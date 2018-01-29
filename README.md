@@ -19,7 +19,7 @@ git clone https://github.com/wandb/examples
 
 Example deep learning projects that use wandb's features.
 
-### examples/keras-cnn-fashion
+### keras-cnn-fashion
 
 Trains a fashion mnist classifier with a small CNN using the keras framework with a tensorflow backend.
 
@@ -28,7 +28,7 @@ cd examples/keras-cnn-fashion
 wandb run train.py
 ```
 
-### examples/tf-cnn-fashion
+### tf-cnn-fashion
 
 Trains a fashion mnist classifier with a small CNN using the tensorflow framework.
 
