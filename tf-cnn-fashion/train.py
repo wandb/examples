@@ -1,7 +1,9 @@
 """
-Builds a convolutional neural network on the fashion mnist data set
+Builds a convolutional neural network on the fashion mnist data set.
 
-This code adapted from https://github.com/aymericdamien/TensorFlow-Examples/
+Designed to show wandb integration with tensorflow.
+
+This code was adapted from https://github.com/aymericdamien/TensorFlow-Examples/
 """
 
 from __future__ import print_function
@@ -9,6 +11,7 @@ from tensorflow.examples.tutorials.mnist import input_data
 import tensorflow as tf
 import wandb
 
+def setup():
 run = wandb.init()
 
 # Import Fashion MNIST data
