@@ -21,10 +21,19 @@ Example deep learning projects that use wandb's features.
 
 ### keras-cnn-fashion
 
-Trains a fashion mnist classifier with a small CNN using the keras framework with a tensorflow backend.
+Trains a fashion mnist classifier with a small CNN using the keras framework with the tensorflow backend.  Uses a simple integration with WandbKerasCallback.
 
 ```
 cd examples/keras-cnn-fashion
+wandb run train.py
+```
+
+### keras-gan-mnist
+
+Trains a GAN on mnist data using a CNN in the keras framework with the tensorflow backend.  This shows a more complicated integration with wandb using a custom callback on the generator model and the discriminator model.
+
+```
+cd examples/keras-gan-mnist
 wandb run train.py
 ```
 
@@ -34,5 +43,14 @@ Trains a fashion mnist classifier with a small CNN using the tensorflow framewor
 
 ```
 cd examples/tf-cnn-fashion
+wandb run train.py
+```
+
+### pytorch-cnn-fashion
+
+Trains a fashion mnist classifier with a small CNN using the pytorch framework.
+
+```
+cd examples/pytorch-cnn-fashion
 wandb run train.py
 ```
