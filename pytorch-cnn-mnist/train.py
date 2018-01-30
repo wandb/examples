@@ -16,56 +16,13 @@ import wandb
 import os
 
 run = wandb.init()
+config = run.config
 
-run.config.dropout = 0.5
-run.config.channels_one = 16
-run.config.channels_two = 32
-
-normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
-                                     std=[x/255.0 for x in [63.0, 62.1, 66.7]])
-
-transform = transforms.Compose([transforms.ToTensor(),
-                                transforms.Normalize((0.1307,), (0.3081,))])
-
-train_dataset = fashion(root='./data',
-                            train=True,
-                            transform=transform,
-                            download=True
-                           )
-
-test_dataset = fashion(root='./data',
-                            train=False,
-                            transform=transform,
-                           )
-
-
-label_names = [
-    "T-shirt/top",
-    "Trouser",
-    "Pullover",
-    "Dress",
-    "Coat",
-    "Sandal",
-    "Shirt",
-    "Sneaker",
-    "Bag",
-    "Boot"]
-
-batch_size = 100
-n_iters = 5500
-num_epochs = n_iters / (len(train_dataset) / batch_size)
-num_epochs = int(num_epochs)
-
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
-                                           batch_size=batch_size,
-                                           shuffle=True)
-
-test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
-                                          batch_size=batch_size,
-                                          shuffle=False)
-
-
-
+config.dropout = 0.5
+config.channels_one = 16
+config.channels_two = 32
+config.batch_size = 100
+config.epochs = 50
 
 class CNNModel(nn.Module):
     def __init__(self):
@@ -115,71 +72,113 @@ class CNNModel(nn.Module):
 
         return out
 
-model = CNNModel()
-criterion = nn.CrossEntropyLoss()
-run.config.learning_rate = 0.001
+def main():
+    normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
+                                         std=[x/255.0 for x in [63.0, 62.1, 66.7]])
 
-optimizer = torch.optim.Adam(model.parameters(), lr=run.config.learning_rate)
+    transform = transforms.Compose([transforms.ToTensor(),
+                                    transforms.Normalize((0.1307,), (0.3081,))])
 
-iter = 0
-for epoch in range(num_epochs):
-    for i, (images, labels) in enumerate(train_loader):
+    train_dataset = fashion(root='./data',
+                                train=True,
+                                transform=transform,
+                                download=True
+                               )
 
-        images = Variable(images)
-        labels = Variable(labels)
+    test_dataset = fashion(root='./data',
+                                train=False,
+                                transform=transform,
+                               )
 
-        # Clear gradients w.r.t. parameters
-        optimizer.zero_grad()
+    label_names = [
+        "T-shirt/top",
+        "Trouser",
+        "Pullover",
+        "Dress",
+        "Coat",
+        "Sandal",
+        "Shirt",
+        "Sneaker",
+        "Bag",
+        "Boot"]
 
-        # Forward pass to get output/logits
-        outputs = model(images)
+    train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
+                                               batch_size=config.batch_size,
+                                               shuffle=True)
 
-        # Calculate Loss: softmax --> cross entropy loss
-        loss = criterion(outputs, labels)
-
-        # Getting gradients w.r.t. parameters
-        loss.backward()
-
-        # Updating parameters
-        optimizer.step()
-
-        iter += 1
-
-        if iter % 100 == 0:
-            # Calculate Accuracy
-            correct = 0
-            correct_arr = [0] * 10
-            total = 0
-            total_arr = [0] * 10
-
-            # Iterate through test dataset
-            for images, labels in test_loader:
-                images = Variable(images)
-
-                # Forward pass only to get logits/output
-                outputs = model(images)
-
-                # Get predictions from the maximum value
-                _, predicted = torch.max(outputs.data, 1)
-
-                # Total number of labels
-                total += labels.size(0)
+    test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
+                                              batch_size=config.batch_size,
+                                              shuffle=False)
 
 
-                correct += (predicted == labels).sum()
+    model = CNNModel()
+    criterion = nn.CrossEntropyLoss()
+    config.learning_rate = 0.001
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+
+    iter = 0
+    for epoch in range(config.epochs):
+        for i, (images, labels) in enumerate(train_loader):
+
+            images = Variable(images)
+            labels = Variable(labels)
+
+            # Clear gradients w.r.t. parameters
+            optimizer.zero_grad()
+
+            # Forward pass to get output/logits
+            outputs = model(images)
+
+            # Calculate Loss: softmax --> cross entropy loss
+            loss = criterion(outputs, labels)
+
+            # Getting gradients w.r.t. parameters
+            loss.backward()
+
+            # Updating parameters
+            optimizer.step()
+
+            iter += 1
+
+            if iter % 100 == 0:
+                # Calculate Accuracy
+                correct = 0
+                correct_arr = [0] * 10
+                total = 0
+                total_arr = [0] * 10
+
+                # Iterate through test dataset
+                for images, labels in test_loader:
+                    images = Variable(images)
+
+                    # Forward pass only to get logits/output
+                    outputs = model(images)
+
+                    # Get predictions from the maximum value
+                    _, predicted = torch.max(outputs.data, 1)
+
+                    # Total number of labels
+                    total += labels.size(0)
+
+
+                    correct += (predicted == labels).sum()
+                    for label in range(10):
+                        correct_arr[label] += (((predicted == labels) + (labels == label)) == 2).sum()
+                        total_arr[label] += (labels == label).sum()
+
+
+                accuracy = 100 * correct / total
+
+                metrics = {'accuracy': accuracy, 'loss': loss.data[0]}
                 for label in range(10):
-                    correct_arr[label] += (((predicted == labels) + (labels == label)) == 2).sum()
-                    total_arr[label] += (labels == label).sum()
+                    metrics['Accuracy ' + label_names[label]] = correct_arr[label] / total_arr[label]
+                run.history.add(metrics)
+                run.summary.update(metrics)
 
 
-            accuracy = 100 * correct / total
+                # Print Loss
+                print('Iteration: {}. Loss: {}. Accuracy: {}'.format(iter, loss.data[0], accuracy))
 
-            metrics = {'accuracy': accuracy, 'loss': loss.data[0]}
-            for label in range(10):
-                metrics['Accuracy ' + label_names[label]] = correct_arr[label] / total_arr[label]
-            run.history.add(metrics)
-            run.summary.update(metrics)
-
-
-            # Print Loss
-            print('Iteration: {}. Loss: {}. Accuracy: {}'.format(iter, loss.data[0], accuracy))
+if __name__ == '__main__':
+   main()
