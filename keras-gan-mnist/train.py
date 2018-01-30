@@ -60,17 +60,11 @@ def add_noise(labels):
             label[0] = label[1]
             label[1] = tmp
 
-# previous_fake_train = [np.zeros((0,28,28))]
 def mix_data(data, generator, length=1000):
     num_examples=int(length/2)
-
     data= data[:num_examples, :, :]
-
-
     seeds = np.random.normal(0, 1, (num_examples, config.generator_seed_dim))
-
     fake_train = generator.predict(seeds)[:,:,:,0]
-
     combined  = np.concatenate([ data, fake_train ])
 
     # combine them together
@@ -84,7 +78,6 @@ def mix_data(data, generator, length=1000):
     combined.shape += (1,)
 
     labels = np_utils.to_categorical(labels)
-
     add_noise(labels)
 
     return (combined, labels)
