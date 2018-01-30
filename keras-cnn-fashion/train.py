@@ -1,3 +1,9 @@
+"""
+Trains a simple cnn on the fashion mnist dataset.
+
+Deigned to show how to do a simple wandb integration with keras.
+"""
+
 from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Dense, Flatten
