@@ -45,3 +45,12 @@ Trains a fashion mnist classifier with a small CNN using the tensorflow framewor
 cd examples/tf-cnn-fashion
 wandb run train.py
 ```
+
+### pytorch-cnn-fashion
+
+Trains a fashion mnist classifier with a small CNN using the pytorch framework.
+
+```
+cd examples/pytorch-cnn-fashion
+wandb run train.py
+```
