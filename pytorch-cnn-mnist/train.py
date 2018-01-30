@@ -1,3 +1,9 @@
+"""
+Builds a convolutional neural network on the fashion mnist data set.
+
+Designed to show wandb integration with pytorch.
+"""
+
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
@@ -33,16 +39,17 @@ test_dataset = fashion(root='./data',
                            )
 
 
-label_names = ["T-shirt/top",
-"Trouser",
-"Pullover",
-"Dress",
-"Coat",
-"Sandal",
-"Shirt",
-"Sneaker",
-"Bag",
-"Boot"]
+label_names = [
+    "T-shirt/top",
+    "Trouser",
+    "Pullover",
+    "Dress",
+    "Coat",
+    "Sandal",
+    "Shirt",
+    "Sneaker",
+    "Bag",
+    "Boot"]
 
 batch_size = 100
 n_iters = 5500
