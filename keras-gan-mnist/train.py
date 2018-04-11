@@ -20,8 +20,8 @@ from wandb.wandb_keras import WandbKerasCallback
 from keras.models import load_model
 import argparse
 
-run = wandb.init()
-config = run.config
+wandb.init()
+config = wandb.config
 
 config.discriminator_epochs = 1
 config.discriminator_examples = 10000
@@ -74,13 +74,11 @@ def mix_data(data, generator, length=1000):
     return (combined, labels)
 
 def log_discriminator(epoch, logs):
-    run.history.add({
+    wandb.log({
             'generator_loss': 0.0,
             'generator_acc': (1.0-logs['acc'])*2.0,
             'discriminator_loss': logs['loss'],
             'discriminator_acc': logs['acc']})
-    run.summary['discriminator_loss'] = logs['loss']
-    run.summary['discriminator_acc'] = logs['acc']
 
 def create_discriminator():
 
@@ -144,17 +142,15 @@ def train_discriminator(generator, discriminator, x_train, x_test, iter):
         batch_size=config.batch_size, validation_data=(test, test_labels),
         callbacks = [wandb_logging_callback])
 
-    discriminator.save(path.join(run.dir, "discriminator.h5"))
+    discriminator.save(path.join(wandb.run.dir, "discriminator.h5"))
 
 def log_generator(epoch, logs):
-    run.history.add({'generator_loss': logs['loss'],
+    wandb.log({'generator_loss': logs['loss'],
                      'generator_acc': logs['acc'],
                      'discriminator_loss': 0.0,
                      'discriminator_acc': (1-logs['acc'])/2.0+0.5})
-    run.summary['generator_loss'] = logs['loss']
-    run.summary['generator_acc'] = logs['acc']
 
-def train_generator(discriminator, joint_model):
+def train_generator(generator, joint_model):
     num_examples = config.generator_examples
 
     train = np.random.normal(0, 1, (num_examples, config.generator_seed_dim))
@@ -164,7 +160,7 @@ def train_generator(discriminator, joint_model):
 
     wandb_logging_callback = LambdaCallback(on_epoch_end=log_generator)
 
-    discriminator.trainable = False
+    generator.trainable = False
 
     joint_model.summary()
 
@@ -172,7 +168,7 @@ def train_generator(discriminator, joint_model):
             batch_size=config.batch_size,
             callbacks=[wandb_logging_callback])
 
-    generator.save(path.join(run.dir, "generator.h5"))
+    generator.save(path.join(wandb.run.dir, "generator.h5"))
 
 def main():
     parser = argparse.ArgumentParser(description='Wandb example GAN')

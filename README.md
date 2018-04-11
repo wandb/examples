@@ -25,6 +25,7 @@ Trains a fashion mnist classifier with a small CNN using the keras framework wit
 
 ```
 cd examples/keras-cnn-fashion
+wandb init
 wandb run train.py
 ```
 
@@ -34,6 +35,7 @@ Trains a GAN on mnist data using a CNN in the keras framework with the tensorflo
 
 ```
 cd examples/keras-gan-mnist
+wandb init
 wandb run train.py
 ```
 
@@ -43,6 +45,7 @@ Trains a fashion mnist classifier with a small CNN using the tensorflow framewor
 
 ```
 cd examples/tf-cnn-fashion
+wandb init
 wandb run train.py
 ```
 
@@ -52,5 +55,6 @@ Trains a fashion mnist classifier with a small CNN using the pytorch framework.
 
 ```
 cd examples/pytorch-cnn-fashion
+wandb init
 wandb run train.py
 ```

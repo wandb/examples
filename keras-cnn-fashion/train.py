@@ -14,8 +14,8 @@ from keras.callbacks import TensorBoard
 import wandb
 from wandb.wandb_keras import WandbKerasCallback
 
-run = wandb.init()
-config = run.config
+wandb.init()
+config = wandb.config
 config.dropout = 0.2
 config.hidden_layer_size = 128
 config.layer_1_size  = 16

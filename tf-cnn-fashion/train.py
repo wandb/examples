@@ -12,7 +12,7 @@ import wandb
 
 
 def main():
-    run = wandb.init()
+    wandb.init()
 
     # Import Fashion MNIST data
     data = input_data.read_data_sets('data/fashion')
@@ -47,10 +47,7 @@ def main():
     FLAGS = flags.FLAGS
 
     # Import all of the tensorflow flags into wandb
-    run.config.update(FLAGS)
-
-    history = run.history
-    summary = run.summary
+    wandb.config.update(FLAGS)
 
     mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 
@@ -119,11 +116,8 @@ def main():
                       "{:.4f}".format(loss) + ", Training Accuracy= " + \
                       "{:.3f}".format(acc))
 
-                metrics = {'acc': acc, 'loss':loss,
-                           'val_acc': acc, 'val_loss': val_loss}
-
-                history.add(metrics)
-                summary.update(metrics)
+                wandb.log({'acc': acc, 'loss':loss,
+                           'val_acc': acc, 'val_loss': val_loss})
 
 if __name__ == '__main__':
    main()
