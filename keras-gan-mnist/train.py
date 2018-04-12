@@ -16,7 +16,7 @@ from os import path
 import scipy.misc
 
 import wandb
-from wandb.wandb_keras import WandbKerasCallback
+from wandb.keras import WandbCallback
 from keras.models import load_model
 import argparse
 

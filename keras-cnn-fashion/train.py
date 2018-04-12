@@ -12,7 +12,7 @@ from keras.optimizers import SGD
 from keras.callbacks import TensorBoard
 
 import wandb
-from wandb.wandb_keras import WandbKerasCallback
+from wandb.keras import WandbCallback
 
 wandb.init()
 config = wandb.config
@@ -61,6 +61,6 @@ model.add(Dense(num_classes, activation='softmax'))
 
 model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 model.fit(X_train, y_train,  validation_data=(X_test, y_test), epochs=config.epochs,
-    callbacks=[WandbKerasCallback()])
+    callbacks=[WandbCallback()])
 
 model.save("cnn.h5")
