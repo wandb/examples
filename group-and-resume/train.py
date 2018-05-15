@@ -42,7 +42,6 @@ def main():
         loss = loss_curve(i)
         acc = accuracy(loss)
 
-        # training metrics, but don't commit the step.
         # Same key for accuracy as validate.py, so we can put them on the same plot.
         # In a future version we will allow showing different keys within a group on the same
         # plot.
