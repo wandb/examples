@@ -42,7 +42,6 @@ def main():
         loss = loss_curve(i)
         acc = accuracy(loss)
 
-        # training metrics, but don't commit the step.
         wandb.log({'loss': loss, 'acc': acc})
 
         time.sleep(10)
