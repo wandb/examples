@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import numpy as np
 import scipy.misc
 
@@ -23,6 +25,7 @@ import argparse
 wandb.init()
 config = wandb.config
 
+config.adversarial_epochs = 1000
 config.discriminator_epochs = 1
 config.discriminator_examples = 10000
 config.generator_epochs = 12
@@ -30,6 +33,7 @@ config.generator_examples = 10000
 config.generator_seed_dim = 10
 config.generator_conv_size = 64
 config.batch_size = 100
+config.image_shape = (28, 28, 1)
 
 def add_noise(labels):
     for label in labels:
@@ -83,7 +87,7 @@ def log_discriminator(epoch, logs):
 def create_discriminator():
 
     discriminator = Sequential()
-    discriminator.add(Flatten(input_shape=(28,28,1)))
+    discriminator.add(Flatten(input_shape=config.image_shape))
     discriminator.add(Dense(1024, kernel_initializer=initializers.RandomNormal(stddev=0.02)))
     discriminator.add(LeakyReLU(0.2))
     discriminator.add(Dropout(0.3))
@@ -109,7 +113,7 @@ def create_generator():
     generator.add(Dense(1024))
     generator.add(LeakyReLU(0.2))
     generator.add(Dense(784, activation='tanh'))
-    generator.add(Reshape((28, 28, 1)))
+    generator.add(Reshape(config.image_shape))
     generator.compile(loss='categorical_crossentropy', optimizer='adam')
 
     return generator
@@ -125,6 +129,10 @@ def create_joint_model(generator, discriminator):
         metrics=['acc'])
 
     return joint_model
+
+
+def generator_inputs(num_examples):
+    return np.random.normal(0, 1, (num_examples, config.generator_seed_dim))
 
 
 def train_discriminator(generator, discriminator, x_train, x_test, iter):
@@ -150,17 +158,18 @@ def log_generator(epoch, logs):
                      'discriminator_loss': 0.0,
                      'discriminator_acc': (1-logs['acc'])/2.0+0.5})
 
-def train_generator(generator, joint_model):
+
+def train_generator(generator, discriminator, joint_model):
     num_examples = config.generator_examples
 
-    train = np.random.normal(0, 1, (num_examples, config.generator_seed_dim))
+    train = generator_inputs(num_examples)
     labels = np_utils.to_categorical(np.ones(num_examples))
 
     add_noise(labels)
 
     wandb_logging_callback = LambdaCallback(on_epoch_end=log_generator)
 
-    generator.trainable = False
+    discriminator.trainable = False
 
     joint_model.summary()
 
@@ -169,6 +178,13 @@ def train_generator(generator, joint_model):
             callbacks=[wandb_logging_callback])
 
     generator.save(path.join(wandb.run.dir, "generator.h5"))
+
+
+def sample_images(generator):
+    noise = generator_inputs(100)
+    gen_imgs = generator.predict(noise)
+    wandb.log({'examples': [wandb.Image(np.squeeze(i)) for i in gen_imgs]})
+
 
 def main():
     parser = argparse.ArgumentParser(description='Wandb example GAN')
@@ -201,9 +217,10 @@ def main():
 
     joint_model = create_joint_model(generator, discriminator)
 
-    for i in range(1000):
+    for i in range(config.adversarial_epochs):
         train_discriminator(generator, discriminator, x_train, x_test, i)
-        train_generator(discriminator, joint_model)
+        train_generator(generator, discriminator, joint_model)
+        sample_images(generator)
 
 if __name__ == '__main__':
    main()
