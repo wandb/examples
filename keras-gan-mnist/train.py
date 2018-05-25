@@ -181,7 +181,7 @@ def train_generator(generator, discriminator, joint_model):
 
 
 def sample_images(generator):
-    noise = generator_inputs(100)
+    noise = generator_inputs(10)
     gen_imgs = generator.predict(noise)
     wandb.log({'examples': [wandb.Image(np.squeeze(i)) for i in gen_imgs]})
 
