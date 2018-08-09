@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Trains a simple cnn on the fashion mnist dataset.
 

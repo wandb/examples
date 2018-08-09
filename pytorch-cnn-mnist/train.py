@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Builds a convolutional neural network on the fashion mnist data set.
 
