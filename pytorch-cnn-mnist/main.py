@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 import wandb
-wandb.init()
+
 
 class Net(nn.Module):
     def __init__(self):
@@ -28,7 +28,6 @@ class Net(nn.Module):
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
-    wandb.hook_torch(model, log="parameters")
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
@@ -40,12 +39,13 @@ def train(args, model, device, train_loader, optimizer, epoch):
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
-            wandb.log({'Loss': loss.item()})
 
 def test(args, model, device, test_loader):
     model.eval()
     test_loss = 0
     correct = 0
+
+    example_images = []
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
@@ -53,19 +53,20 @@ def test(args, model, device, test_loader):
             test_loss += F.nll_loss(output, target, reduction='sum').item() # sum up batch loss
             pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
-
-
+            if len(example_images) < 16:
+                example_images.append(wandb.Image(data[0], caption="Pred: {} Truth: {}".format(pred[0].item(), target[0])))
 
     test_loss /= len(test_loader.dataset)
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
-    wandb.log({'Test Loss': test_loss})
-    wandb.log({'Test Accuracy': 100. * correct / len(test_loader.dataset)})
-
-
+    wandb.log({
+            "Examples": example_images,
+            "Test Accuracy": 100. * correct / len(test_loader.dataset),
+            "Test Loss": test_loss})
 
 def main():
+    wandb.init()
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -86,6 +87,8 @@ def main():
                         help='how many batches to wait before logging training status')
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
+    
+    wandb.config.update(args)
 
     torch.manual_seed(args.seed)
 
@@ -109,6 +112,7 @@ def main():
 
     model = Net().to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+    wandb.hook_torch(model)
 
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
