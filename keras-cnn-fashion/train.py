@@ -2,7 +2,6 @@
 
 """
 Trains a simple cnn on the fashion mnist dataset.
-
 Deigned to show how to do a simple wandb integration with keras.
 """
 
@@ -28,6 +27,8 @@ config.momentum = 0.9
 config.epochs = 25
 
 (X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
+labels=["T-shirt/top","Trouser","Pullover","Dress","Coat",
+        "Sandal","Shirt","Sneaker","Bag","Ankle boot"]
 
 img_width=28
 img_height=28
@@ -63,6 +64,6 @@ model.add(Dense(num_classes, activation='softmax'))
 
 model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 model.fit(X_train, y_train,  validation_data=(X_test, y_test), epochs=config.epochs,
-    callbacks=[WandbCallback()])
+    callbacks=[WandbCallback(data_type="image", labels=labels)])
 
 model.save("cnn.h5")
