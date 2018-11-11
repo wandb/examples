@@ -114,6 +114,8 @@ def main():
 
 
     model = CNNModel()
+    wandb.hook_torch(model)
+
     criterion = nn.CrossEntropyLoss()
     config.learning_rate = 0.001
 
@@ -146,9 +148,9 @@ def main():
             if iter % 100 == 0:
                 # Calculate Accuracy
                 correct = 0
-                correct_arr = [0] * 10
+                correct_arr = [0.0] * 10
                 total = 0
-                total_arr = [0] * 10
+                total_arr = [0.0] * 10
 
                 # Iterate through test dataset
                 for images, labels in test_loader:
@@ -166,7 +168,7 @@ def main():
 
                     correct += (predicted == labels).sum()
                     for label in range(10):
-                        correct_arr[label] += (((predicted == labels) + (labels == label)) == 2).sum()
+                        correct_arr[label] += (((predicted == labels) + (labels == label)) == 2).sum() * 100
                         total_arr[label] += (labels == label).sum()
 
 
