@@ -61,13 +61,9 @@ class Net(nn.Module):
 
 
 net = Net()
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+net = net.to(device)
 
-use_gpu = torch.cuda.is_available()
-if use_gpu:
-	net = net.cuda()
-	print ('USE GPU')
-else:
-	print ('USE CPU')
 
 wandb.hook_torch(net)
 
@@ -82,7 +78,8 @@ for epoch in range(config.epochs):  # loop over the dataset multiple times
     for i, data in enumerate(trainloader, 0):
         # get the inputs
         inputs, labels = data
-
+        inputs, labels = inputs.to(device), labels.to(device)
+        
         # zero the parameter gradients
         optimizer.zero_grad()
 
@@ -101,14 +98,11 @@ for epoch in range(config.epochs):  # loop over the dataset multiple times
 
     dataiter = iter(testloader)
     images, labels = dataiter.next()
-
-    #print('GroundTruth: ', ' '.join('%5s' % classes[labels[j]] for j in range(4)))
-
+    images, labels = images.to(device), labels.to(device)
+        
     outputs = net(images)
     _, predicted = torch.max(outputs, 1)
 
-    #print('Predicted: ', ' '.join('%5s' % classes[predicted[j]]
-    #                          for j in range(4)))
     example_images = [wandb.Image(image, caption=classes[predicted]) for image, predicted, label in zip(images, predicted, labels)]
 
     # Let us look at how the network performs on the whole dataset.
@@ -118,6 +112,8 @@ for epoch in range(config.epochs):  # loop over the dataset multiple times
     with torch.no_grad():
         for data in testloader:
             images, labels = data
+            images, labels = images.to(device), labels.to(device)
+            
             outputs = net(images)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
@@ -130,6 +126,8 @@ for epoch in range(config.epochs):  # loop over the dataset multiple times
     with torch.no_grad():
         for data in testloader:
             images, labels = data
+            images, labels = images.to(device), labels.to(device)
+            
             outputs = net(images)
             _, predicted = torch.max(outputs, 1)
             c = (predicted == labels).squeeze()
