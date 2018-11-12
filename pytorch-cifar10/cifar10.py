@@ -4,6 +4,13 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+# Assume that we are on a CUDA machine, then this should print a CUDA device:
+
+print(device)
+
+
 ########################################################################
 # The output of torchvision datasets are PILImage images of range [0, 1].
 # We transform them to Tensors of normalized range [-1, 1].
@@ -126,9 +133,4 @@ for i in range(10):
     print('Accuracy of %5s : %2d %%' % (
         classes[i], 100 * class_correct[i] / class_total[i]))
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-# Assume that we are on a CUDA machine, then this should print a CUDA device:
-
-print(device)
 
