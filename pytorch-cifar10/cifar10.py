@@ -1,5 +1,3 @@
-
-
 import torch
 import torchvision
 import torchvision.transforms as transforms
@@ -15,7 +13,6 @@ config.epochs = 10
 config.hidden_nodes = 120
 config.conv1_channels = 5
 config.conv2_channels = 16
-
 
 ########################################################################
 # The output of torchvision datasets are PILImage images of range [0, 1].
@@ -63,6 +60,13 @@ class Net(nn.Module):
 
 
 net = Net()
+
+use_gpu = torch.cuda.is_available()
+if use_gpu:
+	net = net.cuda()
+	print ('USE GPU')
+else:
+	print ('USE CPU')
 
 wandb.hook_torch(net)
 
