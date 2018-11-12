@@ -20,8 +20,8 @@ def main():
     data = input_data.read_data_sets('data/fashion')
 
     categories = {
-        0: 'T-shirt/Top',
-        1: 'Trouser',
+        0:'T-shirt/Top',
+        1:'Trouser',
         2:'Pullover',
         3:'Dress',
         4:'Coat',
@@ -38,7 +38,7 @@ def main():
     flags.DEFINE_integer('batch_size', 128, 'Batch size.')
     flags.DEFINE_float('learning_rate', 0.1, 'Learning rate')
 
-    flags.DEFINE_integer('num_steps', 5000,
+    flags.DEFINE_integer('num_steps', 50000,
                          'Num of batches to train.')
     flags.DEFINE_integer('display_step', 100, 'Steps between displaying output.')
     flags.DEFINE_integer('n_hidden_1', 256, '1st layer number of neurons.')
@@ -98,7 +98,6 @@ def main():
 
     # Start training
     with tf.Session() as sess:
-
         # Run the initializer
         sess.run(init)
 
