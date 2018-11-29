@@ -30,8 +30,6 @@ import json
 import wandb
 from wandb.tensorflow import log as tflog
 
-wandb.init(project="distributed-mnist")
-
 import tensorflow as tf
 
 from tensorflow.examples.tutorials.mnist import input_data
@@ -270,4 +268,5 @@ if __name__ == '__main__':
                              'tensorflow/logs'),
         help='Summaries log directory')
     FLAGS, unparsed = parser.parse_known_args()
+    wandb.init(project="distributed-mnist", config=FLAGS)
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)

@@ -11,4 +11,4 @@ wandb arena submit tf --name=exp1 \
     --psImage=ufoym/deepo:keras-cpu \
     --logdir=gs://wandb-production_cloudbuild/rad \
     --tensorboard \
-    "pip install wandb pillow && python code/examples/tf-distributed-mnist/train.py --logdir gs://wandb-production_cloudbuild/rad"
+    "pip install git+git://github.com/wandb/client.git@feature/kubeflow#egg=wandb[kubeflow] pillow && python code/examples/tf-distributed-mnist/train.py --logdir gs://wandb-production_cloudbuild/rad"
