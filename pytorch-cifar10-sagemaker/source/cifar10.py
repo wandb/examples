@@ -72,8 +72,7 @@ net = Net()
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 net = net.to(device)
 
-
-wandb.hook_torch(net)
+wandb.watch(net)
 
 import torch.optim as optim
 
