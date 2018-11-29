@@ -114,7 +114,7 @@ def main():
 
 
     model = CNNModel()
-    wandb.hook_torch(model)
+    wandb.watch(model)
 
     criterion = nn.CrossEntropyLoss()
     config.learning_rate = 0.001

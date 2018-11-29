@@ -6,6 +6,18 @@ import torchvision.transforms as transforms
 import os
 import sys
 import wandb
+import argparse
+
+parser = argparse.ArgumentParser(description='Run a sagemaker parameter sweep')
+parser.add_argument('--max-jobs', type=int, default=3,
+                    help='Maximum jobs')
+parser.add_argument('--max-parallel-jobs', type=int, default=3,
+                    help='Maximum parallel jobs')
+parser.add_argument('--upload-data', action="store_true",
+                    help='Upload the dataset (should be run the first time using this script)')
+
+
+args = parser.parse_args()
 
 sagemaker_session = sagemaker.Session()
 
@@ -16,7 +28,7 @@ prefix = 'sagemaker/pytorch-cifar10'
 role = os.getenv('SAGEMAKER_ROLE') or sagemaker.get_execution_role()
 wandb.sagemaker_auth(path="source")
 
-if sys.argv[-1] == "upload_data":
+if args.upload_data:
     transform = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -59,8 +71,8 @@ tuner = HyperparameterTuner(estimator,
                             objective_metric_name,
                             hyperparameter_ranges,
                             metric_definitions,
-                            max_jobs=1,
-                            max_parallel_jobs=1,
+                            max_jobs=args.max_jobs,
+                            max_parallel_jobs=args.max_parallel_jobs,
                             objective_type=objective_type)
 
 tuner.fit({'training': inputs})
