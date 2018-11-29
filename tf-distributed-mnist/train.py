@@ -28,6 +28,7 @@ import sys
 import ast
 import json
 import wandb
+from wandb.tensorflow import log as tflog
 
 wandb.init(project="distributed-mnist")
 
@@ -219,7 +220,7 @@ def train():
                     [merged, accuracy], feed_dict=feed_dict(False))
                 test_writer.add_summary(summary, i)
                 print('Accuracy at step %s: %s' % (i, acc))
-                wandb.tensorflow.log(summary)
+                tflog(summary)
             else:  # Record train set summaries, and train
                 if i % 100 == 99:  # Record execution stats
                     run_options = tf.RunOptions(
@@ -232,7 +233,7 @@ def train():
                     train_writer.add_run_metadata(run_metadata, 'step%03d' % i)
                     train_writer.add_summary(summary, i)
                     print('Adding run metadata for', i)
-                    wandb.tensorflow.log(summary)
+                    tflog(summary)
                 else:  # Record a summary
                     summary, _ = sess.run(
                         [merged, train_step], feed_dict=feed_dict(True))
