@@ -218,7 +218,8 @@ def train():
                     [merged, accuracy], feed_dict=feed_dict(False))
                 test_writer.add_summary(summary, i)
                 print('Accuracy at step %s: %s' % (i, acc))
-                tflog(summary)
+                if i % 100 == 0:
+                    tflog(summary)
             else:  # Record train set summaries, and train
                 if i % 100 == 99:  # Record execution stats
                     run_options = tf.RunOptions(
