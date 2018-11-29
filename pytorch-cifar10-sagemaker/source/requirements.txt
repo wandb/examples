@@ -1,1 +1,1 @@
-https://github.com/wandb/client/archive/v0.6.26rc12.tar.gz
+wandb
