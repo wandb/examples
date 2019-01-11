@@ -1,6 +1,7 @@
 import sagemaker
 from sagemaker.tuner import IntegerParameter, CategoricalParameter, ContinuousParameter, HyperparameterTuner
 from sagemaker.pytorch import PyTorch
+import botocore
 import torchvision
 import torchvision.transforms as transforms
 import os
@@ -13,10 +14,9 @@ parser.add_argument('--max-jobs', type=int, default=3,
                     help='Maximum jobs')
 parser.add_argument('--max-parallel-jobs', type=int, default=3,
                     help='Maximum parallel jobs')
-parser.add_argument('--upload-data', action="store_true",
-                    help='Upload the dataset (should be run the first time using this script)')
-
-
+parser.add_argument('--wait', dest='wait', action='store_true')
+parser.add_argument('--no-wait', dest='wait', action='store_false')
+parser.set_defaults(wait=True)
 args = parser.parse_args()
 
 sagemaker_session = sagemaker.Session()
@@ -28,7 +28,12 @@ prefix = 'sagemaker/pytorch-cifar10'
 role = os.getenv('SAGEMAKER_ROLE') or sagemaker.get_execution_role()
 wandb.sagemaker_auth(path="source")
 
-if args.upload_data:
+# Ensure training data is stored in s3
+inputs = "s3://{}/{}".format(bucket, prefix)
+try:
+    file = os.path.join(prefix, 'cifar-10-python.tar.gz')
+    sagemaker_session.boto_session.resource('s3').Object(bucket, file).load()
+except botocore.exceptions.ClientError as e:
     transform = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -36,11 +41,8 @@ if args.upload_data:
     trainset = torchvision.datasets.CIFAR10(
         'data', download=True, transform=transform)
     print("Uploading data...")
-    inputs = sagemaker_session.upload_data(
+    sagemaker_session.upload_data(
         path='data', bucket=bucket, key_prefix=prefix)
-else:
-    inputs = "s3://{}/{}".format(bucket, prefix)
-
 print("Using inputs: ", inputs)
 
 estimator = PyTorch(entry_point="cifar10.py",
@@ -48,14 +50,14 @@ estimator = PyTorch(entry_point="cifar10.py",
                     role=role,
                     framework_version='1.0.0.dev',
                     train_instance_count=1,
-                    train_instance_type='ml.p2.xlarge',
+                    train_instance_type='ml.c5.xlarge',
                     hyperparameters={
                         'epochs': 50,
                         'momentum': 0.9
                     })
 
 hyperparameter_ranges = {
-    'lr': ContinuousParameter(0.0001, 0.01),
+    'lr': ContinuousParameter(0.0001, 0.001),
     'hidden_nodes': IntegerParameter(20, 100),
     'batch_size': CategoricalParameter([128, 256, 512]),
     'conv1_channels': CategoricalParameter([32, 64, 128]),
@@ -76,3 +78,7 @@ tuner = HyperparameterTuner(estimator,
                             objective_type=objective_type)
 
 tuner.fit({'training': inputs})
+
+if args.wait:
+    print("Waiting for sweep to finish")
+    tuner.wait()
