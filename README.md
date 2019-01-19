@@ -31,7 +31,7 @@ wandb run train.py
 
 ### keras-cnn-nature
 
-Trains a small CNN on images of plants and animals using Keras. Highly configurable through command line flags--run with ``-h`` to see all the options 
+Trains a small CNN on images of plants and animals using Keras. Highly configurable through command line flags--run with ``-h`` to see all the options. 
 
 ```
 cd examples/keras-cnn-nature
