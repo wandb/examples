@@ -1,6 +1,6 @@
 #!/bin/bash
 
-wandb arena submit tf --name=exp1 \
+python -m wandb.kubeflow.arena submit tf --name=exp1 \
     --wandb-project=distributed-mnist \
     --gpus=1 \
     --workers=2 \
@@ -9,6 +9,5 @@ wandb arena submit tf --name=exp1 \
     --syncSource=https://github.com/wandb/examples.git \
     --ps=1 \
     --psImage=ufoym/deepo:keras-cpu \
-    --logdir=gs://wandb-production_cloudbuild/rad \
     --tensorboard \
-    "pip install git+git://github.com/wandb/client.git@feature/kubeflow#egg=wandb[kubeflow] pillow && python code/examples/tf-distributed-mnist/train.py --logdir gs://wandb-production_cloudbuild/rad"
+    "pip install wandb[kubeflow] pillow && python code/examples/tf-distributed-mnist/train.py"

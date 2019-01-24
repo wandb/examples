@@ -1,44 +1,45 @@
 import tensorflow as tf
 import numpy as np
-
-from tensorflow.examples.tutorials.mnist import input_data
-from wandb.tensorflow import WandbHook
-
 import wandb
+wandb.init(project="mnist", tensorboard=True)
+wandb.config.batch_size = 256
 
-mnist = input_data.read_data_sets('MNIST_data')
+mnist = tf.contrib.learn.datasets.load_dataset("mnist")
+
 
 def input(dataset):
     return dataset.images, dataset.labels.astype(np.int32)
+
 
 # Specify feature
 feature_columns = [tf.feature_column.numeric_column("x", shape=[28, 28])]
 
 # Build 2 layer DNN classifier
+# NOTE: We change the summary logging frequency to be every epoch with save_summary_steps
 classifier = tf.estimator.DNNClassifier(
     feature_columns=feature_columns,
     hidden_units=[256, 32],
     optimizer=tf.train.AdamOptimizer(1e-4),
     n_classes=10,
     dropout=0.1,
-    model_dir="./tmp/mnist_model"
+    config=tf.estimator.RunConfig(
+        save_summary_steps=mnist.train.images.shape[0] / wandb.config.batch_size)
 )
 
-wandb.init()
-summary_op = tf.summary.merge_all()
-hook = WandbHook(summary_op)
+# Turn on logging
+tf.logging.set_verbosity(tf.logging.INFO)
 
 # Define the training inputs
 train_input_fn = tf.estimator.inputs.numpy_input_fn(
     x={"x": input(mnist.train)[0]},
     y=input(mnist.train)[1],
     num_epochs=None,
-    batch_size=50,
+    batch_size=wandb.config.batch_size,
     shuffle=True,
 )
 
-
-classifier.train(input_fn=train_input_fn, steps=100000, hooks=[hook])
+# Train the classifier
+classifier.train(input_fn=train_input_fn, steps=100000)
 
 # Define the test inputs
 test_input_fn = tf.estimator.inputs.numpy_input_fn(

@@ -20,17 +20,16 @@ def main():
     data = input_data.read_data_sets('data/fashion')
 
     categories = {
-        0:'T-shirt/Top',
-        1:'Trouser',
-        2:'Pullover',
-        3:'Dress',
-        4:'Coat',
-        5:'Sandal',
-        6:'Shirt',
-        7:'Sneaker',
-        8:'Bag',
-        9:'Ankle Boot'}
-
+        0: 'T-shirt/Top',
+        1: 'Trouser',
+        2: 'Pullover',
+        3: 'Dress',
+        4: 'Coat',
+        5: 'Sandal',
+        6: 'Shirt',
+        7: 'Sneaker',
+        8: 'Bag',
+        9: 'Ankle Boot'}
 
     flags = tf.app.flags
     flags.DEFINE_string('data_dir', '/tmp/data',
@@ -40,10 +39,12 @@ def main():
 
     flags.DEFINE_integer('num_steps', 50000,
                          'Num of batches to train.')
-    flags.DEFINE_integer('display_step', 100, 'Steps between displaying output.')
+    flags.DEFINE_integer('display_step', 100,
+                         'Steps between displaying output.')
     flags.DEFINE_integer('n_hidden_1', 256, '1st layer number of neurons.')
     flags.DEFINE_integer('n_hidden_2', 256, '2nd layer number of neurons.')
-    flags.DEFINE_integer('num_input', 784, 'MNIST data input (img shape: 28*28)')
+    flags.DEFINE_integer(
+        'num_input', 784, 'MNIST data input (img shape: 28*28)')
     flags.DEFINE_integer('num_classes', 10, 'MNIST total classes (0-9 digits)')
 
     FLAGS = flags.FLAGS
@@ -110,15 +111,16 @@ def main():
                 loss, acc = sess.run([loss_op, accuracy], feed_dict={X: batch_x,
                                                                      Y: batch_y})
                 val_loss, val_acc = sess.run([loss_op, accuracy], feed_dict={
-                                                        X: mnist.test.images,
-                                                        Y: mnist.test.labels})
+                    X: mnist.test.images,
+                    Y: mnist.test.labels})
 
-                print("Step " + str(step) + ", Minibatch Loss= " + \
-                      "{:.4f}".format(loss) + ", Training Accuracy= " + \
+                print("Step " + str(step) + ", Minibatch Loss= " +
+                      "{:.4f}".format(loss) + ", Training Accuracy= " +
                       "{:.3f}".format(acc))
 
-                wandb.log({'acc': acc, 'loss':loss,
+                wandb.log({'acc': acc, 'loss': loss,
                            'val_acc': acc, 'val_loss': val_loss})
 
+
 if __name__ == '__main__':
-   main()
+    main()
