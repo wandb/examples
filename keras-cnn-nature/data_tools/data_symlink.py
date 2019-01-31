@@ -29,7 +29,26 @@ jpgs_by_species = pickle.load(open('species_to_jpg_file_name.pkl', 'rb'))
 def build_symlink_data(args):
   """
   Build train and validation split in the root directory. For each class, take a random sample of images
-  and generate symlinks to them in correct tree.
+  and generate symlinks to them at the correct node of the overall data tree
+  root
+    train
+      Class A
+        image0.jpg
+        image1.jpg
+        ...
+      Class B
+        image10.jpg
+        image11.jpg
+        ...
+    val
+      Class A
+        image50.jpg
+        image51.jpg
+        ...
+      Class B
+        image60.jpg
+        image61.jpg
+        ...
   """
   if not os.path.isdir(args.dest_data):
     os.mkdir(args.dest_data)
@@ -51,8 +70,8 @@ def build_symlink_data(args):
     os.mkdir(os.path.join(args.dest_data, train_dir, c))
     os.mkdir(os.path.join(args.dest_data, val_dir, c))
     
-    # when training on classes alone, take a random sample of N_TRAIN + N_VAL size from the class level
-    if args.flat_target:
+    # when training to predict classes alone, take a random sample of N_TRAIN + N_VAL size from each class
+    if not args.two_tiers:
       jpgs = random.sample(jpgs_by_class[c], args.train_count + args.val_count)
       
       for j in jpgs[:args.val_count]:
@@ -101,25 +120,21 @@ if __name__ == "__main__":
     "-s",
     "--src_data",
     type=str,
-    default=SRC,
     help="Absolute path to root of source data")
   parser.add_argument(
     "-d",
     "--dest_data",
     type=str,
-    default=DEST,
     help="Absolute path to root of destination/symlink data")
   parser.add_argument(
     "-t",
     "--train_count",
     type=int,
-    default=N_TRAIN,
     help="Number of training examples per class")
   parser.add_argument(
     "-v",
     "--val_count",
     type=int,
-    default=N_VAL,
     help="Number of validation examples per class")
   parser.add_argument(
     "--two_tiers",

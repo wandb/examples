@@ -32,6 +32,7 @@ wandb run train.py
 ### keras-cnn-nature
 
 Trains a small CNN on images of plants and animals using Keras. Highly configurable through command line flags--run with ``-h`` to see all the options. 
+The ``data_tools`` directory contains a helper script to generate more manageable training datasets from the full 186GB iNaturalist 2017 dataset.
 
 ```
 cd examples/keras-cnn-nature
