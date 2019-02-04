@@ -1,3 +1,4 @@
+*.swp
 .python-version
 wandb
 wandb-debug.log
