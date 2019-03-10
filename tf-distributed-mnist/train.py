@@ -268,5 +268,6 @@ if __name__ == '__main__':
                              'tensorflow/logs'),
         help='Summaries log directory')
     FLAGS, unparsed = parser.parse_known_args()
-    wandb.init(project="distributed-mnist", config=FLAGS, tensorboard=True)
+    print("K8S IMAGE", wandb.util.image_id_from_k8s())
+    wandb.init(project="distributed-mnist", config=FLAGS)
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
