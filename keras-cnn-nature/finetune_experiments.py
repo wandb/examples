@@ -1,6 +1,5 @@
 import argparse
 import os
-import pandas as pd
 
 # keras pre-trained models
 from keras.applications.inception_v3 import InceptionV3
@@ -80,9 +79,9 @@ def load_pretrained_model(base_model_name, fc_size, num_classes):
   base_model = BASE_MODELS[base_model_name]
   base = base_model(weights='imagenet', include_top=False)
   x = base.output
-  x.add(GlobalAveragePooling2D())
-  x.add(Dense(fc_size, activation='relu'))
-  guesses = x.add(Dense(num_classes, activation='softmax'))
+  x = GlobalAveragePooling2D()(x)
+  x = Dense(fc_size, activation='relu')(x)
+  guesses = Dense(num_classes, activation='softmax')(x)
   model = Model(inputs=base.input, outputs=guesses)
   
   # freeze all base layers
