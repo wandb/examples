@@ -7,11 +7,11 @@ from keras.applications.inception_resnet_v2 import InceptionResNetV2 as IRV2
 from keras.applications.resnet50 import ResNet50
 from keras.applications.xception import Xception
 
-from keras.layers import Sequential, Dense, GlobalAveragePooling2D, Conv2D
+from keras.layers import Dense, GlobalAveragePooling2D, Conv2D
 from keras.layers import MaxPooling2D, Activation, Dropout, Flatten
 
 from keras.preprocessing import image
-from keras.models import Model
+from keras.models import Model, Sequential
 from keras import optimizers
 from keras.preprocessing.image import ImageDataGenerator
 from keras import backend as K
@@ -116,7 +116,7 @@ def finetune_base_cnn(args):
   """ Load a pre-trained model and pre-train it for some epochs (args.pretrain_epochs).
   Then freeze learned layers up to args.freeze_layer, and continue training the remaining
   layers for the rest of the epochs (args.epochs) """
-  wandb.init(project="finetune-base-cnn")
+  wandb.init(project=args.project_name)
   callbacks = [WandbCallback()]
   
   # basic data augmentation
@@ -193,7 +193,7 @@ def curr_learn_experiment(args):
   """ Run curriculum learning experiment, pre-training on class labels for
   args.class_switch total epochs, then finetuning on species labels for 
   args.epochs total epochs """
-  wandb.init(project="curriculum_learning")
+  wandb.init(project=args.project_name)
  
   specific_train = "/mnt/data/inaturalist/curr_learn_25_s_620_100/train"
   specific_val = "/mnt/data/inaturalist/curr_learn_25_s_620_100/val"
@@ -284,6 +284,12 @@ if __name__ == "__main__":
     type=str,
     default="",
     help="Name of this model/run (model will be saved to this file)")
+  parser.add_argument(
+    "-p",
+    "--project_name",
+    type=str,
+    default="finetune_keras",
+    help="Name of the W&B project to which results will be logged")
 
   # Curriculum learning args
   #----------------------------
@@ -294,12 +300,11 @@ if __name__ == "__main__":
     default=0,
     help="Epoch on which to switch tasks from class to species")
   parser.add_argument(
-    "-d",
     "--dropout",
     type=float,
     default=0.3,
     help="Dropout before the last fc layer")
-  parser.add_arugment(
+  parser.add_argument(
     "--class_lr",
     type=float,
     default=0.025,
