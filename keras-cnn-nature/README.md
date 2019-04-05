@@ -21,7 +21,7 @@ python train_small_cnn.py
  
  Enables two kinds of finetuning experiments:
  * loading various pretrained base CNNs (Xception,ResNet, InceptionResNetV2, InceptionV3), pretraining for some epochs, freezing some of the layers of the resulting network, then continuing to finetune the rest of the layers 
- * loading a small CNN, pretraining on general labels (in this case, predicting one of 5 biological classes) for a certain number of epochs, then finetuning on specific labels (predicting one of 25 biological species)
+ * loading a small CNN, pretraining on general labels (in this case, predicting one of 5 biological classes) for a certain number of epochs, then finetuning on specific labels (predicting one of 25 biological species). Note that you'll likely need to modify the absolute paths for loading the curriculum learning data on L205:208 of ``finetune_experiments.py``.
 
 For more contesxt on this example, see this W&B [report](https://app.wandb.ai/stacey/curr_learn/reports?view=stacey%2Fkeras_nature_explore).
 

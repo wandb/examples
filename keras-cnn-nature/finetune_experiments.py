@@ -21,7 +21,8 @@ from wandb.keras import WandbCallback
 
 # training config
 #--------------------------------
-img_width, img_height = 299, 299
+img_width = 299
+img_height = 299
 resnet_img_dim = 224
 
 # Model definitions
@@ -33,7 +34,8 @@ BASE_MODELS = {
   "xception" : Xception
 }
 
-def build_small_cnn(optimizer, dropout, num_classes, lr):
+def build_small_cnn(dropout, num_classes, lr):
+  """ Build a small 7-layer convnet """
   if K.image_data_format() == 'channels_first':
     input_shape = (3, img_width, img_height)
   else:
@@ -129,25 +131,28 @@ def finetune_base_cnn(args):
 
   # modify image dims depending on base model (only resnet is different)
   if args.initial_model == "resnet":
-    img_width = resnet_img_dim
-    img_height = resnet_img_dim
+    base_img_width = resnet_img_dim
+    base_img_height = resnet_img_dim
+  else:
+    base_img_width = img_width
+    base_img_height = img_height
 
   train_generator = train_datagen.flow_from_directory(
     args.train_data,
-    target_size=(img_width, img_height),
+    target_size=(base_img_width, base_img_height),
     batch_size=args.batch_size,
     class_mode='categorical',
     follow_links=True)
 
   validation_generator = test_datagen.flow_from_directory(
     args.val_data,
-    target_size=(img_width, img_height),
+    target_size=(base_img_width, base_img_height),
     batch_size=args.batch_size,
     class_mode='categorical',
     follow_links=True)
 
   model = load_pretrained_model(args.initial_model, args.fc_size, args.num_classes)
-  log_model_params(model, wandb.config, args, img_width)
+  log_model_params(model, wandb.config, args, base_img_width)
    
   # Pre-training phase 
   #-----------------------
@@ -194,11 +199,13 @@ def curr_learn_experiment(args):
   args.class_switch total epochs, then finetuning on species labels for 
   args.epochs total epochs """
   wandb.init(project=args.project_name)
- 
-  specific_train = "/mnt/data/inaturalist/curr_learn_25_s_620_100/train"
-  specific_val = "/mnt/data/inaturalist/curr_learn_25_s_620_100/val"
-  general_train = "/mnt/data/inaturalist/curr_learn_25_s_620_100_BY_CLASS/train"
-  general_val = "/mnt/data/inaturalist/curr_learn_25_s_620_100_BY_CLASS/val"
+
+  # NOTE: these absolute paths to the general and specific train and validation
+  # data depend on your setup 
+  general_train = "curr_learn_25_s_620_100_BY_CLASS/train"
+  general_val = "curr_learn_25_s_620_100_BY_CLASS/val"
+  specific_train = "curr_learn_25_s_620_100/train"
+  specific_val = "curr_learn_25_s_620_100/val"
   
   train_datagen = ImageDataGenerator(
     rescale=1. / 255,
@@ -209,8 +216,8 @@ def curr_learn_experiment(args):
   
   # initially, the more general model pre-trains on 5 classes
   # (amphibians, birds, insects, mammals, and reptiles)
-  # on data generated with general labels( biological class)
-  general_model = build_small_cnn(args.optimizer, args.dropout, 5, args.class_lr)
+  # on data generated with general labels (biological/taxonomic class)
+  general_model = build_small_cnn(args.dropout, 5, args.class_lr)
   log_model_params(general_model, wandb.config, args, img_width)
 
   switch_epochs = args.class_switch
@@ -239,14 +246,14 @@ def curr_learn_experiment(args):
     callbacks=callbacks,
     validation_steps=args.num_valid // args.batch_size)
 
-  # now we need to reload a model with 25 output labels (25 species)
-  specific_model = build_small_cnn(args.optimizer, args.dropout, 25, args.species_lr)
+  # recompile the model such that the final layer can predict 25 output labels (25 species)
+  specific_model = build_small_cnn(args.dropout, 25, args.species_lr)
   # copy weights from general to specific model, up until dropout layer
   for i, layer in enumerate(specific_model.layers[:-3]):
     layer.set_weights(general_model.layers[i].get_weights())
 
   # finetune on second, specific label set (25 species) for finetune_epochs,
-  # on data generated with specific labels
+  # on data generated with specific labels (biological/taxonomic species)
   finetune_epochs = args.epochs - switch_epochs
   spec_train_generator = train_datagen.flow_from_directory(
     specific_train,
@@ -298,22 +305,22 @@ if __name__ == "__main__":
     "--class_switch",
     type=int,
     default=0,
-    help="Epoch on which to switch tasks from class to species")
+    help="Curr Learn: epoch on which to switch tasks from class to species")
   parser.add_argument(
     "--dropout",
     type=float,
     default=0.3,
-    help="Dropout before the last fc layer")
+    help="Curr Learn: dropout before the last fc layer (0.3)")
   parser.add_argument(
     "--class_lr",
     type=float,
     default=0.025,
-    help="Learning rate for class pre-training")
+    help="Curr Learn: learning rate for class pre-training (0.025)")
   parser.add_argument(
     "--species_lr",
     type=float,
     default=0.01,
-    help="Learning rate for species fine-tuning")
+    help="Curr Learn: learning rate for species fine-tuning (0.01)")
 
   # Finetuning args
   #----------------------------
@@ -322,37 +329,37 @@ if __name__ == "__main__":
     "--fc_size",
     type=int,
     default=1024,
-    help="size of penultimate fc layer to add onto base net")
+    help="Finetune: size of penultimate fc layer to add onto base net (1024)")
   parser.add_argument(
     "-fl",
     "--freeze_layer",
     type=int,
     default=155,
-    help="layer of base net up to which we freeze weights")
+    help="Finetune: layer of base net up to which we freeze weights (155)")
   parser.add_argument(
     "-i",
     "--initial_model",
     type=str,
     default="iv3",
-    help="short name of base model to load")
+    help="Finetune: short name of base model to load (iv3, other options: irv2, resnet, xception)")
   parser.add_argument(
     "-pe",
     "--pretrain_epochs",
     type=int,
     default=5,
-    help="number of pre-training epochs")
+    help="Finetune: number of pre-training epochs (5)")
   parser.add_argument(
     "-lr",
     "--learning_rate",
     type=float,
     default=0.0001,
-    help="SGD learning rate for finetuning base cnn")
+    help="Finetune: SGD learning rate for finetuning base cnn (0.0001)")
   parser.add_argument(
     "-mnt",
     "--momentum",
     type=float,
     default=0.9,
-    help="SGD momentum for finetuning base cnn")
+    help="Finetune: SGD momentum for finetuning base cnn (0.9)")
     
   # Optional args
   #----------------------------
@@ -361,31 +368,31 @@ if __name__ == "__main__":
     "--batch_size",
     type=int,
     default=32,
-    help="Batch size")
+    help="Batch size (32)")
   parser.add_argument(
     "-c",
     "--num_classes",
     type=int,
     default=10,
-    help="Number of classes to predict")
+    help="Number of classes to predict (10)")
   parser.add_argument(
     "-e",
     "--epochs",
     type=int,
     default=45,
-    help="Number of training epochs")
+    help="Number of training epochs (45)")
   parser.add_argument(
     "-nt",
     "--num_train",
     type=int,
     default=5000,
-    help="Number of training examples")
+    help="Number of training examples (5000)")
   parser.add_argument(
     "-nv",
     "--num_valid",
     type=int,
     default=800,
-    help="Number of validation examples") 
+    help="Number of validation examples (800)") 
   parser.add_argument(
     "-d",
     "--train_data",
