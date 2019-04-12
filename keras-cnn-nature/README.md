@@ -4,7 +4,7 @@ These examples train and finetune CNNs in Keras with the goal of exploring curri
 
 ## Data acquisition and tools
 
-The full iNaturalist 2017 dataset, [available here](https://github.com/visipedia/inat_comp/tree/master/2017), is 186GB. You can download a more manageable random 12K subset by [clicking this link](https://storage.googleapis.com/wandb_datasets/nature_12K.zip). You can also download a small dataset for curriculum learning (one copy partitioned into 5 biological classes and another into 25 species) by [clicking this link](https://storage.googleapis.com/wandb_datasets/curr_learn_data.zip). The ``data_tools`` directory contains a helper script to generate other subsets for training via symlinks.
+The full iNaturalist 2017 dataset, [available here](https://github.com/visipedia/inat_comp/tree/master/2017), is 186GB. You can download a more manageable random 12K subset by [clicking this link](https://storage.googleapis.com/wandb_datasets/nature_12K.zip). You can also download a small dataset (10GB) for curriculum learning (one copy partitioned into 5 biological classes and another into 25 species) by [clicking this link](https://storage.googleapis.com/wandb_datasets/curr_learn_data.zip). The ``data_tools`` directory contains a helper script to generate other subsets for training via symlinks.
 
 ## Training a small CNN
 
@@ -22,7 +22,7 @@ python train_small_cnn.py
  * loading various pretrained base CNNs in Keras (Xception, ResNet, InceptionResNetV2, InceptionV3), pretraining for some epochs, freezing some of the layers of the resulting network, then continuing to finetune the rest of the layers 
  * loading a small CNN, pretraining on general labels (in this case, predicting one of 5 biological classes) for a certain number of epochs, then finetuning on specific labels (predicting one of 25 biological species). Note that you'll likely need to modify the absolute paths for loading the curriculum learning data on L205:208 of ``finetune_experiments.py``.
 
-For more contesxt on this example, see this W&B [report](https://app.wandb.ai/stacey/curr_learn/reports?view=stacey%2Fkeras_nature_explore).
+For more context on this example, see this W&B [report](https://app.wandb.ai/stacey/curr_learn/reports?view=stacey%2Fkeras_nature_explore).
 
 Highly configurable with commandline flags: run with ``-h`` to see all the options. 
 ```
