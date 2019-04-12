@@ -55,8 +55,11 @@ def build_symlink_data(args):
   os.mkdir(os.path.join(args.dest_data, train_dir))
   os.mkdir(os.path.join(args.dest_data, val_dir))
   
-  # save a second copy of the data with the higher-level class as the prediction label
-  if not args.flat_target:
+  # save a second copy of the data with the parent class as the prediction label
+  # that is, the destination directory args.dest_data will contain training and validation data for 25 species,
+  # and a second directory with the suffix _BY_CLASS will contain training and validation data for
+  # 5 biological classes, where each class is the parent of 5 of the 25 species 
+  if args.flat_target:
     by_class_dest = args.dest_data + "_BY_CLASS"
     os.mkdir(by_class_dest)
     os.mkdir(os.path.join(by_class_dest, train_dir)) 
@@ -65,54 +68,68 @@ def build_symlink_data(args):
       os.mkdir(os.path.join(by_class_dest, train_dir, parent_class))
       os.mkdir(os.path.join(by_class_dest, val_dir, parent_class))
 
-  # these are the final output labels of the model
-  for c in CLASSES:
-    os.mkdir(os.path.join(args.dest_data, train_dir, c))
-    os.mkdir(os.path.join(args.dest_data, val_dir, c))
-    
-    # when training to predict classes alone, take a random sample of N_TRAIN + N_VAL size from each class
-    if not args.two_tiers:
-      jpgs = random.sample(jpgs_by_class[c], args.train_count + args.val_count)
-      
-      for j in jpgs[:args.val_count]:
-        jpg_filename = j.split("/")[-1]
-        if args.copy_real_files:
-          copyfile(os.path.join(args.src_data, c, j), os.path.join(args.dest_data, val_dir, c, jpg_filename))
-        else:
-          os.symlink(os.path.join(args.src_data, c, j), os.path.join(args.dest_data, val_dir, c, jpg_filename))
-      
-      for j in jpgs[args.val_count:]:
-        jpg_filename = j.split("/")[-1]
-        if args.copy_real_files:
-          copyfile(os.path.join(args.src_data, c, j), os.path.join(args.dest_data, train_dir, c, jpg_filename))
-        else:
-          os.symlink(os.path.join(args.src_data, c, j), os.path.join(args.dest_data, train_dir, c, jpg_filename))
-    
+    # the limited number of species for which we have enough data (25) is hardcoded as top_species, each corresponding
+    # to a parent class in top_taxa, such that each class has 5 constituent species
     # when training to predict class and species, save each selected file twice
-    # (once for class data tree, once for species data tree      
-    else:
-      jpgs = random.sample(jpgs_by_species[c], args.train_count + args.val_count)
-      
+    # (once for class data tree, once for species data tree)   
+    for s in top_species:
+      os.mkdir(os.path.join(args.dest_data, train_dir, s))
+      os.mkdir(os.path.join(args.dest_data, val_dir, s))
+
+      jpgs = random.sample(jpgs_by_species[s], args.train_count + args.val_count)
+      # validation 
       for j in jpgs[:args.val_count]:
-        curr_c, species, filename = j.split("/")
+        curr_class, species, filename = j.split("/")
+        src_img = os.path.join(args.src_data, j)
         if args.copy_real_files:
-          copyfile(os.path.join(args.src_data, j), os.path.join(args.dest_data, val_dir, species, filename))
-          copyfile(os.path.join(args.src_data, j), os.path.join(by_class_dest, val_dir, curr_c, filename))
+          copyfile(src_img, os.path.join(args.dest_data, val_dir, species, filename))
+          copyfile(src_img, os.path.join(by_class_dest, val_dir, curr_class, filename))
         else:
-          os.symlink(os.path.join(args.src_data, j), os.path.join(args.dest_data, val_dir, species, filename))
-          os.symlink(os.path.join(args.src_data, j), os.path.join(by_class_dest, val_dir, curr_c, filename))
+          os.symlink(src_img, os.path.join(args.dest_data, val_dir, species, filename))
+          os.symlink(src_img, os.path.join(by_class_dest, val_dir, curr_class, filename))
+      # training
       for j in jpgs[args.val_count:]:
-        curr_c, species, filename = j.split("/")
+        curr_class, species, filename = j.split("/")
+        src_img = os.path.join(args.src_data, j)
         if args.copy_real_files:
-          copyfile(os.path.join(args.src_data, j), os.path.join(args.dest_data, train_dir, species, filename))
-          copyfile(os.path.join(args.src_data, j), os.path.join(by_class_dest, train_dir, curr_c, filename))
+          copyfile(src_img, os.path.join(args.dest_data, train_dir, species, filename))
+          copyfile(src_img, os.path.join(by_class_dest, train_dir, curr_class, filename))
         else:
-          os.symlink(os.path.join(args.src_data, j), os.path.join(args.dest_data, train_dir, species, filename))
-          os.symlink(os.path.join(args.src_data, j), os.path.join(by_class_dest, train_dir, curr_c, filename))
+          os.symlink(src_img, os.path.join(args.dest_data, train_dir, species, filename))
+          os.symlink(src_img, os.path.join(by_class_dest, train_dir, curr_class, filename))
+
+      num_val_files = len(os.listdir(os.path.join(args.dest_data, val_dir, s)))
+      num_train_files = len(os.listdir(os.path.join(args.dest_data, train_dir, s)))
+      print(s, ": ", num_train_files, " train, ", num_val_files, " val")
+
+
+  # when training to predict classes alone, take a random sample of N_TRAIN + N_VAL size from each class
+  else:
+    for c in CLASSES:
+      os.mkdir(os.path.join(args.dest_data, train_dir, c))
+      os.mkdir(os.path.join(args.dest_data, val_dir, c))
     
-    num_val_files = len(os.listdir(os.path.join(args.dest_data, val_dir, c)))
-    num_train_files = len(os.listdir(os.path.join(args.dest_data, train_dir, c)))
-    print(c, ": ", num_train_files, " train, ", num_val_files, " val")
+      jpgs = random.sample(jpgs_by_class[c], args.train_count + args.val_count)
+      # validation
+      for j in jpgs[:args.val_count]:
+        jpg_filename = j.split("/")[-1]
+        src_img = os.path.join(args.src_data, c, j)
+        if args.copy_real_files:
+          copyfile(src_img, os.path.join(args.dest_data, val_dir, c, jpg_filename))
+        else:
+          os.symlink(src_img, os.path.join(args.dest_data, val_dir, c, jpg_filename))
+      # training  
+      for j in jpgs[args.val_count:]:
+        jpg_filename = j.split("/")[-1]
+        src_img = os.path.join(args.src_data, c, j)
+        if args.copy_real_files:
+          copyfile(src_img, os.path.join(args.dest_data, train_dir, c, jpg_filename))
+        else:
+          os.symlink(src_img, os.path.join(args.dest_data, train_dir, c, jpg_filename))
+    
+      num_val_files = len(os.listdir(os.path.join(args.dest_data, val_dir, c)))
+      num_train_files = len(os.listdir(os.path.join(args.dest_data, train_dir, c)))
+      print(c, ": ", num_train_files, " train, ", num_val_files, " val")
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
