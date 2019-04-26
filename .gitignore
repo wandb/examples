@@ -2,3 +2,4 @@
 .python-version
 wandb
 wandb-debug.log
+__pycache__
