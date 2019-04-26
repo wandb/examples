@@ -1,0 +1,5 @@
+fastai
+wandb
+pandas
+fastparquet
+boto3
