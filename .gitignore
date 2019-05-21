@@ -3,3 +3,4 @@
 wandb
 wandb-debug.log
 __pycache__
+.DS_Store
