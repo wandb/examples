@@ -6,12 +6,14 @@ import numpy as np
 import shutil
 from keras.models import load_model
 import keras_metrics as km
+from keras import metrics
 from data import adjust_image
 from keras.preprocessing.image import img_to_array, array_to_img
 
 custom_objects = {
     'binary_precision': km.precision(),
-    'binary_recall': km.recall()
+    'binary_recall': km.recall(),
+    'loss': metrics.mean_squared_error
 }
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
@@ -23,7 +25,7 @@ cur_path = os.path.dirname(__file__)
 
 shutil.rmtree(os.path.join(cur_path, 'debug'), ignore_errors=True)
 
-model = load_model('model/unet_witness.hdf5', custom_objects=custom_objects)
+model = load_model('model/unet-witness-4tier.hdf5', custom_objects=custom_objects)
 
 orig_size = (1280, 720)
 final_size = (512, 288)
