@@ -1,7 +1,0 @@
-debug
-predict
-model
-layers
-data/train
-data/valid
-.python-version

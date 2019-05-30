@@ -1,7 +1,0 @@
-wandb
-pandas
-fastparquet
-keras
-numpy
-tensorflow
-keras-metrics
