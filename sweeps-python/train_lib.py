@@ -28,4 +28,5 @@ def train():
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
     
-    model.fit(train_images, train_labels, epochs=5)
+    model.fit(train_images, train_labels, epochs=5,
+                  validation_data=(test_images, test_labels))
