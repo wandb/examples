@@ -86,12 +86,30 @@ cd examples/pytorch-cnn-fashion
 python train.py
 ```
 
+### fastai-unet-segmentation
+
+Trains a semantic segmentation on a dataset from the game "witness"
+```
+cd fastai/unet-segmentation
+pip install -r requirements.txt
+python train.py
+```
+
 ### scikit-iris
 
 Trains an SVM on the Iris dataset using scikit-learn
 
 ```
 cd examples/scikit-iris
+python train.py
+```
+
+### xgboost-dermatology
+
+Trains a gradient boosted forest on the dermatology dataset
+
+```
+cd examples/xgboost-dermatology
 python train.py
 ```
 
