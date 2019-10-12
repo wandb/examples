@@ -1,18 +1,25 @@
 # Examples
 
+These are simple examples that show how to use wandb to track experiments with different frameworks.  They should be easy to use.
+
 ## Getting started
 
 1. Install wandb
 
 ```
 pip install wandb
-wandb login
 ```
 
 2. Clone this repository
 
 ```
 git clone https://github.com/wandb/examples
+```
+
+3. Create a free account (optional)
+
+```
+wandb login
 ```
 
 ## Example projects
@@ -25,8 +32,7 @@ Trains a fashion mnist classifier with a small CNN using the keras framework wit
 
 ```
 cd examples/keras-cnn-fashion
-wandb init
-wandb run train.py
+python train.py
 ```
 
 ### keras-cnn-nature
@@ -38,7 +44,6 @@ The ``data_tools`` directory contains a helper script to generate more manageabl
 
 ```
 cd examples/keras-cnn-nature
-wandb init
 python train_small_cnn.py
 ```
 
@@ -51,7 +56,6 @@ python train_small_cnn.py
  Highly configurable with commandline flags: run with ``-h`` to see all the options. 
 ```
 cd examples/keras-cnn-nature
-wandb init
 python finetune_experiments.py
 ``` 
 
@@ -61,8 +65,7 @@ Trains a GAN on mnist data using a CNN in the keras framework with the tensorflo
 
 ```
 cd examples/keras-gan-mnist
-wandb init
-wandb run train.py
+python train.py
 ```
 
 ### tf-cnn-fashion
@@ -71,8 +74,7 @@ Trains a fashion mnist classifier with a small CNN using the tensorflow framewor
 
 ```
 cd examples/tf-cnn-fashion
-wandb init
-wandb run train.py
+python train.py
 ```
 
 ### pytorch-cnn-fashion
@@ -81,6 +83,23 @@ Trains a fashion mnist classifier with a small CNN using the pytorch framework.
 
 ```
 cd examples/pytorch-cnn-fashion
-wandb init
-wandb run train.py
+python train.py
+```
+
+### scikit-iris
+
+Trains an SVM on the Iris dataset using scikit-learn
+
+```
+cd examples/scikit-iris
+python train.py
+```
+
+### numpy-boston
+
+Trains a perceptron on the Boston real estate dataset using numpy
+
+```
+cd examples/numpy-boston
+python train.py
 ```
