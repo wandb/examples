@@ -3,11 +3,10 @@ def train():
     import numpy as np
     import tensorflow as tf
     import wandb
-    wandb.init(magic=True)
     config_defaults = {
         'layers': 128
     }
-    wandb.config.update({k: v for k, v in config_defaults.items() if k not in dict(wandb.config.user_items())})
+    wandb.init(config=config_defaults, magic=True)
 
     fashion_mnist = tf.keras.datasets.fashion_mnist
     (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
