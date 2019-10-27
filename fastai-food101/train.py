@@ -3,7 +3,7 @@ from fastai.vision import *
 
 import wandb
 from wandb.fastai import WandbCallback
-wandb.init()
+wandb.init(project="fastai-food-101", entity="wandb-examples")
 
 path = untar_data("https://s3.amazonaws.com/fast-ai-imageclas/food-101")
 
