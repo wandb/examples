@@ -85,6 +85,13 @@ Trains a fashion mnist classifier with a small CNN using the pytorch framework.
 cd examples/pytorch-cnn-fashion
 python train.py
 ```
+### fastai-food101
+Trains a 121 layer DenseNet on the [Food-101 dataset](https://www.vision.ee.ethz.ch/datasets_extra/food-101/) using the 1cycle learning rate policy, mixed precision training, mixup data augmentation, and progressive resizing.
+```
+cd fastai/food-101
+pip install -r requirements.txt
+python train.py
+```
 
 ### fastai-unet-segmentation
 
