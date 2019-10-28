@@ -24,7 +24,7 @@ config.dropout = 0.5
 config.channels_one = 16
 config.channels_two = 32
 config.batch_size = 100
-config.epochs = 50
+config.epochs = 2
 
 class CNNModel(nn.Module):
     def __init__(self):
@@ -93,7 +93,7 @@ def main():
                                )
 
     label_names = [
-        "T-shirt/top",
+        "T-shirt or top",
         "Trouser",
         "Pullover",
         "Dress",
@@ -174,13 +174,13 @@ def main():
 
                 accuracy = 100 * correct / total
 
-                metrics = {'accuracy': accuracy, 'loss': loss.data[0]}
+                metrics = {'accuracy': accuracy, 'loss': loss}
                 for label in range(10):
                     metrics['Accuracy ' + label_names[label]] = correct_arr[label] / total_arr[label]
                 wandb.log(metrics)
 
                 # Print Loss
-                print('Iteration: {}. Loss: {}. Accuracy: {}'.format(iter, loss.data[0], accuracy))
-
+                print('Iteration: {}. Loss: {}. Accuracy: {}'.format(iter, loss, accuracy))
+    torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
 if __name__ == '__main__':
    main()
