@@ -17,14 +17,16 @@ from fashion_data import fashion
 import wandb
 import os
 
-wandb.init()
-config = wandb.config
+hyperparameter_defaults = dict(
+        dropout = 0.5,
+        channels_one = 16,
+        channels_two = 32,
+        batch_size = 100,
+        epochs = 2,
+        )
 
-config.dropout = 0.5
-config.channels_one = 16
-config.channels_two = 32
-config.batch_size = 100
-config.epochs = 2
+wandb.init(config=hyperparameter_defaults)
+config = wandb.config
 
 class CNNModel(nn.Module):
     def __init__(self):
@@ -182,5 +184,6 @@ def main():
                 # Print Loss
                 print('Iteration: {}. Loss: {}. Accuracy: {}'.format(iter, loss, accuracy))
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
+
 if __name__ == '__main__':
    main()
