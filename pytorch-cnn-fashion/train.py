@@ -18,12 +18,13 @@ import wandb
 import os
 
 hyperparameter_defaults = dict(
-        dropout = 0.5,
-        channels_one = 16,
-        channels_two = 32,
-        batch_size = 100,
-        epochs = 2,
-        )
+    dropout = 0.5,
+    channels_one = 16,
+    channels_two = 32,
+    batch_size = 100,
+    learning_rate = 0.001,
+    epochs = 2,
+    )
 
 wandb.init(config=hyperparameter_defaults)
 config = wandb.config
@@ -119,7 +120,6 @@ def main():
     wandb.watch(model)
 
     criterion = nn.CrossEntropyLoss()
-    config.learning_rate = 0.001
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
 
