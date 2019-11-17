@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""validation process."""
+"""eval process."""
 
 import argparse
 import random
@@ -11,10 +11,9 @@ import wandb
 parser = argparse.ArgumentParser()
 parser.description = 'Train an example model'
 parser.add_argument('--group_id', type=str, default=None)
-parser.add_argument('--worker_index', type=int, default=0)
 parser.add_argument('--epoch', type=int, default=0)
 
-# Just a made up validation parameter
+# Just a made up eval parameter
 parser.add_argument('--phase_shift', type=int, default=14)
 
 
@@ -33,17 +32,20 @@ def main():
     if args.group_id == None:
         print('Please pass --group_id')
         return
-    wandb.init()
-    wandb.config.update(args)
-    wandb.config.job_type = 'validation'
+    wandb.init(group=args.group_id, job_type = 'eval')
+    wandb.config.update({'phase_shift': args.phase_shift})
+    wandb.config.job_type = 'eval'
 
-    print('Validation Epoch', args.epoch)
+    print('Eval Epoch', args.epoch)
     loss = loss_curve(args.epoch)
     acc = accuracy(loss)
-    # Same key for accuracy as train.py, so we can put them on the same plot.
-    # In a future version we will allow showing different keys within a group on the same
-    # plot.
-    wandb.log({'acc': acc - 0.05, 'epoch': args.epoch})
+
+    # Keys with a '<section>/' prefix will be separated into different
+    # plot sections. Since train and eval both log a 'loss' key, train
+    # and eval loss results will show up on the same plot by default.
+    # But they each log their own prefixed 'acc', which will get different
+    # plots in different sections.
+    wandb.log({'epoch': args.epoch, 'loss': loss, 'eval/acc': acc - 0.05})
 
 
 if __name__ == '__main__':

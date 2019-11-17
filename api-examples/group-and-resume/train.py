@@ -31,7 +31,7 @@ def main():
     if args.group_id == None:
         print('Please pass --group_id')
         return
-    wandb.init()
+    wandb.init(group=args.group_id, job_type='train')
     wandb.config.update(args)
     wandb.config.job_type = 'training'
 
@@ -42,10 +42,12 @@ def main():
         loss = loss_curve(i)
         acc = accuracy(loss)
 
-        # Same key for accuracy as validate.py, so we can put them on the same plot.
-        # In a future version we will allow showing different keys within a group on the same
-        # plot.
-        wandb.log({'loss': loss, 'acc': acc, 'epoch': i})
+        # Keys with a '<section>/' prefix will be separated into different
+        # plot sections. Since train and eval both log a 'loss' key, train
+        # and eval loss results will show up on the same plot by default.
+        # But they each log their own prefixed 'acc', which will get different
+        # plots in different sections.
+        wandb.log({'epoch': i, 'loss': loss, 'train/acc': acc})
 
         time.sleep(0.25)
 
