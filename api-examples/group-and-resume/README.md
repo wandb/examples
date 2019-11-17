@@ -42,7 +42,7 @@ a group will be grouped together as subgroups.
 ### Run resuming
 
 wandb allows you to stop and resume runs. Resuming a run will
-concatenate logged metrics, logs and system data to the runs
+concatenate logged metrics, logs and system data to the run's
 previous values.
 
 This is most commonly used when using pre-emptible cloud resources,
