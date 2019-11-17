@@ -19,7 +19,7 @@ python train.py --group_id=experiment-"$GROUP_ID" --worker_index=0 \
 python train.py --group_id=experiment-"$GROUP_ID" --worker_index=1 \
     --learning_rate="$TRAIN_LEARNING_RATE" --momentum="$TRAIN_MOMENTUM"
 
-# This is a single simulated evaluation work, that is spun up every 10
+# This is a single simulated evaluation worker, that is spun up every 10
 # epochs. We use wandb's resume feature to put each evaluation result
 # in the same wandb run.
 WANDB_RESUME=allow WANDB_RUN_ID="$GROUP_ID"-eval \
