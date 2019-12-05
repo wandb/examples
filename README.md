@@ -2,6 +2,8 @@
 
 These are simple examples that show how to use wandb to track experiments with different frameworks.  They should be easy to use.
 
+If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/wandb-forum).
+
 ## Getting started
 
 1. Install wandb
