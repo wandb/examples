@@ -1,3 +1,4 @@
 tensorflow-gpu
 Keras
+pillow
 wandb
