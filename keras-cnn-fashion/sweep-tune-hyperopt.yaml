@@ -1,0 +1,62 @@
+program: train.py
+tune:
+  _wandb:
+    seed: 1138535874
+    versions:
+      hyperopt: 0.2.1
+      tune: 0.7.6
+      wandb: 0.8.19
+  num_samples: 10
+  run_or_experiment: train.py
+  search_alg:
+    hyperopt.HyperOptSearch:
+      metric: val_loss
+      mode: min
+      space:
+        decay:
+          hyperopt.hp.choice:
+          - decay
+          - - 1.0e-05
+            - 1.0e-06
+            - 1.0e-07
+        dropout:
+          hyperopt.hp.uniform:
+          - dropout
+          - 0.15
+          - 0.4
+        hidden_layer_size:
+          hyperopt.hp.choice:
+          - hidden_layer_size
+          - - 96
+            - 128
+            - 148
+        layer_1_size:
+          hyperopt.hp.choice:
+          - layer_1_size
+          - - 10
+            - 12
+            - 14
+            - 16
+            - 18
+            - 20
+        layer_2_size:
+          hyperopt.hp.choice:
+          - layer_2_size
+          - - 24
+            - 28
+            - 32
+            - 36
+            - 40
+            - 44
+        learn_rate:
+          hyperopt.hp.choice:
+          - learn_rate
+          - - 0.001
+            - 0.01
+            - 0.003
+        momentum:
+          hyperopt.hp.choice:
+          - momentum
+          - - 0.8
+            - 0.9
+            - 0.95
