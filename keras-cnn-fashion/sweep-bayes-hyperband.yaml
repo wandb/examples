@@ -1,0 +1,27 @@
+program: train.py
+method: bayes
+metric:
+  goal: minimize
+  name: val_loss
+parameters:
+  dropout:
+    values: [0.15, 0.2, 0.25, 0.3, 0.4]
+  hidden_layer_size:
+    values: [96, 128, 148]
+  layer_1_size:
+    values: [10, 12, 14, 16, 18, 20]
+  layer_2_size:
+    values: [24, 28, 32, 36, 40, 44]
+  learn_rate:
+    values: [0.001, 0.01, 0.003]
+  decay:
+    values: [1e-5, 1e-6, 1e-7]
+  momentum:
+    values: [0.8, 0.9, 0.95]
+  epochs:
+    value: 27
+early_terminate:
+  type: hyperband
+  s: 2
+  eta: 3
+  max_iter: 27
