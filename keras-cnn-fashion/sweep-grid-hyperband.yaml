@@ -2,7 +2,7 @@ program: train.py
 method: grid
 metric:
   goal: minimize
-  name: loss
+  name: val_loss
 parameters:
   dropout:
     values: [0.15, 0.2, 0.25, 0.3, 0.4]
