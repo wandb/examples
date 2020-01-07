@@ -26,7 +26,7 @@ hyperparameter_defaults = dict(
     epochs = 2,
     )
 
-wandb.init(config=hyperparameter_defaults)
+wandb.init(config=hyperparameter_defaults, project="sweep-example")
 config = wandb.config
 
 class CNNModel(nn.Module):
@@ -166,23 +166,22 @@ def main():
 
                     # Total number of labels
                     total += labels.size(0)
-
-
                     correct += (predicted == labels).sum()
+
                     for label in range(10):
                         correct_arr[label] += (((predicted == labels) & (labels==label)).sum())
                         total_arr[label] += (labels == label).sum()
 
                 accuracy = correct / total
 
-                metrics = {'accuracy': accuracy, 'loss': loss}
+                metrics = {'accuracy': accuracy, 'loss': loss, 'correct': correct, 'total': total}
                 for label in range(10):
                     metrics['Accuracy ' + label_names[label]] = correct_arr[label] / total_arr[label]
 
                 wandb.log(metrics)
 
                 # Print Loss
-                print('Iteration: {}. Loss: {}. Accuracy: {}'.format(iter, loss, accuracy))
+                print('Iteration: {0} Loss: {1:.2f} Accuracy: {2:.2f}'.format(iter, loss, accuracy))
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, "model.pt"))
 
 if __name__ == '__main__':
