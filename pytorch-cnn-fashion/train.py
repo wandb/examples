@@ -170,15 +170,15 @@ def main():
 
                     correct += (predicted == labels).sum()
                     for label in range(10):
-                        correct_arr[label] += (((predicted == labels) + (labels == label)) == 2).sum() * 100
+                        correct_arr[label] += (((predicted == labels) & (labels==label)).sum())
                         total_arr[label] += (labels == label).sum()
 
-
-                accuracy = 100 * correct / total
+                accuracy = correct / total
 
                 metrics = {'accuracy': accuracy, 'loss': loss}
                 for label in range(10):
                     metrics['Accuracy ' + label_names[label]] = correct_arr[label] / total_arr[label]
+
                 wandb.log(metrics)
 
                 # Print Loss
