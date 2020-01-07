@@ -149,9 +149,9 @@ def main():
 
             if iter % 100 == 0:
                 # Calculate Accuracy
-                correct = 0
+                correct = 0.0
                 correct_arr = [0.0] * 10
-                total = 0
+                total = 0.0
                 total_arr = [0.0] * 10
 
                 # Iterate through test dataset
