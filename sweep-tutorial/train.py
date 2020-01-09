@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 """
-Builds a convolutional neural network on the fashion mnist data set.
-
-Designed to show wandb integration with pytorch.
+WEIGHTS & BIASES SWEEP TUTORIAL
+This tutorial is designed to show how easy it is to run a quick
+hyperparameter sweep with Weights & Biases.
+The script builds a convolutional neural network that classfies
+images of clothing and accessories from the Fashion MNIST dataset.
 """
 
 import torch
@@ -26,7 +28,7 @@ hyperparameter_defaults = dict(
     epochs = 2,
     )
 
-wandb.init(config=hyperparameter_defaults, entity="carey", project="sweep-example")
+wandb.init(config=hyperparameter_defaults, entity="wandb", project="sweep-tutorial")
 config = wandb.config
 
 class CNNModel(nn.Module):
