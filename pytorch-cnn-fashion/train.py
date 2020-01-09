@@ -174,7 +174,7 @@ def main():
 
                 accuracy = correct / total
 
-                metrics = {'accuracy': accuracy, 'loss': loss, 'correct': correct, 'total': total}
+                metrics = {'accuracy': accuracy, 'loss': loss}
                 for label in range(10):
                     metrics['Accuracy ' + label_names[label]] = correct_arr[label] / total_arr[label]
 
