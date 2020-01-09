@@ -26,7 +26,7 @@ hyperparameter_defaults = dict(
     epochs = 2,
     )
 
-wandb.init(config=hyperparameter_defaults, project="sweep-example")
+wandb.init(config=hyperparameter_defaults, project="pytorch-cnn-fashion")
 config = wandb.config
 
 class CNNModel(nn.Module):
