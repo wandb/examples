@@ -1,8 +1,6 @@
-# Sweep Tutorial
+# Run your first sweep from an existing W&B Project
 
-In five minutes, you’ll have a W&B hyperparameter sweep up and running! Just follow along with the quick steps in this tutorial (link coming soon).
-
-sweeps. I’ll work through the steps with a working example— you can open my W&B Dashboard and example code.
+If you have an existing W&B project, it’s easy to start optimizing your models with hyperparameter sweeps. I’ll work through the steps with a working example— you can open my [W&B Dashboard](https://app.wandb.ai/carey/pytorch-cnn-fashion) and the example code from this repo.
 
 
 1. I open my project page. Here are a couple of runs I’ve done already.
