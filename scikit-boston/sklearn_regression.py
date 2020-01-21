@@ -24,5 +24,5 @@ y_pred = reg.predict(X_test)
 # Visualize model performance
 wandb.sklearn.plot_outlier_candidates(reg, X, y)
 wandb.sklearn.plot_residuals(reg, X, y)
-#wandb.sklearn.plot_alpha_selection()
+wandb.sklearn.plot_alpha_selection(reg, X, y)
 # wandb.sklearn.log(reg, X=X, y=y, X_test=X_test, y_test=y_test)
