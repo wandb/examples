@@ -42,8 +42,8 @@ features = list(set(pulsar.columns) - {'target_class'})
 X = pulsar[features]
 y = pulsar['target_class']
 labels = ['Pulsar', 'Not a Pulsar']
-X = X[:10000]
-y = y[:10000]
+X = X[:50000]
+y = y[:50000]
 
 scaler = MinMaxScaler(feature_range=(0,1))
 features_scaled = scaler.fit_transform(X)
@@ -57,6 +57,7 @@ cluster_labels = kmeans.fit_predict(X_train)
 wandb.init(project="sklearn", name='KMeans', reinit=True)
 label_names = get_named_labels(labels, cluster_labels)
 wandb.sklearn.plot_clusterer(kmeans, X_train, cluster_labels, labels, 'KMeans')
+# wandb.sklearn.plot_elbow_curve(model, X_train)
 
 # Classification - predict pulsar
 # Train a model, get predictions
