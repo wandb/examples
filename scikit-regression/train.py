@@ -14,6 +14,7 @@ wandb.init(project="sklearn")
 boston = load_boston()
 X = pd.DataFrame(boston.data, columns=boston.feature_names)
 y = boston.target
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 # Train model, get predictions

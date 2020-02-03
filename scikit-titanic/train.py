@@ -28,21 +28,22 @@ import utils
 import wandb
 
 # Load data
-pulsar = pd.read_csv('pulsar_stars.csv')
+pulsar = pd.read_csv('train.csv')
 
 # Get numeric labels for each of the string labels, to make them compatible with our model
-labels_to_class = {'Pulsar': 0, 'Not a Pulsar': 1}
+labels_to_class = {'Did not Survive': 0, 'Survived': 1}
 def get_class_ids(labels):
     return np.array([labels_to_class[alabel] for alabel in labels])
 def get_named_labels(labels, numeric_labels):
         return np.array([labels[num_label] for num_label in numeric_labels])
 
 # Remove target variables label (and class)
-features = list(set(pulsar.columns) - {'target_class'})
+features = list(set(pulsar.columns) - {'Survived','Name'})
 X = pulsar[features]
-y = pulsar['target_class']
-labels = ['Pulsar', 'Not a Pulsar']
+y = pulsar['Survived']
+labels = ['Did not Survive', 'Survived']
 X = X[:50000]
+X = X.replace("", np.nan, regex = True)
 y = y[:50000]
 
 scaler = MinMaxScaler(feature_range=(0,1))
@@ -91,9 +92,9 @@ model_algorithm(adaboost, X_train, y_train, X_test, y_test, 'AdaBoost', labels, 
 model_algorithm(gbc, X_train, y_train, X_test, y_test, 'GradientBoosting', labels, features)
 
 # Regression - TrackP - particle momentum
-features = list(set(pulsar.columns) - {' Mean of the integrated profile'})
+features = list(set(pulsar.columns) - {'Age'})
 X = pulsar[features]
-y = pulsar[' Mean of the integrated profile']
+y = pulsar['Age']
 X = X[:10000]
 y = y[:10000]
 

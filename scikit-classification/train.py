@@ -6,7 +6,6 @@ import pickle
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.externals import joblib
 import wandb
 wandb.init(project="sklearn")
 
@@ -15,6 +14,7 @@ wine_quality = pd.read_csv("wine.csv")
 y = wine_quality["quality"]
 X = wine_quality.drop(["quality"], axis = 1)
 feature_names=wine_quality.columns
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 labels = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten']
 
@@ -26,5 +26,8 @@ y_probas = model.predict_proba(X_test)
 importances = model.feature_importances_
 indices = np.argsort(importances)[::-1]
 
+print(X_train.info())
+X_train = X_train[1:]
+X_test = X_test[1:]
 # Visualize model performance
 wandb.sklearn.plot_classifier(model, X_train, X_test, y_train, y_test, y_pred, y_probas, labels, False, 'RandomForest', feature_names)
