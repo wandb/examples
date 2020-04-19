@@ -21,7 +21,7 @@ from wandb.keras import WandbCallback
 # default config/hyperparameter values
 # you can modify these below or via command line
 PROJECT_NAME = "fmnist"
-MODEL_NAME = "cnn"
+MODEL_NOTES = "default cnn"
 BATCH_SIZE = 32
 DROPOUT = 0.2
 EPOCHS = 25
@@ -38,7 +38,7 @@ img_height=28
 
 def train_cnn(args):
   # initialize wandb logging to your project
-  wandb.init(project=args.project_name)
+  wandb.init(project=args.project_name, notes=args.notes)
   # log all experimental args to wandb
   wandb.config.update(args)
 
@@ -89,10 +89,10 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument(
     "-m",
-    "--model_name",
+    "--notes",
     type=str,
-    default=MODEL_NAME,
-    help="Name of this model/run (model will be saved to this file)")
+    default=MODEL_NOTES,
+    help="Nots about the training run")
   parser.add_argument(
     "-p",
     "--project_name",
@@ -160,12 +160,6 @@ if __name__ == "__main__":
   # easier testing--don't log to wandb if dry run is set
   if args.dry_run:
     os.environ['WANDB_MODE'] = 'dryrun'
-
-  # create run name
-  if not args.model_name:
-    print("warning: no run name provided")
-  else:
-    os.environ['WANDB_DESCRIPTION'] = args.model_name
  
   train_cnn(args)
 
