@@ -205,11 +205,8 @@ if __name__ == "__main__":
   if args.dry_run:
     os.environ['WANDB_MODE'] = 'dryrun'
 
-  # strongly recommend a descriptive run name
-  if not args.model_name:
-    print "warning: no run name provided"
-    args.model_name = "model"
-  else:
-    os.environ['WANDB_DESCRIPTION'] = args.model_name  
+
+  if args.notes
+    os.environ['WANDB_NOTES'] = args.notes
   
   run_experiment(args)
