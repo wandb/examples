@@ -1,7 +1,5 @@
-# Run your first hyperparameter sweep
-### Start with a W&B project and run a sweep in 5 minutes
-
-If you have an existing W&B project, it’s easy to start optimizing your models with hyperparameter sweeps. I’ll work through the steps with a working example— you can open my [W&B Dashboard](https://app.wandb.ai/carey/pytorch-cnn-fashion). I'm using the code from this example repo, which trains a PyTorch convolutional neural network to classify images from the [Fashion MNIST dataset](https://github.com/zalandoresearch/fashion-mnist).
+# Try a Weights & Biases Hyperparameter Sweep in 5 minutes
+If you have an existing W&B project, it’s easy to start optimizing your models with hyperparameter sweeps. I’ll walk through the steps with a working example— you can open my [W&B Dashboard](https://app.wandb.ai/carey/pytorch-cnn-fashion). I'm using the code from this example repo, which trains a PyTorch convolutional neural network to classify images from the [Fashion MNIST dataset](https://github.com/zalandoresearch/fashion-mnist).
 
 ## 1. Create a project
 Run your first baseline run manually to check that W&B logging is working properly. You'll download this simple example model, train it for a few minutes, and see the example appear in the web dashboard.
