@@ -14,7 +14,7 @@ By default the script assumes that the script is called `train.py` and that you 
 
 ```
 program:
-   wrap_mpi_inner.py
+   wrap_mpi_outer.py
 method: grid
 parameters:
    ...
