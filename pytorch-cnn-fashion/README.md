@@ -18,6 +18,7 @@ From your project page, open the Sweep tab in the sidebar and click "Create Swee
 The auto-generated config guesses values to sweep over based on the runs you've done already. Edit the config to specify what ranges of hyperparameters you want to try. When you launch the sweep, it starts a new process on our hosted W&B sweep server. This centralized service coordinates the agents— your machines that are running the training jobs.
 ![](https://i.imgur.com/gucKbHO.png)
 
+## 3. Launch agents
 Next, launch an agent locally. You can launch dozens of agents on different machines in parallel if you want to distribute the work and finish the sweep more quickly. The agent will print out the set of parameters it’s trying next.
 ![](https://i.imgur.com/6pWCOym.png)
 
