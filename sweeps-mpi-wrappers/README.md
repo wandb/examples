@@ -6,7 +6,7 @@ Demonstrating how to use sweeps with mpi frameworks
 
 ## Steps
 
-1) modify outer wrapper `split_command` variable to match how you want to call your training program
+1) modify outer wrapper `split_command` variable in `wrap_mpi_inner.py` to match how you want to call your training program
 
 By default the script assumes that the script is called `train.py` and that you are not passing any commandline arguments.
 
