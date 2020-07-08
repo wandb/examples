@@ -1,0 +1,4 @@
+pytorchlightning/
+MNIST/
+lightning_logs/
+wandb/
