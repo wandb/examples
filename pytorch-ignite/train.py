@@ -147,7 +147,7 @@ def run(train_batch_size, val_batch_size, epochs, lr, momentum, log_interval):
 # Train Model
 batch_size = 256 #128,256,64
 val_batch_size = 100
-epochs = 10
+epochs = 2
 lr = 0.001
 momentum = 0.1
 log_interval = 10
