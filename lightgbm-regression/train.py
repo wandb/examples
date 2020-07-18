@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error
 
 # initialize a new wandb project
-wandb.init(project='lightgbm')
+wandb.init()
 
 # load or create your dataset
 import requests
