@@ -4,7 +4,7 @@ from sklearn import datasets, cluster
 from sklearn.datasets import load_iris
 import numpy as np
 import wandb
-wandb.init(project="sklearn", name='KMeans')
+wandb.init()
 
 iris = datasets.load_iris()
 X = iris.data
