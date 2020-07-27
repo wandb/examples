@@ -78,7 +78,8 @@ class MNISTModel(pl.LightningModule):
 
 train_loader = DataLoader(MNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()), batch_size=32)
 
-wandb_logger = WandbLogger(project='pytorchlightning', tags=['testtag'])
+#wandb_logger = WandbLogger(project='pytorchlightning', tags=['testtag'])
+wandb_logger = WandbLogger()
 
 mnist_model = MNISTModel()
 trainer = pl.Trainer(gpus=0, progress_bar_refresh_rate=20, max_epochs=2, logger=wandb_logger)    
