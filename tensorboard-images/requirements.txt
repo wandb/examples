@@ -1,0 +1,7 @@
+tensorflow
+tensorboard
+packaging
+sklearn
+numpy
+six
+matplotlib
