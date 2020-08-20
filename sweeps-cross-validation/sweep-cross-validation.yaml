@@ -1,0 +1,55 @@
+method: random
+metric:
+  goal: maximize
+  name: val_accuracy
+parameters:
+  batch_size:
+    distribution: int_uniform
+    max: 128
+    min: 32
+  epochs:
+    distribution: constant
+    value: 200
+  node_size1:
+    distribution: categorical
+    values:
+    - 64
+    - 128
+    - 256
+  node_size2:
+    distribution: categorical
+    values:
+    - 64
+    - 128
+    - 256
+  node_size3:
+    distribution: categorical
+    values:
+    - 64
+    - 128
+    - 256
+  node_size4:
+    distribution: categorical
+    values:
+    - 64
+    - 128
+    - 256
+  node_size5:
+    distribution: categorical
+    values:
+    - 64
+    - 128
+    - 256
+  num_layers:
+    distribution: categorical
+    values:
+    - 1
+    - 2
+    - 3
+  optimizer:
+    distribution: categorical
+    values:
+    - Adam
+    - Adamax
+    - Adagrad
+program: train-cross-validation.py
