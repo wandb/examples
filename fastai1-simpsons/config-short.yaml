@@ -1,0 +1,4 @@
+wandb_version: 1
+
+epochs:
+  value: 2

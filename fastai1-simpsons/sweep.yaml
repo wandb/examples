@@ -1,0 +1,39 @@
+program: train_sweep.py
+method: bayes
+metric:
+  name: accuracy
+  goal: maximize
+parameters:
+  epochs:
+    distribution: constant
+    value: 20
+  dropout:
+    distribution: uniform
+    min: 0
+    max: 1
+  img_size:
+    distribution: categorical
+    values:
+      - 64
+      - 100
+  one_cycle:
+    distribution: categorical
+    values:
+      - True
+      - False
+  batch_size:
+    distribution: categorical
+    values:
+      - 8
+      - 16
+      - 32
+      - 64
+  pretrained:
+    distribution: categorical
+    values:
+      - True
+      - False
+  learning_rate:
+    distribution: log_uniform
+    min: -11
+    max: -2
