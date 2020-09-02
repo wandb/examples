@@ -33,7 +33,7 @@ If you have any questions, please don't hesitate to ask in our [Slack community]
 
 ![](https://i.imgur.com/TU34QFZ.png)
 
-# Configs
+# Track model and data pipeline hyperparameters
 Set `wandb.config` once at the beginning of your script to save your hyperparameters, input settings (like dataset name or model type), and any other independent variables for your experiments. This is useful for analyzing your experiments and reproducing your work in the future. Setting configs also allows you to [visualize](https://docs.wandb.com/sweeps/visualize-sweep-results) the relationships between features of your model architecture or data pipeline and the model performance (as seen in the screenshot above).
 
 ```python
@@ -233,6 +233,30 @@ pred = bst.predict(xg_test)
 - **[Try in a colab →](https://colab.research.google.com/drive/1ybowtxi9LkApZEIXryhRrrhbvDrUsFy4?usp=sharing)**
 - [Docs](https://docs.wandb.com/library/integrations/lightgbm)
 
+
+# Hyperparameter Optimization
+Use Weights & Biases Sweeps to automate hyperparameter optimization and explore the space of possible models.
+
+### [Get started in 5 mins →](https://docs.wandb.com/sweeps/quickstart)
+
+### Benefits of using W&B Sweeps 
+- **Quick setup:** With just a few lines of code you can run W&B sweeps.
+- **Transparent:** We cite all the algorithms we're using, and our code is open source.
+- **Powerful:** Our sweeps are completely customizable and configurable. You can launch a sweep across dozens of machines, and it's just as easy as starting a sweep on your laptop.
+
+![](https://gblobscdn.gitbook.com/assets%2F-Lqya5RvLedGEWPhtkjU%2F-LyfPCyvV8By5YBltxfh%2F-LyfQsxswLC-6WKGgfGj%2Fcentral%20sweep%20server%203.png?alt=media&token=c81e4fe7-7ee4-48ea-a4cd-7b28113c6088)
+
+### Common Use Cases
+- **Explore:** Efficiently sample the space of hyperparameter combinations to discover promising regions and build an intuition about your model.
+- **Optimize:**  Use sweeps to find a set of hyperparameters with optimal performance.
+- **K-fold cross validation:** Here's a brief code example of k-fold cross validation with W&B Sweeps.
+
+### Visualize Sweeps Results
+The hyperparameter importance plot surfaces which hyperparameters were the best predictors of, and highly correlated to desirable values for your metrics.
+![](https://paper-attachments.dropbox.com/s_194708415DEC35F74A7691FF6810D3B14703D1EFE1672ED29000BA98171242A5_1578695757573_image.png)
+
+Parallel coordinates plots map hyperparameter values to model metrics. They're useful for honing in on combinations of hyperparameters that led to the best model performance.
+![](https://assets.website-files.com/5ac6b7f2924c656f2b13a88c/5edabe12e93ebb651f3b77ff_5e1790a2fb9c0354e3182389_parallel%20coordinates%202.jpeg)
 
 # Examples
 
