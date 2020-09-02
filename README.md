@@ -33,6 +33,8 @@ If you have any questions, please don't hesitate to ask in our [Slack community]
 
 ![](https://i.imgur.com/TU34QFZ.png)
 
+### [Explore a W&B dashboard](https://www.youtube.com/watch?v=gnD8BFuyVUA)
+
 # Track model and data pipeline hyperparameters
 Set `wandb.config` once at the beginning of your script to save your hyperparameters, input settings (like dataset name or model type), and any other independent variables for your experiments. This is useful for analyzing your experiments and reproducing your work in the future. Setting configs also allows you to [visualize](https://docs.wandb.com/sweeps/visualize-sweep-results) the relationships between features of your model architecture or data pipeline and the model performance (as seen in the screenshot above).
 
@@ -257,6 +259,20 @@ The hyperparameter importance plot surfaces which hyperparameters were the best 
 
 Parallel coordinates plots map hyperparameter values to model metrics. They're useful for honing in on combinations of hyperparameters that led to the best model performance.
 ![](https://assets.website-files.com/5ac6b7f2924c656f2b13a88c/5edabe12e93ebb651f3b77ff_5e1790a2fb9c0354e3182389_parallel%20coordinates%202.jpeg)
+
+# Reports
+Reports let you organize visualizations, describe your findings, and share updates with collaborators.
+
+### Use Cases
+- **Notes:** Add a graph with a quick note to yourself.
+- **Collaboration:** Share findings with your colleagues.
+- **Work log:** Track what you've tried, and plan next steps.
+
+**Explore reports in [The Gallery →](https://app.wandb.ai/gallery) | [Docs](https://docs.wandb.com/reports)**
+
+Once you have experiments in W&B, easily visualize results in reports. Here's a quick [overview video](https://www.youtube.com/watch?v=o2dOSIDDr1w&).
+
+![](https://i.imgur.com/dn0Dyd8.png)
 
 # Examples
 
