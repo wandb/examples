@@ -33,7 +33,7 @@ If you have any questions, please don't hesitate to ask in our [Slack community]
 
 ![](https://i.imgur.com/TU34QFZ.png)
 
-### [Explore a W&B dashboard](https://www.youtube.com/watch?v=gnD8BFuyVUA)
+**[Explore a W&B dashboard](https://www.youtube.com/watch?v=gnD8BFuyVUA)**
 
 # Track model and data pipeline hyperparameters
 Set `wandb.config` once at the beginning of your script to save your hyperparameters, input settings (like dataset name or model type), and any other independent variables for your experiments. This is useful for analyzing your experiments and reproducing your work in the future. Setting configs also allows you to [visualize](https://docs.wandb.com/sweeps/visualize-sweep-results) the relationships between features of your model architecture or data pipeline and the model performance (as seen in the screenshot above).
@@ -274,6 +274,8 @@ Once you have experiments in W&B, easily visualize results in reports. Here's a 
 
 ![](https://i.imgur.com/dn0Dyd8.png)
 
+If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/wb-slack).
+
 # Examples
 
 We've created some simple examples that show how to use wandb to track experiments with different frameworks.  They should be easy to use.
@@ -307,7 +309,7 @@ Example deep learning projects that use wandb's features.
 Trains a fashion mnist classifier with a small CNN using the keras framework with the tensorflow backend.  Uses a simple integration with WandbKerasCallback.
 
 ```
-cd examples/keras-cnn-fashion
+cd examples/keras/keras-cnn-fashion
 python train.py
 ```
 
@@ -319,7 +321,7 @@ Trains a small CNN on images of plants and animals using Keras. Highly configura
 The ``data_tools`` directory contains a helper script to generate more manageable training datasets from the full 186GB iNaturalist 2017 dataset. A 12K subset of the data can be downloaded by [clicking this link](https://storage.googleapis.com/wandb_datasets/nature_12K.zip). For more context on this example, see this [blog post](https://www.wandb.com/blog/better-paths-through-idea-space) and this W&B [report](https://app.wandb.ai/stacey/keras_finetune/reports?view=stacey%2FiNaturalist), which explores various settings and hyperparameters. 
 
 ```
-cd examples/keras-cnn-nature
+cd examples/keras/keras-cnn-nature
 python train_small_cnn.py
 ```
 
@@ -331,7 +333,7 @@ python train_small_cnn.py
 
  Highly configurable with commandline flags: run with ``-h`` to see all the options. 
 ```
-cd examples/keras-cnn-nature
+cd examples/keras/keras-cnn-nature
 python finetune_experiments.py
 ``` 
 
@@ -340,7 +342,7 @@ python finetune_experiments.py
 Trains a GAN on mnist data using a CNN in the keras framework with the tensorflow backend.  This shows a more complicated integration with wandb using a custom callback on the generator model and the discriminator model.
 
 ```
-cd examples/keras-gan-mnist
+cd examples/keras/keras-gan-mnist
 python train.py
 ```
 
@@ -349,7 +351,7 @@ python train.py
 Trains a fashion mnist classifier with a small CNN using the tensorflow framework.
 
 ```
-cd examples/tf-cnn-fashion
+cd examples/tensorflow/tf-cnn-fashion
 python train.py
 ```
 
@@ -358,13 +360,13 @@ python train.py
 Trains a fashion mnist classifier with a small CNN using the pytorch framework.
 
 ```
-cd examples/pytorch-cnn-fashion
+cd examples/pytorch/pytorch-cnn-fashion
 python train.py
 ```
 ### fastai-food101
 Trains a 121 layer DenseNet on the [Food-101 dataset](https://www.vision.ee.ethz.ch/datasets_extra/food-101/) using the 1cycle learning rate policy, mixed precision training, mixup data augmentation, and progressive resizing.
 ```
-cd examples/fastai-food101
+cd examples/fastai/fastai-food101
 pip install -r requirements.txt
 python train.py
 ```
@@ -373,7 +375,7 @@ python train.py
 
 Trains a semantic segmentation on a dataset from the game "witness"
 ```
-cd examples/fastai-unet-segmentation
+cd examples/fastai/fastai-unet-segmentation
 pip install -r requirements.txt
 python train.py
 ```
@@ -383,7 +385,7 @@ python train.py
 Trains an SVM on the Iris dataset using scikit-learn
 
 ```
-cd examples/scikit-iris
+cd examples/scikit/scikit-iris
 python train.py
 ```
 
@@ -392,15 +394,6 @@ python train.py
 Trains a gradient boosted forest on the dermatology dataset
 
 ```
-cd examples/xgboost-dermatology
-python train.py
-```
-
-### numpy-boston
-
-Trains a perceptron on the Boston real estate dataset using numpy
-
-```
-cd examples/numpy-boston
+cd examples/boosting-algorithms/xgboost-dermatology
 python train.py
 ```
