@@ -1,6 +1,6 @@
 # Getting Started
 
-# Never lose your progress again. 
+### Never lose your progress again. 
 Save everything you need to compare and reproduce models — architecture, hyperparameters, weights, model predictions, GPU usage, git commits, and even datasets — in 5 minutes. W&B is free for personal use and academic projects, and it's easy to get started.
 
 # Simple Integration for any framework
@@ -32,6 +32,20 @@ for i in range (10):
 If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/wb-slack).
 
 ![](https://i.imgur.com/TU34QFZ.png)
+
+# Configs
+Set `wandb.config` once at the beginning of your script to save your hyperparameters, input settings (like dataset name or model type), and any other independent variables for your experiments. This is useful for analyzing your experiments and reproducing your work in the future. Setting configs also allows you to [visualize](https://docs.wandb.com/sweeps/visualize-sweep-results) the relationships between features of your model architecture or data pipeline and the model performance (as seen in the screenshot above).
+
+```python
+wandb.init()
+wandb.config.epochs = 4
+wandb.config.batch_size = 32
+wandb.config.learning_rate = 0.001
+wandb.config.architecture = "resnet"
+```
+
+- **[See how to set configs in a colab →](https://colab.research.google.com/drive/1eITPzCy3ExfXfjUHqGo8n2Pp1GHZcgnX?usp=sharing)**
+- [Docs](https://docs.wandb.com/library/config)
 
 # Frameworks
 
