@@ -3,7 +3,7 @@
 # Never lose your progress again. 
 Save everything you need to compare and reproduce models — architecture, hyperparameters, weights, model predictions, GPU usage, git commits, and even datasets — in 5 minutes. W&B is free for personal use and academic projects, and it's easy to get started.
 
-# Simple Integration
+# Simple Integration for any framework
 Install wandb library and login:
 ```
 pip install wandb
@@ -20,18 +20,18 @@ wandb.init(project='gpt3')
 config = wandb.config
 config.learning_rate = 0.01
 
-# Model training code here
-‍
+# Model training code here ...
+
 # 3. Log metrics over time to visualize performance
 for i in range (10):
     wandb.log({"loss": loss})
 ```
 
-If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/wb-slack).
-
 ### [Try in a colab →](http://bit.ly/intro-wb)
 
-![](https://api.wandb.ai/files/wandb/images/projects/26571/69897d59.png)
+If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/wb-slack).
+
+![](https://i.imgur.com/TU34QFZ.png)
 
 # Frameworks
 
@@ -45,9 +45,13 @@ from wandb.keras import WandbCallback
 # Step1: Initialize W&B run
 wandb.init(project='project_name')
 
-# Your model training code
+# 2. Save model inputs and hyperparameters
+config = wandb.config
+config.learning_rate = 0.01
 
-# Step 2: Add WandbCallback 
+# Model training code here ...
+
+# Step 3: Add WandbCallback 
 model.fit(X_train, y_train,  validation_data=(X_test, y_test),
           callbacks=[WandbCallback()])
 ```
@@ -66,7 +70,7 @@ wandb.init(project="gpt-3")
 
 # 2. Save model inputs and hyperparameters
 config = wandb.config
-config.learning_rate = 0.01
+config.dropout = 0.01
 
 # 3. Log gradients and model parameters
 wandb.watch(model)
@@ -136,7 +140,8 @@ fastai2.callback.wandb import WandbCallback
 
 # 1. Start a new run
 wandb.init(project="gpt-3")
-‍# 2. Automatically log model metrics
+
+# 2. Automatically log model metrics
 learn.fit(..., cbs=WandbCallback())
 ```
 
