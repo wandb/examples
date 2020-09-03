@@ -1,15 +1,15 @@
 import glob
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import numpy as np
+import pandas as pd
 import seaborn as sns
 from tqdm import tqdm
 import warnings
 warnings.filterwarnings('ignore')
+
 from itertools import cycle, islice
-from sklearn.neighbors import BallTree, KDTree, DistanceMetric
-from sklearn.preprocessing import Normalizer, MinMaxScaler
-from sklearn.model_selection import StratifiedKFold, GridSearchCV, StratifiedShuffleSplit
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import Normalizer, MinMaxScaler
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -20,11 +20,7 @@ from sklearn.naive_bayes import GaussianNB
 import sklearn.linear_model as lm
 from sklearn.svm import SVC
 from sklearn.cluster import KMeans
-from sklearn.cluster import DBSCAN
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Ridge
-import utils
 import wandb
 
 # Load data
@@ -106,6 +102,6 @@ reg.fit(X_train, y_train)
 y_pred = reg.predict(X_test)
 
 # Visualize model performance
-wandb.init(project="visualize-sklearn", name='Ridge', reinit=True)
+wandb.init(name='Ridge', reinit=True)
 wandb.sklearn.plot_regressor(reg, X_train, X_test,
                               y_train, y_test, 'Ridge')
