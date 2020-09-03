@@ -7,8 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 import wandb
 
-wandb.init(project="iris", 
-           config={"gamma":0.1, "C":1.0, "test_size": 0.3, "seed": 0})
+wandb.init(config={"gamma":0.1, "C":1.0, "test_size": 0.3, "seed": 0})
 
 iris = datasets.load_iris()
 

@@ -4,6 +4,8 @@ from sklearn import datasets, cluster
 from sklearn.datasets import load_iris
 import numpy as np
 import wandb
+
+# initialize wandb run
 wandb.init()
 
 iris = datasets.load_iris()
@@ -15,4 +17,3 @@ cluster_labels = kmeans.fit_predict(X)
 
 wandb.sklearn.plot_elbow_curve(kmeans, X)
 wandb.sklearn.plot_silhouette(kmeans, X, cluster_labels)
-# wandb.sklearn.plot_intercluster_distance(kmeans)

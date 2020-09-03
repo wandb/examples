@@ -1,8 +1,9 @@
 import pytest
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
 import wandb
 from wandb.sklearn import learning_curve
+
+# initialize wandb run
 wandb.init(project="test")
 
 # Train model, get predictions
