@@ -4,7 +4,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 import wandb
 
-wandb.init(project="sklearn")
+# initialize wandb run
+wandb.init()
 
 # Load data
 wine_quality = pd.read_csv("wine.csv")
