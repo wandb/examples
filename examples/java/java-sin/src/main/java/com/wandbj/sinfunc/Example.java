@@ -1,4 +1,4 @@
-package com.wandb.java.sinfunc;
+package com.wandbj.sinfunc;
 
 import com.wandb.client.WandbRun;
 import org.json.JSONObject;
@@ -27,10 +27,11 @@ public class Example {
         run.printRunInfo();
 
         // Compute and log values for a sin function
-        for(double i = 0.0; i < Math.PI; i += 0.1) {
+        for(double i = 0.0; i < 2*Math.PI; i += 0.1) {
             JSONObject log = new JSONObject();
-            log.put("x1", i);
-            log.put("x2", i*2);
+            double value = Math.sin(i);
+            log.put("x1", value);
+            log.put("x2", value*2);
             run.log(log);
         }
 
