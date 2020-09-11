@@ -1,14 +1,12 @@
 from sklearn.datasets import load_boston
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Ridge
-from sklearn.tree import DecisionTreeClassifier
 import matplotlib.pyplot as plt
 import pandas as pd
 import wandb
-wandb.init(project="sklearn")
+
+# initialize wandb run
+wandb.init()
 
 # Load data
 boston = load_boston()

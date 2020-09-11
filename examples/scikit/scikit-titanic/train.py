@@ -1,10 +1,11 @@
 import glob
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import numpy as np
+import pandas as pd
 import seaborn as sns
 from tqdm import tqdm
 import warnings
 warnings.filterwarnings('ignore')
+
 from itertools import cycle, islice
 from sklearn.neighbors import BallTree, KDTree, DistanceMetric
 from sklearn.preprocessing import Normalizer, MinMaxScaler
@@ -24,7 +25,6 @@ from sklearn.cluster import DBSCAN
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Ridge
-import utils
 import wandb
 
 # Load data
