@@ -1,6 +1,6 @@
 # Java `sin` function
 
-This example uses the [Java Client](https://github.com/wandb/client-ng-java) to plot a
+This example uses the [Java Client](https://github.com/wandb/client-java) to plot a
 sin function.
 
 In order to run this example you must have Java JDK and Maven install on your
