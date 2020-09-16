@@ -14,8 +14,7 @@ import wandb
 # We're defining some default hyper-parameters here, usually you'll
 # use argparse or another config management tool as well
 config_defaults = dict(epochs=5, dropout=0.2, learning_rate=0.001)
-wandb.init(config=config_defaults,
-           project='tf2_gradienttape', sync_tensorboard=True)
+wandb.init(config=config_defaults, sync_tensorboard=True)
 
 mnist = tf.keras.datasets.mnist
 
