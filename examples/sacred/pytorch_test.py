@@ -11,10 +11,7 @@ YOUR_CPU = None  # None is the default setting and will result in using localhos
 
 ex = Experiment(EXPERIMENT_NAME)
 
-ex.observers.append(WandbObserver(project='sacred_test',    
-                                        name="Torch_test", 
-                                        config={"Job_type":"torch_test","gpu_type":"t4"}, 
-                                        reinit=False ))
+ex.observers.append(WandbObserver(config={"Job_type":"torch_test","gpu_type":"t4"}, reinit=False ))
 accuracy=[]
 class NeuralNet(nn.Module):
 

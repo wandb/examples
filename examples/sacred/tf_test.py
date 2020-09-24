@@ -8,8 +8,7 @@ from wandb.sacred import WandbObserver
 
 ex = Experiment('My_Experiment')
 
-ex.observers.append(WandbObserver(project='sacred_test',
-                                        name='keras_test'))
+ex.observers.append(WandbObserver())
 
 
 @ex.config
