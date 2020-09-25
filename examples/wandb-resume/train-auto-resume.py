@@ -9,9 +9,9 @@ Example:
     Initialize your wandb project
         $ wandb init
     Create keras model and train 4 epochs emulating keyboard interrupt:
-        $ python train-auto-resume.py --test_epochs 4
+        $ python train-auto-resume.py --test_num_epochs 4
     Resume from previous run training for another 4 epochs:
-        $ python train-auto-resume.py --test_epochs 8
+        $ python train-auto-resume.py --test_num_epochs 8
     Finish training:
         $ python train-auto-resume.py
 
@@ -32,7 +32,9 @@ from wandb.keras import WandbCallback
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--test_epochs", type=int, help="Number of epochs to execute")
+parser.add_argument("--test_num_epochs", type=int, help="For testing, number of epochs to execute")
+parser.add_argument("--test_no_config", action='store_true', help="For testing, do not pass config")
+parser.add_argument("--test_must_resume", action='store_true', help="For testing, make sure resumed")
 args = parser.parse_args()
 
 
@@ -46,8 +48,17 @@ defaults=dict(
     momentum = 0.9,
     epochs = 10,
     )
-run = wandb.init(config=defaults, resume=True)
+
+# For testing purposes only, make sure resume can handle empty config
+if args.test_no_config:
+    defaults = None
+
+run = wandb.init(config=config=defaults, resume=True)
 config = run.config
+
+# For testing purposes only, assert if we didnt resume
+if args.test_must_resume:
+    assert wandb.run.resumed
 
 (X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
 labels=["T-shirt/top","Trouser","Pullover","Dress","Coat",
@@ -70,7 +81,7 @@ num_classes = y_test.shape[1]
 
 # Check to see if the run was resumed, if it was, load the best model
 if wandb.run.resumed:
-    print("Resuming model")
+    print("Resuming model with config: {}".format(dict(config)))
     model = load_model(wandb.restore("model-best.h5").name)
 else:
     sgd = SGD(lr=config.learn_rate, decay=config.decay, momentum=config.momentum,
@@ -89,11 +100,11 @@ else:
     model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 
 # Optionally limit the number of epochs for testing
-epochs = args.test_epochs or config.epochs
+epochs = args.test_num_epochs or config.epochs
 model.fit(X_train, y_train,  validation_data=(X_test, y_test), epochs=epochs,
     initial_epoch=wandb.run.step,
     callbacks=[WandbCallback(data_type="image", labels=labels)])
 
-# Emulate non-zero exit when limiting the number of epochs for testing
-if args.test_epochs:
+# For testing purposes only, emulate non-zero exit when limiting the number of epochs
+if args.test_num_epochs:
     raise KeyboardInterrupt
