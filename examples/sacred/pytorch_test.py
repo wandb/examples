@@ -151,7 +151,6 @@ def main(_run):
     trainer = Trainer()
     trainer.run()
 
-    return {'final_accuracy': trainer.test()} 
 
 if __name__ == '__main__':
     ex.run_commandline() 
