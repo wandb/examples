@@ -53,7 +53,7 @@ defaults=dict(
 if args.test_no_config:
     defaults = None
 
-run = wandb.init(config=config=defaults, resume=True)
+run = wandb.init(config=defaults, resume=True)
 config = run.config
 
 # For testing purposes only, assert if we didnt resume
