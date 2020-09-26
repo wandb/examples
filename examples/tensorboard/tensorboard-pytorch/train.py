@@ -5,6 +5,8 @@
 #
 
 # imports
+import argparse
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -15,6 +17,12 @@ import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--log_dir", type=str, help="Where to store tensorboard files")
+args = parser.parse_args()
+
 
 #
 # Added lines for W&B
@@ -94,7 +102,8 @@ optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 from torch.utils.tensorboard import SummaryWriter
 
 # default `log_dir` is "runs" - we'll be more specific here
-writer = SummaryWriter('runs/fashion_mnist_experiment_1')
+log_dir = args.log_dir or 'runs/fashion_mnist_experiment_1'
+writer = SummaryWriter(log_dir)
 
 #
 # 2. Writing to TensorBoard

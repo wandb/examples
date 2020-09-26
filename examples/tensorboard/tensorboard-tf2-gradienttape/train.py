@@ -2,6 +2,7 @@
 
 # https://www.tensorflow.org/tensorboard/get_started
 
+import argparse
 import tensorflow as tf
 import datetime
 import numpy as np
@@ -10,6 +11,11 @@ import numpy as np
 # Added lines for W&B
 #
 import wandb
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--log_dir", type=str, help="Where to store tensorboard files")
+args = parser.parse_args()
 
 # We're defining some default hyper-parameters here, usually you'll
 # use argparse or another config management tool as well
@@ -59,8 +65,8 @@ def test_step(model, x_test, y_test):
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
 test_log_dir = 'logs/gradient_tape/' + current_time + '/test'
-train_summary_writer = tf.summary.create_file_writer(train_log_dir)
-test_summary_writer = tf.summary.create_file_writer(test_log_dir)
+train_summary_writer = tf.summary.create_file_writer(args.log_dir or train_log_dir)
+test_summary_writer = tf.summary.create_file_writer(args.log_dir or test_log_dir)
 
 
 def create_model():
