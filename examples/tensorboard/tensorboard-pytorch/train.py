@@ -226,4 +226,7 @@ for epoch in range(1):  # loop over the dataset multiple times
                             plot_classes_preds(net, inputs, labels),
                             global_step=epoch * len(trainloader) + i)
             running_loss = 0.0
+# Note: if you don't call this and logdir is an s3 url, the
+# last file will never get correctly written.
+writer.close()
 print('Finished Training')
