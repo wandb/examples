@@ -3,6 +3,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from numpy.random.mtrand import permutation
+from sklearn.datasets import load_iris
 import wandb
 
 # initialize wandb run
