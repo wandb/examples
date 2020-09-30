@@ -3,7 +3,7 @@
 ### Never lose your progress again. 
 Save everything you need to compare and reproduce models — architecture, hyperparameters, weights, model predictions, GPU usage, git commits, and even datasets — in 5 minutes. W&B is free for personal use and academic projects, and it's easy to get started.
 
-# Simple Integration for any framework
+# Simple integration with any framework
 Install wandb library and login:
 ```
 pip install wandb
@@ -102,7 +102,7 @@ for batch_idx, (data, target) in enumerate(train_loader):
 - [Docs](https://docs.wandb.com/frameworks/pytorch)
 
 
-## 📍 Tensorflow
+## 📍 TensorFlow
 The simplest way to log metrics in TensorFlow is by logging `tf.summary` with the TensorFlow logger.
 ```python
 import wandb
@@ -148,7 +148,7 @@ wandb.sklearn.plot_clusterer(kmeans, X_train, cluster_labels, labels=None, model
 - [Docs](https://docs.wandb.com/library/integrations/scikit)
 
 
-## 📍 Fastai
+## 📍 fastai
 Visualize, compare, and iterate on fastai models using Weights & Biases with the WandbCallback.
 ```python
 import wandb
@@ -236,7 +236,7 @@ pred = bst.predict(xg_test)
 - [Docs](https://docs.wandb.com/library/integrations/lightgbm)
 
 
-# Hyperparameter Optimization
+# Hyperparameter optimization with Sweeps
 Use Weights & Biases Sweeps to automate hyperparameter optimization and explore the space of possible models.
 
 ### [Get started in 5 mins →](https://docs.wandb.com/sweeps/quickstart)
@@ -248,12 +248,12 @@ Use Weights & Biases Sweeps to automate hyperparameter optimization and explore 
 
 ![](https://gblobscdn.gitbook.com/assets%2F-Lqya5RvLedGEWPhtkjU%2F-LyfPCyvV8By5YBltxfh%2F-LyfQsxswLC-6WKGgfGj%2Fcentral%20sweep%20server%203.png?alt=media&token=c81e4fe7-7ee4-48ea-a4cd-7b28113c6088)
 
-### Common Use Cases
+### Common use cases
 - **Explore:** Efficiently sample the space of hyperparameter combinations to discover promising regions and build an intuition about your model.
 - **Optimize:**  Use sweeps to find a set of hyperparameters with optimal performance.
 - **K-fold cross validation:** Here's a brief code example of k-fold cross validation with W&B Sweeps.
 
-### Visualize Sweeps Results
+### Visualize Sweeps results
 The hyperparameter importance plot surfaces which hyperparameters were the best predictors of, and highly correlated to desirable values for your metrics.
 ![](https://paper-attachments.dropbox.com/s_194708415DEC35F74A7691FF6810D3B14703D1EFE1672ED29000BA98171242A5_1578695757573_image.png)
 
@@ -263,7 +263,7 @@ Parallel coordinates plots map hyperparameter values to model metrics. They're u
 # Reports
 Reports let you [organize visualizations, describe your findings, and share updates with collaborators](https://www.youtube.com/watch?v=o2dOSIDDr1w&&ab_channel=Weights%26Biases).
 
-### Use Cases
+### Common use cases
 - **Notes:** Add a graph with a quick note to yourself.
 - **Collaboration:** Share findings with your colleagues.
 - **Work log:** Track what you've tried, and plan next steps.
