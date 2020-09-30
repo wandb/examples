@@ -261,7 +261,7 @@ Parallel coordinates plots map hyperparameter values to model metrics. They're u
 ![](https://i.imgur.com/THYXBN0.png)
 
 # Reports
-Reports let you organize visualizations, describe your findings, and share updates with collaborators.
+Reports let you [organize visualizations, describe your findings, and share updates with collaborators](https://www.youtube.com/watch?v=o2dOSIDDr1w&&ab_channel=Weights%26Biases).
 
 ### Use Cases
 - **Notes:** Add a graph with a quick note to yourself.
@@ -270,7 +270,7 @@ Reports let you organize visualizations, describe your findings, and share updat
 
 **Explore reports in [The Gallery →](https://app.wandb.ai/gallery) | [Docs](https://docs.wandb.com/reports)**
 
-Once you have experiments in W&B, easily visualize results in reports. Here's a quick [overview video](https://www.youtube.com/watch?v=o2dOSIDDr1w&).
+Once you have experiments in W&B, you can visualize and document results in Reports with just a few clicks. Here's a quick [demo video](https://www.youtube.com/watch?v=jWBGKGAjt6w&t=2s&ab_channel=Weights%26Biases).
 
 ![](https://i.imgur.com/dn0Dyd8.png)
 
