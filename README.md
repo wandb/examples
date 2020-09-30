@@ -1,4 +1,4 @@
-# Getting Started
+# 🚀 Getting Started
 
 ### Never lose your progress again. 
 Save everything you need to compare and reproduce models — architecture, hyperparameters, weights, model predictions, GPU usage, git commits, and even datasets — in 5 minutes. W&B is free for personal use and academic projects, and it's easy to get started.
