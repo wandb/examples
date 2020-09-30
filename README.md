@@ -29,7 +29,7 @@ for i in range (10):
 
 ### [Try in a colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/intro/Intro_to_Weights_%26_Biases.ipynb)
 
-If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/wb-slack).
+If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/slack-forum).
 
 ![](https://i.imgur.com/TU34QFZ.png)
 
@@ -274,7 +274,7 @@ Once you have experiments in W&B, easily visualize results in reports. Here's a 
 
 ![](https://i.imgur.com/dn0Dyd8.png)
 
-If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/wb-slack).
+If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/slack-forum).
 
 # Examples
 
