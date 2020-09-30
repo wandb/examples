@@ -373,7 +373,7 @@ python train.py
 
 ### fastai-unet-segmentation
 
-Trains a semantic segmentation on a dataset from the game "witness"
+Trains a semantic segmentation on a dataset from the video game [The Witness](https://en.wikipedia.org/wiki/The_Witness_(2016_video_game))
 ```
 cd examples/fastai/fastai-unet-segmentation
 pip install -r requirements.txt
