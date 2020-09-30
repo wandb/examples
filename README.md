@@ -46,7 +46,7 @@ wandb.config.learning_rate = 0.001
 wandb.config.architecture = "resnet"
 ```
 
-- **[See how to set configs in a colab →](https://colab.research.google.com/drive/1eITPzCy3ExfXfjUHqGo8n2Pp1GHZcgnX?usp=sharing)**
+- **[See how to set configs in a colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-config/Configs_in_W%26B.ipynb)**
 - [Docs](https://docs.wandb.com/library/config)
 
 # Frameworks
