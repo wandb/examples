@@ -3,7 +3,7 @@
 ### Never lose your progress again. 
 Save everything you need to compare and reproduce models — architecture, hyperparameters, weights, model predictions, GPU usage, git commits, and even datasets — in 5 minutes. W&B is free for personal use and academic projects, and it's easy to get started.
 
-# Simple integration with any framework
+# 🤝 Simple integration with any framework
 Install wandb library and login:
 ```
 pip install wandb
@@ -35,7 +35,7 @@ If you have any questions, please don't hesitate to ask in our [Slack community]
 
 **[Explore a W&B dashboard](https://www.youtube.com/watch?v=gnD8BFuyVUA)**
 
-# Track model and data pipeline hyperparameters
+# 📈 Track model and data pipeline hyperparameters
 Set `wandb.config` once at the beginning of your script to save your hyperparameters, input settings (like dataset name or model type), and any other independent variables for your experiments. This is useful for analyzing your experiments and reproducing your work in the future. Setting configs also allows you to [visualize](https://docs.wandb.com/sweeps/visualize-sweep-results) the relationships between features of your model architecture or data pipeline and the model performance (as seen in the screenshot above).
 
 ```python
@@ -49,7 +49,7 @@ wandb.config.architecture = "resnet"
 - **[See how to set configs in a colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-config/Configs_in_W%26B.ipynb)**
 - [Docs](https://docs.wandb.com/library/config)
 
-# Frameworks
+# 🏗 Frameworks
 
 ## 📍 Keras
 Use the Keras callback to automatically save all the metrics and the loss values tracked in `model.fit`. To get you started here's a minimal example.
@@ -236,7 +236,7 @@ pred = bst.predict(xg_test)
 - [Docs](https://docs.wandb.com/library/integrations/lightgbm)
 
 
-# Hyperparameter optimization with Sweeps
+# 🧹 Optimize hyperparameters with Sweeps
 Use Weights & Biases Sweeps to automate hyperparameter optimization and explore the space of possible models.
 
 ### [Get started in 5 mins →](https://docs.wandb.com/sweeps/quickstart)
@@ -260,7 +260,7 @@ The hyperparameter importance plot surfaces which hyperparameters were the best 
 Parallel coordinates plots map hyperparameter values to model metrics. They're useful for honing in on combinations of hyperparameters that led to the best model performance.
 ![](https://i.imgur.com/THYXBN0.png)
 
-# Reports
+# 📜 Reports
 Reports let you [organize visualizations, describe your findings, and share updates with collaborators](https://www.youtube.com/watch?v=o2dOSIDDr1w&&ab_channel=Weights%26Biases).
 
 ### Common use cases
@@ -276,7 +276,7 @@ Once you have experiments in W&B, you can visualize and document results in Repo
 
 If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/slack-forum).
 
-# Examples
+# 🎉 Examples
 
 We've created some simple examples that show how to use wandb to track experiments with different frameworks.  They should be easy to use.
 
