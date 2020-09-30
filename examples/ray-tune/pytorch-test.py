@@ -37,16 +37,13 @@ def train_mnist(config):
         error_rate = 100 * (1 - acc)
         wandb.log({"error_rate": error_rate})
 
-
 analysis = tune.run(
     train_mnist,
     loggers=[WandbLogger],  # WandbLogger logs experiment configurations and metrics reported via tune.report() to W&B Dashboard
-
     resources_per_trial={'gpu': 1},
     config={
         # wandb dict accepts all arguments that can be passed in wandb.init()
-        "wandb": {'project':'ray-example'},
-
+        "wandb": {"project":"ray-example"},
         # Hyperparameters
         "lr": tune.grid_search([0.0001, 0.001, 0.1]),
         "momentum": tune.grid_search([0.9, 0.99])
