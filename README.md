@@ -27,7 +27,7 @@ for i in range (10):
     wandb.log({"loss": loss})
 ```
 
-### [Try in a colab →](http://bit.ly/intro-wb)
+### [Try in a colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/intro/Intro_to_Weights_%26_Biases.ipynb)
 
 If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/wb-slack).
 
@@ -72,7 +72,7 @@ model.fit(X_train, y_train,  validation_data=(X_test, y_test),
           callbacks=[WandbCallback()])
 ```
 
-- **[Try in a colab →](https://colab.research.google.com/drive/1WZI9C9l8-mzTSNS3mXS2zKzdz7N38jYO?usp=sharing)**
+- **[Try in a colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/keras/Simple_Keras_Integration.ipynb)**
 - [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Keras--VmlldzoyMTEwNjQ)
 - [Docs](https://docs.wandb.com/frameworks/keras)
 
@@ -97,7 +97,7 @@ for batch_idx, (data, target) in enumerate(train_loader):
     wandb.log({"loss": loss})
 ```
 
-- **[Try in a colab →](https://colab.research.google.com/drive/1QTIK23LBuAkdejbrvdP5hwBGyYlyEJpT?usp=sharing)**
+- **[Try in a colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/pytorch/Simple_PyTorch_Integration.ipynb)**
 - [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Pytorch--VmlldzoyMTEwNzM)
 - [Docs](https://docs.wandb.com/frameworks/pytorch)
 
