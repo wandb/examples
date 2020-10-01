@@ -252,7 +252,7 @@ Use Weights & Biases Sweeps to automate hyperparameter optimization and explore 
 - **Transparent:** We cite all the algorithms we're using, and our code is open source.
 - **Powerful:** Our sweeps are completely customizable and configurable. You can launch a sweep across dozens of machines, and it's just as easy as starting a sweep on your laptop.
 
-![](https://gblobscdn.gitbook.com/assets%2F-Lqya5RvLedGEWPhtkjU%2F-LyfPCyvV8By5YBltxfh%2F-LyfQsxswLC-6WKGgfGj%2Fcentral%20sweep%20server%203.png?alt=media&token=c81e4fe7-7ee4-48ea-a4cd-7b28113c6088)
+<img src="https://gblobscdn.gitbook.com/assets%2F-Lqya5RvLedGEWPhtkjU%2F-LyfPCyvV8By5YBltxfh%2F-LyfQsxswLC-6WKGgfGj%2Fcentral%20sweep%20server%203.png?alt=media&token=c81e4fe7-7ee4-48ea-a4cd-7b28113c6088" width="400" alt="Weights & Biases" />
 
 ### Common use cases
 - **Explore:** Efficiently sample the space of hyperparameter combinations to discover promising regions and build an intuition about your model.
@@ -261,10 +261,12 @@ Use Weights & Biases Sweeps to automate hyperparameter optimization and explore 
 
 ### Visualize Sweeps results
 The hyperparameter importance plot surfaces which hyperparameters were the best predictors of, and highly correlated to desirable values for your metrics.
-![](https://paper-attachments.dropbox.com/s_194708415DEC35F74A7691FF6810D3B14703D1EFE1672ED29000BA98171242A5_1578695757573_image.png)
+
+<img src="https://paper-attachments.dropbox.com/s_194708415DEC35F74A7691FF6810D3B14703D1EFE1672ED29000BA98171242A5_1578695757573_image.png" width="720" alt="Weights & Biases" />
 
 Parallel coordinates plots map hyperparameter values to model metrics. They're useful for honing in on combinations of hyperparameters that led to the best model performance.
-![](https://i.imgur.com/THYXBN0.png)
+
+<img src="https://i.imgur.com/THYXBN0.png" width="720" alt="Weights & Biases" />
 
 # 📜 Reports
 Reports let you [organize visualizations, describe your findings, and share updates with collaborators](https://www.youtube.com/watch?v=o2dOSIDDr1w&&ab_channel=Weights%26Biases).
