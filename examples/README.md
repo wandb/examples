@@ -1,4 +1,4 @@
-# 🎉 Examples
+# 👩🏽‍🏫 Examples
 
 We've created some simple examples that show how to use `wandb` to track experiments with different frameworks.
 
