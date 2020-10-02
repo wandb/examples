@@ -13,7 +13,7 @@ Save everything you need to compare and reproduce models — architecture, hyper
 or read on for code snippets and more!
 
 # 🤝 Simple integration with any framework
-Install wandb library and login:
+Install `wandb` library and login:
 ```
 pip install wandb
 wandb login
@@ -60,8 +60,8 @@ wandb.config.architecture = "resnet"
 
 # 🏗 Frameworks
 
-## 📍 Keras
-Use the Keras callback to automatically save all the metrics and the loss values tracked in `model.fit`. To get you started here's a minimal example.
+## 🥕 Keras
+In Keras, you can use our callback to automatically save all the metrics tracked in `model.fit`. To get you started here's a minimal example:
 ```python
 # Import W&B
 import wandb
@@ -85,8 +85,9 @@ model.fit(X_train, y_train,  validation_data=(X_test, y_test),
 - [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Keras--VmlldzoyMTEwNjQ)
 - [Docs](https://docs.wandb.com/frameworks/keras)
 
-## 📍 PyTorch
-W&B provides first class support for PyTorch. To automatically log gradients and store the network topology, you can call `watch` and pass in your PyTorch model.
+## 🔥 PyTorch
+W&B provides first class support for PyTorch. To automatically log gradients and store the network topology, you can call `.watch` and pass in your PyTorch model.
+Then use `.log` for anything else you want to track, like so:
 ```python
 import wandb
 
@@ -111,8 +112,8 @@ for batch_idx, (data, target) in enumerate(train_loader):
 - [Docs](https://docs.wandb.com/frameworks/pytorch)
 
 
-## 📍 TensorFlow
-The simplest way to log metrics in TensorFlow is by logging `tf.summary` with the TensorFlow logger.
+## 🌊 TensorFlow
+The simplest way to log metrics in TensorFlow is by logging `tf.summary` with our TensorFlow logger:
 ```python
 import wandb
 
@@ -135,11 +136,11 @@ with tf.Session() as sess:
 - [Docs](https://docs.wandb.com/frameworks/tensorflow)
 
 
-## 📍 fastai
-Visualize, compare, and iterate on fastai models using Weights & Biases with the WandbCallback.
+## 💨 fastai
+Visualize, compare, and iterate on fastai models using Weights & Biases with the `WandbCallback`.
 ```python
 import wandb
-fastai2.callback.wandb import WandbCallback
+from fastai2.callback.wandb import WandbCallback
 
 # 1. Start a new run
 wandb.init(project="gpt-3")
@@ -152,8 +153,9 @@ learn.fit(..., cbs=WandbCallback())
 - [Docs](https://docs.wandb.com/library/integrations/fastai)
 
 
-## 📍 HuggingFace
-Run a script with the Trainer, which automatically logs losses, evaluation metrics, model topology and gradients
+## 🤗 HuggingFace
+Just run a script using HuggingFace's Trainer in an environment where `wandb` is installed
+and we'll automatically log losses, evaluation metrics, model topology and gradients:
 ```python
 # 1. Install the wandb library
 pip install wandb
@@ -183,8 +185,8 @@ Use Weights & Biases Sweeps to automate hyperparameter optimization and explore 
 ### [Get started in 5 mins →](https://docs.wandb.com/sweeps/quickstart)
 
 ### Benefits of using W&B Sweeps 
-- **Quick setup:** With just a few lines of code you can run W&B sweeps.
-- **Transparent:** We cite all the algorithms we're using, and our code is open source.
+- **Quick to setup:** With just a few lines of code you can run W&B sweeps.
+- **Transparent:** We cite all the algorithms we're using, and our code is [open source](https://github.com/wandb/client/tree/master/wandb/sweeps).
 - **Powerful:** Our sweeps are completely customizable and configurable. You can launch a sweep across dozens of machines, and it's just as easy as starting a sweep on your laptop.
 
 <img src="https://gblobscdn.gitbook.com/assets%2F-Lqya5RvLedGEWPhtkjU%2F-LyfPCyvV8By5YBltxfh%2F-LyfQsxswLC-6WKGgfGj%2Fcentral%20sweep%20server%203.png?alt=media&token=c81e4fe7-7ee4-48ea-a4cd-7b28113c6088" width="400" alt="Weights & Biases" />
@@ -192,7 +194,7 @@ Use Weights & Biases Sweeps to automate hyperparameter optimization and explore 
 ### Common use cases
 - **Explore:** Efficiently sample the space of hyperparameter combinations to discover promising regions and build an intuition about your model.
 - **Optimize:**  Use sweeps to find a set of hyperparameters with optimal performance.
-- **K-fold cross validation:** Here's a brief code example of k-fold cross validation with W&B Sweeps.
+- **K-fold cross validation:** [Here's a brief code example](https://github.com/wandb/examples/tree/master/examples/wandb-sweeps/sweeps-cross-validation) of _k_-fold cross validation with W&B Sweeps.
 
 ### Visualize Sweeps results
 The hyperparameter importance plot surfaces which hyperparameters were the best predictors of, and highly correlated to desirable values for your metrics.
@@ -209,7 +211,7 @@ Reports let you [organize visualizations, describe your findings, and share upda
 ### Common use cases
 - **Notes:** Add a graph with a quick note to yourself.
 - **Collaboration:** Share findings with your colleagues.
-- **Work log:** Track what you've tried, and plan next steps.
+- **Work log:** Track what you've tried and plan next steps.
 
 **Explore reports in [The Gallery →](https://app.wandb.ai/gallery) | [Docs](https://docs.wandb.com/reports)**
 
