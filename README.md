@@ -183,6 +183,7 @@ python run_glue.py \
 Use Weights & Biases Sweeps to automate hyperparameter optimization and explore the space of possible models.
 
 ### [Get started in 5 mins →](https://docs.wandb.com/sweeps/quickstart)
+### [Try Sweeps in PyTorch in a Colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/pytorch/Organizing_Hyperparameter_Sweeps_in_PyTorch_with_W%26B.ipynb)
 
 ### Benefits of using W&B Sweeps 
 - **Quick to setup:** With just a few lines of code you can run W&B sweeps.
