@@ -12,6 +12,8 @@ Save everything you need to compare and reproduce models — architecture, hyper
 [**→ Check out our library of example scripts →**](https://github.com/wandb/examples/tree/master/examples)
 or read on for code snippets and more!
 
+If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/slack-forum).
+
 # 🤝 Simple integration with any framework
 Install `wandb` library and login:
 ```
@@ -219,5 +221,3 @@ Reports let you [organize visualizations, describe your findings, and share upda
 Once you have experiments in W&B, you can visualize and document results in Reports with just a few clicks. Here's a quick [demo video](https://www.youtube.com/watch?v=jWBGKGAjt6w&t=2s&ab_channel=Weights%26Biases).
 
 ![](https://i.imgur.com/dn0Dyd8.png)
-
-If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/slack-forum).
