@@ -216,8 +216,31 @@ Reports let you [organize visualizations, describe your findings, and share upda
 - **Collaboration:** Share findings with your colleagues.
 - **Work log:** Track what you've tried and plan next steps.
 
-**Explore reports in [The Gallery →](https://app.wandb.ai/gallery) | [Docs](https://docs.wandb.com/reports)**
+**Explore reports in [The Gallery →](https://app.wandb.ai/gallery) | Read the [Docs](https://docs.wandb.com/reports)**
 
 Once you have experiments in W&B, you can visualize and document results in Reports with just a few clicks. Here's a quick [demo video](https://www.youtube.com/watch?v=jWBGKGAjt6w&t=2s&ab_channel=Weights%26Biases).
 
 ![](https://i.imgur.com/dn0Dyd8.png)
+
+# 🏺 Version control datasets and models with Artifacts
+Git and GitHub make code version control easy,
+but they're not optimized for tracking the other parts of the ML pipeline:
+datasets, models, and other large binary files.
+
+W&B's Artifacts are.
+With just a few extra lines of code,
+you can start tracking you and your team's outputs,
+all directly linked to run.
+
+### [Try Artifacts in a Colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-artifacts/Pipeline_Versioning_with_W&B_Artifacts.ipynb)
+
+![](https://i.imgur.com/zvBWhGx.png)
+
+### Common use cases
+- **Pipeline Management:** Track and visualize the inputs and outputs of your runs as a graph
+- **Don't Repeat Yourself™:** Prevent the duplication of compute effort
+- **Sharing Data in Teams:** Collaborate on models and datasets without all the headaches
+
+![](https://i.imgur.com/w92cYQm.png)
+
+**Learn about Artifacts [here →](https://www.wandb.com/articles/announcing-artifacts) | Read the [Docs](https://docs.wandb.com/artifacts)**
