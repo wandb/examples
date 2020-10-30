@@ -83,7 +83,8 @@ model.fit(X_train, y_train,  validation_data=(X_test, y_test),
           callbacks=[WandbCallback()])
 ```
 
-- **[Try in a colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/keras/Simple_Keras_Integration.ipynb)**
+- **[Try in a colab](http://tiny.cc/wb-keras-colab)** with a
+**[video tutorial](http://tiny.cc/wb-keras-video)**
 - [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Keras--VmlldzoyMTEwNjQ)
 - [Docs](https://docs.wandb.com/frameworks/keras)
 
@@ -109,7 +110,8 @@ for batch_idx, (data, target) in enumerate(train_loader):
     wandb.log({"loss": loss})
 ```
 
-- **[Try in a colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/pytorch/Simple_PyTorch_Integration.ipynb)**
+- **[Try in a colab](http://tiny.cc/wb-pytorch-colab)** with a
+**[video tutorial](http://tiny.cc/wb-pytorch-video)**
 - [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Pytorch--VmlldzoyMTEwNzM)
 - [Docs](https://docs.wandb.com/frameworks/pytorch)
 
