@@ -162,7 +162,7 @@ cd examples/examples/boosting-algorithms/xgboost-dermatology
 python train.py
 ```
 
-### [lightgbm-regression](https://github.com/wandb/examples/tree/master/examples/boosting-algorithms/lightgbm-regression)
+### 📈 [lightgbm-regression](https://github.com/wandb/examples/tree/master/examples/boosting-algorithms/lightgbm-regression)
 
 Trains an ensemble of decision trees on
 [Microsoft's regression example](https://github.com/microsoft/LightGBM/tree/master/examples/regression)
