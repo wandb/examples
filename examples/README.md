@@ -34,7 +34,7 @@ git clone https://github.com/wandb/examples
 wandb login
 ```
 
-## 🔥 pytorch
+## 🔥 [pytorch](https://github.com/wandb/examples/tree/master/examples/pytorch)
 
 ### 👋 [pytorch-intro](https://github.com/wandb/examples/tree/master/examples/pytorch/pytorch-intro)
 
@@ -76,9 +76,9 @@ API to launch a hyperparameter optimization [Sweep](https://docs.wandb.com/sweep
 
 See the README for instructions.
 
-## 🥕 keras
+## 🥕 [keras](https://github.com/wandb/examples/tree/master/examples/keras)
 
-### 👋 TensorFlow 2.0 + Keras Overview for Deep Learning Researchers, + W&B
+### 👋 [keras-tensorflow2](https://github.com/wandb/examples/tree/master/examples/keras/keras-tensorflow2)
 
 This tutorial is adapts Francois Chollet's [brilliant introduction to TensorFlow 2.0](https://colab.research.google.com/drive/1UCJt8EYjlzCs1H1d1X0iDGYJsHKwu-NO)
 to include W&B callbacks.
@@ -88,9 +88,11 @@ cd examples/examples/keras/keras-cnn-fashion
 jupyter notebook "TensorFlow_2_0_+_Keras_Crash_Course_+_W&B.ipynb"
 ```
 
-### 👢 keras-cnn-fashion
+### 👢 [keras-cnn-fashion](https://github.com/wandb/examples/tree/master/examples/keras/keras-cnn-fashion)
 
 Trains a fashion-mnist classifier with a small CNN using the keras framework with the tensorflow backend.  Uses a simple integration with `WandbKerasCallback`.
+Includes instructions for how to use the [Sweeps](https://docs.wandb.com/sweeps)
+tool to run hyperparameter optimization.
 
 ```
 cd examples/examples/keras/keras-cnn-fashion
@@ -99,27 +101,13 @@ python train.py
 
 ### 🏞️ [keras-cnn-nature](https://github.com/wandb/examples/tree/master/examples/keras/keras-cnn-nature)
 
-#### train_small_cnn.py
+Multiple examples which train and finetune CNNs in Keras with the goal of exploring curriculum learning
+on the [iNaturalist 2017 dataset](https://github.com/visipedia/inat_comp/tree/master/2017)
+of animal and plant images plus phylogenetic annotations.
 
-Trains a small CNN on images of plants and animals using Keras. Highly configurable through command line flags: run with ``-h`` to see all the options. 
-The ``data_tools`` directory contains a helper script to generate more manageable training datasets from the full 186GB iNaturalist 2017 dataset. A 12K subset of the data can be downloaded by [clicking this link](https://storage.googleapis.com/wandb_datasets/nature_12K.zip). For more context on this example, see this [blog post](https://www.wandb.com/blog/better-paths-through-idea-space) and this W&B [report](https://app.wandb.ai/stacey/keras_finetune/reports?view=stacey%2FiNaturalist), which explores various settings and hyperparameters. 
+See the [README](https://github.com/wandb/examples/tree/master/examples/keras/keras-cnn-nature)
+for more details.
 
-```
-cd examples/examples/keras/keras-cnn-nature
-python train_small_cnn.py
-```
-
-#### finetune_experiments.py
- 
- Enables two kinds of finetuning experiments:
- * loading various pretrained base CNNs (Xception, ResNet, InceptionResNetV2, InceptionV3), pretraining for some epochs, freezing some of the layers of the resulting network, then continuing to finetune the rest of the layers 
- * loading a small CNN, pretraining on general labels (in this case, predicting one of 5 biological classes) for a certain number of epochs, then finetuning on specific labels (predicting one of 25 biological species)
-
- Highly configurable with commandline flags: run with ``-h`` to see all the options. 
-```
-cd examples/examples/keras/keras-cnn-nature
-python finetune_experiments.py
-``` 
 
 ### ✍️ [keras-gan-mnist](https://github.com/wandb/examples/tree/master/examples/keras/keras-gan-mnist)
 
