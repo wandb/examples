@@ -59,7 +59,7 @@ cd examples/examples/pytorch/pytorch-cnn-fashion
 python main.py
 ```
 
-### 9️⃣ [pytorch-cnn-mnist](https://github.com/wandb/examples/tree/master/examples/pytorch/pytorch-cnn-fashion)
+### 9️⃣ [pytorch-cnn-mnist](https://github.com/wandb/examples/tree/master/examples/pytorch/pytorch-cnn-mnist)
 
 Trains a classifier on hand-written digits from the MNIST dataset
 with a small CNN using the PyTorch framework.
