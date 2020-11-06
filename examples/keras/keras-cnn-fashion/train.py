@@ -55,23 +55,23 @@ sgd = SGD(lr=config.learn_rate, decay=config.decay, momentum=config.momentum,
                             nesterov=True)
 
 # build model
-if wandb.run.resumed:
-    print("RESUMING")
-    # restore the best model
-    model = load_model(wandb.restore("model-best.h5").name)
-else:
-    model = Sequential()
-    model.add(Conv2D(config.layer_1_size, (5, 5), activation='relu',
-                            input_shape=(img_width, img_height,1)))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Conv2D(config.layer_2_size, (5, 5), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(config.dropout))
-    model.add(Flatten())
-    model.add(Dense(config.hidden_layer_size, activation='relu'))
-    model.add(Dense(num_classes, activation='softmax'))
+#if wandb.run.resumed:
+#    print("RESUMING")
+#    # restore the best model
+#    model = load_model(wandb.restore("model-best.h5").name)
+#else:
+model = Sequential()
+model.add(Conv2D(config.layer_1_size, (5, 5), activation='relu',
+                        input_shape=(img_width, img_height,1)))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Conv2D(config.layer_2_size, (5, 5), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(config.dropout))
+model.add(Flatten())
+model.add(Dense(config.hidden_layer_size, activation='relu'))
+model.add(Dense(num_classes, activation='softmax'))
 
-    model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
+model.compile(loss='categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
 
 model.fit(X_train, y_train,  validation_data=(X_test, y_test), epochs=config.epochs,
     initial_epoch=wandb.run.step,
