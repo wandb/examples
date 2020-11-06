@@ -6,7 +6,7 @@ Deigned to show how to do a simple wandb integration with keras.
 """
 
 from keras.datasets import fashion_mnist
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Dense, Flatten
 from keras.utils import np_utils
 from keras.optimizers import SGD
@@ -58,7 +58,7 @@ sgd = SGD(lr=config.learn_rate, decay=config.decay, momentum=config.momentum,
 if wandb.run.resumed:
     print("RESUMING")
     # restore the best model
-    model = keras.models.load_model(wandb.restore("model-best.h5").name)
+    model = load_model(wandb.restore("model-best.h5").name)
 else:
     model = Sequential()
     model.add(Conv2D(config.layer_1_size, (5, 5), activation='relu',
