@@ -86,7 +86,7 @@ model.fit(x_train, y_train,  validation_data=(x_test, y_test),
 - **[Try in a colab](http://tiny.cc/wb-keras-colab)** with a
 **[video tutorial](http://tiny.cc/wb-keras-video)**
 - [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Keras--VmlldzoyMTEwNjQ)
-- [Docs](https://docs.wandb.com/frameworks/keras)
+- [Docs](https://docs.wandb.com/library/integrations/keras)
 
 ## 🔥 PyTorch
 W&B provides first class support for PyTorch. To automatically log gradients and store the network topology, you can call `.watch` and pass in your PyTorch model.
@@ -113,7 +113,7 @@ for batch_idx, (data, target) in enumerate(train_loader):
 - **[Try in a colab](http://tiny.cc/wb-pytorch-colab)** with a
 **[video tutorial](http://tiny.cc/wb-pytorch-video)**
 - [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Pytorch--VmlldzoyMTEwNzM)
-- [Docs](https://docs.wandb.com/frameworks/pytorch)
+- [Docs](https://docs.wandb.com/library/integrations/pytorch)
 
 ## ⚡ PyTorch Lightning
 W&B is integrated directly into [PyTorch Lightning](https://pytorch-lightning.readthedocs.io/en/stable/)
@@ -164,7 +164,7 @@ with tf.Session() as sess:
 ```
 
 - **[Try in a colab →](https://colab.research.google.com/drive/126c1k5IfbQpE7dVmhnoDTdmFfC7CgJqg?usp=sharing)**
-- [Docs](https://docs.wandb.com/frameworks/tensorflow)
+- [Docs](https://docs.wandb.com/library/integrations/tensorflow)
 
 
 ## 💨 fastai
