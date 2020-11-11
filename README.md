@@ -115,6 +115,33 @@ for batch_idx, (data, target) in enumerate(train_loader):
 - [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Pytorch--VmlldzoyMTEwNzM)
 - [Docs](https://docs.wandb.com/frameworks/pytorch)
 
+## ⚡ PyTorch Lightning
+W&B is integrated directly into [PyTorch Lightning](https://pytorch-lightning.readthedocs.io/en/stable/)
+through their [`loggers` API](https://pytorch-lightning.readthedocs.io/en/stable/logging.html).
+```python
+import wandb
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning import Trainer
+
+# add logging into your training_step (and elsewhere!)
+def training_step(self, batch, batch_idx):
+    ...
+    self.log('train/loss', loss)
+    return loss
+
+# add a WandbLogger to your Trainer
+wandb_logger = WandbLogger()
+trainer = Trainer(logger=wandb_logger)
+
+# .fit your model
+trainer.fit(model, mnist)
+```
+
+- **[Try in a colab](http://tiny.cc/wb-lit-colab)** with a
+**[video tutorial](http://tiny.cc/wb-lit-video)**
+- [Learn more with a Report](https://www.wandb.com/articles/pytorch-lightning-with-weights-biases)
+- [Read the docs](https://docs.wandb.com/library/integrations/lightning)
+
 
 ## 🌊 TensorFlow
 The simplest way to log metrics in TensorFlow is by logging `tf.summary` with our TensorFlow logger:
