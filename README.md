@@ -139,8 +139,8 @@ trainer.fit(model, mnist)
 
 - **[Try in a colab](http://tiny.cc/wb-lit-colab)** with a
 **[video tutorial](http://tiny.cc/wb-lit-video)**
-- [Learn more with a Report](https://www.wandb.com/articles/pytorch-lightning-with-weights-biases)
-- [Read the docs](https://docs.wandb.com/library/integrations/lightning)
+- [Learn More](https://www.wandb.com/articles/pytorch-lightning-with-weights-biases)
+- [Docs](https://docs.wandb.com/library/integrations/lightning)
 
 
 ## 🌊 TensorFlow
