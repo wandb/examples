@@ -57,7 +57,7 @@ run = wandb.init(config=defaults, resume=True)
 config = run.config
 
 # For testing purposes only, assert if we didnt resume
-if args.test_must_resume:
+if args.test_must_resume and not wandb.run.disabled:
     assert wandb.run.resumed
 
 (X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
