@@ -50,7 +50,7 @@ defaults=dict(
     )
 
 # For testing purposes only, make sure resume can handle empty config
-if args.test_no_config:
+if args.test_no_config and wandb.setup().settings.mode != "disabled":
     defaults = None
 
 run = wandb.init(config=defaults, resume=True)
