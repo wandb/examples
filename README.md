@@ -261,7 +261,7 @@ With just a few extra lines of code,
 you can start tracking you and your team's outputs,
 all directly linked to run.
 
-### [Try Artifacts in a Colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-artifacts/Pipeline_Versioning_with_W&B_Artifacts.ipynb)
+### Try Artifacts in a [Colab](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-artifacts/Pipeline_Versioning_with_W&B_Artifacts.ipynb) with a [video tutorial](http://tiny.cc/wb-artifacts-video)
 
 ![](https://i.imgur.com/zvBWhGx.png)
 
