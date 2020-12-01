@@ -12,7 +12,7 @@ Save everything you need to compare and reproduce models — architecture, hyper
 [**→ Check out our library of example scripts →**](https://github.com/wandb/examples/tree/master/examples)
 or read on for code snippets and more!
 
-If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/slack-forum).
+If you have any questions, please don't hesitate to ask in our [Slack community](http://wandb.me/slack).
 
 # 🤝 Simple integration with any framework
 Install `wandb` library and login:
@@ -38,9 +38,9 @@ for i in range (10):
     wandb.log({"loss": loss})
 ```
 
-### [Try in a colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/intro/Intro_to_Weights_%26_Biases.ipynb)
+### [Try in a colab →](http://wandb.me/intro-colab)
 
-If you have any questions, please don't hesitate to ask in our [Slack community](http://bit.ly/slack-forum).
+If you have any questions, please don't hesitate to ask in our [Slack community](http://wandb.me/slack).
 
 ![](https://i.imgur.com/TU34QFZ.png)
 
@@ -57,7 +57,7 @@ wandb.config.learning_rate = 0.001
 wandb.config.architecture = "resnet"
 ```
 
-- **[See how to set configs in a colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-config/Configs_in_W%26B.ipynb)**
+- **[See how to set configs in a colab →](http://wandb.me/config-colab)**
 - [Docs](https://docs.wandb.com/library/config)
 
 # 🏗 Use your favorite framework
@@ -83,8 +83,8 @@ model.fit(x_train, y_train,  validation_data=(x_test, y_test),
           callbacks=[WandbCallback()])
 ```
 
-- **[Try in a colab](http://tiny.cc/wb-keras-colab)** with a
-**[video tutorial](http://tiny.cc/wb-keras-video)**
+- **[Try in a colab](http://wandb.me/keras-colab)** with a
+**[video tutorial](http://wandb.me/keras-video)**
 - [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Keras--VmlldzoyMTEwNjQ)
 - [Docs](https://docs.wandb.com/library/integrations/keras)
 
@@ -110,8 +110,8 @@ for batch_idx, (data, target) in enumerate(train_loader):
     wandb.log({"loss": loss})
 ```
 
-- **[Try in a colab](http://tiny.cc/wb-pytorch-colab)** with a
-**[video tutorial](http://tiny.cc/wb-pytorch-video)**
+- **[Try in a colab](http://wandb.me/pytorch-colab)** with a
+**[video tutorial](http://wandb.me/pytorch-video)**
 - [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Pytorch--VmlldzoyMTEwNzM)
 - [Docs](https://docs.wandb.com/library/integrations/pytorch)
 
@@ -137,8 +137,8 @@ trainer = Trainer(logger=wandb_logger)
 trainer.fit(model, mnist)
 ```
 
-- **[Try in a colab](http://tiny.cc/wb-lit-colab)** with a
-**[video tutorial](http://tiny.cc/wb-lit-video)**
+- **[Try in a colab](http://wandb.me/lit-colab)** with a
+**[video tutorial](http://wandb.me/lit-video)**
 - [Learn More](https://www.wandb.com/articles/pytorch-lightning-with-weights-biases)
 - [Docs](https://docs.wandb.com/library/integrations/lightning)
 
@@ -214,7 +214,7 @@ python run_glue.py \
 Use Weights & Biases Sweeps to automate hyperparameter optimization and explore the space of possible models.
 
 ### [Get started in 5 mins →](https://docs.wandb.com/sweeps/quickstart)
-### [Try Sweeps in PyTorch in a Colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/pytorch/Organizing_Hyperparameter_Sweeps_in_PyTorch_with_W%26B.ipynb)
+### [Try Sweeps in PyTorch in a Colab →](http://wandb.me/sweeps-colab)
 
 ### Benefits of using W&B Sweeps 
 - **Quick to setup:** With just a few lines of code you can run W&B sweeps.
@@ -238,16 +238,16 @@ Parallel coordinates plots map hyperparameter values to model metrics. They're u
 <img src="https://i.imgur.com/THYXBN0.png" width="720" alt="Weights & Biases" />
 
 # 📜 Share insights with with Reports
-Reports let you [organize visualizations, describe your findings, and share updates with collaborators](https://www.youtube.com/watch?v=o2dOSIDDr1w&&ab_channel=Weights%26Biases).
+Reports let you [organize visualizations, describe your findings, and share updates with collaborators](http://wandb.me/reports-guide).
 
 ### Common use cases
 - **Notes:** Add a graph with a quick note to yourself.
 - **Collaboration:** Share findings with your colleagues.
 - **Work log:** Track what you've tried and plan next steps.
 
-**Explore reports in [The Gallery →](https://app.wandb.ai/gallery) | Read the [Docs](https://docs.wandb.com/reports)**
+**Explore reports in [The Gallery →](https://wandb.ai/gallery) | Read the [Docs](https://docs.wandb.com/reports)**
 
-Once you have experiments in W&B, you can visualize and document results in Reports with just a few clicks. Here's a quick [demo video](https://www.youtube.com/watch?v=jWBGKGAjt6w&t=2s&ab_channel=Weights%26Biases).
+Once you have experiments in W&B, you can visualize and document results in Reports with just a few clicks. Here's a quick [demo video](http://wandb.me/short-reports).
 
 ![](https://i.imgur.com/dn0Dyd8.png)
 
@@ -261,7 +261,7 @@ With just a few extra lines of code,
 you can start tracking you and your team's outputs,
 all directly linked to run.
 
-### Try Artifacts in a [Colab](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-artifacts/Pipeline_Versioning_with_W&B_Artifacts.ipynb) with a [video tutorial](http://tiny.cc/wb-artifacts-video)
+### Try Artifacts in a [Colab](http://wandb.me/artifacts-colab) with a [video tutorial](http://wandb.me/artifacts-video)
 
 ![](https://i.imgur.com/zvBWhGx.png)
 
