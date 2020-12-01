@@ -163,7 +163,7 @@ with tf.Session() as sess:
   wandb.tensorflow.log(tf.summary.merge_all())
 ```
 
-- **[Try in a colab →](https://colab.research.google.com/drive/126c1k5IfbQpE7dVmhnoDTdmFfC7CgJqg?usp=sharing)**
+- **[Try in a colab →](http://wandb.me/tf-colab)**
 - [Docs](https://docs.wandb.com/library/integrations/tensorflow)
 
 
