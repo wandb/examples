@@ -213,13 +213,15 @@ python run_glue.py \
 # 🧹 Optimize hyperparameters with Sweeps
 Use Weights & Biases Sweeps to automate hyperparameter optimization and explore the space of possible models.
 
-### [Get started in 5 mins →](https://docs.wandb.com/sweeps/quickstart)
 ### [Try Sweeps in PyTorch in a Colab →](http://wandb.me/sweeps-colab)
+### [Try Sweeps in TensorFlow in a Colab →](http://wandb.me/tf-sweeps-colab)
 
 ### Benefits of using W&B Sweeps 
 - **Quick to setup:** With just a few lines of code you can run W&B sweeps.
 - **Transparent:** We cite all the algorithms we're using, and our code is [open source](https://github.com/wandb/client/tree/master/wandb/sweeps).
 - **Powerful:** Our sweeps are completely customizable and configurable. You can launch a sweep across dozens of machines, and it's just as easy as starting a sweep on your laptop.
+
+### [Get started in 5 mins →](https://docs.wandb.com/sweeps/quickstart)
 
 <img src="https://gblobscdn.gitbook.com/assets%2F-Lqya5RvLedGEWPhtkjU%2F-LyfPCyvV8By5YBltxfh%2F-LyfQsxswLC-6WKGgfGj%2Fcentral%20sweep%20server%203.png?alt=media&token=c81e4fe7-7ee4-48ea-a4cd-7b28113c6088" width="400" alt="Weights & Biases" />
 
