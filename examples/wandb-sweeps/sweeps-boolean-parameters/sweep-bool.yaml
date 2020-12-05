@@ -1,0 +1,14 @@
+program: train-bool.py  
+method: grid
+# Parameters to search over
+parameters:
+  optimizer:
+    values: ["sgd", "adam"]
+  flag1:
+    values:
+    - false
+    - true
+  flag2:
+    values:
+    - false
+    - true
