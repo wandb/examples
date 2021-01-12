@@ -2,8 +2,8 @@
 
 # 🤝 Integrations with DL Frameworks
 
-| Notebook    | Link                                                                                                                                                                              |
-|------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Notebook    | Link |
+|-------------|------|
 | PyTorch  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/pytorch-colab) |
 | Keras  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/keras-colab) |
 | PyTorch Lightning | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/lit-colab) |
@@ -13,8 +13,8 @@
 
 # 🏋🏽‍♂️ W&B Features
 
-| Notebook    | Link                                                                                                                                                                              |
-|------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Notebook    | Link |
+|-------------|------|
 | Intro to W&B | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/intro-colab) |
 | Logging Media | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/media-colab) |
 | Configs in W&B  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/config-colab) |
@@ -26,8 +26,8 @@
 
 # ✨ Other
 
-| Notebook    | Link                                                                                                                                                                              |
-|------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Notebook    | Link |
+|-------------|------|
 | Scikit-Learn with W&B  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/scikit-colab) |
 | XGBoost with W&B | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/xgb-colab) |
 | LightGBM with W&B | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/lightgbm-colab) |
