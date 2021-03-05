@@ -3,7 +3,7 @@
 terms up to argument and tracks the answer with wandb.
 
 Example command:
-python pi.py
+python pi.py 5
 """
 
 import sys
