@@ -15,7 +15,7 @@ bst = xgboost.train(param, xg_train, num_round, watchlist, callbacks=[wandb.xgbo
 pred = bst.predict(xg_test)
 ```
 
-- **[Try in a colab →](https://colab.research.google.com/drive/1aJf2DEobaXCcdv-Ys4sV53bEgkh6_auL?usp=sharing)**
+- **[Try in a colab →](http://wandb.me/xgb-colab)**
 - [Docs](https://docs.wandb.com/library/integrations/xgboost)
 
 
@@ -40,5 +40,5 @@ bst = lgb.train(params,
 pred = bst.predict(lgb_test)
 ```
 
-- **[Try in a colab →](https://colab.research.google.com/drive/1ybowtxi9LkApZEIXryhRrrhbvDrUsFy4?usp=sharing)**
+- **[Try in a colab →](http://wandb.me/lightgbm-colab)**
 - [Docs](https://docs.wandb.com/library/integrations/lightgbm)
