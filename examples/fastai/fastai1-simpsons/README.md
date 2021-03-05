@@ -6,9 +6,9 @@
 
 This is a simple demo for classifying Simpsons characters with fast.ai and optimizing the neural network by monitoring and comparing runs with Weights & Biases.
 
-Hyper-parameters are defined pseudo-randomly and every run is automatically logged onto [Weighs & Biases](https://www.wandb.com/) for easier analysis/interpretation of results and how to optimize the architecture.
+Hyper-parameters are defined pseudo-randomly and every run is automatically logged onto [Weights & Biases](https://www.wandb.com/) for easier analysis/interpretation of results and how to optimize the architecture.
 
-You can also run [sweeps](https://docs.wandb.com/sweeps/) to optimize automatically hyper-parameters.
+You can also run [Sweeps](https://docs.wandb.com/sweeps/) to optimize automatically hyper-parameters.
 
 ## Usage
 
@@ -22,8 +22,8 @@ You can also run [sweeps](https://docs.wandb.com/sweeps/) to optimize automatica
 ## Sweeps
 
 1. Run `wandb sweep sweep.yaml`
-2. Run `wandb agent <sweep_id>` where `<sweep_id>` is given by previous command.
-3. Visualize and compare the sweep runs. See [my sweep](https://app.wandb.ai/borisd13/simpsons-fastai/sweeps/erraqo0l?workspace=user-borisd13).
+2. Run `wandb agent <sweep_id>` where `<sweep_id>` is returned by the `wandb sweep` command.
+3. Visualize and compare the sweep runs. You can compare what you got to [my results](https://app.wandb.ai/borisd13/simpsons-fastai/sweeps/erraqo0l?workspace=user-borisd13).
 
 ## Results
 
