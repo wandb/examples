@@ -35,7 +35,7 @@ If using Ray/Tune programmatic sweep definition, create the [Sweep yaml file](ht
 - `wandb sweep sweep-tune-hyperopt.yaml`
 
 ## Start Sweep
-- `wandb agent SWEEP_ID  # SWEEP_ID is from the create sweep command above`
+- `wandb agent SWEEP_ID  # SWEEP_ID is returned by the wandb sweep command above`
 
 ## Sweep Results
 - [Bayesian HyperBand Sweep](https://app.wandb.ai/wandb/examples-keras-cnn-fashion/sweeps/us0ifmrf)
