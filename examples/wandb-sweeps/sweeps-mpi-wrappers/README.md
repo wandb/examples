@@ -1,4 +1,4 @@
-# wandb sweeps mpi wrapper scripts
+# Weights & Biases Sweeps and MPI wrapper scripts
 
 ## Description
 
