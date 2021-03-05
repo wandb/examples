@@ -16,5 +16,5 @@ wandb.sklearn.plot_regressor(reg, X_train, X_test, y_train, y_test,  model_name=
 wandb.sklearn.plot_clusterer(kmeans, X_train, cluster_labels, labels=None, model_name='KMeans')
 ```
 
-- **[Try in a colab →](https://colab.research.google.com/drive/1dxWV5uulLOQvMoBBaJy2dZ3ZONr4Mqlo?usp=sharing)**
+- **[Try in a colab →](http://wandb.me/scikit-colab)**
 - [Docs](https://docs.wandb.com/library/integrations/scikit)
