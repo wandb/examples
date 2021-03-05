@@ -8,7 +8,7 @@ The full iNaturalist 2017 dataset, [available here](https://github.com/visipedia
 
 ## Training a small CNN
 
-This example trains a small CNN on images of plants and animals using Keras. Highly configurable through command line flags: run with ``-h`` to see all the options. For more context on this example, see this [blog post](https://www.wandb.com/blog/better-paths-through-idea-space) and this W&B [report](https://app.wandb.ai/stacey/keras_finetune/reports?view=stacey%2FiNaturalist), which explores various settings and hyperparameters. 
+This example trains a small CNN on images of plants and animals using Keras. Highly configurable through command line flags: run with ``-h`` to see all the options. For more context on this example, see this [blog post](https://wandb.ai/site/articles/better-paths-through-idea-space) and this W&B [report](https://app.wandb.ai/stacey/keras_finetune/reports?view=stacey%2FiNaturalist), which explores various settings and hyperparameters. 
 
 ```
 cd examples/keras-cnn-nature
