@@ -5,7 +5,7 @@ This example showcases wandb's run grouping and resuming features.
 The example has two job types, a `train` job (in `train.py`) and an
 `eval` job (in `eval.py`). The eval job is resumable.
 
-Run `./run_experiment.sh to launch the runs that comprise a single experiment.
+Run `./run_experiment.sh` to launch the runs that comprise a single experiment.
 They will be configured as a group that can be viewed in the W&B UI.
 
 Project page example: https://app.wandb.ai/shawn/group-example
