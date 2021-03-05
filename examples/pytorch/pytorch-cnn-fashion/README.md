@@ -4,7 +4,7 @@ It’s easy to start optimizing your models with hyperparameter sweeps. I’ll w
 ## 1. Create a project
 Run your first baseline run manually to check that W&B logging is working properly. You'll download this simple example model, train it for a few minutes, and see the example appear in the web dashboard.
 - Clone this repo `git clone https://github.com/wandb/examples.git` 
-- Open this example `cd examples/pytorch-cnn-fashion`
+- Open this example `cd examples/examples/pytorch-cnn-fashion`
 - Run a run manually `python train.py`
 
 [View an example project page →](https://app.wandb.ai/carey/pytorch-cnn-fashion)
