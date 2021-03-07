@@ -71,6 +71,14 @@ def test(args, model, device, test_loader):
 
 
 def main():
+
+    # Workaround torchvision bug
+    # https://github.com/pytorch/vision/issues/1938
+    from six.moves import urllib
+    opener = urllib.request.build_opener()
+    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+    urllib.request.install_opener(opener)
+
     wandb.init()
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
