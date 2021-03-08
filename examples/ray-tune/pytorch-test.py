@@ -32,6 +32,7 @@ def train_mnist(config):
         acc = test(model, test_loader, device=device)
 
         # When using WandbLogger, the metrics reported to tune are also logged in the W&B dashboard
+        print("DEBUG: mean_accuracy=", acc)
         tune.report(mean_accuracy=acc)
 
         # @wandb_mixin enables logging custom metric using wandb.log()
