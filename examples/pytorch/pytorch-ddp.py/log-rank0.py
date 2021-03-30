@@ -1,13 +1,13 @@
 # Usage:
-# python -m log-rank0.py \
+# python -m torch.distributed.launch \
 # --nproc_per_node 2 \
 # --nnodes 1 \
 # --node_rank 0 \
-# mnist_distributed.py \
+# log-rank0.py \
 # --epochs 10 \
 # --batch 512 \
-# --entity <entity> \
-# --project <project>
+# --entity <ENTITY> \
+# --project <PROJECT>
 
 # IMPORTS
 import os
