@@ -9,11 +9,24 @@ import os
 import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
+import torchvision
 from torchvision.datasets import MNIST
 from torchvision import transforms
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 
+# workaround to fetch MNIST data
+import sys
+tv_version = torchvision.__version__
+print("torchvision version:", tv_version, file=sys.stderr)
+if tuple(map(lambda x: int(x), tv_version.split(".")[:2])) <= (0, 5):
+    url = "https://activeeon-public.s3.eu-west-2.amazonaws.com/datasets/MNIST.old.tar.gz"
+else:
+    url = "https://activeeon-public.s3.eu-west-2.amazonaws.com/datasets/MNIST.new.tar.gz"
+print("download:", url, file=sys.stderr)
+
+os.system("wget -O MNIST.tar.gz {}".format(url))
+os.system("tar -zxvf MNIST.tar.gz")
 
 class MNISTModel(pl.LightningModule):
 
