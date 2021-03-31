@@ -4,9 +4,23 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import torchvision
 from torchvision import datasets, transforms
 import wandb
 
+# workaround to fetch MNIST data
+import os
+import sys
+tv_version = torchvision.__version__
+print("torchvision version:", tv_version, file=sys.stderr)
+if tuple(map(lambda x: int(x), tv_version.split(".")[:2])) <= (0, 5):
+    url = "https://activeeon-public.s3.eu-west-2.amazonaws.com/datasets/MNIST.old.tar.gz"
+else:
+    url = "https://activeeon-public.s3.eu-west-2.amazonaws.com/datasets/MNIST.new.tar.gz"
+print("download:", url, file=sys.stderr)
+
+os.system("wget -O MNIST.tar.gz {}".format(url))
+os.system("tar -zxvf MNIST.tar.gz")
 
 class Net(nn.Module):
     def __init__(self):

@@ -8,6 +8,7 @@ from torch import nn
 from torch.optim import SGD
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
+import torchvision
 from torchvision.transforms import Compose, ToTensor, Normalize
 from torchvision.datasets import MNIST
  
@@ -15,7 +16,20 @@ from ignite.engine import Events, create_supervised_trainer, create_supervised_e
 from ignite.metrics import Accuracy, Loss
  
 from tqdm import tqdm
- 
+
+# workaround to fetch MNIST data
+import os
+import sys
+tv_version = torchvision.__version__
+print("torchvision version:", tv_version, file=sys.stderr)
+if tuple(map(lambda x: int(x), tv_version.split(".")[:2])) <= (0, 5):
+    url = "https://activeeon-public.s3.eu-west-2.amazonaws.com/datasets/MNIST.old.tar.gz"
+else:
+    url = "https://activeeon-public.s3.eu-west-2.amazonaws.com/datasets/MNIST.new.tar.gz"
+print("download:", url, file=sys.stderr)
+
+os.system("wget -O MNIST.tar.gz {}".format(url))
+os.system("tar -zxvf MNIST.tar.gz")
  
 class Net(nn.Module):
     def __init__(self):

@@ -6,6 +6,21 @@ from sacred import Experiment
 from wandb.sacred import WandbObserver
 from torchvision.utils import make_grid
 import numpy as np
+
+# workaround to fetch MNIST data
+import os
+import sys
+tv_version = torchvision.__version__
+print("torchvision version:", tv_version, file=sys.stderr)
+if tuple(map(lambda x: int(x), tv_version.split(".")[:2])) <= (0, 5):
+    url = "https://activeeon-public.s3.eu-west-2.amazonaws.com/datasets/MNIST.old.tar.gz"
+else:
+    url = "https://activeeon-public.s3.eu-west-2.amazonaws.com/datasets/MNIST.new.tar.gz"
+print("download:", url, file=sys.stderr)
+
+os.system("wget -O MNIST.tar.gz {}".format(url))
+os.system("tar -zxvf MNIST.tar.gz")
+
 EXPERIMENT_NAME = 'my_experiment-on-slurm'
 YOUR_CPU = None  # None is the default setting and will result in using localhost, change if you want something else
 
