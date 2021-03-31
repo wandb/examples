@@ -10,7 +10,6 @@
 # --project <PROJECT>
 
 # IMPORTS
-import os
 import wandb
 import argparse
 import numpy as np
@@ -20,7 +19,6 @@ import torch
 import torchvision
 import torch.nn as nn
 import torch.distributed as dist
-import torch.multiprocessing as mp
 import torchvision.transforms as transforms
 
 
