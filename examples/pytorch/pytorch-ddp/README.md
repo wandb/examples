@@ -1,6 +1,12 @@
 # PyTorch DDP
 
-This example uses `wandb` with PyTorch DDP to track single-node multi-GPU training. There are two modes of usage: logging from a single process, or logging from all processes.
+This example uses [`wandb`](https://docs.wandb.com) with
+[PyTorch `DistributedDataParallel`](https://pytorch.org/tutorials/intermediate/ddp_tutorial.html)
+to track single-node, multi-GPU training.
+
+We demonstrate two modes of usage:
+1. logging from a single process, and
+2. logging from all processes.
 
 ## Method 1: Log from a single process
 **File:** `log-rank0.py`
@@ -13,14 +19,14 @@ Usage:
 
 ```python
 python -m torch.distributed.launch \
---nproc_per_node 2 \
---nnodes 1 \
---node_rank 0 \
-log-rank0.py \
---epochs 10 \
---batch 512 \
---entity <ENTITY> \
---project <PROJECT>
+  --nproc_per_node 2 \
+  --nnodes 1 \
+  --node_rank 0 \
+  log-rank0.py \
+    --epochs 10 \
+    --batch 512 \
+    --entity <ENTITY> \
+    --project <PROJECT>
 ```
 
 ## Method 2: Log from all processes
@@ -35,11 +41,12 @@ In this script we track all the processes and group them together.
     Usage: 
     ```python
     python -m torch.distributed.launch \
-    --nproc_per_node 2 \
-    --nnodes 1 \
-    --node_rank 0 \
-    log-all.py \
-    --epochs 10 \
-    --batch 512 \
-    --entity <ENTITY> \
-    --project <PROJECT>```
+      --nproc_per_node 2 \
+      --nnodes 1 \
+      --node_rank 0 \
+      log-all.py \
+        --epochs 10 \
+        --batch 512 \
+        --entity <ENTITY> \
+        --project <PROJECT>
+    ```
