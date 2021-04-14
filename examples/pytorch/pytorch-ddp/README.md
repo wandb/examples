@@ -9,20 +9,26 @@ We demonstrate two modes of usage:
 2. logging from all processes.
 
 ## Method 1: Log from a single process
-**File:** `log-rank0.py`
 
-In this script we track only the rank0 process.
-1. Call `wandb.init()` once
-2. Call `wandb.log()` only from that process. Never call `wandb` methods from a process that hasn't called `wandb.init()`.
-    
-Usage: 
+In this method we track only the rank0 process
+-- the "master" process from which the others spawn.
+If you're not interested in intra-batch or inter-batch statistics,
+this approach can save you some overhead.
+
+To get started, we call `wandb.init()` once in the rank0 process
+and then call `wandb.log()` only from that process.
+
+If you use this method, take care that you never call `wandb` methods
+from any process that hasn't called `wandb.init()`.
+
+#### Usage:
 
 ```python
 python -m torch.distributed.launch \
-  --nproc_per_node 2 \
+  --nproc_per_node <NUM_GPUS> \
   --nnodes 1 \
   --node_rank 0 \
-  log-rank0.py \
+  log-ddp.py \
     --epochs 10 \
     --batch 512 \
     --entity <ENTITY> \
@@ -31,22 +37,27 @@ python -m torch.distributed.launch \
 
 ## Method 2: Log from all processes
 
-**File:** `log-all.py`
+In this method we track all the processes and group them together.
 
-In this script we track all the processes and group them together.
-1. Call `wandb.init()` in every process. Use the `group` parameter to group the jobs together into a larger experiment. Use `job_type` if you want to separate out different types of jobs on different machines, such as `rollout` and `eval` workers.
-2. Call `wandb.log()` in any process where you want to log metrics. This is ok because all processes have called `wandb.init()`, so they can call other `wandb` functions safely.
+We call `wandb.init()` in _every_ process.
+We use the `group` parameter to group the jobs together into a larger experiment.
+Use `job_type` if you want to separate out different types of jobs on different machines,
+such as `rollout` and `eval` workers.
 
+Here, you can call `wandb.log()` in any process where you want to log metrics,
+since all processes have called `wandb.init()`.
 
-    Usage: 
-    ```python
-    python -m torch.distributed.launch \
-      --nproc_per_node 2 \
-      --nnodes 1 \
-      --node_rank 0 \
-      log-all.py \
-        --epochs 10 \
-        --batch 512 \
-        --entity <ENTITY> \
-        --project <PROJECT>
-    ```
+#### Usage:
+
+```python
+python -m torch.distributed.launch \
+  --nproc_per_node <NUM_GPUS> \
+  --nnodes 1 \
+  --node_rank 0 \
+  log-ddp.py \
+    --log_all \
+    --epochs 10 \
+    --batch 512 \
+    --entity <ENTITY> \
+    --project <PROJECT>
+```
