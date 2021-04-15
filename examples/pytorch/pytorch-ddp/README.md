@@ -8,10 +8,14 @@ We demonstrate two modes of usage:
 1. logging from a single process, and
 2. logging from all processes.
 
+You can find more context on this example in the
+[Guide to Distributed Training](https://docs.wandb.ai/library/distributed-training)
+in our documentation.
+
 ## Method 1: Log from a single process
 
 In this method we track only the rank0 process
--- the "master" process from which the others spawn.
+-- the "main" process which coordinates the others.
 If you're not interested in intra-batch or inter-batch statistics,
 this approach can save you some overhead.
 
@@ -39,7 +43,7 @@ python -m torch.distributed.launch \
 
 In this method we track all the processes and group them together.
 
-We call `wandb.init()` in _every_ process.
+We call `wandb.init()` in _every_ process, resulting in a W&B `Run` for each process.
 We use the `group` parameter to group the jobs together into a larger experiment.
 Use `job_type` if you want to separate out different types of jobs on different machines,
 such as `rollout` and `eval` workers.
