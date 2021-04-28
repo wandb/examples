@@ -117,7 +117,7 @@ for batch_idx, (data, target) in enumerate(train_loader):
 
 ## ⚡ PyTorch Lightning
 W&B is integrated directly into [PyTorch Lightning](https://pytorch-lightning.readthedocs.io/en/stable/)
-through their [`loggers` API](https://pytorch-lightning.readthedocs.io/en/stable/logging.html).
+through their [`loggers` API](https://pytorch-lightning.readthedocs.io/en/latest/common/loggers.html).
 ```python
 import wandb
 from pytorch_lightning.loggers import WandbLogger
