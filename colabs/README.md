@@ -21,6 +21,7 @@
 | Logging Media | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/media-colab) |
 | Configs in W&B  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/config-colab) |
 | Saving Code  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/code-save-colab) |
+| Interactive W&B Charts Inside Jupyter  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/jupyter-interact-colab) |
 | Model/Data Versioning with Artifacts (PyTorch) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/artifacts-colab) |
 | Model/Data Versioning with Artifacts (Keras) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/artifacts-fast-colab) |
 | Selecting Hyperparameters with Sweeps (PyTorch)  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/sweeps-colab) |
