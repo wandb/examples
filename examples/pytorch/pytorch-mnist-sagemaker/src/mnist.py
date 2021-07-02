@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import sys
+import wandb
 
 #import sagemaker_containers
 import torch
@@ -138,6 +139,7 @@ def train(args):
         # single-machine multi-gpu case or single-machine or multi-machine cpu case
         model = torch.nn.DataParallel(model)
 
+    wandb.watch(model)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
     for epoch in range(1, args.epochs + 1):
@@ -152,6 +154,7 @@ def train(args):
                 # average gradients manually for multi-machine cpu case only
                 _average_gradients(model)
             optimizer.step()
+            wandb.log({"training/loss": loss.item()})
             if batch_idx % args.log_interval == 0:
                 logger.info(
                     "Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}".format(
@@ -179,6 +182,7 @@ def test(model, test_loader, device):
             correct += pred.eq(target.view_as(pred)).sum().item()
 
     test_loss /= len(test_loader.dataset)
+    wandb.log({"testing/loss": test_loss})
     logger.info(
         "Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n".format(
             test_loss, correct, len(test_loader.dataset), 100.0 * correct / len(test_loader.dataset)
@@ -199,6 +203,7 @@ def save_model(model, model_dir):
     path = os.path.join(model_dir, "model.pth")
     # recommended way from http://pytorch.org/docs/master/notes/serialization.html
     torch.save(model.cpu().state_dict(), path)
+    wandb.save(path)
 
 
 if __name__ == "__main__":
@@ -254,4 +259,6 @@ if __name__ == "__main__":
     parser.add_argument("--data-dir", type=str, default=os.environ["SM_CHANNEL_TRAINING"])
     parser.add_argument("--num-gpus", type=int, default=os.environ["SM_NUM_GPUS"])
 
-    train(parser.parse_args())
+    args = parser.parse_args()
+    wandb.init(project="sm-pytorch-mnist-new", config=vars(args))
+    train(args)
