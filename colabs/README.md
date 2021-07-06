@@ -10,7 +10,7 @@
 | TensorFlow  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/tf-colab) |
 | fastai | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/fastai-colab) |
 | HuggingFace | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/huggingface-colab) |
-| YOLO | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/yolo-colab) |
+| YOLOv5 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/yolo-colab) |
 | Ray/Tune | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/raytune-colab) |
 
 # 🏋🏽‍♂️ W&B Features
