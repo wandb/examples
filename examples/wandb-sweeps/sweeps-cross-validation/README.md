@@ -14,3 +14,9 @@ https://app.wandb.ai/jeffr/examples-sweeps-cross-validation/sweeps/vp0fsvku
 
 Example Sweep Group URL:
 https://app.wandb.ai/jeffr/examples-sweeps-cross-validation/groups/vp0fsvku
+
+##### Troubleshooting
+
+Please refer to the [Sweeps Quickstart Guide](https://docs.wandb.ai/guides/sweeps/quickstart) for detailed instructions.
+
+- If you get permissions error, make sure you run `wandb init`.
