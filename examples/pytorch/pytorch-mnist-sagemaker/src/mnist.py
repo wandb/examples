@@ -188,6 +188,26 @@ def test(model, test_loader, device):
             test_loss, correct, len(test_loader.dataset), 100.0 * correct / len(test_loader.dataset)
         )
     )
+    # data and prediction visualization via W&B Tables
+    original_data = datasets.MNIST(
+        args.data_dir,
+        train=False,
+    )
+    images, labels, preds = [], [], []
+    for i in range(100):
+        images += [original_data[i][0]]
+        labels += [original_data[i][1]]
+    processed_images = torch.stack([transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+    )(image) for image in images]).to(device)
+    output = model(processed_images).exp()
+    probs, preds = output.max(1, keepdim=True)
+    probs, preds = probs.flatten(), preds.flatten()
+    table = []
+    for i in range(len(images)):
+        table += [[wandb.Image(images[i]), labels[i], preds[i].item(), probs[i].item()]]
+    table = wandb.Table(data=table, columns=["image", "label", "prediction", "probability"])
+    wandb.log({"mnist_visualization": table})
 
 
 def model_fn(model_dir):
