@@ -18,7 +18,6 @@
 
 import os
 os.system("python -m pip install git+https://github.com/huggingface/transformers.git")
-# os.system("python -m pip install datasets --upgrade")
 os.environ["WANDB_PROJECT"] = "hf-sagemaker"
 
 import logging
