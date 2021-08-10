@@ -236,7 +236,7 @@ def main():
         model_args.config_name if model_args.config_name else model_args.model_name_or_path,
         num_labels=num_labels,
         finetuning_task=data_args.task_name,
-        cache_dir=model_args.cache_dir,,
+        cache_dir=model_args.cache_dir,
     )
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
@@ -290,10 +290,7 @@ def main():
 
     def preprocess_function(examples):
         # Tokenize the texts
-        args = (
-            (examples[sentence1_key],) if sentence2_key is None else (examples[sentence1_key], examples[sentence2_key])
-        )
-        result = tokenizer(*args, padding=padding, max_length=max_seq_length, truncation=True)
+        result = tokenizer(examples['text'], padding=padding, max_length=max_seq_length, truncation=True)
 
         # Map labels to IDs (not necessary for GLUE tasks)
         if label_to_id is not None and "label" in examples:
@@ -339,7 +336,7 @@ def main():
             
             samples_table.add_data(index, train_dataset[index])
     
-    wandb.log({f'samples/{args.dataset_name}_samples_table':samples_table})
+    wandb.log({f'samples/{data_args.dataset_name}_samples_table' : samples_table})
             
     # Get the metric function
     metric = load_metric("accuracy")
