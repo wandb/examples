@@ -46,6 +46,7 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version
 from transformers.utils.versions import require_version
 
+# ✍️ import W&B ✍️
 import wandb
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
@@ -162,10 +163,7 @@ def main():
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
-
-
-    # Create a new run in to Weights & Biases and set the project name
-#     os.environ["WANDB_PROJECT"] = project_name
+    # ✍️ Create a new run in to Weights & Biases and set the project name ✍️
     project_name = "hf-sagemaker"
     wandb.init(name=training_args.run_name, project=project_name)
         
@@ -327,17 +325,25 @@ def main():
         if data_args.max_predict_samples is not None:
             predict_dataset = predict_dataset.select(range(data_args.max_predict_samples))
 
-    # Log Samples to Weights & Biases
-    samples_table = wandb.Table(columns=['id', 'text'])
-    # Log a few random samples from the training set:
-    if training_args.do_train:
-        for index in random.sample(range(len(train_dataset)), 20):
-            logger.info(f"Sample {index} of the training set: {train_dataset[index]}.")
             
-            samples_table.add_data(index, train_dataset[index])
-    
-    wandb.log({f'samples/{data_args.dataset_name}_samples_table' : samples_table})
+    # ✍️ Log the training dataset as a Weights & Biases Table ✍️
+    #
+    # Create W&B Table
+    dataset_table = wandb.Table(columns=['id', 'label_id', 'label', 'text'])
+
+    # Add each row of data to the table
+    for index in range(len(train_dataset)):            
+        row = [index, 
+               model.config.id2label[train_dataset[index]['label']],                    
+               train_dataset[index]['label'], 
+               train_dataset[index]['text']
+              ]
+        dataset_table.add_data(*row)
+        
+    # Log the table to Weights & Biases
+    wandb.log({f'dataset/{data_args.dataset_name}_training_dataset' : dataset_table})
             
+        
     # Get the metric function
     metric = load_metric("accuracy")
 
