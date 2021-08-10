@@ -16,16 +16,8 @@
 """ Finetuning the library models for sequence classification"""
 # You can also adapt this script on your own text classification task. Pointers for this are left as comments.
 
-# Create a new run in to Weights & Biases and set the project name
-project_name = "hf-sagemaker"
-
-import os
-os.environ["WANDB_PROJECT"] = project_name
-
-import wandb
-wandb.init(project=project_name)
-
 # Imports
+import os
 import logging
 import random
 import sys
@@ -54,8 +46,7 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version
 from transformers.utils.versions import require_version
 
-import time
-time.sleep(90)
+import wandb
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.10.0.dev0")
@@ -82,7 +73,7 @@ class DataTrainingArguments:
     )
     task_name: Optional[str] = field(
         default=None,
-        metadata={"help": "The name of the task to train on: " + ", ".join(task_to_keys.keys())},
+        metadata={"help": "The name of the task to train on"},
     )
     max_seq_length: int = field(
         default=128,
@@ -171,6 +162,13 @@ def main():
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
+
+
+    # Create a new run in to Weights & Biases and set the project name
+#     os.environ["WANDB_PROJECT"] = project_name
+    project_name = "hf-sagemaker"
+    wandb.init(name=training_args.run_name, project=project_name)
+        
     # Setup logging
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -238,24 +236,18 @@ def main():
         model_args.config_name if model_args.config_name else model_args.model_name_or_path,
         num_labels=num_labels,
         finetuning_task=data_args.task_name,
-        cache_dir=model_args.cache_dir,
-        revision=model_args.model_revision,
-        use_auth_token=True if model_args.use_auth_token else None,
+        cache_dir=model_args.cache_dir,,
     )
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
         cache_dir=model_args.cache_dir,
         use_fast=model_args.use_fast_tokenizer,
-        revision=model_args.model_revision,
-        use_auth_token=True if model_args.use_auth_token else None,
     )
     model = AutoModelForSequenceClassification.from_pretrained(
         model_args.model_name_or_path,
         from_tf=bool(".ckpt" in model_args.model_name_or_path),
         config=config,
         cache_dir=model_args.cache_dir,
-        revision=model_args.model_revision,
-        use_auth_token=True if model_args.use_auth_token else None,
     )
 
     # Padding strategy
