@@ -1,2 +1,2 @@
 datasets>=1.11.0
-wandb>=0.11.2
+wandb>=0.12.0

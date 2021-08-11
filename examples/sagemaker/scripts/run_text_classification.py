@@ -166,6 +166,7 @@ def main():
     # ✍️ Create a new run in to Weights & Biases and set the project name ✍️
     project_name = "hf-sagemaker"
     wandb.init(name=training_args.run_name, project=project_name)
+    os.environ["WANDB_LOG_MODEL"] = "true"  # Hugging Face Trainer will use this to log model weights to W&B
         
     # Setup logging
     logging.basicConfig(
@@ -223,8 +224,8 @@ def main():
     else:
         # A useful fast method:
         # https://huggingface.co/docs/datasets/package_reference/main_classes.html#datasets.Dataset.unique
-        label_list = raw_datasets["train"].unique("label")
-        label_list.sort()  # Let's sort it for determinism
+#         label_list = raw_datasets["train"].unique("label")
+        label_list = raw_datasets["train"].features["label"].names
         num_labels = len(label_list)
 
     # Load pretrained model and tokenizer
@@ -254,26 +255,10 @@ def main():
     else:
         # We will pad later, dynamically at batch creation, to the max sequence length in each batch
         padding = False
-
-    # Some models have set the order of the labels to use, so let's make sure we do use it.
-    label_to_id = None
-    if (
-        model.config.label2id != PretrainedConfig(num_labels=num_labels).label2id
-        and data_args.task_name is not None
-        and not is_regression
-    ):
-        # Some have all caps in their config, some don't.
-        label_name_to_id = {k.lower(): v for k, v in model.config.label2id.items()}
-        if list(sorted(label_name_to_id.keys())) == list(sorted(label_list)):
-            label_to_id = {i: int(label_name_to_id[label_list[i]]) for i in range(num_labels)}
-        else:
-            logger.warning(
-                "Your model seems to have been trained with labels, but they don't match the dataset: ",
-                f"model labels: {list(sorted(label_name_to_id.keys()))}, dataset labels: {list(sorted(label_list))}."
-                "\nIgnoring the model labels as a result.",
-            )
-    elif data_args.task_name is None and not is_regression:
-        label_to_id = {v: i for i, v in enumerate(label_list)}
+        
+    
+    # Map labels to ids
+    label_to_id = {v: i for i, v in enumerate(label_list)}
 
     if label_to_id is not None:
         model.config.label2id = label_to_id
@@ -291,10 +276,10 @@ def main():
         result = tokenizer(examples['text'], padding=padding, max_length=max_seq_length, truncation=True)
 
         # Map labels to IDs (not necessary for GLUE tasks)
-        if label_to_id is not None and "label" in examples:
-            result["label"] = [(label_to_id[l] if l != -1 else -1) for l in examples["label"]]
+        if "label" in examples:
+            result["label"] = examples["label"]
         return result
-
+    
     with training_args.main_process_first(desc="dataset map pre-processing"):
         raw_datasets = raw_datasets.map(
             preprocess_function,
@@ -326,34 +311,107 @@ def main():
             predict_dataset = predict_dataset.select(range(data_args.max_predict_samples))
 
             
-    # ✍️ Log the training dataset as a Weights & Biases Table ✍️
-    #
-    # Create W&B Table
-    dataset_table = wandb.Table(columns=['id', 'label_id', 'label', 'text'])
+    # ✍️ Log the training and eval datasets as a Weights & Biases Tables ✍️
+    for d_idx, ds in enumerate([train_dataset, eval_dataset]):
+        
+        # Create W&B Table
+        dataset_table = wandb.Table(columns=['id', 'label_id', 'label', 'text'])
+        
+        # Ensure different row ids when logging train and eval data
+        if d_idx == 1:
+            idx_step = len(train_dataset)
+            nm = 'Eval'
+        else:
+            idx_step = 0
+            nm = 'Train'
+          
+        # Add each row of data to the table
+        for index in range(len(ds)):
+            idx = index + idx_step
+                
+            lbl = ds[index]['label']
+            row = [idx,                    
+                   lbl, 
+                   model.config.id2label[lbl],                
+                   ds[index]['text']
+                  ]
+            dataset_table.add_data(*row)
+        
+        # Log the table to Weights & Biases
+        wandb.log({f'{nm} Dataset Table/{data_args.dataset_name}_dataset' : dataset_table})
+         
+        
+    # ✍️  Setup to log predictions to a W&B Table during validation ✍️ 
+#     validation_inputs = eval_dataset.remove_columns(['label', 'attention_mask', 'input_ids'])
 
-    # Add each row of data to the table
-    for index in range(len(train_dataset)):            
-        row = [index, 
-               model.config.id2label[train_dataset[index]['label']],                    
-               train_dataset[index]['label'], 
-               train_dataset[index]['text']
-              ]
-        dataset_table.add_data(*row)
-        
-    # Log the table to Weights & Biases
-    wandb.log({f'dataset/{data_args.dataset_name}_training_dataset' : dataset_table})
-            
-        
+    # convert labels to their respective class
+#     validation_targets = eval_dataset['label']
+#     validation_targets = [model.config.id2label[x] for x in validation_targets]
+
+#     # Import the W&B ValidationDataLogger [in beta]
+#     from wandb.sdk.integration_utils.data_logging import ValidationDataLogger
+#     validation_logger = ValidationDataLogger(
+#         inputs = validation_inputs[:],
+#         targets = eval_dataset['label']
+#     )
+    
+
     # Get the metric function
     metric = load_metric("accuracy")
 
-    # You can define your custom compute_metrics function. It takes an `EvalPrediction` object (a namedtuple with a
-    # predictions and label_ids field) and has to return a dictionary string to float.
-    def compute_metrics(p: EvalPrediction):
-        preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
-        preds = np.squeeze(preds) if is_regression else np.argmax(preds, axis=1)
-        return {"accuracy": (preds == p.label_ids).astype(np.float32).mean().item()}
+#     # You can define your custom compute_metrics function. It takes an `EvalPrediction` object (a namedtuple with a
+#     # predictions and label_ids field) and has to return a dictionary string to float.
+#     def compute_metrics(p: EvalPrediction):
+#         preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
+#         preds = np.squeeze(preds) if is_regression else np.argmax(preds, axis=1)
+    
+# #         # ✍️ log predictions to W&B Validation Logger ✍️ 
+# #         preds_labels = [model.config.id2label[x.item()] for x in preds] # convert id to class, (0, 1, 2…) to label (Health, Science…)
+# #         validation_logger.log_predictions(preds_labels)
+        
+#         # Create W&B Table
+#         validation_table = wandb.Table(columns=['id', 'step', 'pred_label_id'])
+#         for i,p in enumerate(preds):
+#             idx = i + len(train_dataset)
+#             row = [idx, state.global_step, p]                    
+#             validation_table.add_data(*row)
+        
+#         # Log the table to Weights & Biases
+#         wandb.log({f'Eval Predictions/{data_args.dataset_name}_state.global_step' : validation_table}, commit=False)
+        
+#         return {"accuracy": (preds == p.label_ids).astype(np.float32).mean().item()}
 
+
+    class ComputeMetrics:
+        def __init__(self, train_len, eval_steps):
+            self.train_len = train_len
+            self.eval_steps = eval_steps
+            self.eval_step_count = eval_steps
+
+        def __call__(self, p: EvalPrediction):
+                preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
+                preds = np.squeeze(preds) if is_regression else np.argmax(preds, axis=1)
+
+                # Create W&B Table
+                validation_table = wandb.Table(columns=['id', 'step', 'pred_label_id'])
+                for i, val_pred in enumerate(preds):
+                    idx = i + len(train_dataset)
+                    row = [idx, self.eval_step_count, val_pred]                    
+                    validation_table.add_data(*row)
+
+                # Log the table to Weights & Biases
+                wandb.log(
+                    {f'Eval Predictions/{data_args.dataset_name}_step_{self.eval_step_count}' : validation_table}, 
+                    commit=False
+                )
+                
+                # increment step count
+                self.eval_step_count+=self.eval_steps
+                return {"accuracy": (preds == p.label_ids).astype(np.float32).mean().item()}
+        
+    compute_metrics = ComputeMetrics(len(train_dataset), training_args.eval_steps)
+
+    
     # Data collator will default to DataCollatorWithPadding, so we change it if we already did the padding.
     if data_args.pad_to_max_length:
         data_collator = default_data_collator
