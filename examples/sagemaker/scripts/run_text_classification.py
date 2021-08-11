@@ -405,10 +405,10 @@ def main():
                     for i, val_pred in enumerate(preds_idxs):
                         idx = i + len(train_dataset)
                         row = [idx, self.eval_step_count, val_pred, preds_vals[i]]                    
-                        self.validation_table.add_data(*row)
+                        validation_table.add_data(*row)
 
                     wandb.log({f'eval_predictions_table/{data_args.dataset_name}_preds_step_{self.eval_step_count}' : 
-                               self.validation_table}, commit=False)
+                               validation_table}, commit=False)
                     # increment step count
                     self.eval_step_count+=self.eval_steps
                 
