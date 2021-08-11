@@ -311,7 +311,7 @@ def main():
             predict_dataset = predict_dataset.select(range(data_args.max_predict_samples))
 
             
-    # ✍️ Log the training and eval datasets as a Weights & Biases Tables ✍️
+    # ✍️ Log the training and eval datasets as a Weights & Biases Tables to Artifacts ✍️
     for d_idx, ds in enumerate([train_dataset, eval_dataset]):
         
         # Create W&B Table
@@ -320,10 +320,10 @@ def main():
         # Ensure different row ids when logging train and eval data
         if d_idx == 1:
             idx_step = len(train_dataset)
-            nm = 'Eval'
+            nm = 'eval'
         else:
             idx_step = 0
-            nm = 'Train'
+            nm = 'train'
           
         # Add each row of data to the table
         for index in range(len(ds)):
@@ -338,8 +338,11 @@ def main():
             dataset_table.add_data(*row)
         
         # Log the table to Weights & Biases
-        wandb.log({f'{nm} Dataset Table/{data_args.dataset_name}_dataset' : dataset_table})
-         
+        dataset_artifact = wandb.Artifact(f"{data_args.dataset_name}_{nm}_dataset", type=f"{nm}_dataset")
+        dataset_artifact.add(dataset_table, f"{data_args.dataset_name}_{nm}")
+        wandb.log_artifact(dataset_artifact)   
+            
+            
         
     # ✍️  Setup to log predictions to a W&B Table during validation ✍️ 
 #     validation_inputs = eval_dataset.remove_columns(['label', 'attention_mask', 'input_ids'])
@@ -383,33 +386,35 @@ def main():
 
 
     class ComputeMetrics:
-        def __init__(self, train_len, eval_steps):
+        def __init__(self, train_len, eval_steps, log_predictions=False):
             self.train_len = train_len
             self.eval_steps = eval_steps
+            self.log_predictions = log_predictions
             self.eval_step_count = eval_steps
 
         def __call__(self, p: EvalPrediction):
                 preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
-                preds = np.squeeze(preds) if is_regression else np.argmax(preds, axis=1)
-
-                # Create W&B Table
-                validation_table = wandb.Table(columns=['id', 'step', 'pred_label_id'])
-                for i, val_pred in enumerate(preds):
-                    idx = i + len(train_dataset)
-                    row = [idx, self.eval_step_count, val_pred]                    
-                    validation_table.add_data(*row)
-
-                # Log the table to Weights & Biases
-                wandb.log(
-                    {f'Eval Predictions/{data_args.dataset_name}_step_{self.eval_step_count}' : validation_table}, 
-                    commit=False
-                )
+                preds_idxs = np.squeeze(preds) if is_regression else np.argmax(preds, axis=1)
+                preds_vals = np.max(preds, axis=1)
                 
-                # increment step count
-                self.eval_step_count+=self.eval_steps
-                return {"accuracy": (preds == p.label_ids).astype(np.float32).mean().item()}
+                # Create W&B Table
+                validation_table = wandb.Table(columns=['id', 'step', 'pred_label_id', 'pred_score'])
+                
+                if self.log_predictions:
+                    # Add predictions to your table
+                    for i, val_pred in enumerate(preds_idxs):
+                        idx = i + len(train_dataset)
+                        row = [idx, self.eval_step_count, val_pred, preds_vals[i]]                    
+                        self.validation_table.add_data(*row)
+
+                    wandb.log({f'eval_predictions_table/{data_args.dataset_name}_preds_step_{self.eval_step_count}' : 
+                               self.validation_table}, commit=False)
+                    # increment step count
+                    self.eval_step_count+=self.eval_steps
+                
+                return {"accuracy": (preds_idxs == p.label_ids).astype(np.float32).mean().item()}
         
-    compute_metrics = ComputeMetrics(len(train_dataset), training_args.eval_steps)
+    compute_metrics = ComputeMetrics(len(train_dataset), training_args.eval_steps, True)
 
     
     # Data collator will default to DataCollatorWithPadding, so we change it if we already did the padding.
