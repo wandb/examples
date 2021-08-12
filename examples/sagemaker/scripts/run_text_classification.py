@@ -342,47 +342,9 @@ def main():
         dataset_artifact.add(dataset_table, f"{data_args.dataset_name}_{nm}")
         wandb.log_artifact(dataset_artifact)   
             
-            
-        
-    # ✍️  Setup to log predictions to a W&B Table during validation ✍️ 
-#     validation_inputs = eval_dataset.remove_columns(['label', 'attention_mask', 'input_ids'])
-
-    # convert labels to their respective class
-#     validation_targets = eval_dataset['label']
-#     validation_targets = [model.config.id2label[x] for x in validation_targets]
-
-#     # Import the W&B ValidationDataLogger [in beta]
-#     from wandb.sdk.integration_utils.data_logging import ValidationDataLogger
-#     validation_logger = ValidationDataLogger(
-#         inputs = validation_inputs[:],
-#         targets = eval_dataset['label']
-#     )
     
-
     # Get the metric function
     metric = load_metric("accuracy")
-
-#     # You can define your custom compute_metrics function. It takes an `EvalPrediction` object (a namedtuple with a
-#     # predictions and label_ids field) and has to return a dictionary string to float.
-#     def compute_metrics(p: EvalPrediction):
-#         preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
-#         preds = np.squeeze(preds) if is_regression else np.argmax(preds, axis=1)
-    
-# #         # ✍️ log predictions to W&B Validation Logger ✍️ 
-# #         preds_labels = [model.config.id2label[x.item()] for x in preds] # convert id to class, (0, 1, 2…) to label (Health, Science…)
-# #         validation_logger.log_predictions(preds_labels)
-        
-#         # Create W&B Table
-#         validation_table = wandb.Table(columns=['id', 'step', 'pred_label_id'])
-#         for i,p in enumerate(preds):
-#             idx = i + len(train_dataset)
-#             row = [idx, state.global_step, p]                    
-#             validation_table.add_data(*row)
-        
-#         # Log the table to Weights & Biases
-#         wandb.log({f'Eval Predictions/{data_args.dataset_name}_state.global_step' : validation_table}, commit=False)
-        
-#         return {"accuracy": (preds == p.label_ids).astype(np.float32).mean().item()}
 
 
     class ComputeMetrics:
@@ -444,67 +406,26 @@ def main():
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
-        metrics = train_result.metrics
-        max_train_samples = (
-            data_args.max_train_samples if data_args.max_train_samples is not None else len(train_dataset)
-        )
-        metrics["train_samples"] = min(max_train_samples, len(train_dataset))
 
-        trainer.save_model()  # Saves the tokenizer too for easy upload
 
-        trainer.log_metrics("train", metrics)
-        trainer.save_metrics("train", metrics)
-        trainer.save_state()
+#     # Evaluation
+#     if training_args.do_eval:
+#         logger.info("*** Evaluate ***")
 
-    # Evaluation
-    if training_args.do_eval:
-        logger.info("*** Evaluate ***")
+#         tasks = [data_args.task_name]
+#         eval_datasets = [eval_dataset]
 
-        # Loop to handle MNLI double evaluation (matched, mis-matched)
-        tasks = [data_args.task_name]
-        eval_datasets = [eval_dataset]
-        if data_args.task_name == "mnli":
-            tasks.append("mnli-mm")
-            eval_datasets.append(raw_datasets["validation_mismatched"])
+#         for eval_dataset, task in zip(eval_datasets, tasks):
+#             metrics = trainer.evaluate(eval_dataset=eval_dataset)
 
-        for eval_dataset, task in zip(eval_datasets, tasks):
-            metrics = trainer.evaluate(eval_dataset=eval_dataset)
+#             max_eval_samples = (
+#                 data_args.max_eval_samples if data_args.max_eval_samples is not None else len(eval_dataset)
+#             )
+#             metrics["eval_samples"] = min(max_eval_samples, len(eval_dataset))
 
-            max_eval_samples = (
-                data_args.max_eval_samples if data_args.max_eval_samples is not None else len(eval_dataset)
-            )
-            metrics["eval_samples"] = min(max_eval_samples, len(eval_dataset))
+#             trainer.log_metrics("eval", metrics)
+#             trainer.save_metrics("eval", metrics)
 
-            trainer.log_metrics("eval", metrics)
-            trainer.save_metrics("eval", metrics)
-
-    if training_args.do_predict:
-        logger.info("*** Predict ***")
-
-        # Loop to handle MNLI double evaluation (matched, mis-matched)
-        tasks = [data_args.task_name]
-        predict_datasets = [predict_dataset]
-        if data_args.task_name == "mnli":
-            tasks.append("mnli-mm")
-            predict_datasets.append(raw_datasets["test_mismatched"])
-
-        for predict_dataset, task in zip(predict_datasets, tasks):
-            # Removing the `label` columns because it contains -1 and Trainer won't like that.
-            predict_dataset = predict_dataset.remove_columns("label")
-            predictions = trainer.predict(predict_dataset, metric_key_prefix="predict").predictions
-            predictions = np.squeeze(predictions) if is_regression else np.argmax(predictions, axis=1)
-
-            output_predict_file = os.path.join(training_args.output_dir, f"predict_results_{task}.txt")
-            if trainer.is_world_process_zero():
-                with open(output_predict_file, "w") as writer:
-                    logger.info(f"***** Predict results {task} *****")
-                    writer.write("index\tprediction\n")
-                    for index, item in enumerate(predictions):
-                        if is_regression:
-                            writer.write(f"{index}\t{item:3.3f}\n")
-                        else:
-                            item = label_list[item]
-                            writer.write(f"{index}\t{item}\n")
 
 def _mp_fn(index):
     # For xla_spawn (TPUs)
