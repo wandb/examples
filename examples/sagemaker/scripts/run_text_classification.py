@@ -1,20 +1,7 @@
 #!/usr/bin/env python
-# coding=utf-8
-# Copyright 2020 The HuggingFace Inc. team. All rights reserved.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-""" Finetuning the library models for sequence classification"""
-# You can also adapt this script on your own text classification task. Pointers for this are left as comments.
+# This file is a modified version of the Hugging Face example training scipt
+# which can be found here: https://github.com/huggingface/transformers/tree/master/examples/pytorch/text-classification
 
 # Imports
 import os
@@ -26,7 +13,7 @@ from typing import Optional
 
 import datasets
 import numpy as np
-from datasets import load_dataset, load_metric
+from datasets import load_dataset, load_from_disk, load_metric
 
 import transformers
 from transformers import (
@@ -165,8 +152,17 @@ def main():
 
     # ✍️ Create a new run in to Weights & Biases and set the project name ✍️
     project_name = "hf-sagemaker"
-    wandb.init(name=training_args.run_name, project=project_name)
-    os.environ["WANDB_LOG_MODEL"] = "true"  # Hugging Face Trainer will use this to log model weights to W&B
+    job_type=None
+    if training_args.run_name == 'tmp':
+        name = f"{model_args.model_name_or_path}_{training_args.learning_rate}_{training_args.warmup_steps}"
+    elif "hpt" in training_args.run_name:
+        name = f"HypTn_{model_args.model_name_or_path}_{training_args.learning_rate}_{training_args.warmup_steps}"
+        job_type='HyperparameterTuning'
+    else:
+        name = training_args.run_name
+        
+    wandb.init(name=name, project=project_name, job_type=job_type)
+    os.environ["WANDB_LOG_MODEL"] = "TRUE"  # Hugging Face Trainer will use this to log model weights to W&B
         
     # Setup logging
     logging.basicConfig(
@@ -207,7 +203,20 @@ def main():
     # Set seed before initializing model.
     set_seed(training_args.seed)
 
-    if data_args.dataset_name is not None:
+    if data_args.dataset_name == 'banking77_artifacts':
+        
+        # Download the tokenized Datasets from W&B Artifacts and load to HF Datasets object
+        for split in ['train', 'eval']:
+            pth = f'./{split}'
+            nm = f"{split}_{model_args.model_name_or_path.split('/')[-1]}_tokenized"
+            artifact = wandb.use_artifact(f'morgan/hf-sagemaker/{nm}:v0', type=f'{split}_tokenized_dataset')
+            artifact_dir = artifact.download(pth)
+            if split == 'train':
+                train_dataset = load_from_disk(pth)
+            else:
+                eval_dataset = load_from_disk(pth)
+        
+    elif data_args.dataset_name is not None:
         raw_datasets = load_dataset(
             data_args.dataset_name, data_args.dataset_config_name, cache_dir=model_args.cache_dir
         )
@@ -217,16 +226,13 @@ def main():
             )
 
     # Labels
-    # Trying to have good defaults here, don't hesitate to tweak to your needs.
-    is_regression = raw_datasets["train"].features["label"].dtype in ["float32", "float64"]
-    if is_regression:
-        num_labels = 1
-    else:
-        # A useful fast method:
-        # https://huggingface.co/docs/datasets/package_reference/main_classes.html#datasets.Dataset.unique
-#         label_list = raw_datasets["train"].unique("label")
+    is_regression = False
+    if data_args.dataset_name == 'banking77_artifacts':
+        label_list = train_dataset.features["label"].names
+    else: 
         label_list = raw_datasets["train"].features["label"].names
-        num_labels = len(label_list)
+    
+    num_labels = len(label_list)
 
     # Load pretrained model and tokenizer
     # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
@@ -280,72 +286,65 @@ def main():
             result["label"] = examples["label"]
         return result
     
-    with training_args.main_process_first(desc="dataset map pre-processing"):
-        raw_datasets = raw_datasets.map(
-            preprocess_function,
-            batched=True,
-            load_from_cache_file=not data_args.overwrite_cache,
-            desc="Running tokenizer on dataset",
-        )
-    if training_args.do_train:
-        if "train" not in raw_datasets:
-            raise ValueError("--do_train requires a train dataset")
-        train_dataset = raw_datasets["train"]
-        if data_args.max_train_samples is not None:
-            train_dataset = train_dataset.select(range(data_args.max_train_samples))
+    if data_args.dataset_name != 'banking77_artifacts':
+        with training_args.main_process_first(desc="dataset map pre-processing"):
+            raw_datasets = raw_datasets.map(
+                preprocess_function,
+                batched=True,
+                load_from_cache_file=not data_args.overwrite_cache,
+                desc="Running tokenizer on dataset",
+            )
+        if training_args.do_train:
+            if "train" not in raw_datasets:
+                raise ValueError("--do_train requires a train dataset")
+            train_dataset = raw_datasets["train"]
+            if data_args.max_train_samples is not None:
+                train_dataset = train_dataset.select(range(data_args.max_train_samples))
 
-    if training_args.do_eval:
-        if "validation" not in raw_datasets and "validation_matched" not in raw_datasets and "test" in raw_datasets:
-            raw_datasets['validation'] = raw_datasets['test']
-        elif "validation" not in raw_datasets and "validation_matched" not in raw_datasets and "test" not in raw_datasets:
-            raise ValueError("--do_eval requires a validation dataset")
-        eval_dataset = raw_datasets["validation_matched" if data_args.task_name == "mnli" else "validation"]
-        if data_args.max_eval_samples is not None:
-            eval_dataset = eval_dataset.select(range(data_args.max_eval_samples))
+        if training_args.do_eval:
+            if "validation" not in raw_datasets and "validation_matched" not in raw_datasets and "test" in raw_datasets:
+                raw_datasets['validation'] = raw_datasets['test']
+            elif "validation" not in raw_datasets and "validation_matched" not in raw_datasets and "test" not in raw_datasets:
+                raise ValueError("--do_eval requires a validation dataset")
+            eval_dataset = raw_datasets["validation_matched" if data_args.task_name == "mnli" else "validation"]
+            if data_args.max_eval_samples is not None:
+                eval_dataset = eval_dataset.select(range(data_args.max_eval_samples))
 
-    if training_args.do_predict or data_args.task_name is not None or data_args.test_file is not None:
-        if "test" not in raw_datasets and "test_matched" not in raw_datasets:
-            raise ValueError("--do_predict requires a test dataset")
-        predict_dataset = raw_datasets["test_matched" if data_args.task_name == "mnli" else "test"]
-        if data_args.max_predict_samples is not None:
-            predict_dataset = predict_dataset.select(range(data_args.max_predict_samples))
-
-            
-    # ✍️ Log the training and eval datasets as a Weights & Biases Tables to Artifacts ✍️
-    for d_idx, ds in enumerate([train_dataset, eval_dataset]):
-        
-        # Create W&B Table
-        dataset_table = wandb.Table(columns=['id', 'label_id', 'label', 'text'])
-        
-        # Ensure different row ids when logging train and eval data
-        if d_idx == 1:
-            idx_step = len(train_dataset)
-            nm = 'eval'
-        else:
-            idx_step = 0
-            nm = 'train'
-          
-        # Add each row of data to the table
-        for index in range(len(ds)):
-            idx = index + idx_step
                 
-            lbl = ds[index]['label']
-            row = [idx,                    
-                   lbl, 
-                   model.config.id2label[lbl],                
-                   ds[index]['text']
-                  ]
-            dataset_table.add_data(*row)
+#     # ✍️ Log the training and eval datasets as a Weights & Biases Tables to Artifacts ✍️
+#     for d_idx, ds in enumerate([train_dataset, eval_dataset]):
         
-        # Log the table to Weights & Biases
-        dataset_artifact = wandb.Artifact(f"{data_args.dataset_name}_{nm}_dataset", type=f"{nm}_dataset")
-        dataset_artifact.add(dataset_table, f"{data_args.dataset_name}_{nm}")
-        wandb.log_artifact(dataset_artifact)   
+#         # Create W&B Table
+#         dataset_table = wandb.Table(columns=['id', 'label_id', 'label', 'text'])
+        
+#         # Ensure different row ids when logging train and eval data
+#         if d_idx == 1:
+#             idx_step = len(train_dataset)
+#             nm = 'eval'
+#         else:
+#             idx_step = 0
+#             nm = 'train'
+          
+#         # Add each row of data to the table
+#         for index in range(len(ds)):
+#             idx = index + idx_step
+                
+#             lbl = ds[index]['label']
+#             row = [idx,                    
+#                    lbl, 
+#                    model.config.id2label[lbl],                
+#                    ds[index]['text']
+#                   ]
+#             dataset_table.add_data(*row)
+        
+#         # Log the table to Weights & Biases
+#         dataset_artifact = wandb.Artifact(f"{data_args.dataset_name}_{nm}_dataset", type=f"{nm}_dataset")
+#         dataset_artifact.add(dataset_table, f"{data_args.dataset_name}_{nm}")
+#         wandb.log_artifact(dataset_artifact)   
             
     
     # Get the metric function
     metric = load_metric("accuracy")
-
 
     class ComputeMetrics:
         def __init__(self, train_len, eval_steps, log_predictions=False):
@@ -376,7 +375,7 @@ def main():
                 
                 return {"accuracy": (preds_idxs == p.label_ids).astype(np.float32).mean().item()}
         
-    compute_metrics = ComputeMetrics(len(train_dataset), training_args.eval_steps, True)
+    compute_metrics = ComputeMetrics(len(train_dataset), training_args.eval_steps, False)
 
     
     # Data collator will default to DataCollatorWithPadding, so we change it if we already did the padding.
@@ -407,26 +406,9 @@ def main():
             checkpoint = last_checkpoint
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
 
+    wandb.finish()
 
-#     # Evaluation
-#     if training_args.do_eval:
-#         logger.info("*** Evaluate ***")
-
-#         tasks = [data_args.task_name]
-#         eval_datasets = [eval_dataset]
-
-#         for eval_dataset, task in zip(eval_datasets, tasks):
-#             metrics = trainer.evaluate(eval_dataset=eval_dataset)
-
-#             max_eval_samples = (
-#                 data_args.max_eval_samples if data_args.max_eval_samples is not None else len(eval_dataset)
-#             )
-#             metrics["eval_samples"] = min(max_eval_samples, len(eval_dataset))
-
-#             trainer.log_metrics("eval", metrics)
-#             trainer.save_metrics("eval", metrics)
-
-
+    
 def _mp_fn(index):
     # For xla_spawn (TPUs)
     main()
