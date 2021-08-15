@@ -162,6 +162,7 @@ def main():
         name = training_args.run_name
         
     wandb.init(name=name, project=project_name, job_type=job_type)
+    wandb._label('sagemaker-hf')
     os.environ["WANDB_LOG_MODEL"] = "TRUE"  # Hugging Face Trainer will use this to log model weights to W&B
         
     # Setup logging
