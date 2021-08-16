@@ -1,2 +1,3 @@
+git+https://github.com/huggingface/transformers.git
 datasets>=1.11.0
 wandb>=0.12.0
