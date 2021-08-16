@@ -152,10 +152,9 @@ def main():
 
     # ✍️ Create a new run in to Weights & Biases and set the project name ✍️
     project_name = "hf-sagemaker"
-    job_type=None
+    job_type='Training'
     if training_args.run_name == 'tmp':
         name = f"{model_args.model_name_or_path}_{training_args.learning_rate}_{training_args.warmup_steps}"
-        job_type='Training'
     elif "hpt" in training_args.run_name:
         name = f"HypTn_{model_args.model_name_or_path}_{training_args.learning_rate}_{training_args.warmup_steps}"
         job_type='HyperparameterTuning'
@@ -313,36 +312,38 @@ def main():
                 eval_dataset = eval_dataset.select(range(data_args.max_eval_samples))
 
                 
-#     # ✍️ Log the training and eval datasets as a Weights & Biases Tables to Artifacts ✍️
-#     for d_idx, ds in enumerate([train_dataset, eval_dataset]):
-        
-#         # Create W&B Table
-#         dataset_table = wandb.Table(columns=['id', 'label_id', 'label', 'text'])
-        
-#         # Ensure different row ids when logging train and eval data
-#         if d_idx == 1:
-#             idx_step = len(train_dataset)
-#             nm = 'eval'
-#         else:
-#             idx_step = 0
-#             nm = 'train'
-          
-#         # Add each row of data to the table
-#         for index in range(len(ds)):
-#             idx = index + idx_step
-                
-#             lbl = ds[index]['label']
-#             row = [idx,                    
-#                    lbl, 
-#                    model.config.id2label[lbl],                
-#                    ds[index]['text']
-#                   ]
-#             dataset_table.add_data(*row)
-        
-#         # Log the table to Weights & Biases
-#         dataset_artifact = wandb.Artifact(f"{data_args.dataset_name}_{nm}_dataset", type=f"{nm}_dataset")
-#         dataset_artifact.add(dataset_table, f"{data_args.dataset_name}_{nm}")
-#         wandb.log_artifact(dataset_artifact)   
+    # ✍️ Log the training and eval datasets as a Weights & Biases Tables to Artifacts ✍️
+    # Log only if we are not doing a hyperparameter sweep
+    if "hpt" not in training_args.run_name:        
+        for d_idx, ds in enumerate([train_dataset, eval_dataset]):
+
+            # Create W&B Table
+            dataset_table = wandb.Table(columns=['id', 'label_id', 'label', 'text'])
+
+            # Ensure different row ids when logging train and eval data
+            if d_idx == 1:
+                idx_step = len(train_dataset)
+                nm = 'eval'
+            else:
+                idx_step = 0
+                nm = 'train'
+
+            # Add each row of data to the table
+            for index in range(len(ds)):
+                idx = index + idx_step
+
+                lbl = ds[index]['label']
+                row = [idx,                    
+                       lbl, 
+                       model.config.id2label[lbl],                
+                       ds[index]['text']
+                      ]
+                dataset_table.add_data(*row)
+
+            # Log the table to Weights & Biases
+            dataset_artifact = wandb.Artifact(f"{data_args.dataset_name}_{nm}_dataset", type=f"{nm}_dataset")
+            dataset_artifact.add(dataset_table, f"{data_args.dataset_name}_{nm}")
+            wandb.log_artifact(dataset_artifact)   
             
     
     # Get the metric function
@@ -376,8 +377,11 @@ def main():
                     self.eval_step_count+=self.eval_steps
                 
                 return {"accuracy": (preds_idxs == p.label_ids).astype(np.float32).mean().item()}
-        
-    compute_metrics = ComputeMetrics(len(train_dataset), training_args.eval_steps, False)
+    
+    
+    # ✍️ Log the evaluation predictions at each evaluation to W&B Tables for model evaluation ✍️
+    log_preds_to_wandb = "hpt" not in training_args.run_name
+    compute_metrics = ComputeMetrics(len(train_dataset), training_args.eval_steps, log_preds_to_wandb)
 
     
     # Data collator will default to DataCollatorWithPadding, so we change it if we already did the padding.
@@ -403,7 +407,7 @@ def main():
     if training_args.do_train:
         train_result = trainer.train()
     
-    # Finish the W&B run to tidy up the process
+    # ✍️ Finish the W&B run to tidy up the process ✍️
     wandb.finish()
     
     # Delete tmp folder to free up space on disk
