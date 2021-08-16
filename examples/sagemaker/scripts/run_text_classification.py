@@ -155,6 +155,7 @@ def main():
     job_type=None
     if training_args.run_name == 'tmp':
         name = f"{model_args.model_name_or_path}_{training_args.learning_rate}_{training_args.warmup_steps}"
+        job_type='Training'
     elif "hpt" in training_args.run_name:
         name = f"HypTn_{model_args.model_name_or_path}_{training_args.learning_rate}_{training_args.warmup_steps}"
         job_type='HyperparameterTuning'
@@ -162,7 +163,7 @@ def main():
         name = training_args.run_name
         
     wandb.init(name=name, project=project_name, job_type=job_type)
-    wandb._label('sagemaker-hf')
+    wandb.run._label('sagemaker-hf')
     os.environ["WANDB_LOG_MODEL"] = "TRUE"  # Hugging Face Trainer will use this to log model weights to W&B
         
     # Setup logging
@@ -400,15 +401,14 @@ def main():
 
     # Training
     if training_args.do_train:
-        checkpoint = None
-        if training_args.resume_from_checkpoint is not None:
-            checkpoint = training_args.resume_from_checkpoint
-        elif last_checkpoint is not None:
-            checkpoint = last_checkpoint
-        train_result = trainer.train(resume_from_checkpoint=checkpoint)
-
+        train_result = trainer.train()
+    
+    # Finish the W&B run to tidy up the process
     wandb.finish()
-
+    
+    # Delete tmp folder to free up space on disk
+    os.system(f"rm -rf {training_args.output_dir}")
+    
     
 def _mp_fn(index):
     # For xla_spawn (TPUs)
