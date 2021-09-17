@@ -12,7 +12,7 @@ Save everything you need to compare and reproduce models — architecture, hyper
 **Check out our libraries of [example scripts](https://github.com/wandb/examples/tree/master/examples) and [example colabs](https://github.com/wandb/examples/tree/master/colabs)**
 or read on for code snippets and more!
 
-If you have any questions, please don't hesitate to ask in our [Slack community](http://wandb.me/slack).
+If you have any questions, please don't hesitate to ask in our [Discourse forum](http://wandb.me/and-you).
 
 # 🤝 Simple integration with any framework
 Install `wandb` library and login:
@@ -40,7 +40,7 @@ for i in range (10):
 
 ### [Try in a colab →](http://wandb.me/intro-colab)
 
-If you have any questions, please don't hesitate to ask in our [Slack community](http://wandb.me/slack).
+If you have any questions, please don't hesitate to ask in our [Discourse forum](http://wandb.me/and-you).
 
 ![](https://i.imgur.com/TU34QFZ.png)
 
