@@ -28,7 +28,7 @@
 | Model/Data Versioning with Artifacts (Keras) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/artifacts-fast-colab) |
 | Selecting Hyperparameters with Sweeps (PyTorch)  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/sweeps-colab) |
 | Selecting Hyperparameters with Sweeps (Keras)  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/tf-sweeps-colab) |
-| Visualize Datasets and Predictions  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/dsviz-nature-colab) |
+| Visualize Datasets and Predictions with Tables  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/dsviz-nature-colab) |
 
 # ✨ Other
 
