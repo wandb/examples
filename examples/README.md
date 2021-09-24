@@ -1,8 +1,8 @@
-<img src="https://i.imgur.com/gb6B4ig.png" width="400" alt="Weights & Biases" />
+<img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
 
 <div><img /></div>
 
-<img src="https://i.imgur.com/uEtWSEb.png" width="650" alt="Weights & Biases" />
+<img src="https://wandb.me/mini-diagram" width="650" alt="Weights & Biases" />
 
 # 👩🏽‍🏫 Examples
 
