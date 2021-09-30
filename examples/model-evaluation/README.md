@@ -25,24 +25,26 @@ python dataset_generator.py
 
 ### 3. Train some models
 
-Train a model based on the latest available dataset for the given model use case.
+Train a model based on the latest available dataset for the given model use case. Change
+hyperparameters to get different versions of the model.
 
 ```shell
 python model_trainer.py
-```
-
-Next, tweak some hyperparameters and re-run the model. You'll be able to compare
-training performance for different models in the W&B dashboard. 
-
-For example:
-```shell
 python model_trainer.py --validation_split 0.05
+python model_trainer.py --batch_size 64
 ```
-
 
 ### 4. Evaluate candidate models
 
-This script represents a workload that:
+Next, run a model evaluation job that:
 1. Finds all models that haven't yet been evaluated on the latest evaluation dataset
 2. Runs the evaluation job for each model
 3. Labels the best model "production" to feed into an inference system
+
+```shell
+python model_evaluator.py
+```
+
+### 5. Visualize results
+
+Create tables to visualize your results. Here's [an example report](https://wandb.ai/timssweeney/model_registry_example/reports/MNIST-Model-Status--Vmlldzo4OTIyNTA) that captures and compares trained models.
