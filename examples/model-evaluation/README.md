@@ -48,3 +48,5 @@ python model_evaluator.py
 ### 5. Visualize results
 
 Create tables to visualize your results. Here's [an example report](https://wandb.ai/timssweeney/model_registry_example/reports/MNIST-Model-Status--Vmlldzo4OTIyNTA) that captures and compares trained models.
+
+Learn more in the [Model Management docs](https://docs.wandb.ai/guides/models).
