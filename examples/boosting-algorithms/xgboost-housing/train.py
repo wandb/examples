@@ -2,7 +2,7 @@ import xgboost as xgb
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
-from sklearn.datasets import load_boston
+from sklearn.datasets import fetch_california_housing
 import pandas as pd
 import numpy as np
 import wandb
@@ -11,8 +11,8 @@ import wandb
 wandb.init()
 
 # load data
-boston = load_boston()
-data = pd.DataFrame(boston.data)
+housing = fetch_california_housing()
+data = pd.DataFrame(housing.data)
 X, y = data.iloc[:,:-1],data.iloc[:,-1]
 data_dmatrix = xgb.DMatrix(data=X,label=y)
 
