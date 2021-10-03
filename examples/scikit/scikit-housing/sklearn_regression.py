@@ -1,16 +1,16 @@
-from sklearn.datasets import load_boston
+from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import Ridge
 import pandas as pd
 import wandb
 
 # initialize wandb run
-wandb.init()
+wandb.init(project="housing-demo")
 
 # Load data
-boston = load_boston()
-X = pd.DataFrame(boston.data, columns=boston.feature_names)
-y = boston.target
+housing = fetch_california_housing()
+X = pd.DataFrame(housing.data, columns=housing.feature_names)
+y = housing.target
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 # Train model, get predictions
