@@ -186,6 +186,6 @@ Trains a ridge regression model on the [California Housing Dataset](https://scik
 using scikit-learn and logs the results to W&B.
 
 ```
-cd examples/examples/scikit/scikit-regression
+cd examples/examples/scikit/scikit-housing
 python train.py
 ```
