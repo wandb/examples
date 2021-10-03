@@ -5,7 +5,7 @@ import pandas as pd
 import wandb
 
 # initialize wandb run
-wandb.init(project="housing-demo")
+wandb.init(project="regression-housing-demo")
 
 # Load data
 housing = fetch_california_housing()

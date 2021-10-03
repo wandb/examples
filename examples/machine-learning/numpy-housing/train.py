@@ -1,15 +1,15 @@
-from sklearn.datasets import load_boston
+from sklearn.datasets import fetch_california_housing
 import numpy as np
 import wandb
 
-wandb.init()
+wandb.init(project="numpy-housing-demo")
 
 # Save hyperparameters
 wandb.config.lr = 0.000001
 wandb.config.epochs = 1
 
 # Load Dataset
-data, target = load_boston(return_X_y=True)
+data, target = fetch_california_housing(return_X_y=True)
 
 # Initialize model
 weights = np.zeros(data.shape[1])

@@ -8,7 +8,7 @@ import numpy as np
 import wandb
 
 # initialize wandb run
-wandb.init()
+wandb.init(project="xgboost-housing-demo")
 
 # load data
 housing = fetch_california_housing()
