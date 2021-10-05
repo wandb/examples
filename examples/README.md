@@ -180,7 +180,7 @@ cd examples/examples/scikit/scikit-iris
 python train.py
 ```
 
-### 🏡 [scikit-regression](https://github.com/wandb/examples/tree/master/examples/scikit/scikit-housing)
+### 🏡 [scikit-housing](https://github.com/wandb/examples/tree/master/examples/scikit/scikit-housing)
 
 Trains a ridge regression model on the [California Housing Dataset](https://scikit-learn.org/stable/datasets/real_world.html#california-housing-dataset)
 using scikit-learn and logs the results to W&B.
