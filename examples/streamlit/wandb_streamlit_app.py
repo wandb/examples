@@ -54,39 +54,37 @@ def main():
 
         selected_project = "Log-Example-HTML"
         if selected_project in projects:
-            try:
-                selected_artifact = "demo_artifacts"
-                selected_html_file_name = "demo_html"
+            selected_artifact = "demo_artifacts"
+            selected_html_file_name = "demo_html"
 
-                # We load the run from the api and then gather the artifacts to display
-                selected_project_path = f"{entity}/{selected_project}"
+            # We load the run from the api and then gather the artifacts to display
+            selected_project_path = f"{entity}/{selected_project}"
 
-                # We download all the artifacts to access for the demo
-                demo_artifact_path = get_wandb_demo_artifact(
-                    selected_project_path)
+            # We download all the artifacts to access for the demo
+            demo_artifact_path = get_wandb_demo_artifact(
+                selected_project_path)
 
-                # A couple of steps are needed to properly load reload the html in via WANDB
-                # Use metadata file to find path to the actual html
-                # this value is in the `path` key
-                demo_html_meta_path = Path(
-                    demo_artifact_path, f"{selected_html_file_name}.html-file.json")
-                with open(demo_html_meta_path, "rb") as f:
-                    demo_html_meta = json.load(f)
+            # A couple of steps are needed to properly load reload the html in via WANDB
+            # Use metadata file to find path to the actual html
+            # this value is in the `path` key
+            demo_html_meta_path = Path(
+                demo_artifact_path, f"{selected_html_file_name}.html-file.json")
+            with open(demo_html_meta_path, "rb") as f:
+                demo_html_meta = json.load(f)
 
-                # Read the contents of the html file into a string to be rendered by streamlit
-                demo_html_path = Path(demo_artifact_path,
-                                      demo_html_meta["path"])
-                demo_html = open(demo_html_path, "r")
-                demo_html_contents = demo_html.read()
+            # Read the contents of the html file into a string to be rendered by streamlit
+            demo_html_path = Path(demo_artifact_path,
+                                  demo_html_meta["path"])
+            demo_html = open(demo_html_path, "r")
+            demo_html_contents = demo_html.read()
 
-                st.text(
-                    "Our experiment was able to be logged to WANDB with an artifact containing HTML 🛠")
-                st.text(
-                    "We can now pull these artifacts to be used within our application 🙌🏽")
-                st.text("Below is our rendered HTML text")
-                components.html(demo_html_contents, height=height)
-            except:
-                st.text("Please run experiment via the provided button!")
+            st.text(
+                "Our experiment was able to be logged to WANDB with an artifact containing HTML 🛠")
+            st.text(
+                "We can now pull these artifacts to be used within our application 🙌🏽")
+            st.text("Below is our rendered HTML text")
+            components.html(demo_html_contents, height=height)
+            # st.text("Please run experiment via the provided button!")
 
             # demo_html.close()
 
