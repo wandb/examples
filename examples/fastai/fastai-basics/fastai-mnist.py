@@ -1,5 +1,5 @@
-from fastai.vision.all import *
 import wandb
+from fastai.vision.all import *
 from fastai.callback.wandb import *
 
 # build MNIST dataloaders
