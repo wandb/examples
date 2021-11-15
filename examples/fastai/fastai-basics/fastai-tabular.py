@@ -11,7 +11,7 @@ dls = TabularDataLoaders.from_csv(path/'adult.csv', path=path, y_names="salary",
     procs = [Categorify, FillMissing, Normalize])
 
 # start a run
-wandb.init()
+wandb.init(project='fastai-tabular')
 
 # create a learner and train
 learn = tabular_learner(dls, metrics=accuracy, cbs=[WandbCallback()])

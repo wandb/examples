@@ -16,7 +16,7 @@ dls = SegmentationDataLoaders.from_label_func(
 )
 
 # start a run
-wandb.init()
+wandb.init(project='fastai-segmentation')
 
 # create a learner and log dataset & model
 learn = unet_learner(dls, resnet18, cbs=[WandbCallback(log_model=True, log_dataset=True), SaveModelCallback()])
