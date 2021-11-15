@@ -1,5 +1,5 @@
-from fastai.tabular.all import *
 import wandb
+from fastai.tabular.all import *
 from fastai.callback.wandb import *
 
 # create dataloaders
