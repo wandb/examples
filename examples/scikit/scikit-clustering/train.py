@@ -1,9 +1,8 @@
-import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans, DBSCAN, AgglomerativeClustering
-from sklearn import datasets, cluster
-from sklearn.datasets import load_iris
-import numpy as np
+# import packages
 import wandb
+import numpy as np
+from sklearn import datasets
+from sklearn.cluster import KMeans
 
 # initialize wandb run
 wandb.init()
@@ -21,5 +20,8 @@ labels = get_label_ids(y)
 kmeans = KMeans(n_clusters=4, random_state=1)
 cluster_labels = kmeans.fit_predict(X)
 
-# wandb.sklearn.plot_elbow_curve(kmeans, X)
+# Plot panels to W&B
 wandb.sklearn.plot_clusterer(kmeans, X, cluster_labels, labels, 'KMeans')
+
+# Finish the W&B Process
+wandb.finish()
