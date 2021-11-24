@@ -18,7 +18,6 @@ def main():
     height = 720
 
     projects = get_projects(entity, height=720)
-
     if menu_choice == 'Embed WANDB':
         st.subheader("WANDB IFrame test")
 
@@ -28,7 +27,7 @@ def main():
         selected_project = st.sidebar.selectbox(
             "Project Name", list(projects.keys()))
         selected_project_iframe = projects[selected_project]
-        st.text("Using the WANDB API we can directly query project and run page links which we can use to embed Iframes")
+        st.text_area("Using the WANDB API we can directly query project and run page links which we can use to embed Iframes")
         st.subheader("PROJECT DETAILS:")
         components.html(selected_project_iframe, height=height)
 
@@ -54,7 +53,6 @@ def main():
 
         selected_project = "Log-Example-HTML"
         if selected_project in projects:
-            selected_artifact = "demo_artifacts"
             selected_html_file_name = "demo_html"
 
             # We load the run from the api and then gather the artifacts to display
