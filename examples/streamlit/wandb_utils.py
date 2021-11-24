@@ -62,23 +62,29 @@ def get_wandb_demo_artifact(project_path):
     return artifact_dir
 
 
-def save_webpage_to_html(url, dest_path="example.html"):
-    import urllib.request
-    import urllib.error
-    import urllib.parse
+def save_example_html(dest_path="example.html"):
 
-    response = urllib.request.urlopen(url)
-    content = response.read()
+    with open(dest_path, 'w') as f:
+        content = """
+        <!DOCTYPE html>
+        <html>
+        <body>
 
-    f = open(dest_path, 'wb')
-    f.write(content)
-    f.close
+        <h1 style="color:blue">Example HTML</h1>
+        <p style="color:blue">This HTML is logged and tracked as a W&B Artifact. 
+        You can log anything as a W&B Artifact including models & datasets and they will be tracked and versioned anytime you update them.
+        </p>
+
+        </body>
+        </html>
+        """
+        f.write(content)
 
 
 def log_example_html_to_wandb():
     run = wandb.init(project="Log-Example-HTML")
     dest_path = "example.html"
-    save_webpage_to_html(url="http://example.com", dest_path=dest_path)
+    save_example_html(dest_path=dest_path)
 
     demo_artifacts = wandb.Artifact("demo_artifacts", type="demo")
     demo_html = wandb.Html(dest_path)
