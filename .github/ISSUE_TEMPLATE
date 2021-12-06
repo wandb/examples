@@ -1,0 +1,21 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees:
+  - tcapelle
+  - scottire 
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Just to be sure, this is an issue about one of our examples right? If you encounter problems with the python library `wandb` please fill an issue at https://github.com/wandb/client.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Tell us what happen, in which example?
+      placeholder: Tell us what you see!
+      value: "Please tell us which example failed and why. Please link the wandb.ai logs if you have one."
+    validations:
+      required: true
