@@ -1,6 +1,6 @@
 name: Example Request
 description: Request and example of wandb
-title: "[Reqeust]: "
+title: "[Request]: "
 labels: ["library-integration", "wandb-feature", "other"]
 assignees:
   - tcapelle
