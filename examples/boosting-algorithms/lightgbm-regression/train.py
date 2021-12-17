@@ -1,6 +1,6 @@
 # import wandb and the lightgbm callback
 import wandb
-from wandb.lightgbm import wandb_callback
+from wandb.lightgbm import log_summary, wandb_callback
 import lightgbm as lgb
 import pandas as pd
 from sklearn.metrics import mean_squared_error
@@ -47,10 +47,13 @@ gbm = lgb.train(params,
                 num_boost_round=20,
                 valid_sets=lgb_eval,
                 valid_names=('validation'),
-                callbacks=[wandb_callback()],
-                early_stopping_rounds=5)
+                callbacks=[wandb_callback(),
+                           lgb.early_stopping(stopping_rounds=5)])
 
 # predict
 y_pred = gbm.predict(X_test, num_iteration=gbm.best_iteration)
 # eval
 print('The rmse of prediction is:', mean_squared_error(y_test, y_pred) ** 0.5)
+
+# log feature importance and model checkpoint 
+log_summary(gbm, save_model_checkpoint=True)
