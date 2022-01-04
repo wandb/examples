@@ -10,7 +10,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to fill out this bug report! 
-        ## Client Bug 🐛
+        ## `wandb` Library Bug 🐛
         Just to be sure, this is an issue about one of our examples right? If you encounter problems with the python library `wandb` please fill an issue [here](https://github.com/wandb/client/issues/new/choose)
   - type: textarea
     id: what-happened
