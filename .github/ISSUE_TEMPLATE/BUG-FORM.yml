@@ -9,7 +9,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report! Just to be sure, this is an issue about one of our examples right? If you encounter problems with the python library `wandb` please fill an issue at https://github.com/wandb/client.
+        Thanks for taking the time to fill out this bug report! 
+        > 🔥 Just to be sure, this is an issue about one of our examples right? If you encounter problems with the python library `wandb` please fill an issue at https://github.com/wandb/client.
   - type: textarea
     id: what-happened
     attributes:
