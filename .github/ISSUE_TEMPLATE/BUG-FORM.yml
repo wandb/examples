@@ -7,7 +7,7 @@ assignees:
   - scottire 
 body:
   - type: markdown
-      value: Thanks for taking the time to fill out this bug report! 
+    value: Thanks for taking the time to fill out this bug report! 
   - type: markdown
     value: "## Client Bug 🐛"
   - type: markdown
