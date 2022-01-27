@@ -1,0 +1,3 @@
+model:
+  use_norm: True
+  norm_type: group

@@ -1,0 +1,26 @@
+default_language_version:
+  python: python3.8
+repos:
+- repo: https://github.com/psf/black
+  rev: 21.12b0
+  hooks:
+    - id: black
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.1.0
+  hooks:
+    - id: check-yaml
+- repo: https://github.com/PyCQA/isort
+  rev: 5.10.1
+  hooks:
+    - id: isort
+- repo: https://github.com/MarcoGorelli/absolufy-imports
+  rev: v0.3.0
+  hooks:
+    - id: absolufy-imports
+      #- repo: local
+      #  hooks:
+      #    - id: pylint
+      #      name: pylint
+      #      entry: env PYTHONPATH=. pylint
+      #      language: system
+      #      types: [python]

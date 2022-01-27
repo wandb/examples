@@ -1,0 +1,8 @@
+name: "mnist"
+dir: "mnist/"
+train_batch: 32
+test_batch: 10
+image_dim:
+  - 28
+  - 28
+num_classes: 10

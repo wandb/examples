@@ -1,0 +1,3 @@
+optimizer: Adam
+lr: !!float 1e-3
+epochs: 10
