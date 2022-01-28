@@ -4,7 +4,3 @@ job:
         # In case wandb process interferes with
         # hydra's multi-launcher
         WANDB_START_METHOD: thread
-launcher:
-    ray:
-        remote:
-            num_gpus: 2

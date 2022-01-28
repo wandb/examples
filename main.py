@@ -2,16 +2,16 @@ import logging
 import pathlib
 import pprint
 
-import hydra.utils
 import omegaconf
 import torch
 import torchvision
 import tqdm
-import wandb
 
 import dataset
 import hydra
+import hydra.utils
 import model
+import wandb
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -21,7 +21,7 @@ def log_test_predictions(images, labels, outputs, predicted, test_table, log_cou
     # obtain confidence scores for all classes
     scores = torch.nn.functional.softmax(outputs.data, dim=1)
     log_scores = scores.cpu().numpy()
-    log_images = images.cpu().numpy()
+    log_images = images.cpu()
     log_labels = labels.cpu().numpy()
     log_preds = predicted.cpu().numpy()
     # adding ids based on the order of the images
