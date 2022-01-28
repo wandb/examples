@@ -9,12 +9,12 @@ and demonstrate how Hydra can be used to configure the codebase.
 
 For single run (with default architecture):
 ```bash
-$ python3 main.py dataset=cifar10
+$ python3 main.py dataset=mnist
 ```
 
 For running Hydra-Multirun over different dataset([`dataset/`](configs/dataset)) and architectures ([`experiments/`](configs/experiments))
 ```bash
-$ python3 main dataset=cifar10,mnist experiments=group,batch,instance
+$ python3 main.py dataset=cifar10,mnist experiments=group,batch,instance
 ```
 
 NOTE: Running the codebase creates a project called: `hydra-example` on your W&B account by default. You can configure where to send the runs by editing the [`wandb/defaults.yaml`](configs/wandb/defaults.yaml) configuration file.
