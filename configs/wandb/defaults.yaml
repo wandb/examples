@@ -1,0 +1,8 @@
+---
+setup:
+    project: hydra-example
+    entity:
+    mode: online
+watch:
+    log: all
+    log_freq: 100

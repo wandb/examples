@@ -1,3 +1,4 @@
+---
 model:
-  use_norm: True
-  norm_type: group
+    use_norm: true
+    norm_type: group

@@ -1,2 +1,7 @@
+---
 defaults:
-  - dataset: mnist
+    - dataset: mnist
+    - model: defaults
+    - train: defaults
+    - wandb: defaults
+    - hydra: defaults

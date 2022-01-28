@@ -1,0 +1,6 @@
+---
+job:
+    env_set:
+        # In case wandb process interferes with
+        # hydra's multi-launcher
+        WANDB_START_METHOD: thread
