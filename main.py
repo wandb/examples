@@ -16,7 +16,7 @@ import hydra.utils
 import model
 import wandb
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def log_test_predictions(images, labels, outputs, predicted, test_table, log_counter):
