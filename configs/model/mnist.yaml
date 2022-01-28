@@ -1,0 +1,7 @@
+---
+conv1_size: 32
+conv2_size: 64
+dense_size: 3136
+kernel_size: 5
+norm_type: nonorm
+use_norm: false

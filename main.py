@@ -8,6 +8,7 @@ sys.path.append("5029e7a6e431bc04135de662326ea682")
 import omegaconf
 import torch
 import torchvision
+import tqdm
 
 import dataset
 import hydra
@@ -35,7 +36,7 @@ def log_test_predictions(images, labels, outputs, predicted, test_table, log_cou
         test_table.add_data(img_id, wandb.Image(i), p, l, *s)
 
 
-def test_loop(test_loader, net, epoch):
+def test_loop(test_loader, net, epoch, job_id):
 
     net.eval()
     columns = ["id", "image", "guess", "truth"]
@@ -59,7 +60,7 @@ def test_loop(test_loader, net, epoch):
         acc = 100 * correct / total
         wandb.log({"epoch": epoch, "test/accuracy": acc})
         logging.warning(
-            "[Job ID = %02d] Test: Epoch %d: Accuracy: %f", hydra.job.id, epoch, acc
+            "[Job ID = %s] Test: Epoch %d: Accuracy: %f", job_id, epoch, acc
         )
         wandb.log({"test/predictions": test_table})
 
@@ -70,7 +71,7 @@ def run_experiment(cfg: omegaconf.DictConfig) -> None:
     base_path = pathlib.Path(hydra.utils.get_original_cwd())
     (train_loader, test_loader), _ = dataset.get_dataset(
         cfg.dataset.name,
-        base_path / cfg.dataset.dir,
+        (base_path / "data") / cfg.dataset.dir,
         cfg.dataset.train_batch,
         cfg.dataset.test_batch,
     )
@@ -79,7 +80,12 @@ def run_experiment(cfg: omegaconf.DictConfig) -> None:
         cfg, resolve=True, throw_on_missing=True
     )
     pprint.pprint(wandb_cfg)
-    with wandb.init(**cfg.wandb.setup, group=str(cfg.train.norm_type)):
+
+    runtime_cfg = hydra.core.hydra_config.HydraConfig.get()
+    job_id = runtime_cfg.job.get("id", -1)
+    ismultirun = job_id != -1
+    group_key = f"{cfg.dataset.name}-{cfg.model.norm_type}"
+    with wandb.init(**cfg.wandb.setup, group=group_key, config=wandb_cfg) as run:
 
         net = model.ConvNet(
             cfg.dataset.image_dim, cfg.dataset.num_classes, **cfg.model
@@ -88,9 +94,22 @@ def run_experiment(cfg: omegaconf.DictConfig) -> None:
         optimizer_class = getattr(torch.optim, cfg.train.optimizer)
         optimizer = optimizer_class(net.parameters(), lr=cfg.train.lr)
 
-        for epoch in range(cfg.train.epochs):
+        epoch_iter = range(cfg.train.epochs)
+        train_iter = train_loader
+
+        if not ismultirun:
+            epoch_iter = tqdm.tqdm(epoch_iter, position=0, leave=False)
+        else:
+            logging.warning("[MULTIRUN] Logged Metrics only available on :%s", run.url)
+
+        for epoch in epoch_iter:
+
             net.train()
-            for images, labels in train_loader:
+
+            if not ismultirun:
+                train_iter = tqdm.tqdm(train_iter, position=1, leave=False)
+
+            for images, labels in train_iter:
                 images = images.to(device)
                 labels = labels.to(device)
                 outputs = net(images)
@@ -99,7 +118,7 @@ def run_experiment(cfg: omegaconf.DictConfig) -> None:
                 loss.backward()
                 optimizer.step()
                 wandb.log({"train/loss": loss})
-        test_loop(test_loader, net, epoch)
+            test_loop(test_loader, net, epoch, job_id)
 
 
 if __name__ == "__main__":

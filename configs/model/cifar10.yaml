@@ -1,6 +1,7 @@
 ---
-l1_size: 32
-l2_size: 64
+conv1_size: 32
+conv2_size: 64
+dense_size: 4096
 kernel_size: 5
 norm_type: nonorm
 use_norm: false
