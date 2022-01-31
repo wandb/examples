@@ -1,4 +1,4 @@
 # @package _global_
 model:
     use_norm: true
-    norm_type: group
+    norm_type: instance
