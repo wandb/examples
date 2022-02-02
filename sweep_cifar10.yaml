@@ -8,6 +8,9 @@ parameters:
     model.num_groups:
         values: [2, 4, 8]
 
+    dataset:
+        values: [cifar10]
+
     dataset.train_batch:
         values: [8, 16, 32]
 
@@ -19,3 +22,4 @@ command:
     - ${interpreter}
     - ${program}
     - ${args_no_hyphens}
+    - +num_gpus=1
