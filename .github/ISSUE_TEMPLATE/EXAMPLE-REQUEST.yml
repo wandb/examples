@@ -10,7 +10,7 @@ body:
     attributes:
       value: |
         Hello, are you trying to find something that is missing in the examples/documentation? Do you want to propose an example? Please tell us more about!
-        - You may find what you are looing for in our [forums](https://community.wandb.ai)
+        - You may find what you are looking for in our [forums](https://community.wandb.ai)
         - Or ping us on [twitter](https://twitter.com/weights_biases)
   - type: textarea
     id: request
