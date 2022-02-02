@@ -6,3 +6,5 @@ defaults:
     - wandb: defaults
     - hydra: defaults
     - normalization: nonorm
+model:
+    num_groups: -1
