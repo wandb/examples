@@ -1,0 +1,21 @@
+---
+program: main.py
+method: bayes
+metric:
+    goal: maximize
+    name: test/accuracy
+parameters:
+    model.num_groups:
+        values: [2, 4, 8]
+
+    dataset.train_batch:
+        values: [8, 16, 32]
+
+    normalization:
+        values: [batch, nonorm, instance, group]
+
+command:
+    - ${env}
+    - ${interpreter}
+    - ${program}
+    - ${args_no_hyphens}

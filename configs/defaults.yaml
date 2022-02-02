@@ -5,3 +5,4 @@ defaults:
     - train: defaults
     - wandb: defaults
     - hydra: defaults
+    - normalization: nonorm

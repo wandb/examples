@@ -2,16 +2,16 @@ import logging
 import pathlib
 import pprint
 
-import hydra.utils
 import omegaconf
 import torch
 import torchvision
 import tqdm
-import wandb
 
 import dataset
 import hydra
+import hydra.utils
 import model
+import wandb
 
 num_gpus = None
 job_num = 0
