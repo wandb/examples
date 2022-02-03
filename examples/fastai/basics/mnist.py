@@ -9,7 +9,7 @@ tds = Datasets(items, [PILImageBW.create, [parent_label, Categorize()]], splits=
 dls = tds.dataloaders(bs=32, after_item=[ToTensor(), IntToFloatTensor()])
 
 # start a run
-wandb.init()
+wandb.init(project='fastai-mnist')
 
 # create a learner with gradient accumulation
 learn = cnn_learner(dls, resnet18, loss_func=CrossEntropyLossFlat(), cbs=[WandbCallback(), GradientAccumulation(50)])
