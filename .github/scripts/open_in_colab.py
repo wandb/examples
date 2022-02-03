@@ -4,6 +4,7 @@ from nb_helpers.colab import get_colab_url
 from nb_helpers.utils import git_current_branch
 
 def create_comment():
+    "On PR post a comment with links to open in colab for each changed nb"
     api = GhApi(owner='wandb', repo='examples', token=github_token())
     payload = context_github.event
     if 'workflow' in payload: issue = 1
