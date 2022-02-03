@@ -1,5 +1,5 @@
 name: Open in Colab
-on: [workflow_dispatch, pull_request]
+on: [workflow_dispatch, pull_request, push]
 defaults:
   run: { shell: bash }
 jobs:
