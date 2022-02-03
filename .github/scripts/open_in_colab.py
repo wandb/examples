@@ -23,23 +23,12 @@ def create_comment():
         url = get_colab_url(fname, git_current_branch(fname))
         return f"- [{_fname}]({url})\n"
 
-    def search_comment(issue_number):
-        "Search for older message"
-        comments = api.issues.list_comments(issue_number)
-        return [c for c in comments if'colabs where changed' in c.body]
 
     if len(nb_files)>0:
         colab_links = tuple(get_colab_md(f) for f in nb_files)
         body = tuplify(title) + colab_links
         body = "".join(body)
-
-        previous_comments = search_comment(issue)
-
-        if len(previous_comments)>0:
-            "We already have the comment"
-            api.issues.update_comment(issue, body)
-        else:
-            api.issues.create_comment(issue_number=issue, body=body)
+        api.issues.create_comment(issue_number=issue, body=body)
     
 
 
