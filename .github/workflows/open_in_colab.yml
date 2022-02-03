@@ -1,0 +1,18 @@
+name: Open in Colab
+on: [workflow_dispatch, pull_request]
+defaults:
+  run: { shell: bash }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+    - name: Run script
+      env:
+        CONTEXT_GITHUB: ${{ toJson(github) }}
+      run: |
+        pip install -Uq ghapi nb_helpers
+        python .github/scripts/open_in_colab.py
