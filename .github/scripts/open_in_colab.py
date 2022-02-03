@@ -1,3 +1,4 @@
+from fastcore.all import *
 from ghapi.all import *
 from nb_helpers.colab import get_colab_url
 from nb_helpers.utils import git_current_branch
