@@ -4,6 +4,10 @@ from nb_helpers.colab import get_colab_url
 from nb_helpers.utils import git_current_branch
 
 def create_comment():
+    "On PR post a comment with links to open in colab for each changed nb"
+
+    title = "The following colabs where changed in this PR:\n"
+
     api = GhApi(owner='wandb', repo='examples', token=github_token())
     payload = context_github.event
     if 'workflow' in payload: issue = 1
@@ -19,10 +23,13 @@ def create_comment():
         url = get_colab_url(fname, git_current_branch(fname))
         return f"- [{_fname}]({url})\n"
 
-    colab_links = tuple(get_colab_md(f) for f in nb_files)
-    body = ("The following colabs where changed in this PR:\n",)+colab_links
-    body = "".join(body)
 
-    api.issues.create_comment(issue_number=issue, body=body)
+    if len(nb_files)>0:
+        colab_links = tuple(get_colab_md(f) for f in nb_files)
+        body = tuplify(title) + colab_links
+        body = "".join(body)
+        api.issues.create_comment(issue_number=issue, body=body)
+    
+
 
 create_comment()
