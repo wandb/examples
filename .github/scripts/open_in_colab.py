@@ -28,6 +28,7 @@ def create_comment():
         colab_links = tuple(get_colab_md(f) for f in nb_files)
         body = tuplify(title) + colab_links
         body = "".join(body)
+        print(f">> Creating comment on PR #{issue}")
         api.issues.create_comment(issue_number=issue, body=body)
     
 
