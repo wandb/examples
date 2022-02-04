@@ -16,6 +16,7 @@ def create_comment():
     #         return
     
     issue = payload.number
+    print(f' >> {payload}\n')
 
     print(f' >> issue_number {issue}\n')
 
