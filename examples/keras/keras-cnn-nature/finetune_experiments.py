@@ -431,7 +431,7 @@ if __name__ == "__main__":
   if args.dry_run:
     os.environ['WANDB_MODE'] = 'dryrun'
 
-  if args.notes
+  if args.notes:
     os.environ['WANDB_NOTES'] = args.notes
   
   if args.tags:
