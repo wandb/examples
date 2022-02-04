@@ -19,9 +19,8 @@ def create_comment():
     print(f' >> {payload}\n')
 
     print(f' >> issue_number {issue}\n')
-
-    pr = api.pulls.get(issue)
-    github_repo, branch = pr.head.repo.full_name, pr.head.ref
+    github_repo = payload.pull_request.head.repo.full_name
+    branch = payload.pull_request.head.ref
 
     pr_files = [Path(f.filename) for f in api.pulls.list_files(issue)]
 
