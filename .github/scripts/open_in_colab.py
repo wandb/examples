@@ -9,21 +9,16 @@ def create_comment():
     api = GhApi(owner="wandb", repo="examples", token=github_token())
     payload = context_github.event
 
-    # if "workflow" in payload:
-    #     issue = 1
-    # else:
-    #     if payload.action != "opened":
-    #         return
-    
-    pr = payload.pull_request
+    if "workflow" in payload:
+        issue = 1
+    else:
+        if payload.action != "opened":
+            return
 
     issue = payload.number
-    print(f' >> {payload}\n')
-
-    print(f' >> issue_number {issue}\n')
+    pr = payload.pull_request
     github_repo = pr.head.repo.full_name
     branch = pr.head.ref
-
     pr_files = [Path(f.filename) for f in api.pulls.list_files(issue)]
 
     # filter nbs
