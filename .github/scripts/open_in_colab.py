@@ -6,7 +6,7 @@ from nb_helpers.utils import git_local_repo, is_nb
 def create_comment():
     "On PR post a comment with links to open in colab for each changed nb"
 
-    api = GhApi(owner="wandb", repo="nb_helpers", token=github_token())
+    api = GhApi(owner="wandb", repo="examples", token=github_token())
     payload = context_github.event
 
     # if "workflow" in payload:
@@ -15,12 +15,14 @@ def create_comment():
     #     if payload.action != "opened":
     #         return
     
+    pr = payload.pull_request
+
     issue = payload.number
     print(f' >> {payload}\n')
 
     print(f' >> issue_number {issue}\n')
-    github_repo = payload.pull_request.head.repo.full_name
-    branch = payload.pull_request.head.ref
+    github_repo = pr.head.repo.full_name
+    branch = pr.head.ref
 
     pr_files = [Path(f.filename) for f in api.pulls.list_files(issue)]
 
