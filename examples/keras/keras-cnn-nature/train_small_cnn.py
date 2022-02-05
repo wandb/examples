@@ -206,7 +206,7 @@ if __name__ == "__main__":
     os.environ['WANDB_MODE'] = 'dryrun'
 
 
-  if args.notes
+  if args.notes:
     os.environ['WANDB_NOTES'] = args.notes
   
   run_experiment(args)
