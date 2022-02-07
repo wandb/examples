@@ -1,0 +1,10 @@
+---
+defaults:
+    - dataset: mnist
+    - model: ${dataset}
+    - train: defaults
+    - wandb: defaults
+    - hydra: defaults
+    - normalization: default
+model:
+    num_groups: -1

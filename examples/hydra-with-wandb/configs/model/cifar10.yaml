@@ -1,0 +1,5 @@
+---
+conv1_size: 32
+conv2_size: 64
+dense_size: 4096
+kernel_size: 5
