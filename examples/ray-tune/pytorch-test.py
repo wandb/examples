@@ -1,13 +1,11 @@
-import argparse
+import wandb
+
+import torch
+import torch.optim as optim
 
 from ray import tune
 from ray.tune.examples.mnist_pytorch import ConvNet, get_data_loaders, test, train
-from ray.tune.integration.wandb import wandb_mixin
-from ray.tune.integration.wandb import WandbLogger
-import torch
-import torch.optim as optim
-import wandb
-
+from ray.tune.integration.wandb import wandb_mixin, WandbLogger
 
 
 @wandb_mixin
@@ -33,21 +31,18 @@ def train_mnist(config):
         error_rate = 100 * (1 - acc)
         wandb.log({"error_rate": error_rate})
 
+if __name__=="__main__":
 
-wandb.login()
-
-parser = argparse.ArgumentParser()
-parser.add_argument("-p", "--project", type=str, help="name of the wandb project", default="ray-example")
-args = parser.parse_args()
-
-analysis = tune.run(
-    train_mnist,
-    loggers=[WandbLogger],  # WandbLogger logs experiment configurations and metrics reported via tune.report() to W&B Dashboard
-    resources_per_trial={'gpu': 1},
-    config={
-        # wandb dict accepts all arguments that can be passed in wandb.init()
-        "wandb": {"project": args.project},
-        # Hyperparameters
-        "lr": tune.grid_search([0.0001, 0.001, 0.1]),
-        "momentum": tune.grid_search([0.9, 0.99])
-    })
+    #log into wandb account
+    wandb.login()
+    analysis = tune.run(
+        train_mnist,
+        loggers=[WandbLogger],  # WandbLogger logs experiment configurations and metrics reported via tune.report() to W&B Dashboard
+        resources_per_trial={'gpu': 1},
+        config={
+            # wandb dict accepts all arguments that can be passed in wandb.init()
+            "wandb": {"project": "ray-example"},
+            # Hyperparameters
+            "lr": tune.grid_search([0.0001, 0.001, 0.1]),
+            "momentum": tune.grid_search([0.9, 0.99])
+        })
