@@ -9,11 +9,6 @@ import torch
 import torch.optim as optim
 import wandb
 
-'''
-Make sure that os.environ['WANDB_API_KEY'] is set. Ray tune requires you to manually pass API key
-or API Key file path if it cannot find WANDB_API_KEY environment variable
-'''
-assert os.environ.get('WANDB_API_KEY'), "os.environ['WANDB_API_KEY'] is not set"
 
 
 @wandb_mixin
@@ -39,6 +34,8 @@ def train_mnist(config):
         error_rate = 100 * (1 - acc)
         wandb.log({"error_rate": error_rate})
 
+
+wandb.login()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--project", type=str, help="name of the wandb project", default="ray-example")
