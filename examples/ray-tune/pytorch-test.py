@@ -1,5 +1,4 @@
 import argparse
-import os
 
 from ray import tune
 from ray.tune.examples.mnist_pytorch import ConvNet, get_data_loaders, test, train
