@@ -1,0 +1,12 @@
+# @pkg _global_
+defaults:
+  - override /optimizer: adagrad
+
+model:
+  l1_size: 128
+  l2_size: 64
+  last_size: 64
+
+optimizer:
+  config:
+    learning_rate: !!float 1e-5

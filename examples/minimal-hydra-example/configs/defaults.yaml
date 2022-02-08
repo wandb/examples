@@ -1,0 +1,4 @@
+defaults:
+  - model: default
+  - optimizer: adam
+  - wandb: default
