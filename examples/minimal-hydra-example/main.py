@@ -1,3 +1,5 @@
+import pprint
+
 import hydra
 import omegaconf
 import tensorflow as tf
@@ -28,23 +30,24 @@ def get_model(model_cfg):
 @hydra.main(config_path="configs/", config_name="defaults")
 def run_experiment(cfg: omegaconf.DictConfig) -> None:
 
+    pprint.pprint(cfg, indent=2)
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
     y_train = tf.squeeze(tf.one_hot(y_train, depth=10))
     y_test = tf.squeeze(tf.one_hot(y_test, depth=10))
 
     with wandb.init(**cfg.wandb.setup) as run:
-      model = get_model(cfg.model)
+        model = get_model(cfg.model)
 
-      optim_cfg = omegaconf.OmegaConf.to_container(cfg.optimizer)
-      optimizer = tf.optimizers.get(optim_cfg)
-      model.compile(loss="categorical_crossentropy", optimizer=optimizer)
-      model.summary()
-      model.fit(
-          x_train,
-          y_train,
-          validation_data=(x_test, y_test),
-          callbacks=[wandb.keras.WandbCallback()],
-      )
+        optim_cfg = omegaconf.OmegaConf.to_container(cfg.optimizer)
+        optimizer = tf.optimizers.get(optim_cfg)
+        model.compile(loss="categorical_crossentropy", optimizer=optimizer)
+        model.summary()
+        model.fit(
+            x_train,
+            y_train,
+            validation_data=(x_test, y_test),
+            callbacks=[wandb.keras.WandbCallback()],
+        )
 
 
 if __name__ == "__main__":

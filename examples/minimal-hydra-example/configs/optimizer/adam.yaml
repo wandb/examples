@@ -1,3 +1,4 @@
-class_name: "adam"
+---
+class_name: adam
 config:
-  learning_rate: !!float 1e-3
+  learning_rate: 1e-3

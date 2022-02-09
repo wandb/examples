@@ -1,5 +1,6 @@
+---
 defaults:
-  - model: default
-  - optimizer: adam
-  - wandb: default
-  - experiment: default
+- model: default
+- optimizer: adam
+- wandb: default
+- experiment: default
