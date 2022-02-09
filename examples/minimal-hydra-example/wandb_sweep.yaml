@@ -1,5 +1,5 @@
 program: main.py
-metric: 
+metric:
   name: val_loss
   goal: minimize
 
@@ -14,7 +14,7 @@ parameters:
     values: [sgd, adagrad, adam]
 
 command:
-  - ${env}
-  - ${interpreter}
-  - ${program}
-  - ${args_no_hyphens}
+- ${env}
+- ${interpreter}
+- ${program}
+- ${args_no_hyphens}
