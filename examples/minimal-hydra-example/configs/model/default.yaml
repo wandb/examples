@@ -1,0 +1,7 @@
+---
+l1_size: 64
+l2_size: 32
+l3_size: 16
+kernel_size: 3
+last_size: 16
+activation: relu

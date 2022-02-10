@@ -1,0 +1,5 @@
+# @package _global_
+hydra:
+  job_logging:
+    root:
+      level: DEBUG

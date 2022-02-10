@@ -1,0 +1,20 @@
+program: main.py
+metric:
+  name: val_loss
+  goal: minimize
+
+method: bayes
+parameters:
+  optimizer.config.learning_rate:
+    min: !!float 1e-5
+    max: 0.1
+  experiment:
+    values: [expt001, expt002]
+  optimizer:
+    values: [sgd, adagrad, adam]
+
+command:
+- ${env}
+- ${interpreter}
+- ${program}
+- ${args_no_hyphens}

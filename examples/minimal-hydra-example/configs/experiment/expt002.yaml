@@ -1,0 +1,14 @@
+# @package _global_
+defaults:
+  - override /optimizer: adagrad
+
+model:
+  kernel_size: 3
+  l1_size: 128
+  l2_size: 64
+  l3_size: 32
+  last_size: 32
+  activation: "leaky_relu"
+optimizer:
+  config:
+    learning_rate: !!float 1e-5
