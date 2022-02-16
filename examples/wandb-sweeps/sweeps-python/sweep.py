@@ -11,5 +11,5 @@ if __name__ == '__main__':
             }
         }
     }
-    sweep_id = wandb.sweep(sweep_config)
+    sweep_id = wandb.sweep(sweep_config, project="keras-fmnist-sweep")
     wandb.agent(sweep_id, function=train)
