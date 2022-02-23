@@ -14,8 +14,8 @@ def create_comment():
     # else:
     #     if payload.action != "opened":
     #         return
-
-    issue = payload.number
+    else:
+        issue = payload.number
     pr = payload.pull_request
     github_repo = pr.head.repo.full_name
     branch = pr.head.ref
