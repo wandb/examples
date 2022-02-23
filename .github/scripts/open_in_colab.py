@@ -11,9 +11,9 @@ def create_comment():
 
     if "workflow" in payload:
         issue = 1
-    else:
-        if payload.action != "opened":
-            return
+    # else:
+    #     if payload.action != "opened":
+    #         return
 
     issue = payload.number
     pr = payload.pull_request
@@ -38,9 +38,23 @@ def create_comment():
         body = tuplify(title) + colab_links
         return "".join(body)
 
+    def _get_comment_id(issue):
+        comments = api.issues.list_comments(issue)
+        candidates =  [c for c in comments if "The following colabs where changed in this PR" in c.body]
+        if len(candidates)==1:
+            comment_id = candidates[0].id
+        else:
+            comment_id = -1
+        return comment_id
+
     if len(nb_files) > 0:
         body = _create_comment_body(nb_files)
-        print(f">> Creating comment on PR #{issue}\n{body}\n")
-        api.issues.create_comment(issue_number=issue, body=body)
+        comment_id = _get_comment_id(issue)
+        if comment_id>0:
+            print(f">> Updating comment on PR #{issue}\n{body}\n")
+            api.issues.update_comment(comment_id, body)
+        else:
+            print(f">> Creating comment on PR #{issue}\n{body}\n")
+            api.issues.create_comment(issue_number=issue, body=body)
 
 create_comment()
