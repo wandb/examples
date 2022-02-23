@@ -11,9 +11,6 @@ def create_comment():
 
     if "workflow" in payload:
         issue = 1
-    # else:
-    #     if payload.action != "opened":
-    #         return
     else:
         issue = payload.number
     pr = payload.pull_request
@@ -34,7 +31,7 @@ def create_comment():
     def _create_comment_body(nb_files) -> str:
         "Creates a MD list of fnames with links to colab"
         title = "The following colabs where changed in this PR:\n"
-        colab_links = tuple(_get_colab_url2md(f.absolute()) for f in nb_files)
+        colab_links = tuple(_get_colab_url2md(f) for f in nb_files)
         body = tuplify(title) + colab_links
         return "".join(body)
 
