@@ -7,15 +7,12 @@ def create_comment():
     "On PR post a comment with links to open in colab for each changed nb"
 
     api = GhApi(owner="wandb", repo="examples", token=github_token())
-    payload = context_github.event
+    payload = context_github.event  
 
     if "workflow" in payload:
         issue = 1
     else:
-        if payload.action != "opened":
-            return
-
-    issue = payload.number
+        issue = payload.number
     pr = payload.pull_request
     github_repo = pr.head.repo.full_name
     branch = pr.head.ref
@@ -23,6 +20,7 @@ def create_comment():
 
     # filter nbs
     nb_files = [f for f in pr_files if is_nb(f)]
+
 
     def _get_colab_url2md(fname: Path, github_repo=github_repo, branch=branch) -> str:
         "Create colab links in md"
@@ -37,9 +35,23 @@ def create_comment():
         body = tuplify(title) + colab_links
         return "".join(body)
 
+    def _get_comment_id(issue):
+        comments = api.issues.list_comments(issue)
+        candidates =  [c for c in comments if "The following colabs where changed in this PR" in c.body]
+        if len(candidates)==1:
+            comment_id = candidates[0].id
+        else:
+            comment_id = -1
+        return comment_id
+
     if len(nb_files) > 0:
         body = _create_comment_body(nb_files)
-        print(f">> Creating comment on PR #{issue}")
-        api.issues.create_comment(issue_number=issue, body=body)
+        comment_id = _get_comment_id(issue)
+        if comment_id>0:
+            print(f">> Updating comment on PR #{issue}\n{body}\n")
+            api.issues.update_comment(comment_id, body)
+        else:
+            print(f">> Creating comment on PR #{issue}\n{body}\n")
+            api.issues.create_comment(issue_number=issue, body=body)
 
 create_comment()
