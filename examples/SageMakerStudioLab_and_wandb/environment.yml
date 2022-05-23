@@ -1,0 +1,10 @@
+name: fastai
+channels:
+  - fastchan
+  - conda-forge
+dependencies:
+  - fastai
+  - wandb
+  - ipykernel
+  - pip:
+      - timm
