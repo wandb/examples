@@ -69,12 +69,12 @@ adaboost = AdaBoostClassifier(n_estimators=500, learning_rate=0.01, random_state
                              min_samples_leaf=10, random_state=42))
 
 def model_algorithm(clf, X_train, y_train, X_test, y_test, name, labels, features):
-    clf.fit(X_train, y_train)
-    y_probas = clf.predict_proba(X_test)
+    clf.fit(X_train.values, y_train)
+    y_probas = clf.predict_proba(X_test.values)
     y_pred = clf.predict(X_test)
     wandb.init(project="visualize-sklearn", name=name, reinit=True)
     # wandb.sklearn.plot_roc(y_test, y_probas, labels, reinit = True)
-    wandb.sklearn.plot_classifier(clf, X_train, X_test, y_train,
+    wandb.sklearn.plot_classifier(clf, X_train.values, X_test.values, y_train,
                     y_test, y_pred, y_probas, labels, True, name, features)
 
 model_algorithm(log, X_train, y_train, X_test, y_test, 'LogisticRegression', labels, features)

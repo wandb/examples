@@ -1,8 +1,7 @@
 import pytest
 from sklearn.ensemble import RandomForestClassifier
 import wandb
-from wandb.sklearn import learning_curve
-
+from wandb.sklearn import plot_learning_curve
 # initialize wandb run
 wandb.init(project="test")
 

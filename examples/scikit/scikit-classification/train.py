@@ -19,11 +19,11 @@ labels = ['one', 'two', 'three', 'four', 'five',
 
 # Train model
 model = RandomForestClassifier()
-model.fit(X, y)
+model.fit(X.values, y)
 
 # Get predictions
-y_pred = model.predict(X_test)
-y_probas = model.predict_proba(X_test)
+y_pred = model.predict(X_test.values)
+y_probas = model.predict_proba(X_test.values)
 importances = model.feature_importances_
 indices = np.argsort(importances)[::-1]
 
@@ -31,5 +31,5 @@ print(X_train.info())
 
 # Visualize model performance
 wandb.sklearn.plot_classifier(
-    model, X_train, X_test, y_train, y_test, y_pred, y_probas, labels,
+    model, X_train.values, X_test.values, y_train, y_test, y_pred, y_probas, labels,
     is_binary=False, model_name='RandomForest', feature_names=feature_names)

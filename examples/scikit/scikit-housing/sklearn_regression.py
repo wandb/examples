@@ -15,9 +15,9 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 # Train model, get predictions
 reg = Ridge()
-reg.fit(X, y)
-y_pred = reg.predict(X_test)
+reg.fit(X.values, y)
+y_pred = reg.predict(X_test.values)
 
 # Visualize model performance
-wandb.sklearn.plot_outlier_candidates(reg, X, y)
-wandb.sklearn.plot_residuals(reg, X, y)
+wandb.sklearn.plot_outlier_candidates(reg, X.values, y)
+wandb.sklearn.plot_residuals(reg, X.values, y)
