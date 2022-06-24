@@ -37,3 +37,4 @@
 | Scikit-Learn with W&B  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/scikit-colab) |
 | XGBoost with W&B | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/xgb-colab) |
 | LightGBM with W&B | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/lightgbm-colab) |
+| StyleGAN-NADA with W&B  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/scikit-colab) |
