@@ -1,0 +1,13 @@
+numpy
+pandas
+scipy
+jupyterLab
+ipython
+scikit-learn
+scikit-image
+seaborn
+matplotlib
+h5py
+wandb[launch]
+ipywidgets
+apex
