@@ -1,0 +1,7 @@
+{
+    "name": "my_launch_job",
+    "docker": {
+        "docker_image": "dpaiton/torch-jupyter",
+    },
+    "cuda": True,
+}
