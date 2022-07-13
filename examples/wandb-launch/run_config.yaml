@@ -1,0 +1,18 @@
+fc_layer_size:
+    desc: Number of neurons in each fully-connected layer
+    value: 256
+dropout:
+    desc: Dropout keep probability
+    value: 0.5
+epochs:
+    desc: Number of iterations through the training dataset
+    value: 50
+learning_rate:
+    desc: Network weight and bias update learning rate
+    value: 0.005
+batch_size:
+    desc: Number of examples in each training batch
+    value: 128
+optimizer:
+    desc: Optimizer class
+    value: "adam"
