@@ -72,8 +72,8 @@ def train(run):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='train a model on MNIST')
-    parser.add_argument('entity', help='wandb entity (usually your username)')
-    parser.add_argument('project', help='wandb project')
+    parser.add_argument('-e', '--entity', help='wandb entity (usually your username)')
+    parser.add_argument('-p', '--project', help='wandb project')
     parser.add_argument('config', help='location of the run config file')
     args = parser.parse_args()
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
