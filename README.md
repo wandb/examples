@@ -290,7 +290,7 @@ Spend more time deriving insights, and less time building charts manually.
 wandb.log({"table": my_dataframe})
 ```
 
-![](https://i.imgur.com/Fg9xR6M.gifv)
+![](https://i.imgur.com/Fg9xR6M.gif)
 
 ### Try Tables in a [Colab](http://wandb.me/tables-quickstart) or these [examples](https://github.com/wandb/examples/tree/master/colabs/tables)
 
