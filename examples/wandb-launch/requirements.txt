@@ -11,3 +11,5 @@ h5py
 wandb[launch]
 ipywidgets
 apex
+torch
+torchvision

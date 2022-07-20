@@ -6,7 +6,7 @@ dropout:
     value: 0.5
 epochs:
     desc: Number of iterations through the training dataset
-    value: 50
+    value: 1
 learning_rate:
     desc: Network weight and bias update learning rate
     value: 0.005
