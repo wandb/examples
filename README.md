@@ -275,3 +275,23 @@ all directly linked to run.
 ![](https://i.imgur.com/w92cYQm.png)
 
 **Learn about Artifacts [here →](https://www.wandb.com/articles/announcing-artifacts) | Read the [Docs](https://docs.wandb.com/artifacts)**
+
+
+
+# Visualize and Query data with Tables
+
+Group, sort, filter, generate calculated columns, and create charts from tabular data.
+
+Spend more time deriving insights, and less time building charts manually.
+
+```
+# log my table
+
+wandb.log({"table": my_dataframe})
+```
+
+![](https://i.imgur.com/Fg9xR6M.gif)
+
+### Try Tables in a [Colab](http://wandb.me/tables-quickstart) or these [examples](https://github.com/wandb/examples/tree/master/colabs/tables)
+
+**Explore Tables [here →](https://wandb.ai/site/tables) | Read the [Docs](https://docs.wandb.ai/guides/data-vis)**
