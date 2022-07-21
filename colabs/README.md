@@ -6,6 +6,7 @@
 |-------------|------|
 | PyTorch  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/pytorch-colab) |
 | Keras  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/keras-colab) |
+| JAX and Flax | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/jax-intro) |
 | PyTorch Lightning | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/lit-colab) |
 | PyTorch Profiler | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/trace-colab) |
 | TensorFlow  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/tf-colab) |
