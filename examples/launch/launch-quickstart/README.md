@@ -1,7 +1,8 @@
 # Weights & Biases Launch Quickstart
 
 In order to follow this tutorial, you will need a machine with `docker` and `wandb`
-installed and configured.
+installed. You will also want to make sure you have authenticated your `wandb`
+client with `wandb login` or by settings the `WANDB_API_KEY` environment variable.
 
 The `train.py` script in this directory will train a simple neural network to
 classify handwritten digits from the MNIST dataset. It will also log training 
