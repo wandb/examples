@@ -76,7 +76,7 @@ with wandb.init(config=config) as run:
       losses.append(loss.item())
 
       if iter % 25 == 1:
-        print("loggin")
+        print("logging")
         run.log(
           {
             "train/loss": sum(losses)/len(losses),  # Log average loss
