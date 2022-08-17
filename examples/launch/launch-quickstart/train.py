@@ -68,7 +68,6 @@ with wandb.init(config=config) as run:
     for idx, (images, labels) in enumerate(train_loader):
 
       iter += 1
-      print(iter)
       images = images.to(device)
       labels = labels.to(device)
       outputs = model(images)
@@ -76,7 +75,6 @@ with wandb.init(config=config) as run:
       losses.append(loss.item())
 
       if iter % 25 == 1:
-        print("loggin")
         run.log(
           {
             "train/loss": sum(losses)/len(losses),  # Log average loss
