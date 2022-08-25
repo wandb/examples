@@ -1,6 +1,7 @@
-import tensorflow as tf
-import numpy as np
 import argparse
+
+import numpy as np
+import tensorflow as tf
 import wandb
 
 mnist = tf.contrib.learn.datasets.load_dataset("mnist")
@@ -51,7 +52,7 @@ def main():
 
     # Evaluate accuracy
     accuracy_score = classifier.evaluate(input_fn=test_input_fn)["accuracy"]
-    print("\nTest Accuracy: {0:f}%\n".format(accuracy_score*100))
+    print(f"\nTest Accuracy: {accuracy_score:.0%}\n")
 
 
 if __name__ == '__main__':

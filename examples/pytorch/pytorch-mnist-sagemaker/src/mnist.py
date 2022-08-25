@@ -116,18 +116,18 @@ def train(args):
     test_loader = _get_test_data_loader(args.test_batch_size, args.data_dir, **kwargs)
 
     logger.debug(
-        "Processes {}/{} ({:.0f}%) of train data".format(
+        "Processes {}/{} ({:.0%}) of train data".format(
             len(train_loader.sampler),
             len(train_loader.dataset),
-            100.0 * len(train_loader.sampler) / len(train_loader.dataset),
+            len(train_loader.sampler) / len(train_loader.dataset),
         )
     )
 
     logger.debug(
-        "Processes {}/{} ({:.0f}%) of test data".format(
+        "Processes {}/{} ({:.0%}) of test data".format(
             len(test_loader.sampler),
             len(test_loader.dataset),
-            100.0 * len(test_loader.sampler) / len(test_loader.dataset),
+            len(test_loader.sampler) / len(test_loader.dataset),
         )
     )
 
@@ -157,11 +157,11 @@ def train(args):
             wandb.log({"training/loss": loss.item()})
             if batch_idx % args.log_interval == 0:
                 logger.info(
-                    "Train Epoch: {} [{}/{} ({:.0f}%)] Loss: {:.6f}".format(
+                    "Train Epoch: {} [{}/{} ({:.0%})] Loss: {:.6f}".format(
                         epoch,
                         batch_idx * len(data),
                         len(train_loader.sampler),
-                        100.0 * batch_idx / len(train_loader),
+                        batch_idx / len(train_loader),
                         loss.item(),
                     )
                 )
@@ -184,8 +184,8 @@ def test(model, test_loader, device):
     test_loss /= len(test_loader.dataset)
     wandb.log({"testing/loss": test_loss})
     logger.info(
-        "Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n".format(
-            test_loss, correct, len(test_loader.dataset), 100.0 * correct / len(test_loader.dataset)
+        "Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0%})\n".format(
+            test_loss, correct, len(test_loader.dataset), correct / len(test_loader.dataset)
         )
     )
     # data and prediction visualization via W&B Tables
