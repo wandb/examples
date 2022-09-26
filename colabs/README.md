@@ -39,3 +39,4 @@
 | XGBoost with W&B | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/xgb-colab) |
 | LightGBM with W&B | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/lightgbm-colab) |
 | StyleGAN-NADA with W&B  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/soumik12345/examples/blob/master/colabs/stylegan_nada/StyleGAN-NADA.ipynb) |
+| Cross Attention Control with Stable Diffusion and W&B | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/cross-attention-control) |
