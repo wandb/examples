@@ -5,8 +5,8 @@ import torch.optim as optim
 
 from ray import tune
 from ray.tune.examples.mnist_pytorch import ConvNet, get_data_loaders, test, train
-from ray.tune.integration.wandb import wandb_mixin, WandbLogger
-
+from ray.tune.integration.wandb import wandb_mixin
+from ray.air.callbacks.wandb import WandbLoggerCallback
 
 @wandb_mixin
 def train_mnist(config):
@@ -23,7 +23,7 @@ def train_mnist(config):
         train(model, optimizer, train_loader, device=device)
         acc = test(model, test_loader, device=device)
 
-        # When using WandbLogger, the metrics reported to tune are also logged in the W&B dashboard
+        # When using WandbLoggerCallback, the metrics reported to tune are also logged in the W&B dashboard
         print("DEBUG: tune.report run_id={} mean_accuracy={}".format(wandb.run.id, acc))
         tune.report(mean_accuracy=acc)
 
@@ -33,11 +33,13 @@ def train_mnist(config):
 
 if __name__=="__main__":
 
-    #log into wandb account
+    # Log into wandb account
     wandb.login()
     analysis = tune.run(
         train_mnist,
-        loggers=[WandbLogger],  # WandbLogger logs experiment configurations and metrics reported via tune.report() to W&B Dashboard
+        callbacks=[WandbLoggerCallback(
+            project="ray-example", # you can pass your project name as an arg via callback or via config as well
+            log_config=True)],  # WandbLoggerCallback logs experiment configurations and metrics reported via tune.report() to W&B Dashboard
         resources_per_trial={'gpu': 1},
         config={
             # wandb dict accepts all arguments that can be passed in wandb.init()
