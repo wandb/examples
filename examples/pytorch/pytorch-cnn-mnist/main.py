@@ -1,16 +1,18 @@
 from __future__ import print_function
+
 import argparse
+# workaround to fetch MNIST data
+import os
+import sys
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
-from torchvision import datasets, transforms
 import wandb
+from torchvision import datasets, transforms
 
-# workaround to fetch MNIST data
-import os
-import sys
 tv_version = torchvision.__version__
 print("torchvision version:", tv_version, file=sys.stderr)
 if tuple(map(lambda x: int(x), tv_version.split(".")[:2])) <= (0, 5):
@@ -51,9 +53,9 @@ def train(args, model, device, train_loader, optimizer, epoch):
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+            print('Train Epoch: {} [{}/{} ({:.0%})]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
+                batch_idx / len(train_loader), loss.item()))
 
 
 def test(args, model, device, test_loader):
@@ -75,9 +77,9 @@ def test(args, model, device, test_loader):
                 data[0], caption="Pred: {} Truth: {}".format(pred[0].item(), target[0])))
 
     test_loss /= len(test_loader.dataset)
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0%})\n'.format(
         test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))
+        correct / len(test_loader.dataset)))
     wandb.log({
         "Examples": example_images,
         "Test Accuracy": 100. * correct / len(test_loader.dataset),
