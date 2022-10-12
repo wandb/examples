@@ -41,8 +41,8 @@ class FashionCNN(nn.Module):
 # Training hyperparamters
 config = {
   "learning_rate": 0.0001,
-  "batch_size": 32,
-  "epochs": 5,
+  "batch_size":32,
+  "epochs": 1,
 }
 
 # Pass config into wandb.init

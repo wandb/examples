@@ -1,0 +1,2 @@
+torchvision==0.13.1
+wandb==0.13.4
