@@ -8,3 +8,6 @@ __pycache__
 logs
 summary*
 run*
+colabs/yolo/test/
+colabs/yolo/train/
+colabs/yolo/valid/
