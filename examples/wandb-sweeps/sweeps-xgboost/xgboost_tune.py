@@ -1,4 +1,4 @@
-# Sweeps with Traditional ML. (XGBoost)
+# Sweeps with XGBoost
 # Similar to this post: https://towardsdatascience.com/how-to-use-w-b-sweeps-with-lightgbm-for-hyperparameter-tuning-b67c3cac435c but uses xgboost
 
 import wandb
