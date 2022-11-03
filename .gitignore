@@ -8,3 +8,9 @@ __pycache__
 logs
 summary*
 run*
+colabs/dataset/*
+colabs/train_data/*
+colabs/output/*
+MNIST/*
+log.txt
+colabs/log.txt
