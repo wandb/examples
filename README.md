@@ -1,4 +1,4 @@
-<img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
+<img src="http://wandb.me/wandb-logo-darkbg" width="400" alt="Weights & Biases" />
 
 <div><img /></div>
 
