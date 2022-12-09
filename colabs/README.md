@@ -16,6 +16,7 @@
 | YOLOv5 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/yolo-colab) |
 | Ray/Tune | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/raytune-colab) |
 | 🤗 Diffusers | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/diffusers-uncond-colab) |
+| Kaolin-Wisp | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/vqad-colab) |
 
 # 🏋🏽‍♂️ W&B Features
 
