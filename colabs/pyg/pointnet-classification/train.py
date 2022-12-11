@@ -80,15 +80,23 @@ class GlobalSetAbstraction(torch.nn.Module):
 
 
 class PointNet2(torch.nn.Module):
-    def __init__(self, set_abstraction_ratio_1, set_abstraction_ratio_2, dropout):
+    def __init__(
+        self,
+        set_abstraction_ratio_1, set_abstraction_ratio_2,
+        set_abstraction_radius_1, set_abstraction_radius_2, dropout
+    ):
         super().__init__()
 
         # Input channels account for both `pos` and node features.
         self.sa1_module = SetAbstraction(
-            set_abstraction_ratio_1, 0.2, MLP([3, 64, 64, 128])
+            set_abstraction_ratio_1,
+            set_abstraction_radius_1,
+            MLP([3, 64, 64, 128])
         )
         self.sa2_module = SetAbstraction(
-            set_abstraction_ratio_2, 0.4, MLP([128 + 3, 128, 128, 256])
+            set_abstraction_ratio_2,
+            set_abstraction_radius_2,
+            MLP([128 + 3, 128, 128, 256])
         )
         self.sa3_module = GlobalSetAbstraction(MLP([256 + 3, 256, 512, 1024]))
 
@@ -124,6 +132,8 @@ def train():
     sample_points = config.sample_points
     set_abstraction_ratio_1 = config.set_abstraction_ratio_1
     set_abstraction_ratio_2 = config.set_abstraction_ratio_2
+    set_abstraction_radius_1 = config.set_abstraction_radius_1
+    set_abstraction_radius_2 = config.set_abstraction_radius_2
     dropout = config.dropout
     
     # Create datasets and dataloaders
@@ -134,7 +144,8 @@ def train():
     )
     
     model = PointNet2(
-        set_abstraction_ratio_1, set_abstraction_ratio_2, dropout
+        set_abstraction_ratio_1, set_abstraction_ratio_2,
+        set_abstraction_radius_1, set_abstraction_radius_2, dropout
     ).to(device)
     optimizer = torch.optim.Adam(
         model.parameters(), lr=config.learning_rate
@@ -218,22 +229,3 @@ def train():
 
 if __name__ == "__main__":
     train()
-
-
-# sweep_configuration = {
-#     'method': 'bayes',
-#     'metric': {'goal': 'maximize', 'name': 'Validation/Accuracy'},
-#     'parameters': 
-#     {
-#         'batch_size': {'values': [8, 16, 32, 64]},
-#         'sample_points': {'values': [512, 1024, 2048]},
-#         'set_abstraction_ratio_1': {'min': 0.1, 'max': 0.9},
-#         'set_abstraction_ratio_2': {'min': 0.1, 'max': 0.9},
-#         'dropout': {'min': 0.1, 'max': 0.7},
-#      }
-# }
-
-# sweep_id = wandb.sweep(
-#     sweep=sweep_configuration, project='pyg-point-cloud', entity="geekyrakshit"
-# )
-# wandb.agent(sweep_id, function=train, count=30)

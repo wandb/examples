@@ -11,9 +11,15 @@ parameters:
     set_abstraction_ratio_1:
         min: 0.1
         max: 0.9
+    set_abstraction_radius_1:
+        min: 0.1
+        max: 0.5
     set_abstraction_ratio_2:
         min: 0.1
         max: 0.9
+    set_abstraction_radius_2:
+        min: 0.1
+        max: 0.5
     dropout:
         min: 0.1
         max: 0.7
