@@ -1,6 +1,6 @@
 # 🔥🔥 Point Cloud Classification using PyTorch Geometric and Weights & Biases 🪄🐝
 
-This example demonstrates an implementation of the [PointeNet++](https://arxiv.org/pdf/1706.02413.pdf) architecture implemented using PyTorch Geometric and experiment tracked and visualized using [Weights & Biases](https://wandb.ai/site).
+This example demonstrates an implementation of the [PointeNet++](https://arxiv.org/pdf/1706.02413.pdf) architecture implemented using [PyTorch Geometric](https://www.pyg.org/) and experiment tracked and visualized using [Weights & Biases](https://wandb.ai/site).
 
 [![](https://raw.githubusercontent.com/wandb/assets/main/wandb-github-badge-gradient.svg)](http://wandb.me/pointnet2-classification)
 
