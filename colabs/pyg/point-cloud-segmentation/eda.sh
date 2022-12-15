@@ -1,0 +1,16 @@
+python eda.py Airplane
+python eda.py Bag
+python eda.py Cap
+python eda.py Car
+python eda.py Chair
+python eda.py Earphone
+python eda.py Guitar
+python eda.py Knife
+python eda.py Lamp
+python eda.py Laptop
+python eda.py Motorbike
+python eda.py Mug
+python eda.py Pistol
+python eda.py Rocket
+python eda.py Skateboard
+python eda.py Table
