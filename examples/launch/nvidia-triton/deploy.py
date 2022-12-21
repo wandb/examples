@@ -21,6 +21,8 @@ artifact_name, artifact_version_str = artifact.name.split(":")
 artifact_version = artifact_version_str.strip("v")
 path = artifact.download()
 
+
+# DEPLOY TO REMOTE MODEL REPOSITORY (S3, GCP, NFS)
 # assume the artifact is a tensorflow artifact, create a "model.savedmodel" folder
 model_path = os.path.join("/model_repository", artifact_name, artifact_version, "model.savedmodel")
 # create the local model repository for Triton
@@ -28,6 +30,9 @@ os.makedirs(model_path, exist_ok=True)
 # copy over the saved model files to triton
 shutil.copytree(path, model_path, dirs_exist_ok=True)
 
+# CALL TRITON LOAD MODEL URL
+
+# VERIFY MODEL IS RUNNING
 
 run.finish()
 
