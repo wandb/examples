@@ -1,0 +1,23 @@
+python run.py --do_train="True" \
+    --do_eval="True" \
+    --output_dir="./proteins-base" \
+    --model_type="roberta" \
+    --config_name="./proteins-base" \
+    --tokenizer_artifact_path="darek/protobert/uniref_1m_tokenizer:v0" \
+    --tokenizer_name="uniref_1m_tokenizer" \
+    --dataset_artifact_path="darek/protobert/uniref_1m_split:v2" \
+    --dataset_name="uniref_1m" \
+    --max_seq_length="32" \
+    --weight_decay="0.01" \
+    --per_device_train_batch_size="16" \
+    --per_device_eval_batch_size="16" \
+    --learning_rate="5e-5" \
+    --warmup_steps="50" \
+    --overwrite_output_dir \
+    --num_train_epochs="1000" \
+    --adam_beta1="0.9" \
+    --adam_beta2="0.98" \
+    --logging_steps="500" \
+    --save_steps="500" \
+    --eval_steps="500" \
+    --line_by_line="True"
