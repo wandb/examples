@@ -92,13 +92,13 @@ def main():
     wandb.config.update(data_args)
 
     if data_args.dataset_name is not None:
-        # Downloading and loading a dataset from the wandb artifacts.
         if data_args.dataset_artifact_path is None:
-            datasets = load_from_disk(data_args.dataset_name)
+            # Downloading and loading a dataset from the hub.
+            datasets = load_dataset(data_args.dataset_name)
         else:
+            # Downloading and loading a dataset from the wandb artifacts.
             artifact = wandb.use_artifact(data_args.dataset_artifact_path)
             local_path = artifact.download()
-
             datasets = load_from_disk(os.path.join(local_path, data_args.dataset_name))
     else:
         data_files = {}
@@ -255,7 +255,7 @@ def main():
     logger.info(f"Tokenized first example encoded: {encoded}")
     logger.info(f"Tokenized first example decoded: {decoded}")
 
-    tpu_count = jax.device_count(backend="gpu")
+    tpu_count = jax.device_count(backend="tpu")
     logger.info(f"TPU devices: {tpu_count}")
 
     data_collator = FlaxDataCollatorForLanguageModeling(
@@ -305,6 +305,8 @@ def main():
         end_value=0,
         transition_steps=num_train_steps - training_args.warmup_steps,
     )
+    # lr testing
+    # decay_fn = optax.constant_schedule(training_args.learning_rate)
     linear_decay_lr_schedule_fn = optax.join_schedules(
         schedules=[warmup_fn, decay_fn], boundaries=[training_args.warmup_steps]
     )
@@ -462,8 +464,10 @@ def main():
                 train_time += time.time() - train_start
                 if jax.process_index() == 0:
                     print(train_metric)
-                    wandb.log({"train/loss": train_metric["loss"].item()})
-                    wandb.log({"learning_rate": train_metric["learning_rate"].item()})
+                    wandb.log({
+                        'train_loss' : train_metric['loss'],
+                        'learning_rate': train_metric['learning_rate']
+                        })
 
                 epochs.write(
                     f"Step... ({cur_step} | Loss: {train_metric['loss']}, Learning Rate:"
@@ -511,8 +515,10 @@ def main():
 
                 # Save metrics
                 if jax.process_index() == 0:
-                    wandb.log({"eval/loss": eval_metrics["loss"].item()})
-                    wandb.log({"eval/accuracy": eval_metrics["accuracy"].item()})
+                    wandb.log({
+                            'eval_loss': eval_metrics['loss'],
+                            'eval_accuracy': eval_metrics['accuracy'],
+                            })
 
             if cur_step % training_args.save_steps == 0 and cur_step > 0:
                 # save checkpoint after each epoch and push checkpoint to the hub
@@ -522,6 +528,8 @@ def main():
                     )
                     model.save_pretrained(training_args.output_dir, params=params)
                     tokenizer.save_pretrained(training_args.output_dir)
+                    model_path = f'{training_args.output_dir}/flax_model.msgpack'
+                    wandb.log_artifact(model_path, name=f'{wandb.run.id}-model', type='model') 
                     if training_args.push_to_hub:
                         repo.push_to_hub(
                             commit_message=f"Saving weights and logs of step {cur_step}",
@@ -568,14 +576,13 @@ def main():
             perplexity = float("inf")
         eval_metrics["perplexity"] = perplexity
 
+
         if jax.process_index() == 0:
-            eval_metrics = {
-                f"eval_{metric_name}": value
-                for metric_name, value in eval_metrics.items()
-            }
+            eval_metrics = {f"eval_{metric_name}": value for metric_name, value in eval_metrics.items()}
             path = os.path.join(training_args.output_dir, "eval_results.json")
             with open(path, "w") as f:
                 json.dump(eval_metrics, f, indent=4, sort_keys=True)
+            wandb.run.summary["perplexity"] = eval_metrics["eval_perplexity"]
 
 
 if __name__ == "__main__":

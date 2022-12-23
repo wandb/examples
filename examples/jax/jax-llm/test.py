@@ -14,4 +14,6 @@ input_ids = tokenizer(dummy_input, return_tensors="np").input_ids[:, :10]
 model = FlaxRobertaModel.from_pretrained("julien-c/dummy-unknown")
 
 # run a forward pass, should return an object `FlaxBaseModelOutputWithPooling`
-model(input_ids)
+out = model(input_ids)
+
+print(type(out))

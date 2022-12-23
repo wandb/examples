@@ -1,3 +1,5 @@
+# full experiment
+
 python run.py --do_train="True" \
     --do_eval="True" \
     --output_dir="./proteins-base" \
@@ -5,19 +7,28 @@ python run.py --do_train="True" \
     --config_name="./proteins-base" \
     --tokenizer_artifact_path="darek/protobert/uniref_1m_tokenizer:v0" \
     --tokenizer_name="uniref_1m_tokenizer" \
-    --dataset_artifact_path="darek/protobert/uniref_1m_split:v2" \
-    --dataset_name="uniref_1m" \
-    --max_seq_length="32" \
+    --dataset_name="agemagician/uniref30" \
+    --max_seq_length="128" \
     --weight_decay="0.01" \
-    --per_device_train_batch_size="16" \
-    --per_device_eval_batch_size="16" \
-    --learning_rate="5e-5" \
+    --per_device_train_batch_size="256" \
+    --per_device_eval_batch_size="256" \
+    --learning_rate="1e-4" \
     --warmup_steps="50" \
     --overwrite_output_dir \
-    --num_train_epochs="1000" \
+    --num_train_epochs="1" \
     --adam_beta1="0.9" \
     --adam_beta2="0.98" \
     --logging_steps="500" \
     --save_steps="500" \
     --eval_steps="500" \
     --line_by_line="True"
+
+# learning rate experiments
+
+python run.py --do_train="True"     --do_eval="True"     --output_dir="./proteins-base"     --model_type="roberta"     --config_name="./proteins-base"     --tokenizer_artifact_path="darek/protobert/uniref_1m_tokenizer:v0"     --tokenizer_name="uniref_1m_tokenizer"     --dataset_artifact_path="darek/protobert/uniref_1m_split:v2"     --dataset_name="uniref_1m"     --max_seq_length="128"     --weight_decay="0.01"     --per_device_train_batch_size="256"     --per_device_eval_batch_size="256"     --learning_rate="1e-5"     --warmup_steps="50"     --overwrite_output_dir     --num_train_epochs="1"     --adam_beta1="0.9"     --adam_beta2="0.98"     --logging_steps="50"     --save_steps="50"     --eval_steps="50"     --line_by_line="True"
+python run.py --do_train="True"     --do_eval="True"     --output_dir="./proteins-base"     --model_type="roberta"     --config_name="./proteins-base"     --tokenizer_artifact_path="darek/protobert/uniref_1m_tokenizer:v0"     --tokenizer_name="uniref_1m_tokenizer"     --dataset_artifact_path="darek/protobert/uniref_1m_split:v2"     --dataset_name="uniref_1m"     --max_seq_length="128"     --weight_decay="0.01"     --per_device_train_batch_size="256"     --per_device_eval_batch_size="256"     --learning_rate="3e-5"     --warmup_steps="50"     --overwrite_output_dir     --num_train_epochs="1"     --adam_beta1="0.9"     --adam_beta2="0.98"     --logging_steps="50"     --save_steps="50"     --eval_steps="50"     --line_by_line="True"
+python run.py --do_train="True"     --do_eval="True"     --output_dir="./proteins-base"     --model_type="roberta"     --config_name="./proteins-base"     --tokenizer_artifact_path="darek/protobert/uniref_1m_tokenizer:v0"     --tokenizer_name="uniref_1m_tokenizer"     --dataset_artifact_path="darek/protobert/uniref_1m_split:v2"     --dataset_name="uniref_1m"     --max_seq_length="128"     --weight_decay="0.01"     --per_device_train_batch_size="256"     --per_device_eval_batch_size="256"     --learning_rate="5e-5"     --warmup_steps="50"     --overwrite_output_dir     --num_train_epochs="1"     --adam_beta1="0.9"     --adam_beta2="0.98"     --logging_steps="50"     --save_steps="50"     --eval_steps="50"     --line_by_line="True"
+python run.py --do_train="True"     --do_eval="True"     --output_dir="./proteins-base"     --model_type="roberta"     --config_name="./proteins-base"     --tokenizer_artifact_path="darek/protobert/uniref_1m_tokenizer:v0"     --tokenizer_name="uniref_1m_tokenizer"     --dataset_artifact_path="darek/protobert/uniref_1m_split:v2"     --dataset_name="uniref_1m"     --max_seq_length="128"     --weight_decay="0.01"     --per_device_train_batch_size="256"     --per_device_eval_batch_size="256"     --learning_rate="1e-4"     --warmup_steps="50"     --overwrite_output_dir     --num_train_epochs="1"     --adam_beta1="0.9"     --adam_beta2="0.98"     --logging_steps="50"     --save_steps="50"     --eval_steps="50"     --line_by_line="True"
+python run.py --do_train="True"     --do_eval="True"     --output_dir="./proteins-base"     --model_type="roberta"     --config_name="./proteins-base"     --tokenizer_artifact_path="darek/protobert/uniref_1m_tokenizer:v0"     --tokenizer_name="uniref_1m_tokenizer"     --dataset_artifact_path="darek/protobert/uniref_1m_split:v2"     --dataset_name="uniref_1m"     --max_seq_length="128"     --weight_decay="0.01"     --per_device_train_batch_size="256"     --per_device_eval_batch_size="256"     --learning_rate="3e-4"     --warmup_steps="50"     --overwrite_output_dir     --num_train_epochs="1"     --adam_beta1="0.9"     --adam_beta2="0.98"     --logging_steps="50"     --save_steps="50"     --eval_steps="50"     --line_by_line="True"
+python run.py --do_train="True"     --do_eval="True"     --output_dir="./proteins-base"     --model_type="roberta"     --config_name="./proteins-base"     --tokenizer_artifact_path="darek/protobert/uniref_1m_tokenizer:v0"     --tokenizer_name="uniref_1m_tokenizer"     --dataset_artifact_path="darek/protobert/uniref_1m_split:v2"     --dataset_name="uniref_1m"     --max_seq_length="128"     --weight_decay="0.01"     --per_device_train_batch_size="256"     --per_device_eval_batch_size="256"     --learning_rate="5e-4"     --warmup_steps="50"     --overwrite_output_dir     --num_train_epochs="1"     --adam_beta1="0.9"     --adam_beta2="0.98"     --logging_steps="50"     --save_steps="50"     --eval_steps="50"     --line_by_line="True"
+python run.py --do_train="True"     --do_eval="True"     --output_dir="./proteins-base"     --model_type="roberta"     --config_name="./proteins-base"     --tokenizer_artifact_path="darek/protobert/uniref_1m_tokenizer:v0"     --tokenizer_name="uniref_1m_tokenizer"     --dataset_artifact_path="darek/protobert/uniref_1m_split:v2"     --dataset_name="uniref_1m"     --max_seq_length="128"     --weight_decay="0.01"     --per_device_train_batch_size="256"     --per_device_eval_batch_size="256"     --learning_rate="1e-3"     --warmup_steps="50"     --overwrite_output_dir     --num_train_epochs="1"     --adam_beta1="0.9"     --adam_beta2="0.98"     --logging_steps="50"     --save_steps="50"     --eval_steps="50"     --line_by_line="True"
