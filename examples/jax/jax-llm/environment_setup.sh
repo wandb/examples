@@ -12,7 +12,7 @@ cd transformers
 git remote add upstream https://github.com/huggingface/transformers.git
 git checkout -b proto
 pip install datasets
-pip install .[flax,testing,sentencepiece]
+pip install ".[flax,testing,sentencepiece]"
 pip install -r examples/flax/_tests_requirements.txt
 pip install tensorflow
 pip install wandb
