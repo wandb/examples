@@ -42,14 +42,12 @@ class FashionCNN(nn.Module):
 config = {
   "learning_rate": 0.0001,
   "batch_size": 32,
-  "epochs": 1,
+  "epochs": 5,
 }
 
 # Pass config into wandb.init
 with wandb.init(config=config) as run:
   
-  run.log_code()
-
   # Training setup
   config = run.config
   device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -80,7 +78,7 @@ with wandb.init(config=config) as run:
         run.log(
           {
             "train/loss": sum(losses)/len(losses),  # Log average loss
-            # "train/losses": wandb.Histogram(losses)  # Log all losses
+            "train/losses": wandb.Histogram(losses)  # Log all losses
           }
         )
         losses = []
