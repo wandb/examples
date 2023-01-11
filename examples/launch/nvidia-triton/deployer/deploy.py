@@ -18,9 +18,7 @@ config = {
     "triton_url": "localhost:8000",
     "triton_bucket": "andrew-triton-bucket",
     "triton_model_repo_path": "models",
-    "triton_model_config_overrides": {
-        # "max_batch_size": 8
-    },
+    "triton_model_config_overrides": {"max_batch_size": 32},
     "number_of_model_copies": 3,
 }
 
@@ -33,7 +31,7 @@ if "triton_url" not in config:
 
 if "triton_bucket" not in config:
     raise ValueError(
-        "`triton_bucket` must be specified in config in the form of s3://your-bucket-name"
+        "`triton_bucket` must be specified in config in the form of your-bucket-name (omit the s3://)"
     )
 
 
@@ -80,12 +78,20 @@ with wandb.init(config=config, job_type="deploy_to_triton") as run:
                 "specific": {"versions": [run.config["artifact_version"]]}
             }
         }
+
+        # I'm not sure how to read the pbtxt yet, but this should work for now...
+        # 1. Load the model without config -- this will pick up the config.pbtxt if it exists or autogenerate otherwise
+        client.load_model(model_name)
+
+        # 2. Then, patch this config with the overrides in run.config and reload the model
+        triton_auto_config = client.get_model_config(model_name)
         triton_configs = {
+            **triton_auto_config,
             **version_config,
             **run.config["triton_model_config_overrides"],
         }
+        client.unload_model(model_name)
         client.load_model(model_name, config=json.dumps(triton_configs))
-        # client.load_model(model_name)
 
         if not client.is_model_ready(model_name):
             print(f"Failed to load model {model_name}")
