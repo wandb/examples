@@ -8,6 +8,35 @@ import os
 import boto3
 import tritonclient.http as httpclient
 import wandb
+from google.protobuf import json_format, text_format
+from tritonclient.grpc import model_config_pb2
+
+
+# def config_pbtxt_to_dict(fname):
+#     with open(fname) as f:
+#         model_config = model_config_pb2.ModelConfig()
+#         text_format.Parse(f.read(), model_config)
+#         return json_format.MessageToDict(model_config)
+
+
+def s3_config_pbtxt_to_dict(bucket, pbtxt_path):
+    s3 = boto3.resource("s3")
+    bucket = s3.Bucket(bucket)
+    for obj in bucket.objects.all():
+        print(obj.key)
+        if obj.key == pbtxt_path:
+            model_config = model_config_pb2.ModelConfig()
+            body = obj.get()["Body"]
+            text_format.Parse(body.read(), model_config)
+            return json_format.MessageToDict(model_config)
+    return {}  # no pbtxt found; do you have to load and unload model for the autogen?
+
+
+def dict_to_config_pbtxt(d, out_fname):
+    with open(out_fname, "w") as f:
+        model_config = model_config_pb2.ModelConfig()
+        json_format.ParseDict(d, model_config)
+        text_format.PrintMessage(model_config, f)
 
 
 config = {
@@ -19,7 +48,7 @@ config = {
     "triton_bucket": "andrew-triton-bucket",
     "triton_model_repo_path": "models",
     "triton_model_config_overrides": {"max_batch_size": 32},
-    "number_of_model_copies": 3,
+    "number_of_model_copies": 1,
 }
 
 
@@ -79,18 +108,16 @@ with wandb.init(config=config, job_type="deploy_to_triton") as run:
             }
         }
 
-        # I'm not sure how to read the pbtxt yet, but this should work for now...
-        # 1. Load the model without config -- this will pick up the config.pbtxt if it exists or autogenerate otherwise
-        client.load_model(model_name)
-
-        # 2. Then, patch this config with the overrides in run.config and reload the model
-        triton_auto_config = client.get_model_config(model_name)
+        base_pbtxt_config = s3_config_pbtxt_to_dict(
+            bucket=run.config["triton_bucket"],
+            pbtxt_path=f"{run.config['triton_model_repo_path']}/{model_name}/config.pbtxt",
+        )
         triton_configs = {
-            **triton_auto_config,
+            **base_pbtxt_config,
             **version_config,
             **run.config["triton_model_config_overrides"],
         }
-        client.unload_model(model_name)
+        dict_to_config_pbtxt(triton_configs, "overloaded.pbtxt")
         client.load_model(model_name, config=json.dumps(triton_configs))
 
         if not client.is_model_ready(model_name):

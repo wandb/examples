@@ -1,7 +1,7 @@
 ## 1. Build and run the Triton server container
 ```
 docker build -t tritonserver-wandb server && \
-docker run --env-file ./env.list --rm --net=host tritonserver-wandb
+docker run --env-file ./env.list --rm -p 8000:8000 tritonserver-wandb
 ```
 
 ## 2. Build and run the deployer container, which loads a model from wandb Artifacts into Triton
