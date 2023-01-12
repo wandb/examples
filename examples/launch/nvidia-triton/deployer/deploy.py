@@ -59,7 +59,7 @@ if "triton_url" not in config:
 
 if "triton_bucket" not in config:
     raise ValueError(
-        "`triton_bucket` must be specified in config in the form of your-bucket-name (omit the s3://)"
+        "`triton_bucket` must be specified in config in the form of your-bucket-name"
     )
 
 
@@ -74,7 +74,11 @@ with wandb.init(config=config, job_type="deploy_to_triton") as run:
 
     def _deploy(i):
         wandb.termlog(f"Starting job {i}")
-        model_name = run.config["artifact_name"] + f"_copy_{i}"
+        model_name = (
+            run.config["artifact_name"]
+            + f"_v{run.config['artifact_version']}"
+            + f"_copy_{i}"
+        )
 
         wandb.termlog(
             "Uploading model to Triton model repository (this may take a while...)"

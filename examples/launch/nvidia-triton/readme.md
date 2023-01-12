@@ -1,3 +1,5 @@
+# Deploy a model from Artifacts to Triton
+
 ## 1. Build and run the Triton server container
 ```
 docker build -t tritonserver-wandb server && \
@@ -16,3 +18,6 @@ You may need to include:
 2. AWS_DEFAULT_REGION
 3. AWS_ACCESS_KEY_ID
 4. AWS_SECRET_ACCESS_KEY
+
+## Note on testing
+- Tested using keras savedmodel on CPU
