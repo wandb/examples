@@ -41,16 +41,9 @@ testset = torchvision.datasets.FashionMNIST(
 trainloader = torch.utils.data.DataLoader(
     trainset, batch_size=4, shuffle=True, num_workers=2
 )
-
-
 testloader = torch.utils.data.DataLoader(
     testset, batch_size=4, shuffle=False, num_workers=2
 )
-
-# dataiter = iter(trainloader)
-# images, labels = next(dataiter)
-
-
 
 # constant for classes
 classes = (
