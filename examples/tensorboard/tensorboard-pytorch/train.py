@@ -10,14 +10,15 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torchvision
-import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data
-import wandb
+import torchvision
+import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
+
+import wandb
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--log_dir", type=str, help="Where to store tensorboard files")
