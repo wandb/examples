@@ -3,6 +3,8 @@
   <img src="https://github.com/wandb/wandb/raw/main/.github/wb-logo-darkbg.png#gh-dark-mode-only" width="600" alt="Weights & Biases"/>
 </p>
 
+Use W&B to build better models faster. Track and visualize all the pieces of your machine learning pipeline, from datasets to production machine learning models. Get started with W&B today, [sign up for a free account!](https://wandb.com?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme)
+
 <p align='center'>
 <a target="_blank" href="https://docs.wandb.ai/guides/track?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme">
 <picture>
@@ -57,6 +59,7 @@
 
 &nbsp;
 
+🎓 W&B is free for students
 # 🚀 Getting Started
 
 ### Never lose your progress again. 
