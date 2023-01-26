@@ -8,8 +8,8 @@ Use W&B to build better models faster. Track and visualize all the pieces of you
 <p align='center'>
 <a target="_blank" href="https://docs.wandb.ai/guides/track?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/README_images/Product_Icons_dark_background/experiments_icon.svg" width="13.5%">
-  <source media="(prefers-color-scheme: light)" srcset="./docs/README_images/Product_Icons_light/experiments_icon.svg" width="13.5%">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_dark_background/experiments_icon.svg" width="13.5%">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_light/experiments_icon.svg" width="13.5%">
   <img alt="Weights and Biases Experiments" src="">
 </picture>
 </a>
