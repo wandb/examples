@@ -29,8 +29,8 @@ Use W&B to build better models faster. Track and visualize all the pieces of you
 </a>
 <a target="_blank" href="https://docs.wandb.ai/guides/data-vis?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/README_images/Product_Icons_dark_background/tables_icon.svg" width="13.5%">
-  <source media="(prefers-color-scheme: light)" srcset="./docs/README_images/Product_Icons_light/tables_icon.svg" width="13.5%">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_dark_background/tables_icon.svg" width="13.5%">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_light/tables_icon.svg" width="13.5%">
   <img alt="Weights and Biases Tables" src="">
 </picture>
 </a>
@@ -59,7 +59,6 @@ Use W&B to build better models faster. Track and visualize all the pieces of you
 
 &nbsp;
 
-🎓 W&B is free for students
 # 🚀 Getting Started
 
 ### Never lose your progress again. 
