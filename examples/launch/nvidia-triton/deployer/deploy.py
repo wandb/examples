@@ -6,12 +6,12 @@ import json
 import os
 
 import boto3
+import click
 import tritonclient.http as httpclient
-import wandb
 from google.protobuf import json_format, text_format
 from tritonclient.grpc import model_config_pb2
-import click
 
+import wandb
 
 # def config_pbtxt_to_dict(fname):
 #     with open(fname) as f:
