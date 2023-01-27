@@ -61,7 +61,6 @@ config = {
     "triton_bucket": "andrew-triton-bucket",
     "triton_model_repo_path": "models",
     "triton_model_config_overrides": {"max_batch_size": 32},
-    "number_of_model_copies": 1,
 }
 
 
