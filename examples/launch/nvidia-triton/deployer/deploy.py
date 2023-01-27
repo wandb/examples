@@ -40,10 +40,6 @@ def dict_to_config_pbtxt(d, out_fname):
         wandb.termlog("Generated overloaded config at: overloaded_config.pbtxt")
 
 
-def download_wandb_artifact():
-    pass
-
-
 def wandb_termlog_heading(text):
     return wandb.termlog(click.style(text, bg="white", bold=True))
 
