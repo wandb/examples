@@ -37,7 +37,7 @@ def dict_to_config_pbtxt(d, out_fname):
         model_config = model_config_pb2.ModelConfig()
         json_format.ParseDict(d, model_config)
         text_format.PrintMessage(model_config, f)
-        wandb.termlog("Generated overloaded config at: overloaded_config.pbtxt")
+        wandb.termlog(f"Generated overloaded config at: {out_fname}")
 
 
 def wandb_termlog_heading(text):
@@ -66,6 +66,7 @@ config = {
 
 
 with wandb.init(config=config, job_type="deploy_to_triton") as run:
+
     *_, model_name_ver = run.config.artifact.name.split("/")
     model_name, model_ver = model_name_ver.split(":v")
     model_ver = int(model_ver)
