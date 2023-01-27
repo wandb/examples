@@ -86,19 +86,16 @@ with wandb.init(config=config, job_type="deploy_to_triton") as run:
     wandb_termlog_heading(
         "Uploading model to Triton model repo (this may take a while...)"
     )
-    remote_path = os.path.join(
-        run.config["triton_model_repo_path"],
-        model_name,
-        str(model_ver),
-        "model.savedmodel",
+    remote_path = (
+        f"{run.config.triton_model_repo_path}/{model_name}/{model_ver}/model.savedmodel"
     )
-    upload_files_to_triton_repo(path, remote_path, run.config["triton_bucket"])
+    upload_files_to_triton_repo(path, remote_path, run.config.triton_bucket)
 
     wandb_termlog_heading("Loading model into Triton")
-    with httpclient.InferenceServerClient(url=run.config["triton_url"]) as client:
+    with httpclient.InferenceServerClient(url=run.config.triton_url) as client:
         base_pbtxt_config = s3_config_pbtxt_to_dict(
-            bucket=run.config["triton_bucket"],
-            pbtxt_path=f"{run.config['triton_model_repo_path']}/{model_name}/config.pbtxt",
+            bucket=run.config.triton_bucket,
+            pbtxt_path=f"{run.config.triton_model_repo_path}/{model_name}/config.pbtxt",
         )
         if not base_pbtxt_config:  # no config.pbtxt found
             wandb.termwarn(
@@ -123,7 +120,7 @@ with wandb.init(config=config, job_type="deploy_to_triton") as run:
         triton_configs = {
             **base_pbtxt_config,
             **version_config,
-            **run.config["triton_model_config_overrides"],
+            **run.config.triton_model_config_overrides,
         }
         dict_to_config_pbtxt(triton_configs, "overloaded_config.pbtxt")
         client.load_model(model_name, config=json.dumps(triton_configs))
