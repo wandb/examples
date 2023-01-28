@@ -1,3 +1,4 @@
 boto3
 tritonclient[all]
 git+https://github.com/wandb/wandb.git@launch/handle-many-env-vars-in-docker-args-hack
+# git+https://github.com/wandb/wandb.git

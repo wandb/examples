@@ -41,7 +41,7 @@ def dict_to_config_pbtxt(d, out_fname):
 
 
 def wandb_termlog_heading(text):
-    return wandb.termlog(click.style(text, bg="white", bold=True))
+    return wandb.termlog(click.style("triton job: ", fg="green") + text)
 
 
 def upload_files_to_triton_repo(artifact_path, remote_path, bucket_path):
@@ -55,6 +55,14 @@ def upload_files_to_triton_repo(artifact_path, remote_path, bucket_path):
             s3_client.upload_file(full_path, bucket_path, remote_obj_path)
 
 
+def decompose_artifact_str(s):
+    entity, project, name_version = s.strip("wandb-artifact://").split("/")
+    name, version = name_version.split(":v")
+    version = int(version)
+
+    return entity, project, name, version
+
+
 config = {
     "artifact": "wandb-artifact://megatruong/fashion-mnist-keras-triton/model-sage-feather-1:v2",
     "triton_url": "localhost:8000",
@@ -63,11 +71,8 @@ config = {
     "triton_model_config_overrides": {"max_batch_size": 32},
 }
 
-
-with wandb.init(config=config, job_type="deploy_to_triton") as run:
-
-    *_, model_name_ver = run.config.artifact.name.split("/")
-    model_name, model_ver = model_name_ver.split(":v")
+with wandb.init(config=config, job_type="deploy_to_triton", save_code=True) as run:
+    model_name, model_ver = run.config.artifact.name.split(":v")
     model_ver = int(model_ver)
     if not isinstance(model_ver, int):
         raise ValueError("Triton requires model version to be an integer")
@@ -129,6 +134,3 @@ with wandb.init(config=config, job_type="deploy_to_triton") as run:
             wandb.termerror(f"Failed to load model {model_name}")
 
     wandb_termlog_heading("Finished deploying to Triton")
-
-    # Log code so it can be Launch'd
-    run.log_code()
