@@ -30,6 +30,7 @@ def s3_config_pbtxt_to_dict(bucket, pbtxt_path):
             body = obj.get()["Body"]
             text_format.Parse(body.read(), model_config)
             return json_format.MessageToDict(model_config)
+    return {}
 
 
 def dict_to_config_pbtxt(d, out_fname):
@@ -37,7 +38,7 @@ def dict_to_config_pbtxt(d, out_fname):
         model_config = model_config_pb2.ModelConfig()
         json_format.ParseDict(d, model_config)
         text_format.PrintMessage(model_config, f)
-        wandb.termlog(f"Generated overloaded config at: {out_fname}")
+        wandb.termlog(f"Generated config at: {out_fname}")
 
 
 def wandb_termlog_heading(text):
@@ -55,6 +56,13 @@ def upload_files_to_triton_repo(artifact_path, remote_path, bucket_path):
             s3_client.upload_file(full_path, bucket_path, remote_obj_path)
 
 
+def upload_config_pbtxt_to_triton_repo(fpath, remote_path, bucket_path):
+    s3_client = boto3.client("s3")
+    remote_obj_path = f"{remote_path}/{fpath}"
+    wandb.termlog(f"Uploading {fpath} to {remote_obj_path}")
+    s3_client.upload_file(fpath, bucket_path, remote_obj_path)
+
+
 def decompose_artifact_str(s):
     entity, project, name_version = s.strip("wandb-artifact://").split("/")
     name, version = name_version.split(":v")
@@ -63,12 +71,28 @@ def decompose_artifact_str(s):
     return entity, project, name, version
 
 
+valid_frameworks = ["pytorch", "tensorflow"]
+
+# config = {
+#     "artifact": "wandb-artifact://megatruong/ptl-testing2/my_model:v0",
+#     "framework": "pytorch",
+#     "triton_url": "localhost:8000",
+#     "triton_bucket": "andrew-triton-bucket",
+#     "triton_model_repo_path": "models",
+#     "triton_model_config_overrides": {
+#         "max_batch_size": 32,
+#         "input": [{"name": "conv1", "data_type": "TYPE_FP32", "dims": [3, 28, 28]}],
+#         "output": [{"name": "fc", "data_type": "TYPE_FP32", "dims": [1]}],
+#     },
+# }
+
 config = {
-    "artifact": "wandb-artifact://megatruong/fashion-mnist-keras-triton/model-sage-feather-1:v2",
+    "artifact": "wandb-artifact://megatruong/fashion-mnist-keras-triton/model-sage-feather-1:v3",
+    "framework": "tensorflow",
     "triton_url": "localhost:8000",
     "triton_bucket": "andrew-triton-bucket",
     "triton_model_repo_path": "models",
-    "triton_model_config_overrides": {"max_batch_size": 32},
+    "triton_model_config_overrides": {},
 }
 
 with wandb.init(config=config, job_type="deploy_to_triton", save_code=True) as run:
@@ -91,9 +115,15 @@ with wandb.init(config=config, job_type="deploy_to_triton", save_code=True) as r
     wandb_termlog_heading(
         "Uploading model to Triton model repo (this may take a while...)"
     )
-    remote_path = (
-        f"{run.config.triton_model_repo_path}/{model_name}/{model_ver}/model.savedmodel"
-    )
+
+    if run.config.framework not in valid_frameworks:
+        raise ValueError(
+            f"Invalid framework {run.config.framework} -- must be one of {valid_frameworks}"
+        )
+    if run.config.framework == "tensorflow":
+        remote_path = f"{run.config.triton_model_repo_path}/{model_name}/{model_ver}/model.savedmodel"
+    if run.config.framework == "pytorch":
+        remote_path = f"{run.config.triton_model_repo_path}/{model_name}/{model_ver}"
     upload_files_to_triton_repo(path, remote_path, run.config.triton_bucket)
 
     wandb_termlog_heading("Loading model into Triton")
@@ -102,7 +132,9 @@ with wandb.init(config=config, job_type="deploy_to_triton", save_code=True) as r
             bucket=run.config.triton_bucket,
             pbtxt_path=f"{run.config.triton_model_repo_path}/{model_name}/config.pbtxt",
         )
-        if not base_pbtxt_config:  # no config.pbtxt found
+        if (
+            not base_pbtxt_config and run.config.framework == "tensorflow"
+        ):  # no config.pbtxt found
             wandb.termwarn(
                 f"Did not find config.pbtxt for {model_name}/{model_ver}.  Trying to autogenerate config..."
             )
