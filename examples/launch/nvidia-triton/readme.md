@@ -20,4 +20,5 @@ You may need to include:
 4. AWS_SECRET_ACCESS_KEY
 
 ## Note on testing
-- Tested using keras savedmodel on CPU
+- Tested using keras savedmodel and torchscript on CPU
+- Note: For pytorch, your model needs to have already been converted to torchscript and saved to Artifacts before uploading -- currently investigating if we can do the conversion automatically.
