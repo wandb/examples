@@ -1,0 +1,21 @@
+{
+  "overrides": {
+    "args": [],
+    "run_config": {
+      "artifact": "${artifactVersion}",
+      "framework": "tensorflow",
+      "triton_url": "localhost:8000",
+      "triton_bucket": "andrew-triton-bucket",
+      "triton_model_repo_path": "models",
+      "triton_model_config_overrides": {
+        "max_batch_size": 32
+      }
+    },
+    "entry_point": []
+  },
+  "docker_args": {
+    "tty": true,
+    "env-file": "/Users/andrewtruong/repos/examples/examples/launch/nvidia-triton/env.list",
+    "net": "host"
+  }
+}
