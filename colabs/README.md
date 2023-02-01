@@ -8,6 +8,7 @@
 | Keras  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/keras-colab) |
 | JAX and Flax | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/jax-intro) |
 | PyTorch Lightning | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/lit-colab) |
+| PyTorch Geometric | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/pyg-graph-classification) |
 | PyTorch Profiler | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/trace-colab) |
 | TensorFlow  | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/tf-colab) |
 | fastai | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/fastai-colab) |
