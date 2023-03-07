@@ -31,7 +31,7 @@ jedi==0.18.0
 Jinja2==3.0.2
 jsonschema==4.1.2
 jupyter-client==7.0.6
-jupyter-core==4.9.1
+jupyter-core==4.11.2
 jupyterlab-pygments==0.1.2
 jupyterlab-widgets==1.0.2
 MarkupSafe==2.0.1
