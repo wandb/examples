@@ -1,7 +1,7 @@
 # Model Evaluation with Weights & Biases
 
 This is a simple example that covers how to use W&B for:
-1. Dataset Registry: Generate training dataset and register it with Weights & Biasespip 
+1. Dataset Registry: Generate training dataset and register it with Weights & Biases
 2. Model Registry: Train models on the dataset, and register resulting model files
 3. Model Evaluation: Evaluate models from the model registry, and tag production-ready models
 
