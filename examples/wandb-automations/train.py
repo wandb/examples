@@ -66,7 +66,6 @@ def train(config):
                                                     total_steps=len(train_dl)*config.epochs)
     # Training
     example_ct = 0
-    step_ct = 0
     for epoch in tqdm(range(config.epochs)):
         model.train()
         correct = 0.
@@ -87,19 +86,13 @@ def train(config):
             correct += (predicted == labels).sum().item()
             train_accuracy = correct / example_ct
 
-            metrics = {"train/train_loss": train_loss, 
-                        "train/epoch": (step + 1 + (n_steps_per_epoch * epoch)) / n_steps_per_epoch, 
-                        "train/example_ct": example_ct,
-                        "train/accuracy": train_accuracy}
+            metrics = {"train_loss": train_loss, 
+                        "train_acc": train_accuracy}
             
-            if step + 1 < n_steps_per_epoch:
-                # 🐝 Log train metrics to wandb 
-                wandb.log(metrics)
-                
-            step_ct += 1
+            wandb.log(metrics)
 
         wandb.log(metrics)
-        print(f"{epoch} - Train Loss: {train_loss:.3f}, Train Accuracy: {train_accuracy:.2f}")
+        print(f"{epoch} - Train Loss: {train_loss:.3f}, Train Acc: {train_accuracy:.2f}")
 
     # Save trained model to disk and to W&B Artifacts
     save_model(model, model_name=config.model_name, 
