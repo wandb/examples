@@ -8,13 +8,14 @@ import torch.nn as nn
 import torchvision.transforms as T
 from torchvision.datasets import FashionMNIST
 from tqdm.auto import tqdm
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
 from utils import save_model
 
 defaults = SimpleNamespace(
     image_size=32,
     batch_size=128,
+    train_set=2560,
     learning_rate=1e-3,
     epochs=1,
     num_workers=0,
@@ -31,7 +32,8 @@ def train(config):
         T.RandomHorizontalFlip(),
         T.ToTensor()])
 
-    train_ds = FashionMNIST(".", train=True, download=True, transform=train_tfms)
+    all_train_data = FashionMNIST(".", train=True, download=True, transform=train_tfms)
+    train_ds = Subset(all_train_data, torch.arange(config.train_set))
 
     train_dl = DataLoader(
         train_ds, 
