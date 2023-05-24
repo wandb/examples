@@ -22,14 +22,14 @@ def save_model(model, model_name, models_folder="models", metadata=None, link=Fa
     file_name.parent.mkdir(parents=True, exist_ok=True)
     model = model.to("cpu")
     torch.save(model.state_dict(), file_name)
-    at = wandb.Artifact(model_name, 
+    model_artifact = wandb.Artifact(model_name, 
                         type="model", 
                         description="Model checkpoint from TIMM",
                         metadata=metadata)
-    at.add_file(file_name)
-    wandb.log_artifact(at)
+    model_artifact.add_file(file_name)
+    wandb.log_artifact(model_artifact)
     if link:
-        wandb.run.link_artifact(at, 'model-registry/FMNIST_Classifier')
+        wandb.run.link_artifact(model_artifact, 'model-registry/FMNIST_Classifier')
 
 def load_model(model_artifact_name, eval=True):
     """Load the model from wandb artifacts
