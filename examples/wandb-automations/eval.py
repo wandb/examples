@@ -29,7 +29,7 @@ def get_valid_dl(config=defaults):
    
 
 def validate_model(model, valid_dl, config=defaults):
-    "Compute performance of the model on the validation dataset and log a wandb.Table"
+    "Compute performance of the model on the validation dataset and log a Table"
     loss_func=nn.CrossEntropyLoss()
     model.to(config.device)
     val_loss = 0.
@@ -57,15 +57,16 @@ def validate_model(model, valid_dl, config=defaults):
                         table.add_data(wandb.Image(img[0].numpy()), label, pred, *prob.numpy())
         
         if config.log_images:
-            wandb.log({"predictions":table}, commit=False)
+            run.log({"predictions":table}, commit=False)
 
     return val_loss / len(valid_dl.dataset), correct / len(valid_dl.dataset)
 
 def eval(config):
     # Initialize W&B run
     run = wandb.init(project="automations_demo", tags=["eval"], job_type="eval", config=config)
+    run.log_code(name="evaluate_fmnist")
 
-    config = wandb.config
+    config = run.config
 
     # Get the validation dataloader
     valid_dl = get_valid_dl(config)
@@ -75,7 +76,7 @@ def eval(config):
 
     # Log the validation loss and accuracy
     val_loss, val_acc = validate_model(model, valid_dl, config)
-    wandb.log({"val_loss": val_loss, "val_acc": val_acc})
+    run.log({"val_loss": val_loss, "val_acc": val_acc})
 
     run.finish()
 

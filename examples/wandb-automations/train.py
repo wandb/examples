@@ -50,10 +50,10 @@ def train(config):
     run = wandb.init(project="automations_demo", tags=["train"], config=config)
 
     # Log code to create a W&B Launch Job
-    run.log_code(".", include_fn=lambda path: path.endswith(".py"))
+    run.log_code(name="train_fmnist")
 
     # Copy your config 
-    config = wandb.config
+    config = run.config
 
     # Get the data
     n_steps_per_epoch = math.ceil(len(train_dl.dataset) / config.batch_size)
@@ -89,9 +89,9 @@ def train(config):
             metrics = {"train_loss": train_loss, 
                         "train_acc": train_accuracy}
             
-            wandb.log(metrics)
+            run.log(metrics)
 
-        wandb.log(metrics)
+        run.log(metrics)
         print(f"{epoch} - Train Loss: {train_loss:.3f}, Train Acc: {train_accuracy:.2f}")
 
     # Save trained model and track with W&B Artifacts
