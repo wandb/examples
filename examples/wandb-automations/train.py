@@ -49,7 +49,7 @@ def train(config):
 
     run = wandb.init(project="automations_demo", tags=["train"], config=config)
 
-    # Log code wo W&B for launch
+    # Log code to create a W&B Launch Job
     run.log_code(".", include_fn=lambda path: path.endswith(".py"))
 
     # Copy your config 
@@ -94,7 +94,7 @@ def train(config):
         wandb.log(metrics)
         print(f"{epoch} - Train Loss: {train_loss:.3f}, Train Acc: {train_accuracy:.2f}")
 
-    # Save trained model to disk and to W&B Artifacts
+    # Save trained model and track with W&B Artifacts
     save_model(model, model_name=config.model_name, 
                metadata=dict(config), link=config.link_model)
     run.finish()
