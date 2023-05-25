@@ -65,7 +65,12 @@ def validate_model(model, valid_dl, config=defaults):
 
 def eval(config):
     # Initialize W&B run
-    run = wandb.init(project="automations_demo", tags=["eval"], job_type="eval", config=config, settings={"disable_git": True})
+    run = wandb.init(project="automations_demo", 
+                     job_type="eval", 
+                     config=config, 
+                     settings={"disable_git": True})
+
+    # Log code to create a reusable job
     run.log_code(name="eval")
 
     config = run.config
