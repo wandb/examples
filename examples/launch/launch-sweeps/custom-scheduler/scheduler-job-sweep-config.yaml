@@ -1,0 +1,13 @@
+# scheduler-job-sweep-config.yaml  
+description: Launch sweep config using a scheduler job
+scheduler:
+  job: 'wandb/jobs/Wandb Sweep Scheduler:latest'
+  num_workers: 8  # allows 8 concurrent sweep runs
+
+# training/tuning job that the sweep runs will execute
+job: 'wandb/jobs/Hello World 2:latest'
+method: grid
+parameters:
+  param1:
+    min: 0
+    max: 10

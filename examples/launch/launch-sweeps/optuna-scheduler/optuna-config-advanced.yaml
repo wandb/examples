@@ -1,0 +1,10 @@
+# optuna-config-basic.yaml
+description: An advanced configuration for an Optuna scheduler
+job: 'wandb/jobs/Hello World 2:latest'
+run_cap: 5
+
+scheduler:
+  job: 'wandb/jobs/job-OptunaScheduler:latest'
+  num_workers: 2
+  settings:
+    optuna_source: 'optuna_wandb.py'

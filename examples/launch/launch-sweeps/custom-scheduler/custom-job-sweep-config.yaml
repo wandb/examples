@@ -1,0 +1,12 @@
+# custom-job-sweep-config.yaml
+
+scheduler:
+  job: '<entity/proj/ JOB-NAME: alias>'
+  settings: 
+    verbose_logging: True   
+
+method: grid
+parameters:
+  param1:
+    max: 10
+    min: 0
