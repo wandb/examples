@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import FashionMNIST
 import torchvision.transforms as T
 import wandb
@@ -16,6 +16,7 @@ defaults = SimpleNamespace(
     device = "cuda:0" if torch.cuda.is_available() else "cpu",
     model_artifact = "model-registry/FMNIST_Classifier:latest",
     log_images = True,
+    val_set = 1280,
 )
 
 def get_valid_dl(config=defaults):
@@ -23,9 +24,10 @@ def get_valid_dl(config=defaults):
     valid_tfms = T.Compose([
         T.Resize(32, antialias=True),
         T.ToTensor()])
-    valid_ds = FashionMNIST(".", train=False, download=True, transform=valid_tfms)
-    valid_dl = DataLoader(valid_ds, batch_size=config.bs, num_workers=config.num_workers)
-    return valid_dl
+    all_val_data = FashionMNIST(".", train=False, download=True, transform=valid_tfms)
+    val_ds = Subset(all_val_data, torch.arange(config.val_set))
+    val_dl = DataLoader(val_ds, batch_size=config.bs, num_workers=config.num_workers)
+    return val_dl
    
 
 def validate_model(model, valid_dl, config=defaults):
@@ -57,7 +59,7 @@ def validate_model(model, valid_dl, config=defaults):
                         table.add_data(wandb.Image(img[0].numpy()), label, pred, *prob.numpy())
         
         if config.log_images:
-            run.log({"predictions":table}, commit=False)
+            wandb.log({"predictions":table}, commit=False)
 
     return val_loss / len(valid_dl.dataset), correct / len(valid_dl.dataset)
 

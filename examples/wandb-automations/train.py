@@ -15,7 +15,7 @@ from utils import save_model
 defaults = SimpleNamespace(
     image_size=32,
     batch_size=128,
-    train_set=2560,
+    train_set=3840,
     learning_rate=1e-3,
     epochs=1,
     num_workers=0,
