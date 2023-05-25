@@ -15,7 +15,7 @@ defaults = SimpleNamespace(
     batch_count = 2,
     num_workers=0,
     device = "cuda:0" if torch.cuda.is_available() else "cpu",
-    model_artifact = "model-registry/FMNIST_Classifier:latest",
+    model_artifact = "model-registry/MNIST Classifier:latest",
     log_images = True
 )
 
@@ -65,7 +65,7 @@ def validate_model(model, valid_dl, config=defaults):
 
 def eval(config):
     # Initialize W&B run
-    run = wandb.init(project="automations_demo", 
+    run = wandb.init(project="wandb_automations", 
                      job_type="eval", 
                      config=config, 
                      settings={"disable_git": True})

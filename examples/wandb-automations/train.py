@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader, Subset
 from utils import save_model
 
 defaults = SimpleNamespace(
-    batch_count=60,
+    batch_count=70,
     batch_size=128,
     image_size=32,
     learning_rate=1e-3,
@@ -49,7 +49,7 @@ def train(config):
 
     model = model.to(device=config.device)
 
-    run = wandb.init(project="automations_demo",
+    run = wandb.init(project="wandb_automations",
                      job_type="train", 
                      config=config, 
                      settings={"disable_git": True})
