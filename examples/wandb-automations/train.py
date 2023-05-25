@@ -49,10 +49,10 @@ def train(config):
 
     model = model.to(device=config.device)
 
-    run = wandb.init(project="automations_demo", tags=["train"], config=config)
+    run = wandb.init(project="automations_demo", tags=["train"], config=config, settings={"disable_git": True})
 
     # Log code to create a W&B Launch Job
-    run.log_code(name="train_fmnist")
+    run.log_code(name="train")
 
     # Copy your config 
     config = run.config

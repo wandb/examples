@@ -51,7 +51,7 @@ def validate_model(model, valid_dl, config=defaults):
             # Log validation predictions and images to the dashboard
             if config.log_images:
                 if i == 0:
-                    # 🐝 Create a wandb Table to log images, labels and predictions
+                    # Create a wandb Table to log images, labels and predictions
                     table = wandb.Table(columns=["image", "label", "pred"]+[f"score_{i}" for i in range(10)])
                 
                 probs = outputs.softmax(dim=1)
@@ -65,8 +65,8 @@ def validate_model(model, valid_dl, config=defaults):
 
 def eval(config):
     # Initialize W&B run
-    run = wandb.init(project="automations_demo", tags=["eval"], job_type="eval", config=config)
-    run.log_code(name="evaluate_fmnist")
+    run = wandb.init(project="automations_demo", tags=["eval"], job_type="eval", config=config, settings={"disable_git": True})
+    run.log_code(name="eval")
 
     config = run.config
 
