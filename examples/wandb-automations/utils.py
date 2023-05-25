@@ -29,7 +29,7 @@ def save_model(model, model_name, models_folder="models", metadata=None, link=Fa
     model_artifact.add_file(file_name)
     wandb.log_artifact(model_artifact)
     if link:
-        wandb.run.link_artifact(model_artifact, 'model-registry/FMNIST_Classifier')
+        wandb.run.link_artifact(model_artifact, 'model-registry/MNIST')
 
 def load_model(model_artifact_name, eval=True):
     """Load the model from wandb artifacts

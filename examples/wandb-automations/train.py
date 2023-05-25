@@ -6,16 +6,16 @@ import wandb
 import torch
 import torch.nn as nn
 import torchvision.transforms as T
-from torchvision.datasets import FashionMNIST
+from torchvision.datasets import MNIST
 from tqdm.auto import tqdm
 from torch.utils.data import DataLoader, Subset
 
 from utils import save_model
 
 defaults = SimpleNamespace(
-    image_size=32,
+    batch_count=60,
     batch_size=128,
-    train_set=3840,
+    image_size=32,
     learning_rate=1e-3,
     epochs=1,
     num_workers=0,
@@ -32,8 +32,8 @@ def train(config):
         T.RandomHorizontalFlip(),
         T.ToTensor()])
 
-    all_train_data = FashionMNIST(".", train=True, download=True, transform=train_tfms)
-    train_ds = Subset(all_train_data, torch.arange(config.train_set))
+    all_train_data = MNIST(".", train=True, download=True, transform=train_tfms)
+    train_ds = Subset(all_train_data, torch.arange(config.batch_size * config.batch_count))
 
     train_dl = DataLoader(
         train_ds, 
@@ -49,13 +49,14 @@ def train(config):
 
     model = model.to(device=config.device)
 
-    run = wandb.init(project="automations_demo", j
-                     ob_type="train", 
+    run = wandb.init(project="automations_demo",
+                     job_type="train", 
                      config=config, 
                      settings={"disable_git": True})
 
     # Log code to create a reusable job
-    run.log_code(name="train")
+    run.log_code(name="train",
+                 include_fn=lambda path: path.endswith(".py") or path.endswith(".txt"))
 
     # Copy your config 
     config = run.config

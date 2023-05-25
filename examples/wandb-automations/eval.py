@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, Subset
-from torchvision.datasets import FashionMNIST
+from torchvision.datasets import MNIST
 import torchvision.transforms as T
 import wandb
 from tqdm.auto import tqdm
@@ -11,12 +11,12 @@ from tqdm.auto import tqdm
 from utils import load_model
 
 defaults = SimpleNamespace(
-    bs=128,
+    batch_size=128,
+    batch_count = 2,
     num_workers=0,
     device = "cuda:0" if torch.cuda.is_available() else "cpu",
     model_artifact = "model-registry/FMNIST_Classifier:latest",
-    log_images = True,
-    val_set = 1280,
+    log_images = True
 )
 
 def get_valid_dl(config=defaults):
@@ -24,9 +24,9 @@ def get_valid_dl(config=defaults):
     valid_tfms = T.Compose([
         T.Resize(32, antialias=True),
         T.ToTensor()])
-    all_val_data = FashionMNIST(".", train=False, download=True, transform=valid_tfms)
-    val_ds = Subset(all_val_data, torch.arange(config.val_set))
-    val_dl = DataLoader(val_ds, batch_size=config.bs, num_workers=config.num_workers)
+    all_val_data = MNIST(".", train=False, download=True, transform=valid_tfms)
+    val_ds = Subset(all_val_data, torch.arange(config.batch_size * config.batch_count))
+    val_dl = DataLoader(val_ds, batch_size=config.batch_size, num_workers=config.num_workers)
     return val_dl
    
 
@@ -71,7 +71,8 @@ def eval(config):
                      settings={"disable_git": True})
 
     # Log code to create a reusable job
-    run.log_code(name="eval")
+    run.log_code(name="eval",
+                 include_fn=lambda path: path.endswith(".py") or path.endswith(".txt"))
 
     config = run.config
 
