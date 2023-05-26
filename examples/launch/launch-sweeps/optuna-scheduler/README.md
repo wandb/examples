@@ -105,3 +105,36 @@ scheduler:
       optuna_source: wandb_optuna.py  # or artifact full path
 ...
 ```
+
+In this same file, custom samplers and pruners can be defined in specially named functions. As long as they work in an Optuna study, they will be loaded and plugged into the Optuna scheduler instead of the defaults/config settings. For example, we could add the following functions to our `optuna_wandb.py` file to include all 3 special objects:
+
+```python
+# optuna_wandb.py
+
+def objective(trial):
+    database = trial.suggest_categorical('database', ['small', 'medium', 'large'])
+    
+    if database in ['small', 'large']:
+        batch_size = trial.suggest_int('batch_size', 12, 64)
+
+        # maybe test offset when the batch_size is small
+        random_offset = trial.suggest_int('random_offset', 0, 10)
+    else:
+        batch_size = trial.suggest_int('batch_size', 64, 256)
+
+    return -1
+
+
+def sampler():
+    return optuna.samplers.NSGAIISampler(
+        population_size=100,
+        crossover_prob=0.2,
+        seed=1000000,
+    )
+
+
+def pruner():
+    return optuna.pruners.PatientPruner(
+        optuna.pruners.MedianPruner(), patience=1
+    )
+```
