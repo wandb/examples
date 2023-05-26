@@ -16,7 +16,8 @@ import optuna
 import wandb
 from wandb.apis.internal import Api
 from wandb.apis.public import Api as PublicApi
-from wandb.apis.public import Artifact, QueuedRun, Run
+from wandb.apis.public import QueuedRun, Run
+from wandb.sdk.artifacts.public_artifact import Artifact
 from wandb.sdk.launch.sweeps import SchedulerError
 from wandb.sdk.launch.sweeps.scheduler import Scheduler, SweepRun
 
@@ -572,7 +573,7 @@ class OptunaScheduler(Scheduler):
         study_copy.optimize(self._objective_func, n_trials=1)
         signal.alarm(0)  # disable alarm
 
-        # now ask the study to create a new active trial from the distributions provided
+        # now ask the real study to create a new active trial from the distributions provided
         new_trial = self.study.ask(
             fixed_distributions=study_copy.trials[-1].distributions
         )
@@ -726,7 +727,7 @@ def setup_scheduler(scheduler: Scheduler, **kwargs):
     parser = argparse.ArgumentParser()
     parser.add_argument("--project", type=str, default=kwargs.get("project"))
     parser.add_argument("--entity", type=str, default=kwargs.get("entity"))
-    parser.add_argument("--num_workers", type=int, default=1)
+    parser.add_argument("--num_workers", type=int, default=None)
     parser.add_argument("--name", type=str, default=None)
     parser.add_argument("--disable_git", type=bool, default=True)
     cli_args = parser.parse_args()
@@ -737,10 +738,10 @@ def setup_scheduler(scheduler: Scheduler, **kwargs):
         project=cli_args.project,
         entity=cli_args.entity,
     )
-    run.log_code(name=name, exclude_fn=lambda x: x.startswith("_"))
     config = run.config
 
     if not config.get("sweep_args", {}).get("sweep_id"):
+        run.log_code(name=name, exclude_fn=lambda x: x.startswith("_"))
         wandb.termlog("Job not configured to run a sweep, logging code and returning early.")
         if cli_args.disable_git:  # too hard to figure out git repo job names
             jobstr = f"{run.entity}/{run.project}/job-{name}:latest"

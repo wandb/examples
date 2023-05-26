@@ -7,12 +7,12 @@ def objective(trial):
     randomize = None  # init for printing
 
     if database in ['small', 'large']:
-        batch_size = trial.suggest_categorical('batch_size', [16, 32, 64])
+        batch_size = trial.suggest_int('batch_size', 16, 64)
 
         # maybe test randomization when the batch_size is small
         randomize = trial.suggest_categorical('randomize', [True, False])
     else:
-        batch_size = trial.suggest_categorical('batch_size', [64, 128, 256])
+        batch_size = trial.suggest_int('batch_size', 64, 256)
 
     print(f"{database=} {batch_size=} {randomize=}")
 
