@@ -10,7 +10,7 @@ Use the `launch-sweep` command with the example sweep-config to get started. Rem
 
 ### Customizing the WandbScheduler job
 
-First, make changes to the `wandb_scheduler.py` file found in this folder (mirrors [wandb/launch-jobs/jobs/sweep_schedulers/wandb_scheduler.py](https://github.com/wandb/launch-jobs/jobs/sweep_schedulers/wandb_scheduler.py))
+First, make changes to the `wandb_scheduler.py` file (the source of the WandbScheduler job), which can be downloaded from [wandb/launch-jobs/jobs/sweep_schedulers/wandb_scheduler.py](https://github.com/wandb/launch-jobs/jobs/sweep_schedulers/wandb_scheduler.py).
 
 In this example, we add an additional scheduler setting to manage the verbosity of logging.
 

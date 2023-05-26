@@ -1,5 +1,4 @@
 # custom-job-sweep-config.yaml
-
 scheduler:
   job: '<entity/proj/ JOB-NAME: alias>'
   settings: 

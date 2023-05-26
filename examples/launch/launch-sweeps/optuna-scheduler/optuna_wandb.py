@@ -3,7 +3,6 @@ import optuna
 
 def objective(trial):
     database = trial.suggest_categorical('database', ['small', 'medium', 'large'])
-
     randomize = None  # init for printing
 
     if database in ['small', 'large']:
@@ -25,6 +24,14 @@ def sampler():
         crossover_prob=0.2,
         seed=1000000,
     )
+
+
+"""Example of an alternate sampler"""
+# def sampler():
+#     return optuna.samplers.QMCSampler(
+#         qmc_type="halton",
+#         scramble=True
+#     )
 
 
 def pruner():
