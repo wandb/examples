@@ -1,4 +1,4 @@
-# optuna-config-basic.yaml
+# optuna_config_basic.yaml
 description: An advanced configuration for an Optuna scheduler
 job: # training job
 run_cap: 5

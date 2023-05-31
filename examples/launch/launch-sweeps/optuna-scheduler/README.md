@@ -8,6 +8,16 @@ Note: This example assumes familiarity with launch setup and creating custom lau
 
 Using sweeps on launch, many of these features can be used to schedule wandb sweeps. To do so, use the `wandb/jobs/job-OptunaScheduler` job, or create your own using the `optuna_scheduler.py` file found in the `wandb/launch-jobs` repo [here](https://github.com/wandb/launch-jobs/jobs/sweep_schedulers/optuna_scheduler.py).
 
+
+### Run a basic example:
+
+Run a simple Optuna scheduler using out-of-the-box jobs. The scheduler and training jobs are image-sourced, and should be run on queues that can launch containers (but they do not require a builder).
+
+```bash
+wandb launch-sweep optuna_config_basic.yaml -q <container queue> -p <project>
+```
+
+
 ### Key Optuna Features: 
 
 1. Samplers
@@ -37,7 +47,7 @@ Identical to the samplers above, pruners, found [here](https://optuna.readthedoc
 Example: 
 
 ```yaml
-# optuna-config-basic.yaml
+# optuna_config_basic.yaml
 ...
 scheduler:
    settings:

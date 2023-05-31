@@ -18,7 +18,7 @@ A launch-sweep configuration file should look very similar to a normal sweep con
 Example configuration file: 
 
 ```yaml
-# launch-sweep-config.yaml
+# launch_sweep_config.yaml
 description: sweeps on launch quickstart
 method: grid
 run_cap: 50

@@ -1,4 +1,4 @@
-# scheduler-job-sweep-config.yaml  
+# scheduler_job_sweep_config.yaml  
 description: Launch sweep config using a scheduler job
 scheduler:
   job: 'wandb/jobs/Wandb Sweep Scheduler:latest'
