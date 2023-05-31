@@ -9,7 +9,8 @@ metric:
 
 scheduler:
   # TODO(gst): replace with public wandb jobo
-  job: griffin_wb/public/job-wandb_job_sweep_scheduler_optuna_latest:latest
+  job: griffin_wb/public/job-wandb_job_sweep_scheduler_optuna:latest
+  resource: local-container  # required for scheduler jobs sourced from images
   num_workers: 2
   settings:
     sampler:
@@ -22,3 +23,11 @@ scheduler:
       args:
         percentile: 25.0  # kill 75% of runs
         n_warmup_steps: 10  # pruning disabled for first x steps
+
+parameters:
+  param1:
+    min: 0
+    max: 10
+  sleep:
+    min: 0.05
+    max: 0.25
