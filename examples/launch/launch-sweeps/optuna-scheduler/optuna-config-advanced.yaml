@@ -8,7 +8,8 @@ metric:
   goal: # maximize, minimize
 
 scheduler:
-  job: 'griffin_wb/proj/job-OptunaScheduler:latest'
+  # TODO(gst): make public wandb entity Optuna Scheduler job
+  job: griffin_wb/public/job-wandb_job_sweep_scheduler_optuna_latest:latest
   num_workers: 2
   settings:
     optuna_source: examples/launch/launch-sweeps/optuna-scheduler/optuna_wandb.py

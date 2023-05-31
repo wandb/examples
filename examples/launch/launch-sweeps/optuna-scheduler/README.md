@@ -6,7 +6,7 @@ Note: This example assumes familiarity with launch setup and creating custom lau
 
 [Optuna](https://optuna.org/) is an open-source hyperparameter tuning [library](https://optuna.readthedocs.io/en/stable/) that exposes significant flexibility to sampling, pruning, and parameter space creation.  
 
-Using sweeps on launch, many of these features can be used to scheduler wandb sweeps. To do so, use the `wandb/jobs/job-OptunaScheduler` job, or create your own using the `optuna_scheduler.py` file found in the `wandb/launch-jobs` repo [here](https://github.com/wandb/launch-jobs/jobs/sweep_schedulers/optuna_scheduler.py).
+Using sweeps on launch, many of these features can be used to schedule wandb sweeps. To do so, use the `wandb/jobs/job-OptunaScheduler` job, or create your own using the `optuna_scheduler.py` file found in the `wandb/launch-jobs` repo [here](https://github.com/wandb/launch-jobs/jobs/sweep_schedulers/optuna_scheduler.py).
 
 ### Key Optuna Features: 
 

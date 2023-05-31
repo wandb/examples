@@ -1,10 +1,15 @@
 # optuna-config-basic.yaml
 description: A basic configuration for an Optuna scheduler
-job: 'wandb/jobs/Hello World 2:latest'
+job: griffin_wb/public/job-source-public-train.py:latest
 run_cap: 5
 
+metric:
+  name: val_acc
+  goal: maximize
+
 scheduler:
-  job: 'wandb/jobs/job-OptunaScheduler:latest'
+  # TODO(gst): replace with public wandb jobo
+  job: 'griffin_wb/public/job-wandb_job_sweep_scheduler_optuna_latest:latest'
   num_workers: 2
   settings:
     sampler:
