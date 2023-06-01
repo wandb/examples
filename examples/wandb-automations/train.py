@@ -51,8 +51,8 @@ def train(config):
 
     run = wandb.init(project="wandb_automations",
                      job_type="train", 
-                     config=config, 
-                     settings={"disable_git": True})
+                     config=config,
+                     )
 
     # Log code to create a reusable job
     run.log_code(name="train",

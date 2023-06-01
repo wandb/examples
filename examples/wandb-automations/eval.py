@@ -67,8 +67,8 @@ def eval(config):
     # Initialize W&B run
     run = wandb.init(project="wandb_automations", 
                      job_type="eval", 
-                     config=config, 
-                     settings={"disable_git": True})
+                     config=config,
+                     )
 
     # Log code to create a reusable job
     run.log_code(name="eval",
