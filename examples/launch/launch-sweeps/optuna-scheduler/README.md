@@ -14,8 +14,38 @@ Using sweeps on launch, many of these features can be used to schedule wandb swe
 Run a simple Optuna scheduler using out-of-the-box jobs. The scheduler and training jobs are image-sourced, and should be run on queues that can launch containers (but they do not require a builder).
 
 ```bash
-wandb launch-sweep optuna_config_basic.yaml -q <container queue> -p <project>
+wandb launch-sweep optuna_config_basic.yaml -q <container queue> -p <project> -e <entity>
 ```
+
+The `optuna_config_basic.yaml` file configures a basic sweep using an Optuna [PercentilePruner](https://optuna.readthedocs.io/en/stable/reference/generated/optuna.pruners.PercentilePruner.html) and sweeps over one parameter: `param1`, shown below.
+
+```yaml
+# optuna_config_basic.yaml
+description: A basic configuration for an Optuna scheduler
+job: griffin_wb/public/job-train_latest:latest
+run_cap: 5
+metric:
+  name: val_acc
+  goal: maximize
+
+scheduler:
+  # TODO(gst): replace with public wandb jobo
+  job: griffin_wb/public/job-wandb_job_sweep_scheduler_optuna:latest
+  resource: local-container  # required for scheduler jobs sourced from images
+  num_workers: 2  # number of concurrent runs
+  settings:
+    pruner:
+      type: PercentilePruner
+      args:
+        percentile: 25.0  # kill 75% of runs
+        n_warmup_steps: 10  # pruning disabled for first x steps
+
+parameters:
+  param1:
+    min: 0
+    max: 10
+```
+
 
 
 ### Key Optuna Features: 
@@ -106,15 +136,29 @@ def objective(trial):
     return -1
 ```
 
-To use a pythonic search space in the OptunaScheduler, there are two methods. First is to create an artifact (of `type="optuna"`) with a python file containing a function exactly: `def objective(trial)` which will be loaded up and used as the sweep hyperparameter space. The python filename inside the artifact can be specified in the sweep config as: `optuna_source_filename`, or otherwise will assumed to be named: `optuna_wandb.py`. The second is to include that file in the log_code step when creating a code artifact scheduler job. Both methods require setting a filepath parameter in the sweep config, which the Optuna scheduler will use to identify which file contains the `objective` function.
-
+To use a pythonic search space in the OptunaScheduler, there are two methods:
+1. Create an artifact (of `type="optuna"`) with a python file containing a function exactly: `def objective(trial)` which will be loaded up and used as the sweep hyperparameter space. The python filename inside the artifact can be specified in the sweep config with: `settings.optuna_source_filename`, or otherwise will assumed to be named: `optuna_wandb.py`. 
 ```yaml
+# using an artifact
 ...
 scheduler:
    settings:
-      optuna_source: wandb_optuna.py  # or artifact full path
+      optuna_source: griffin_wb/public/optuna-pythonic-source:latest
 ...
 ```
+
+2. Include that file in the log_code step when creating a code artifact scheduler job, or in the container when building a docker image. Again, use `settings.optuna_source_filename` to direct the scheduler toward the file.
+
+
+```yaml
+# using a file
+...
+scheduler:
+   settings:
+      optuna_source: wandb_optuna.py
+...
+```
+
 
 In this same file, custom samplers and pruners can be defined in specially named functions. As long as they work in an Optuna study, they will be loaded and plugged into the Optuna scheduler instead of the defaults/config settings. For example, we could add the following functions to our `optuna_wandb.py` file to include all 3 special objects:
 

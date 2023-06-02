@@ -2,7 +2,6 @@
 description: A basic configuration for an Optuna scheduler
 job: griffin_wb/public/job-train_latest:latest
 run_cap: 5
-
 metric:
   name: val_acc
   goal: maximize
@@ -13,11 +12,6 @@ scheduler:
   resource: local-container  # required for scheduler jobs sourced from images
   num_workers: 2
   settings:
-    sampler:
-      type: CmaEsSampler
-      args:
-        seed: 42
-        n_startup_trials: 10
     pruner:
       type: PercentilePruner
       args:
@@ -28,6 +22,3 @@ parameters:
   param1:
     min: 0
     max: 10
-  sleep:
-    min: 0.05
-    max: 0.25

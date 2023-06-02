@@ -41,4 +41,8 @@ scheduler:
 ...
 ```
 
-Then launch the sweep from this config to a queue with an active launch agent.
+Then launch the sweep from this config to a queue with an active launch agent, with: 
+
+```bash
+wandb launch-sweep custom-job-sweep-config.yaml -q <queue> -p <project> -e <entity>
+```
