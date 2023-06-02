@@ -29,7 +29,7 @@ Insert the scheduler job in the sweep configuration under a scheduler.job key, a
 # custom-job-sweep-config.yaml
 ...
 scheduler:
-   job: <entity/project/job-WandbScheduler:latest>
+   job: <entity>/<project>/<newly created job name>:<alias>
    settings:
       verbose_logging: True
 ...

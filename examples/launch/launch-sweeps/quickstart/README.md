@@ -12,7 +12,7 @@ Sweeps-on-launch leverages launch to supercharge the wandb hyperparameter tuning
 
 A launch-sweep configuration file should look very similar to a normal sweep configuration file, with a two changes. 
 
-1. The `program` execution path must be replaced with a `job`. For this quickstart, lets use a publicly available job, like: `'wandb/jobs/Hello World 2:latest'`. This can be replaced with any training job that is available in the entity/project where the sweep will be run. More information about job creation can be found [here](https://docs.wandb.ai/guides/launch/create-job). This enables our training run to be executed anywhere, no longer tied to a local training script.
+1. The `program` execution path must be replaced with a `job`. For this quickstart, lets use a publicly available job, like: `'wandb/jobs/Example Train Job:latest'`. This can be replaced with any training job that is available in the entity/project where the sweep will be run. More information about job creation can be found [here](https://docs.wandb.ai/guides/launch/create-job). This enables our training run to be executed anywhere, no longer tied to a local training script.
 2. An Optional `scheduler` key can be provided to the configuration, specifying scheduler-specific parameters for the sweep, like concurrency of runs. 
 
 Example configuration file: 
@@ -24,7 +24,7 @@ method: grid
 run_cap: 50
 
 # the training job
-job: 'wandb/jobs/Hello World 2:latest'
+job: 'wandb/jobs/Example Train Job:latest'
 
 # some parameters to tune
 parameters:

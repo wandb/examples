@@ -1,14 +1,13 @@
 # optuna_config_basic.yaml
 description: A basic configuration for an Optuna scheduler
-job: griffin_wb/public/job-train_latest:latest
+job: 'wandb/jobs/Example Train Job:latest'
 run_cap: 5
 metric:
   name: val_acc
   goal: maximize
 
 scheduler:
-  # TODO(gst): replace with public wandb jobo
-  job: griffin_wb/public/job-wandb_job_sweep_scheduler_optuna:latest
+  job: 'wandb/jobs/Optuna Scheduler Image Job:latest'
   resource: local-container  # required for scheduler jobs sourced from images
   num_workers: 2
   settings:

@@ -4,7 +4,7 @@ method: grid
 run_cap: 10
 
 # the training job
-job: 'wandb/jobs/Hello World 2:latest'
+job: 'wandb/jobs/Example Train Job:latest'
 
 # some parameters to tune
 parameters:

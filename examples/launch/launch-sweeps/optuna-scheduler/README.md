@@ -6,7 +6,7 @@ Note: This example assumes familiarity with launch setup and creating custom lau
 
 [Optuna](https://optuna.org/) is an open-source hyperparameter tuning [library](https://optuna.readthedocs.io/en/stable/) that exposes significant flexibility to sampling, pruning, and parameter space creation.  
 
-Using sweeps on launch, many of these features can be used to schedule wandb sweeps. To do so, use the `wandb/jobs/job-OptunaScheduler` job, or create your own using the `optuna_scheduler.py` file found in the `wandb/launch-jobs` repo [here](https://github.com/wandb/launch-jobs/jobs/sweep_schedulers/optuna_scheduler.py).
+Using sweeps on launch, many of these features can be used to schedule wandb sweeps. To do so, use the `'wandb/jobs/Optuna Scheduler Image Job:latest'` job, or create your own using the `optuna_scheduler.py` file found in the `wandb/launch-jobs` repo [here](https://github.com/wandb/launch-jobs/jobs/sweep_schedulers/optuna_scheduler.py).
 
 
 ### Run a basic example:
@@ -22,15 +22,14 @@ The `optuna_config_basic.yaml` file configures a basic sweep using an Optuna [Pe
 ```yaml
 # optuna_config_basic.yaml
 description: A basic configuration for an Optuna scheduler
-job: griffin_wb/public/job-train_latest:latest
+job: 'wandb/jobs/Example Train Job:latest'
 run_cap: 5
 metric:
   name: val_acc
   goal: maximize
 
 scheduler:
-  # TODO(gst): replace with public wandb jobo
-  job: griffin_wb/public/job-wandb_job_sweep_scheduler_optuna:latest
+  job: 'wandb/jobs/Optuna Scheduler Image Job:latest'
   resource: local-container  # required for scheduler jobs sourced from images
   num_workers: 2  # number of concurrent runs
   settings:
@@ -143,7 +142,7 @@ To use a pythonic search space in the OptunaScheduler, there are two methods:
 ...
 scheduler:
    settings:
-      optuna_source: griffin_wb/public/optuna-pythonic-source:latest
+      optuna_source: <entity>/<project>/<job name>:<alias>
 ...
 ```
 

@@ -6,7 +6,7 @@ scheduler:
     method: grid
 
 # the training job to run
-job: griffin_wb/public/job-train_latest:latest
+job: 'wandb/jobs/Example Train Job:latest'
 
 parameters:
   param1:
