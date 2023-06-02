@@ -1,10 +1,13 @@
 # custom_job_sweep_config.yaml
 scheduler:
-  job: '<entity/proj/ JOB-NAME: alias>'
+  job: <INSERT SCHEDULER JOB>
   settings: 
-    verbose_logging: True   
+    verbose_logging: True  # our new custom setting
+    method: grid
 
-method: grid
+# the training job to run
+job: griffin_wb/public/job-train_latest:latest
+
 parameters:
   param1:
     max: 10

@@ -1,14 +1,8 @@
 ## Use a scheduler job for sweeps
 
-Sweeps on Launch are far more customizable than standard sweeps. The sweep scheduling mechanism can be entirely replaced with a job! You can use pre-made schedulers or implement your own custom scheduler job. Examples of what is possible with custom sweep scheduler jobs are available in the [wandb/launch-jobs](https://github.com/wandb/launch-jobs) repo under `jobs/sweep_schedulers`. This guide shows how to use the publicly available **Wandb Scheduler Job**, as well demonstrates a process for creating custom sweep scheduler jobs. 
+Sweeps on Launch are far more customizable than standard sweeps. The sweep scheduling mechanism can be entirely replaced with a job! You can use pre-made schedulers or implement your own custom scheduler job. Examples of what is possible with custom sweep scheduler jobs are available in the [wandb/launch-jobs](https://github.com/wandb/launch-jobs) repo under `jobs/sweep_schedulers`. This guide shows how to create a custom sweep scheduler job. 
 
-What is a sweep scheduler job? Just like any other training job, launch will take a scheduler job and execute it in the environment of choice. The sweep scheduler starts, turning a user provided hyperparameter configuration into many different sweep runs. Rather than starting runs in a sub-process like standard sweeps, the scheduler packages them up and launches them onto the same queue it is running on. Then, the scheduler is responsible for polling on the runs, feeding that information back into its optimization algorithm, and determining which combinations of parameters to use next.
-
-### Using the public WandbScheduler job
-
-Use the `launch-sweep` command with the example sweep-config to get started. Remember to push to a queue with an active launch agent.
-
-`wandb launch-sweep scheduler-job-sweep-config.yaml -q <queue> -p <project> -e <entity>`
+What is a sweep scheduler job? Just like any other training job, launch will take a scheduler job and execute it in the environment of choice. The sweep scheduler starts, turning a user-provided hyperparameter configuration into many different sweep runs. Rather than starting runs in a sub-process like standard sweeps, the scheduler packages them up and launches them onto the same queue it is running on. Then, the scheduler is responsible for polling on the runs, feeding that information back into its optimization algorithm, and determining which combinations of parameters to use next.
 
 ### Customizing the WandbScheduler job
 
@@ -27,7 +21,7 @@ def _poll(self) -> None:
 
 Now, to turn this scheduler python file into a job, run `python wandb_scheduler.py --project <project> --entity <entity>`.
 
-This should init a run that only logs the job. The name for this job can be found in the jobs tab in the project, or printed in the python environment.
+This should init a run that only logs the job. The name for this job can be found in the jobs tab in the project, or printed in the command line.
 
 Insert the scheduler job in the sweep configuration under a scheduler.job key, along with the usual sweep parameters. Example:
 
