@@ -1,6 +1,6 @@
 ## Optuna sweep scheduler
 
-Note: This example assumes familiarity with launch setup and creating custom launch scheduler jobs. Information about launch setup can be found [here](https://docs.wandb.ai/guides/launch/quickstart) and in the "quickstart" example. For a simple example of a custom scheduler job, check out the "custom-scheduler" example in this repo. 
+Note: This example assumes familiarity with launch setup and creating jobs. Information about launch setup can be found [here](https://docs.wandb.ai/guides/launch/quickstart) and in the "quickstart" example.
 
 ### What is Optuna? 
 
@@ -11,11 +11,13 @@ Using sweeps on launch, many of these features can be used to schedule wandb swe
 
 ### Run a basic example:
 
-Run a simple Optuna scheduler using out-of-the-box jobs. The scheduler and training jobs are image-sourced, and should be run on queues that can launch containers (but they do not require a builder).
+Run a simple Optuna scheduler using out-of-the-box image-sourced jobs, using the command:
 
 ```bash
 wandb launch-sweep optuna_config_basic.yaml -q <container queue> -p <project> -e <entity>
 ```
+
+Confirm there is a launch agent polling on that queue (if not, start one using [this guide](https://docs.wandb.ai/guides/launch/run-agent)).
 
 The `optuna_config_basic.yaml` file configures a basic sweep using an Optuna [PercentilePruner](https://optuna.readthedocs.io/en/stable/reference/generated/optuna.pruners.PercentilePruner.html) and sweeps over one parameter: `param1`, shown below.
 
