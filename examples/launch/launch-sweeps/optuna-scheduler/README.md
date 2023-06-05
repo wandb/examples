@@ -138,17 +138,18 @@ def objective(trial):
 ```
 
 To use a pythonic search space in the OptunaScheduler, there are two methods:
-1. Create an artifact (of `type="optuna"`) with a python file containing a function exactly: `def objective(trial)` which will be loaded up and used as the sweep hyperparameter space. The python filename inside the artifact can be specified in the sweep config with: `settings.optuna_source_filename`, or otherwise will assumed to be named: `optuna_wandb.py`. 
+1. Create an artifact (of `type="optuna"`) with a python file containing a function exactly: `def objective(trial)` which will be loaded up and used as the sweep hyperparameter space. Use `settings.optuna_source` to set the path to the artifact. The python file inside the artifact can be specified in the sweep config with: `settings.optuna_source_filename`, or otherwise will assumed to be named: `optuna_wandb.py`. 
 ```yaml
 # using an artifact
 ...
 scheduler:
    settings:
       optuna_source: <entity>/<project>/<job name>:<alias>
+      optuna_source_filename: optuna_wandb.py
 ...
 ```
 
-2. Include that file in the log_code step when creating a code artifact scheduler job, or in the container when building a docker image. Again, use `settings.optuna_source_filename` to direct the scheduler toward the file.
+2. Include that file in the log_code step when creating a code artifact scheduler job, or in the container when building a docker image. If using just a file in the scheduler context (not an artifact), just use `settings.optuna_source` to direct the scheduler toward the file.
 
 
 ```yaml
