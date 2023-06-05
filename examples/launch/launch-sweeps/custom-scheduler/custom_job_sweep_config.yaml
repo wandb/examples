@@ -1,0 +1,14 @@
+# custom_job_sweep_config.yaml
+scheduler:
+  job: <INSERT SCHEDULER JOB>
+  settings: 
+    verbose_logging: True  # our new custom setting
+    method: grid
+
+# the training job to run
+job: 'wandb/jobs/Example Train Job:latest'
+
+parameters:
+  param1:
+    max: 10
+    min: 0

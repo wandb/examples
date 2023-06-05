@@ -1,0 +1,15 @@
+# optuna_config_artifact.yaml
+description: Load parameter space from a pythonic search space file
+job: # training job
+run_cap: 5
+
+metric:
+  name: # <METRIC>
+  goal: # maximize, minimize
+
+scheduler:
+  # TODO(gst): replace with public wandb jobo
+  job: griffin_wb/public/job-wandb_job_sweep_scheduler_optuna:latest
+  num_workers: 2
+  settings:
+    optuna_source: examples/launch/launch-sweeps/optuna-scheduler/optuna_wandb.py

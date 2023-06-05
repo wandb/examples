@@ -1,0 +1,23 @@
+# optuna_config_basic.yaml
+description: A basic configuration for an Optuna scheduler
+job: 'wandb/jobs/Example Train Job:latest'
+run_cap: 5
+metric:
+  name: val_acc
+  goal: maximize
+
+scheduler:
+  job: 'wandb/jobs/Optuna Scheduler Image Job:latest'
+  resource: local-container  # required for scheduler jobs sourced from images
+  num_workers: 2
+  settings:
+    pruner:
+      type: PercentilePruner
+      args:
+        percentile: 25.0  # kill 75% of runs
+        n_warmup_steps: 10  # pruning disabled for first x steps
+
+parameters:
+  param1:
+    min: 0
+    max: 10
