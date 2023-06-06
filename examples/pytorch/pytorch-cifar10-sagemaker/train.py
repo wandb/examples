@@ -50,7 +50,7 @@ print("Using inputs: ", inputs)
 estimator = PyTorch(entry_point="cifar10.py",
                     source_dir=os.getcwd() + "/source",
                     role=role,
-                    framework_version='1.0.0',
+                    framework_version='1.7.1',
                     py_version='py3',
                     instance_count=1,
                     instance_type='ml.c5.xlarge',
