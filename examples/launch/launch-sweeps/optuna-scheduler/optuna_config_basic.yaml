@@ -4,8 +4,8 @@ description: A basic configuration for an Optuna scheduler
 job: wandb/sweep-jobs/job-fashion-MNIST-train:latest
 run_cap: 5
 metric:
-  name: val_acc
-  goal: maximize
+  name: epoch/val_loss
+  goal: minimize
 
 scheduler:
   job: wandb/sweep-jobs/job-optuna-sweep-scheduler:latest
@@ -19,6 +19,6 @@ scheduler:
         n_warmup_steps: 10  # pruning disabled for first x steps
 
 parameters:
-  param1:
-    min: 0
-    max: 10
+  learning_rate:
+    min: 0.0001
+    max: 1.0

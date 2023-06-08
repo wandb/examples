@@ -15,7 +15,7 @@ parameters:
     values: [0, 0.0001, 0.001, 0.01, 0.1, 1]
   epochs:
     max: 20
-    min: 0
+    min: 10
     distribution: int_uniform
 
 # Optional Scheduler Params:
