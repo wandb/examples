@@ -25,6 +25,9 @@ run_cap: 50
 
 # a basic MNIST training job
 job: wandb/sweep-jobs/job-fashion-MNIST-train:latest
+metric:
+  name: epoch/val_loss
+  goal: minimize
 
 # some parameters to tune
 parameters:

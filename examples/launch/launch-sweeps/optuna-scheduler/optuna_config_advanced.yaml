@@ -1,12 +1,12 @@
 # optuna_config_artifact.yaml
 description: Load parameter space from a pythonic search space file
 # training job to run
-job: 'wandb/sweep-jobs/job-fashion-MNIST-train:latest'
+job: wandb/sweep-jobs/job-fashion-MNIST-train:latest
 run_cap: 5
 
 metric:
-  name: # <METRIC>
-  goal: # maximize, minimize
+  name: epoch/val_loss
+  goal: minimize
 
 scheduler:
   job: wandb/sweep-jobs/job-optuna-sweep-scheduler:latest
