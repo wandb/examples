@@ -4,7 +4,10 @@ method: grid
 run_cap: 10
 
 # the training job
-job: 'wandb/jobs/Example Train Job:latest'
+job: wandb/sweep-jobs/job-fashion-MNIST-train:latest
+metric:
+  name: epoch/val_loss
+  goal: minimize
 
 # some parameters to tune
 parameters:
@@ -12,7 +15,7 @@ parameters:
     values: [0, 0.0001, 0.001, 0.01, 0.1, 1]
   epochs:
     max: 20
-    min: 0
+    min: 10
     distribution: int_uniform
 
 # Optional Scheduler Params:

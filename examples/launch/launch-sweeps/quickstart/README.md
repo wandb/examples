@@ -23,8 +23,11 @@ description: sweeps on launch quickstart
 method: grid
 run_cap: 50
 
-# the training job
-job: 'wandb/jobs/Example Train Job:latest'
+# a basic MNIST training job
+job: wandb/sweep-jobs/job-fashion-MNIST-train:latest
+metric:
+  name: epoch/val_loss
+  goal: minimize
 
 # some parameters to tune
 parameters:

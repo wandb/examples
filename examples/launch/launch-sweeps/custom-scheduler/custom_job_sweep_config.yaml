@@ -6,7 +6,7 @@ scheduler:
     method: grid
 
 # the training job to run
-job: 'wandb/jobs/Example Train Job:latest'
+job: wandb/sweep-jobs/job-fashion-MNIST-train:latest
 
 parameters:
   param1:
