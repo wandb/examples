@@ -4,7 +4,7 @@ method: grid
 run_cap: 10
 
 # the training job
-job: 'wandb/jobs/Example Train Job:latest'
+job: wandb/sweep-jobs/job-fashion-MNIST-train:latest
 
 # some parameters to tune
 parameters:

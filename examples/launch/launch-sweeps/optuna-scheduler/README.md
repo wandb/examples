@@ -6,7 +6,7 @@ Note: This example assumes familiarity with launch setup and creating jobs. Info
 
 [Optuna](https://optuna.org/) is an open-source hyperparameter tuning [library](https://optuna.readthedocs.io/en/stable/) that exposes significant flexibility to sampling, pruning, and parameter space creation.  
 
-Using sweeps on launch, many of these features can be used to schedule wandb sweeps. To do so, use the `'wandb/jobs/Optuna Scheduler Image Job:latest'` job, or create your own using the `optuna_scheduler.py` file found in the `wandb/launch-jobs` repo [here](https://github.com/wandb/launch-jobs/jobs/sweep_schedulers/optuna_scheduler.py).
+Using sweeps on launch, many of these features can be used to schedule wandb sweeps. To do so, use the `wandb/sweep-jobs/job-optuna-sweep-scheduler:latest` job, or create your own using the `optuna_scheduler.py` file found in the `wandb/launch-jobs` repo [here](https://github.com/wandb/launch-jobs/jobs/sweep_schedulers/optuna_scheduler.py).
 
 
 ### Run a basic example:
@@ -24,14 +24,15 @@ The `optuna_config_basic.yaml` file configures a basic sweep using an Optuna [Pe
 ```yaml
 # optuna_config_basic.yaml
 description: A basic configuration for an Optuna scheduler
-job: 'wandb/jobs/Example Train Job:latest'
+# a basic training job to run
+job: wandb/sweep-jobs/job-fashion-MNIST-train:latest
 run_cap: 5
 metric:
   name: val_acc
   goal: maximize
 
 scheduler:
-  job: 'wandb/jobs/Optuna Scheduler Image Job:latest'
+  job: wandb/sweep-jobs/job-optuna-sweep-scheduler:latest
   resource: local-container  # required for scheduler jobs sourced from images
   num_workers: 2  # number of concurrent runs
   settings:
@@ -53,7 +54,7 @@ parameters:
 
 1. Samplers
 
-There are a variety of samplers that can be used to pick hyperparameters from a given search space, found [here](https://optuna.readthedocs.io/en/stable/reference/samplers/index.html). They can be configured to work with the `wandb/jobs/job-OptunaScheduler` job by defining specific settings in the sweep config. 
+There are a variety of samplers that can be used to pick hyperparameters from a given search space, found [here](https://optuna.readthedocs.io/en/stable/reference/samplers/index.html). They can be configured to work with the `wandb/sweep-jobs/job-optuna-sweep-scheduler:latest` job by defining specific settings in the sweep config. 
 
 For example: 
 
