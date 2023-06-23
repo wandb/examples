@@ -12,6 +12,8 @@ from torch.utils.data import DataLoader, Subset
 
 from utils import save_model
 
+WANDB_PROJECT = "wandb_automations"
+
 defaults = SimpleNamespace(
     batch_count=70,
     batch_size=128,
@@ -49,14 +51,10 @@ def train(config):
 
     model = model.to(device=config.device)
 
-    run = wandb.init(project="wandb_automations",
+    run = wandb.init(project=WANDB_PROJECT,
                      job_type="train", 
-                     config=config, 
-                     settings={"disable_git": True})
+                     config=config)
 
-    # Log code to create a reusable job
-    run.log_code(name="train",
-                 include_fn=lambda path: path.endswith(".py") or path.endswith(".txt"))
 
     # Copy your config 
     config = run.config

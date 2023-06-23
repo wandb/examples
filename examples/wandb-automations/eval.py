@@ -10,6 +10,8 @@ from tqdm.auto import tqdm
 
 from utils import load_model
 
+WANDB_PROJECT = "wandb_automations"
+
 defaults = SimpleNamespace(
     batch_size=128,
     batch_count = 2,
@@ -65,14 +67,9 @@ def validate_model(model, valid_dl, config=defaults):
 
 def eval(config):
     # Initialize W&B run
-    run = wandb.init(project="wandb_automations", 
+    run = wandb.init(project=WANDB_PROJECT,
                      job_type="eval", 
-                     config=config, 
-                     settings={"disable_git": True})
-
-    # Log code to create a reusable job
-    run.log_code(name="eval",
-                 include_fn=lambda path: path.endswith(".py") or path.endswith(".txt"))
+                     config=config)
 
     config = run.config
 
