@@ -119,154 +119,440 @@ wandb.config.architecture = "resnet"
 
 # 🏗 Use your favorite framework
 
-## 🥕 Keras
-In Keras, you can use our callback to automatically save all the metrics tracked in `model.fit`. To get you started here's a minimal example:
-```python
-# Import W&B
-import wandb
-from wandb.keras import WandbCallback
+Use your favorite framework with W&B. W&B integrations make it fast and easy to set up experiment tracking and data versioning inside existing projects. For more information on how to integrate W&B with the framework of your choice, see the [Integrations chapter](https://docs.wandb.ai/guides/integrations) in the W&B Developer Guide.
 
-# Step1: Initialize W&B run
-wandb.init(project='project_name')
+<!-- <p align='center'>
+<img src="./docs/README_images/integrations.png" width="100%" />
+</p> -->
 
-# 2. Save model inputs and hyperparameters
-config = wandb.config
-config.learning_rate = 0.01
+<details>
+<summary>🔥 PyTorch</summary>
 
-# Model training code here ...
+Call `.watch` and pass in your PyTorch model to automatically log gradients and store the network topology. Next, use `.log` to track other metrics. The following example demonstrates an example of how to do this:
 
-# Step 3: Add WandbCallback 
-model.fit(x_train, y_train,  validation_data=(x_test, y_test),
-          callbacks=[WandbCallback()])
-```
-
-- **[Try in a colab](http://wandb.me/intro-keras)** with a
-**[video tutorial](http://wandb.me/keras-video)**
-- [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Keras--VmlldzoyMTEwNjQ)
-- [Docs](https://docs.wandb.com/library/integrations/keras)
-
-## 🔥 PyTorch
-W&B provides first class support for PyTorch. To automatically log gradients and store the network topology, you can call `.watch` and pass in your PyTorch model.
-Then use `.log` for anything else you want to track, like so:
 ```python
 import wandb
 
 # 1. Start a new run
-wandb.init(project="gpt-3")
+run = wandb.init(project="gpt4")
 
 # 2. Save model inputs and hyperparameters
-config = wandb.config
+config = run.config
 config.dropout = 0.01
 
 # 3. Log gradients and model parameters
-wandb.watch(model)
+run.watch(model)
 for batch_idx, (data, target) in enumerate(train_loader):
-  ...  
-  if batch_idx % args.log_interval == 0:      
-    # 4. Log metrics to visualize performance
-    wandb.log({"loss": loss})
-```
-
-- **[Try in a colab](http://wandb.me/pytorch-colab)** with a
-**[video tutorial](http://wandb.me/pytorch-video)**
-- [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Pytorch--VmlldzoyMTEwNzM)
-- [Docs](https://docs.wandb.com/library/integrations/pytorch)
-
-## ⚡ PyTorch Lightning
-W&B is integrated directly into [PyTorch Lightning](https://pytorch-lightning.readthedocs.io/en/stable/)
-through their [`loggers` API](https://pytorch-lightning.readthedocs.io/en/latest/common/loggers.html).
-```python
-import wandb
-from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning import Trainer
-
-# add logging into your training_step (and elsewhere!)
-def training_step(self, batch, batch_idx):
     ...
-    self.log('train/loss', loss)
-    return loss
-
-# add a WandbLogger to your Trainer
-wandb_logger = WandbLogger()
-trainer = Trainer(logger=wandb_logger)
-
-# .fit your model
-trainer.fit(model, mnist)
+    if batch_idx % args.log_interval == 0:
+        # 4. Log metrics to visualize performance
+        run.log({"loss": loss})
 ```
 
-- **[Try in a colab](http://wandb.me/lightning)** with a
-**[video tutorial](http://wandb.me/lit-video)**
-- [Learn More](https://www.wandb.com/articles/pytorch-lightning-with-weights-biases)
-- [Docs](https://docs.wandb.com/library/integrations/lightning)
+- Run an example [Google Colab Notebook](http://wandb.me/pytorch-colab).
+- Read the [Developer Guide](https://docs.wandb.com/guides/integrations/pytorch?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations) for technical details on how to integrate PyTorch with W&B.
+- Explore [W&B Reports](https://app.wandb.ai/wandb/getting-started/reports/Pytorch--VmlldzoyMTEwNzM?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations).
 
+</details>
+<details>
+<summary>🌊 TensorFlow/Keras</summary>
+Use W&B Callbacks to automatically save metrics to W&B when you call `model.fit` during training.
 
-## 🌊 TensorFlow
-The simplest way to log metrics in TensorFlow is by logging `tf.summary` with our TensorFlow logger:
+The following code example demonstrates how your script might look like when you integrate W&B with Keras:
+
 ```python
+# This script needs these libraries to be installed:
+#   tensorflow, numpy
+
+import wandb
+from wandb.keras import WandbMetricsLogger, WandbModelCheckpoint
+
+import random
+import numpy as np
+import tensorflow as tf
+
+
+# Start a run, tracking hyperparameters
+run = wandb.init(
+    # set the wandb project where this run will be logged
+    project="my-awesome-project",
+    # track hyperparameters and run metadata with wandb.config
+    config={
+        "layer_1": 512,
+        "activation_1": "relu",
+        "dropout": random.uniform(0.01, 0.80),
+        "layer_2": 10,
+        "activation_2": "softmax",
+        "optimizer": "sgd",
+        "loss": "sparse_categorical_crossentropy",
+        "metric": "accuracy",
+        "epoch": 8,
+        "batch_size": 256,
+    },
+)
+
+# [optional] use wandb.config as your config
+config = run.config
+
+# get the data
+mnist = tf.keras.datasets.mnist
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
+x_train, y_train = x_train[::5], y_train[::5]
+x_test, y_test = x_test[::20], y_test[::20]
+labels = [str(digit) for digit in range(np.max(y_train) + 1)]
+
+# build a model
+model = tf.keras.models.Sequential(
+    [
+        tf.keras.layers.Flatten(input_shape=(28, 28)),
+        tf.keras.layers.Dense(config.layer_1, activation=config.activation_1),
+        tf.keras.layers.Dropout(config.dropout),
+        tf.keras.layers.Dense(config.layer_2, activation=config.activation_2),
+    ]
+)
+
+# compile the model
+model.compile(optimizer=config.optimizer, loss=config.loss, metrics=[config.metric])
+
+# WandbMetricsLogger will log train and validation metrics to wandb
+# WandbModelCheckpoint will upload model checkpoints to wandb
+history = model.fit(
+    x=x_train,
+    y=y_train,
+    epochs=config.epoch,
+    batch_size=config.batch_size,
+    validation_data=(x_test, y_test),
+    callbacks=[
+        WandbMetricsLogger(log_freq=5),
+        WandbModelCheckpoint("models"),
+    ],
+)
+
+# [optional] finish the wandb run, necessary in notebooks
+run.finish()
+```
+
+Get started integrating your Keras model with W&B today:
+
+- Run an example [Google Colab Notebook](https://wandb.me/intro-keras?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations)
+- Read the [Developer Guide](https://docs.wandb.com/guides/integrations/keras?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations) for technical details on how to integrate Keras with W&B.
+- Explore [W&B Reports](https://app.wandb.ai/wandb/getting-started/reports/Keras--VmlldzoyMTEwNjQ?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations).
+
+</details>
+<details>
+<summary>🤗 Huggingface Transformers</summary>
+
+Pass `wandb` to the `report_to` argument when you run a script using a HuggingFace Trainer. W&B will automatically log losses,
+evaluation metrics, model topology, and gradients.
+
+**Note**: The environment you run your script in must have `wandb` installed.
+
+The following example demonstrates how to integrate W&B with Hugging Face:
+
+```python
+# This script needs these libraries to be installed:
+#   numpy, transformers, datasets
+
 import wandb
 
-# 1. Start a W&B run
-wandb.init(project='gpt5')
+import os
+import numpy as np
+from datasets import load_dataset
+from transformers import TrainingArguments, Trainer
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-# 2. Save model inputs and hyperparameters
-config = wandb.config
-config.learning_rate = 0.01
 
-# Model training here
+def tokenize_function(examples):
+    return tokenizer(examples["text"], padding="max_length", truncation=True)
 
-# 3. Log metrics over time to visualize performance
-with tf.Session() as sess:
-  # ...
-  wandb.tensorflow.log(tf.summary.merge_all())
+
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    predictions = np.argmax(logits, axis=-1)
+    return {"accuracy": np.mean(predictions == labels)}
+
+
+# download prepare the data
+dataset = load_dataset("yelp_review_full")
+tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+
+small_train_dataset = dataset["train"].shuffle(seed=42).select(range(1000))
+small_eval_dataset = dataset["test"].shuffle(seed=42).select(range(300))
+
+small_train_dataset = small_train_dataset.map(tokenize_function, batched=True)
+small_eval_dataset = small_train_dataset.map(tokenize_function, batched=True)
+
+# download the model
+model = AutoModelForSequenceClassification.from_pretrained(
+    "distilbert-base-uncased", num_labels=5
+)
+
+# set the wandb project where this run will be logged
+os.environ["WANDB_PROJECT"] = "my-awesome-project"
+
+# save your trained model checkpoint to wandb
+os.environ["WANDB_LOG_MODEL"] = "true"
+
+# turn off watch to log faster
+os.environ["WANDB_WATCH"] = "false"
+
+# pass "wandb" to the `report_to` parameter to turn on wandb logging
+training_args = TrainingArguments(
+    output_dir="models",
+    report_to="wandb",
+    logging_steps=5,
+    per_device_train_batch_size=32,
+    per_device_eval_batch_size=32,
+    evaluation_strategy="steps",
+    eval_steps=20,
+    max_steps=100,
+    save_steps=100,
+)
+
+# define the trainer and start training
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=small_train_dataset,
+    eval_dataset=small_eval_dataset,
+    compute_metrics=compute_metrics,
+)
+trainer.train()
+
+# [optional] finish the wandb run, necessary in notebooks
+wandb.finish()
 ```
 
-- **[Try in a colab →](http://wandb.me/tf-colab)**
-- [Docs](https://docs.wandb.com/library/integrations/tensorflow)
+- Run an example [Google Colab Notebook](http://wandb.me/hf?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations).
+- Read the [Developer Guide](https://docs.wandb.com/guides/integrations/huggingface?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations) for technical details on how to integrate Hugging Face with W&B.
+</details>
 
+<details>
+<summary>⚡️ PyTorch Lightning</summary>
 
-## 💨 fastai
-Visualize, compare, and iterate on fastai models using Weights & Biases with the `WandbCallback`.
+Build scalable, structured, high-performance PyTorch models with Lightning and log them with W&B.
+
 ```python
+# This script needs these libraries to be installed:
+#   torch, torchvision, pytorch_lightning
+
 import wandb
-from fastai.callback.wandb import WandbCallback
 
-# 1. Start a new run
-wandb.init(project="gpt-5")
+import os
+from torch import optim, nn, utils
+from torchvision.datasets import MNIST
+from torchvision.transforms import ToTensor
 
-# 2. Automatically log model metrics
-learn.fit(..., cbs=WandbCallback())
+import pytorch_lightning as pl
+from pytorch_lightning.loggers import WandbLogger
+
+
+class LitAutoEncoder(pl.LightningModule):
+    def __init__(self, lr=1e-3, inp_size=28, optimizer="Adam"):
+        super().__init__()
+
+        self.encoder = nn.Sequential(
+            nn.Linear(inp_size * inp_size, 64), nn.ReLU(), nn.Linear(64, 3)
+        )
+        self.decoder = nn.Sequential(
+            nn.Linear(3, 64), nn.ReLU(), nn.Linear(64, inp_size * inp_size)
+        )
+        self.lr = lr
+
+        # save hyperparameters to self.hparamsm auto-logged by wandb
+        self.save_hyperparameters()
+
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        x = x.view(x.size(0), -1)
+        z = self.encoder(x)
+        x_hat = self.decoder(z)
+        loss = nn.functional.mse_loss(x_hat, x)
+
+        # log metrics to wandb
+        self.log("train_loss", loss)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = optim.Adam(self.parameters(), lr=self.lr)
+        return optimizer
+
+
+# init the autoencoder
+autoencoder = LitAutoEncoder(lr=1e-3, inp_size=28)
+
+# setup data
+batch_size = 32
+dataset = MNIST(os.getcwd(), download=True, transform=ToTensor())
+train_loader = utils.data.DataLoader(dataset, shuffle=True)
+
+# initialise the wandb logger and name your wandb project
+wandb_logger = WandbLogger(project="my-awesome-project")
+
+# add your batch size to the wandb config
+wandb_logger.experiment.config["batch_size"] = batch_size
+
+# pass wandb_logger to the Trainer
+trainer = pl.Trainer(limit_train_batches=750, max_epochs=5, logger=wandb_logger)
+
+# train the model
+trainer.fit(model=autoencoder, train_dataloaders=train_loader)
+
+# [optional] finish the wandb run, necessary in notebooks
+wandb.finish()
 ```
 
-- **[Try in a colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/fastai/Weights_&_Biases_with_fastai.ipynb)**
-- [Docs](https://docs.wandb.com/library/integrations/fastai)
+- Run an example [Google Colab Notebook](http://wandb.me/lightning?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations).
+- Read the [Developer Guide](https://docs.wandb.ai/guides/integrations/lightning?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations) for technical details on how to integrate PyTorch Lightning with W&B.
+</details>
+<details>
+<summary>💨 XGBoost</summary>
+Use W&B Callbacks to automatically save metrics to W&B when you call `model.fit` during training.
 
+The following code example demonstrates how your script might look like when you integrate W&B with XGBoost:
 
-## 🤗 HuggingFace
-Just run a script using HuggingFace's Trainer in an environment where `wandb` is installed
-and we'll automatically log losses, evaluation metrics, model topology and gradients:
 ```python
-# 1. Install the wandb library
-pip install wandb
+# This script needs these libraries to be installed:
+#   numpy, xgboost
 
-# 2. Run a script that has the Trainer to automatically logs metrics, model topology and gradients
-python run_glue.py \
- --model_name_or_path bert-base-uncased \
- --task_name MRPC \
- --data_dir $GLUE_DIR/$TASK_NAME \
- --do_train \
- --evaluate_during_training \
- --max_seq_length 128 \
- --per_gpu_train_batch_size 32 \
- --learning_rate 2e-5 \
- --num_train_epochs 3 \
- --output_dir /tmp/$TASK_NAME/ \
- --overwrite_output_dir \
- --logging_steps 50
+import wandb
+from wandb.xgboost import WandbCallback
+
+import numpy as np
+import xgboost as xgb
+
+
+# setup parameters for xgboost
+param = {
+    "objective": "multi:softmax",
+    "eta": 0.1,
+    "max_depth": 6,
+    "nthread": 4,
+    "num_class": 6,
+}
+
+# start a new wandb run to track this script
+run = wandb.init(
+    # set the wandb project where this run will be logged
+    project="my-awesome-project",
+    # track hyperparameters and run metadata
+    config=param,
+)
+
+# download data from wandb Artifacts and prep data
+run.use_artifact("wandb/intro/dermatology_data:v0", type="dataset").download(".")
+data = np.loadtxt(
+    "./dermatology.data",
+    delimiter=",",
+    converters={33: lambda x: int(x == "?"), 34: lambda x: int(x) - 1},
+)
+sz = data.shape
+
+train = data[: int(sz[0] * 0.7), :]
+test = data[int(sz[0] * 0.7) :, :]
+
+train_X = train[:, :33]
+train_Y = train[:, 34]
+
+test_X = test[:, :33]
+test_Y = test[:, 34]
+
+xg_train = xgb.DMatrix(train_X, label=train_Y)
+xg_test = xgb.DMatrix(test_X, label=test_Y)
+watchlist = [(xg_train, "train"), (xg_test, "test")]
+
+# add another config to the wandb run
+num_round = 5
+run.config["num_round"] = 5
+run.config["data_shape"] = sz
+
+# pass WandbCallback to the booster to log its configs and metrics
+bst = xgb.train(
+    param, xg_train, num_round, evals=watchlist, callbacks=[WandbCallback()]
+)
+
+# get prediction
+pred = bst.predict(xg_test)
+error_rate = np.sum(pred != test_Y) / test_Y.shape[0]
+
+# log your test metric to wandb
+run.summary["Error Rate"] = error_rate
+
+# [optional] finish the wandb run, necessary in notebooks
+run.finish()
 ```
 
-- **[Try in a colab →](http://wandb.me/huggingface-colab)**
-- [Docs](https://docs.wandb.com/library/integrations/huggingface)
+- Run an example [Google Colab Notebook](https://wandb.me/xgboost?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations).
+- Read the [Developer Guide](https://docs.wandb.ai/guides/integrations/xgboost?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations) for technical details on how to integrate XGBoost with W&B.
+</details>
+<details>
+<summary>🧮 Sci-Kit Learn</summary>
+Use wandb to visualize and compare your scikit-learn models' performance:
 
+```python
+# This script needs these libraries to be installed:
+#   numpy, sklearn
+
+import wandb
+from wandb.sklearn import plot_precision_recall, plot_feature_importances
+from wandb.sklearn import plot_class_proportions, plot_learning_curve, plot_roc
+
+import numpy as np
+from sklearn import datasets
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+
+
+# load and process data
+wbcd = datasets.load_breast_cancer()
+feature_names = wbcd.feature_names
+labels = wbcd.target_names
+
+test_size = 0.2
+X_train, X_test, y_train, y_test = train_test_split(
+    wbcd.data, wbcd.target, test_size=test_size
+)
+
+# train model
+model = RandomForestClassifier()
+model.fit(X_train, y_train)
+model_params = model.get_params()
+
+# get predictions
+y_pred = model.predict(X_test)
+y_probas = model.predict_proba(X_test)
+importances = model.feature_importances_
+indices = np.argsort(importances)[::-1]
+
+# start a new wandb run and add your model hyperparameters
+run = wandb.init(project="my-awesome-project", config=model_params)
+
+# Add additional configs to wandb
+run.config.update(
+    {
+        "test_size": test_size,
+        "train_len": len(X_train),
+        "test_len": len(X_test),
+    }
+)
+
+# log additional visualisations to wandb
+plot_class_proportions(y_train, y_test, labels)
+plot_learning_curve(model, X_train, y_train)
+plot_roc(y_test, y_probas, labels)
+plot_precision_recall(y_test, y_probas, labels)
+plot_feature_importances(model)
+
+# [optional] finish the wandb run, necessary in notebooks
+run.finish()
+```
+
+- Run an example [Google Colab Notebook](https://wandb.me/scikit-colab?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations).
+- Read the [Developer Guide](https://docs.wandb.ai/guides/integrations/scikit?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations) for technical details on how to integrate Scikit-Learn with W&B.
+</details>
+
+&nbsp;
 # 🧹 Optimize hyperparameters with Sweeps
 Use Weights & Biases Sweeps to automate hyperparameter optimization and explore the space of possible models.
 
