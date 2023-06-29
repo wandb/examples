@@ -140,7 +140,7 @@ model.fit(x_train, y_train,  validation_data=(x_test, y_test),
           callbacks=[WandbCallback()])
 ```
 
-- **[Try in a colab](http://wandb.me/keras-colab)** with a
+- **[Try in a colab](http://wandb.me/intro-keras)** with a
 **[video tutorial](http://wandb.me/keras-video)**
 - [Learn More](https://app.wandb.ai/wandb/getting-started/reports/Keras--VmlldzoyMTEwNjQ)
 - [Docs](https://docs.wandb.com/library/integrations/keras)
@@ -194,7 +194,7 @@ trainer = Trainer(logger=wandb_logger)
 trainer.fit(model, mnist)
 ```
 
-- **[Try in a colab](http://wandb.me/lit-colab)** with a
+- **[Try in a colab](http://wandb.me/lightning)** with a
 **[video tutorial](http://wandb.me/lit-video)**
 - [Learn More](https://www.wandb.com/articles/pytorch-lightning-with-weights-biases)
 - [Docs](https://docs.wandb.com/library/integrations/lightning)
