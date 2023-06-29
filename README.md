@@ -206,7 +206,7 @@ The simplest way to log metrics in TensorFlow is by logging `tf.summary` with ou
 import wandb
 
 # 1. Start a W&B run
-wandb.init(project='gpt3')
+wandb.init(project='gpt5')
 
 # 2. Save model inputs and hyperparameters
 config = wandb.config
@@ -231,13 +231,13 @@ import wandb
 from fastai.callback.wandb import WandbCallback
 
 # 1. Start a new run
-wandb.init(project="gpt-3")
+wandb.init(project="gpt-5")
 
 # 2. Automatically log model metrics
 learn.fit(..., cbs=WandbCallback())
 ```
 
-- **[Try in a colab →](http://bit.ly/fastai-wandb)**
+- **[Try in a colab →](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/fastai/Weights_&_Biases_with_fastai.ipynb)**
 - [Docs](https://docs.wandb.com/library/integrations/fastai)
 
 
@@ -264,7 +264,7 @@ python run_glue.py \
  --logging_steps 50
 ```
 
-- **[Try in a colab →](https://colab.research.google.com/drive/1NEiqNPhiouu2pPwDAVeFoN4-vTYMz9F8?usp=sharing)**
+- **[Try in a colab →](http://wandb.me/huggingface-colab)**
 - [Docs](https://docs.wandb.com/library/integrations/huggingface)
 
 # 🧹 Optimize hyperparameters with Sweeps
