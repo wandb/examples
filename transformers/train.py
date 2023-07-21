@@ -3,6 +3,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from datasets import load_dataset
 import wandb
 import os
+import ast
 
 
 os.environ["WANDB_LOG_MODEL"] = "checkpoint"
@@ -52,7 +53,28 @@ with wandb.init(entity="gong-demo", project="transformers") as run:
         save_strategy="epoch",
         logging_dir="./logs",
         report_to="wandb",
+#        use_mps_device=True
     )
+
+    for k, v in wandb.config.items():
+        if k in training_args.__dict__.keys():
+            config_value = v
+            new_type = type(config_value)
+            original_type = type(training_args.__dict__[k])
+            if original_type != new_type:
+                try:
+                    if original_type is list or (new_type is str and config_value == "None"):
+                        # try eval string into the correct type
+                        config_value = ast.literal_eval(v)
+                    else:
+                        # try to instantiate the type, this will work for int, float, and enums
+                        config_value = original_type(v)
+                except Exception as e:
+                    pass
+                if type(config_value) != original_type:
+                    print(f"Failed to convert {v} of type {new_type} to original type {original_type}, skipping...")
+                    continue
+            training_args.__dict__[k] = config_value
 
     # Define the trainer
     trainer = Trainer(
