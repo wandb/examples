@@ -80,7 +80,7 @@ See the README for instructions.
 
 ### 👋 [keras-tensorflow2](https://github.com/wandb/examples/tree/master/examples/keras/keras-tensorflow2)
 
-This tutorial is adapts Francois Chollet's [brilliant introduction to TensorFlow 2.0](https://colab.research.google.com/drive/1UCJt8EYjlzCs1H1d1X0iDGYJsHKwu-NO)
+This tutorial is adapted from Francois Chollet's [brilliant introduction to TensorFlow 2.0](https://colab.research.google.com/drive/1UCJt8EYjlzCs1H1d1X0iDGYJsHKwu-NO)
 to include W&B callbacks.
 
 ```
