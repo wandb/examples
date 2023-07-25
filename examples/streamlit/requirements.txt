@@ -10,7 +10,7 @@ base58==2.1.1
 bleach==4.1.0
 blinker==1.4
 cachetools==4.2.4
-certifi==2021.10.8
+certifi==2023.7.22
 cffi==1.15.0
 charset-normalizer==2.0.7
 click==7.1.2
