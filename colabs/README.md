@@ -19,9 +19,11 @@
 | Ultralytics Inference | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/ultralytics-inference) |
 | Ray/Tune | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/raytune-colab) |
 | 🤗 Diffusers | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/diffusers-uncond-colab) |
-| Kaolin-Wisp | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/vqad-colab) |
+| 🤗 Diffusers Stable Diffusion XL 1.0 Text-to-Image | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/sdxl-colab) |
 | 🧨 Dreambooth-Keras Train | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/db-keras-train) |
 | 🧨 Dreambooth-Keras Inference | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/db-keras-inference) |
+| Kaolin-Wisp | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/vqad-colab) |
+
 
 # 🏋🏽‍♂️ W&B Features
 
