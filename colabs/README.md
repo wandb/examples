@@ -15,6 +15,8 @@
 | HuggingFace | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/huggingface-colab) |
 | spaCy v3 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/spacy-colab) |
 | YOLOv5 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/yolo-colab) |
+| Ultralytics Train | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/ultralytics-train) |
+| Ultralytics Inference | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/ultralytics-inference) |
 | Ray/Tune | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/raytune-colab) |
 | 🤗 Diffusers | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/diffusers-uncond-colab) |
 | Kaolin-Wisp | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/vqad-colab) |
