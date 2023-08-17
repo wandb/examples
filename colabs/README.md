@@ -24,6 +24,7 @@
 | 🧨 Dreambooth-Keras Train | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/db-keras-train) |
 | 🧨 Dreambooth-Keras Inference | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/db-keras-inference) |
 | Kaolin-Wisp | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/vqad-colab) |
+| Super Gradients | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/yolo-nas-colab) |
 
 # 🏋🏽‍♂️ W&B Features
 
