@@ -1,6 +1,6 @@
 <p align="center">
-  <img src="https://github.com/wandb/wandb/raw/main/.github/wb-logo-lightbg.png#gh-light-mode-only" width="600" alt="Weights & Biases"/>
-  <img src="https://github.com/wandb/wandb/raw/main/.github/wb-logo-darkbg.png#gh-dark-mode-only" width="600" alt="Weights & Biases"/>
+  <img src="https://github.com/wandb/wandb/raw/main/docs/README_images/logo-light.svg#gh-light-mode-only" width="600" alt="Weights & Biases"/>
+  <img src="https://github.com/wandb/wandb/raw/main/docs/README_images/logo-dark.svg#gh-dark-mode-only" width="600" alt="Weights & Biases"/>
 </p>
 
 Use W&B to build better models faster. Track and visualize all the pieces of your machine learning pipeline, from datasets to production machine learning models. Get started with W&B today, [sign up for a free account!](https://wandb.com?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme)
