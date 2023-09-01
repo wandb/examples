@@ -1,5 +1,5 @@
 wandb
 keras
 tensorflow
-sklearn
+scikit-learn
 numpy
