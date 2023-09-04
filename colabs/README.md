@@ -25,6 +25,7 @@
 | 🧨 Dreambooth-Keras Inference | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/db-keras-inference) |
 | Kaolin-Wisp | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/vqad-colab) |
 | Super Gradients | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://wandb.me/yolo-nas-colab) |
+| Fine-tune a Torchvision Model with KerasCore | [![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/keras/keras_core/torchvision_keras.ipynb) |
 
 # 🏋🏽‍♂️ W&B Features
 
