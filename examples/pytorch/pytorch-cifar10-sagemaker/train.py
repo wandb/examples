@@ -50,13 +50,14 @@ print("Using inputs: ", inputs)
 estimator = PyTorch(entry_point="cifar10.py",
                     source_dir=os.getcwd() + "/source",
                     role=role,
-                    framework_version='1.7.1',
-                    py_version='py3',
+                    framework_version='1.12.1',
+                    py_version='py38',
                     instance_count=1,
                     instance_type='ml.c5.xlarge',
                     hyperparameters={
                         'epochs': args.train_epochs,
-                        'momentum': 0.9
+                        'momentum': 0.9,
+                        'num_round': 10,
                     })
 
 hyperparameter_ranges = {
