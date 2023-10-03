@@ -88,7 +88,7 @@ traitlets==5.1.1
 typing-extensions==3.10.0.2
 tzdata==2021.5
 tzlocal==4.1
-urllib3==1.26.7
+urllib3==1.26.17
 validators==0.18.2
 wandb==0.12.6
 watchdog==2.1.6
