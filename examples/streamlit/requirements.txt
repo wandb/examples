@@ -21,7 +21,7 @@ defusedxml==0.7.1
 docker-pycreds==0.4.0
 entrypoints==0.3
 gitdb==4.0.9
-GitPython==3.1.34
+GitPython==3.1.37
 idna==3.3
 ipykernel==6.5.0
 ipython==8.10.0
@@ -88,7 +88,7 @@ traitlets==5.1.1
 typing-extensions==3.10.0.2
 tzdata==2021.5
 tzlocal==4.1
-urllib3==1.26.7
+urllib3==1.26.18
 validators==0.18.2
 wandb==0.12.6
 watchdog==2.1.6
