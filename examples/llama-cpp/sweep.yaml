@@ -1,0 +1,22 @@
+program: evaluate.py
+method: random
+metric:
+  goal: maximize
+  name: diff_score
+parameters:
+  model:
+    distribution: categorical
+    values:
+      - codellama-13b-instruct.Q4_K_M.gguf
+      - codellama-7b.Q5_K_S.gguf
+      - mistral-7b-instruct-v0.1.Q5_K_M.gguf
+      - gpt-3.5-turbo
+  system_prompt:
+    distribution: categorical
+    values:
+      - You're a Docker expert. Translate the following sentence to a simple docker command.
+      - You'll be asked a question about Docker.  Your job is to convert this question to a succinct docker command.  Only provide a single command and limit your use of pipeing to other unix tools.
+  temperature:
+    distribution: uniform
+    max: 0.6
+    min: 0

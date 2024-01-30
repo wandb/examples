@@ -1,0 +1,10 @@
+{"input": "Spin up a new container named busy_server_1 with the latest version of the busybox image and place it under the high_priority cgroup parent in the background.", "ideal": "docker run -d --name busy_server_1 --cgroup-parent /high_priority busybox"}
+{"input": "Please display the images in a table format with the repository, tag, ID, and size included.", "ideal": "docker images --format \"table {{.Repository}},{{.Tag}},{{.ID}},{{.Size}}\""}
+{"input": "Can you show me the containers that are running and have port 8080 published?", "ideal": "docker ps --filter 'publish=8080'"}
+{"input": "I need just the IDs of Docker images.", "ideal": "docker images --quiet"}
+{"input": "Display the containers that are both running and healthy.", "ideal": "docker ps --filter 'status=running' --filter 'health=healthy'"}
+{"input": "Get the images labeled with \"maintainer=nginx\" and show their repository, tag, and ID.", "ideal": "docker images --filter \"label=maintainer=nginx\" --format \"{{.Repository}},{{.Tag}},{{.ID}}\""}
+{"input": "Display all the running containers.", "ideal": "docker ps"}
+{"input": "Display the details of the most recent container execution now!", "ideal": "docker ps -l"}
+{"input": "Please run httpd as an Apache server on port 8080 using the latest image.", "ideal": "docker run --name apache_server -p 8080:80 httpd"}
+{"input": "I need to see the running tasks in Docker.", "ideal": "docker ps --filter 'is-task=true'"}
