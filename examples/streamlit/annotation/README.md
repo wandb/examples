@@ -35,14 +35,17 @@ Finally, run the Streamlit app on localhost:
 streamlit run wandb_streamlit_app.py
 ```
 From there, you can edit the columns that have been configured for labeling:
-![Screenshot 2024-02-06 at 5 16 48 PM](https://github.com/wandb/annotation_streamlit/assets/14133187/0439eb5f-1d1a-4495-bad7-c57a94ce7563)
+![image](https://github.com/wandb/examples/assets/6355078/eff3ad41-4550-42e7-92ae-00ba5d46f5b5)
+
 
 ## 3. Annotate and Version Tables
 
 This is what the data looks like from the CSV of sample LLM inputs and outputs:
-<img width="1000" alt="sample table" src="https://github.com/wandb/annotation_streamlit/assets/6355078/bea1105e-cc65-4bbb-b899-e99bcb2220cb">
+![image](https://github.com/wandb/examples/assets/6355078/6a20a3cd-3ebd-4372-bb79-64c54f965d55)
+
 
 Once loaded as a W&B Table, we have a clean, annotated version of this workflow, complete with metadata, in our system of record:
-![Screenshot 2024-02-06 at 5 06 25 PM](https://github.com/wandb/annotation_streamlit/assets/14133187/aa404c53-b934-47d0-a29b-c7e2cbef27a1)
+![image](https://github.com/wandb/examples/assets/6355078/4cd1357a-71c3-4c06-bd55-caf1042e45f0)
+
 
 
