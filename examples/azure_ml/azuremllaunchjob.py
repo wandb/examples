@@ -9,7 +9,7 @@ os.environ["WANDB_LOG_MODEL"] = "checkpoint"  # log all model checkpoints
 
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments
-from datasets import load_dataset, load_metric
+from datasets import load_dataset, load_metric, DatasetDict
 import wandb
 import numpy as np
 import pandas as pd
@@ -18,71 +18,10 @@ from pathlib import Path
 from transformers import TFAutoModelForSequenceClassification
 from transformers.convert_graph_to_onnx import convert
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_name = "bert-base-uncased"
-
 # Initialize wandb
 wandb.init(project="azure_ml_test")
 
-# Load a dataset and a tokenizer
-dataset = load_dataset("glue", "mrpc")
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-def preprocess_function(examples):
-    return tokenizer(examples['sentence1'], examples['sentence2'], truncation=True, padding="max_length", max_length=128)  # You can adjust max_length as needed
-
-encoded_dataset = dataset.map(preprocess_function, batched=True)
-
-# Load a model and specify the number of labels
-model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2).to(device)
-
-# Load the metric
-metric = load_metric("glue", "mrpc")
-
-def compute_metrics(eval_pred):
-    predictions, labels = eval_pred
-    # Depending on the task, you might need to modify the prediction or label format
-    predictions = np.argmax(predictions, axis=1)
-    return metric.compute(predictions=predictions, references=labels)
-
-# Define training arguments
-training_args = TrainingArguments(
-    output_dir="./results",
-    evaluation_strategy="epoch",
-    save_strategy="epoch",
-    load_best_model_at_end=True,  # Load the best model at the end based on eval_accuracy
-    metric_for_best_model="eval_accuracy",
-    logging_strategy="steps",
-    logging_steps=1,
-    learning_rate=2e-5,
-    per_device_train_batch_size=16,
-    per_device_eval_batch_size=16,
-    num_train_epochs=2,
-    weight_decay=0.01,
-    report_to="wandb",  # Ensure we report to Weights & Biases
-)
-# Initialize our Trainer
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=encoded_dataset["train"],
-    eval_dataset=encoded_dataset["validation"],
-    compute_metrics=compute_metrics,
-)
-
-def decode_predictions(predictions, labels, encoded_dataset, label_map):
-    pred_labels = np.argmax(predictions, axis=1)
-    pred_label_str = [label_map[label] for label in pred_labels]
-    true_label_str = [label_map[label] for label in labels]
-    sentence1 = encoded_dataset['sentence1']
-    sentence2 = encoded_dataset['sentence2']
-    return {
-        'Sentence 1': sentence1,
-        'Sentence 2': sentence2,
-        'Prediction': pred_label_str,
-        'Ground Truth': true_label_str
-    }
-
+# Define the callback for logging predictions during evaluation
 class WandbPredictionLoggingCallback(WandbCallback):
     def __init__(self, trainer, tokenizer, val_dataset, label_map, num_samples=100, freq=1):
         super().__init__()
@@ -102,12 +41,85 @@ class WandbPredictionLoggingCallback(WandbCallback):
             predictions_table = wandb.Table(dataframe=predictions_df)
             wandb.log({"predictions": predictions_table})
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model_name = "roberta-base"
+
+# Load a finance-related dataset
+dataset = load_dataset("financial_phrasebank", "sentences_allagree")
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+# Preprocess by tokenizing the sentences by padding and truncating with a maximum length of 128
+def preprocess_function(examples):
+    return tokenizer(examples['sentence'], truncation=True, padding="max_length", max_length=128)
+
+# Preprocess the dataset
+full_encoded_dataset = dataset.map(preprocess_function, batched=True)['train']
+
+# Split the dataset
+# Splits into train and then the join of test and valid
+train_testvalid = full_encoded_dataset.train_test_split(test_size=0.1, seed=42)
+# Splits the join of test and valid into test and valid
+test_valid = train_testvalid['test'].train_test_split(test_size=0.2, seed=42)
+
+# Create a combined dataset for training, testing, and validation
+encoded_dataset = DatasetDict({
+    'train': train_testvalid['train'],
+    'test': test_valid['test'],
+    'valid': test_valid['train']})
+
+# Load a model for sequence classification with the number of labels corresponding to sentiment analysis
+model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=3).to(device)
+
+# Load the metric
+metric = load_metric("accuracy")
+
+def compute_metrics(eval_pred):
+    predictions, labels = eval_pred
+    predictions = np.argmax(predictions, axis=1)
+    return metric.compute(predictions=predictions, references=labels)
+
+# Define training arguments
+training_args = TrainingArguments(
+    output_dir="./results",
+    evaluation_strategy="epoch",
+    save_strategy="epoch",
+    load_best_model_at_end=True,
+    metric_for_best_model="accuracy",
+    logging_strategy="steps",
+    logging_steps=10,
+    learning_rate=5e-5,
+    per_device_train_batch_size=8,
+    per_device_eval_batch_size=8,
+    num_train_epochs=3,
+    weight_decay=0.01,
+    report_to="wandb",
+)
+# Initialize our Trainer
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=encoded_dataset["train"],
+    eval_dataset=encoded_dataset["valid"],
+    compute_metrics=compute_metrics,
+)
+
+def decode_predictions(predictions, labels, encoded_dataset, label_map):
+    pred_labels = np.argmax(predictions, axis=1)
+    pred_label_str = [label_map[label] for label in pred_labels]
+    true_label_str = [label_map[label] for label in labels]
+    sentences = encoded_dataset['sentence']
+    return {
+        'Sentence': sentences,
+        'Prediction': pred_label_str,
+        'Ground Truth': true_label_str
+    }
+
 # Instantiate the WandbPredictionLoggingCallback
 prediction_logging_callback = WandbPredictionLoggingCallback(
     trainer=trainer,
     tokenizer=tokenizer,
-    val_dataset=encoded_dataset["validation"],
-    label_map={0: 'not equivalent', 1: 'equivalent'},
+    val_dataset=encoded_dataset["valid"],
+    label_map={0: 'negative', 1: 'neutral', 2: 'positive'},
     num_samples=10,
     freq=1,
 )
@@ -118,10 +130,10 @@ trainer.add_callback(prediction_logging_callback)
 # Train the model
 trainer.train()
 # Perform the prediction
-predictions, labels, _ = trainer.predict(encoded_dataset["validation"])
+predictions, labels, _ = trainer.predict(encoded_dataset["test"])
 
 # Decode the predictions
-decoded_predictions = decode_predictions(predictions, labels, encoded_dataset["validation"], {0: 'not equivalent', 1: 'equivalent'})
+decoded_predictions = decode_predictions(predictions, labels, encoded_dataset["test"], {0: 'negative', 1: 'neutral', 2: 'positive'})
 
 # Create the pandas DataFrame
 df = pd.DataFrame(decoded_predictions)
