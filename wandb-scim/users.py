@@ -80,7 +80,7 @@ class User(object):
         else:
             return(f"Failed to delete user. Status code: {response.status_code}")
 
-    def _assign_role(self, url, request_payload):
+    def _assign_role_user(self, url, request_payload):
         # request_payload.role It can be one of admin, viewer or member.
         print("assign a role to the User")
         data = {
@@ -110,7 +110,7 @@ class User(object):
         else:
             return(f"Failed to update user. Status code: {response.status_code}")
 
-    def _assign_role(self,url, request_payload):
+    def _assign_role_team(self,url, request_payload):
         print("assign a role to the User of the team")
         data = {
                 "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
