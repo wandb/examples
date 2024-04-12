@@ -1,11 +1,13 @@
 import requests
+import base64
 
 class CustomRole(object):
-    # def __init__(self, common_params):
-    #     dbcli_apiclient = ApiClient(common_params["api_user"], password=common_params["api_password"],
-    #                             host='https://accounts.cloud.databricks.com', 
-    #                             verify=True, command_name='Python Dev')
-    #     self.accounts_api_client = AccountsApi(dbcli_apiclient)
+    def __init__(self, username, api_key):
+        auth_str = f"{username}:{api_key}"
+        auth_bytes = auth_str.encode('ascii')
+        self.auth_token = base64.b64encode(auth_bytes).decode('ascii')
+
+        self.authorization_header = f"Basic {self.auth_token}"
 
     def _create_custom_role(self, url, request_payload):
         print("Creating the custom role")
@@ -16,7 +18,11 @@ class CustomRole(object):
                 "permissions": [ request_payload.permissionjson],
                 "inheritedFrom": request_payload.inheritedFrom
                 }
-        response = requests.post(url, json=data)
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
+        response = requests.post(url, json=data, headers=headers)
         
         if response.status_code == 201:
             return("custom role has been created!")
@@ -25,7 +31,12 @@ class CustomRole(object):
     def _get_custom_role(self, url):
         print("Getting the custom role")
 
-        response = requests.get(url)
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
+
+        response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
             return(f"custom role detials: {response.text}")
@@ -34,7 +45,12 @@ class CustomRole(object):
     def _get_all_custom_role(self, url):
         print("Getting all the custom roles in org")
 
-        response = requests.get(url)
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
+
+        response = requests.get(url,headers=headers)
 
         if response.status_code == 200:
             return(f"all the custom roles detials: {response.text}")
@@ -54,7 +70,12 @@ class CustomRole(object):
                 ]
             }
 
-        response = requests.patch(url, json=data)
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
+
+        response = requests.patch(url, json=data, headers=headers)
 
         if response.status_code == 200:
             updated_data = response.json()  # Get the updated resource data from the response
@@ -79,8 +100,12 @@ class CustomRole(object):
                     }
                 ]
             }
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
 
-        response = requests.patch(url, json=data)
+        response = requests.patch(url, json=data, headers=headers)
 
         if response.status_code == 200:
             updated_data = response.json()  # Get the updated resource data from the response
@@ -102,8 +127,12 @@ class CustomRole(object):
                 "inheritedFrom": request_payload.inheritedFrom 
                 # inheritedFrom can either be member or viewer. 
             }
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
 
-        response = requests.put(url, json=data)
+        response = requests.put(url, json=data, headers=headers)
 
         if response.status_code == 200:
             updated_data = response.json()  # Get the updated resource data from the response

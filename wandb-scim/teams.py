@@ -1,11 +1,14 @@
 import requests
+import base64
 
 class Teams(object):
-    # def __init__(self, common_params):
-    #     dbcli_apiclient = ApiClient(common_params["api_user"], password=common_params["api_password"],
-    #                             host='https://accounts.cloud.databricks.com', 
-    #                             verify=True, command_name='Python Dev')
-    #     self.accounts_api_client = AccountsApi(dbcli_apiclient)
+    def __init__(self, username, api_key):
+
+        auth_str = f"{username}:{api_key}"
+        auth_bytes = auth_str.encode('ascii')
+        self.auth_token = base64.b64encode(auth_bytes).decode('ascii')
+
+        self.authorization_header = f"Basic {self.auth_token}"
 
     def _create_team(self, url, request_payload):
         print("Creating the team")
@@ -18,7 +21,11 @@ class Teams(object):
                     }
                 ]
             }
-        response = requests.post(url, json=data)
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
+        response = requests.post(url, json=data , headers=headers)
         
         if response.status_code == 201:
             return("team has been created!")
@@ -27,7 +34,12 @@ class Teams(object):
     def _get_team(self, url):
         print("Getting the team")
 
-        response = requests.get(url)
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
+
+        response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
             return(f"team detials: {response.text}")
@@ -36,7 +48,12 @@ class Teams(object):
     def _get_all_teams(self, url):
         print("Getting all the teams in org")
 
-        response = requests.get(url)
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
+
+        response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
             return(f"teams detials: {response.text}")
@@ -59,8 +76,12 @@ class Teams(object):
                     }
                 ]
             }
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
 
-        response = requests.patch(url, json=data)
+        response = requests.patch(url, json=data, headers=headers)
 
         if response.status_code == 200:
             updated_data = response.json()  # Get the updated resource data from the response
@@ -89,8 +110,11 @@ class Teams(object):
                     }
                 ]
             }
-
-        response = requests.patch(url, json=data)
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
+        response = requests.patch(url, json=data, headers=headers)
 
         if response.status_code == 200:
             updated_data = response.json()  # Get the updated resource data from the response

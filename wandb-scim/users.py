@@ -1,11 +1,13 @@
 import requests
+import base64
 
 class User(object):
-    # def __init__(self, common_params):
-    #     dbcli_apiclient = ApiClient(common_params["api_user"], password=common_params["api_password"],
-    #                             host='https://accounts.cloud.databricks.com', 
-    #                             verify=True, command_name='Python Dev')
-    #     self.accounts_api_client = AccountsApi(dbcli_apiclient)
+    def __init__(self, username, api_key):
+        auth_str = f"{username}:{api_key}"
+        auth_bytes = auth_str.encode('ascii')
+        self.auth_token = base64.b64encode(auth_bytes).decode('ascii')
+
+        self.authorization_header = f"Basic {self.auth_token}"
 
     def _create_user(self, url, request_payload):
         print("Creating the User")
@@ -20,8 +22,13 @@ class User(object):
                     }
                 ],
                 "userName": request_payload.name
-                }
-        response = requests.post(url, json=data)
+                }   
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
+        
+        response = requests.post(url, json=data, headers=headers)
         
         if response.status_code == 200:
             return("User has been created!")
@@ -30,7 +37,13 @@ class User(object):
     def _get_user(self, url):
         print("Getting the User")
 
-        response = requests.get(url)
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
+        
+
+        response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
             return(f"user detials: {response.text}")
@@ -39,7 +52,12 @@ class User(object):
     def _get_all_user(self, url):
         print("Getting all the Users in org")
 
-        response = requests.get(url)
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
+
+        response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
             return(f"users detials: {response.text}")
@@ -48,7 +66,12 @@ class User(object):
     def _deactivate_user(self, url):
         print("deleting the User")
 
-        response = requests.delete(url)
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
+
+        response = requests.delete(url,headers=headers)
 
         if response.status_code == 204:
             return("user deleted successfully")
@@ -70,8 +93,12 @@ class User(object):
                     }
                 ]
             }
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
 
-        response = requests.patch(url, json=data)
+        response = requests.patch(url, json=data, headers=headers)
 
         if response.status_code == 200:
             updated_data = response.json()  # Get the updated resource data from the response
@@ -100,8 +127,12 @@ class User(object):
                     }
                 ]
             }
+        headers = {
+        "Authorization": self.authorization_header,
+        "Content-Type": "application/json"
+        }
 
-        response = requests.patch(url, json=data)
+        response = requests.patch(url, json=data, headers=headers)
 
         if response.status_code == 200:
             updated_data = response.json()  # Get the updated resource data from the response
