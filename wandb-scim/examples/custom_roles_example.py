@@ -1,4 +1,6 @@
 import requests
+import sys
+sys.path.append('../')
 from custom_roles import CustomRole  # Assuming CustomRole class is defined in custom_role.py
 
 def create_custom_role(base_url, custom_role):

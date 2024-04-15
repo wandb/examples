@@ -1,4 +1,6 @@
 import requests
+import sys
+sys.path.append('../')
 from teams import Teams  # Assuming the Teams class is defined in teams.py
 
 def create_team(base_url, teams):
