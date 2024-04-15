@@ -1,6 +1,8 @@
 # calling_module.py
 
 import requests
+import sys
+sys.path.append('../')
 from users import User  # Assuming the User class is defined in user_module.py
 
 def create_user(base_url, user):
@@ -72,6 +74,5 @@ if __name__ == "__main__":
 
     # Instantiate the User class with your credentials
     user = User(username, api_key)
-
-    create_user(base_url , user)
+    user._create_user(base_url , request_payload)
 

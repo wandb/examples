@@ -8,7 +8,7 @@ def create_team(base_url, teams):
             url=f"{base_url}/Groups",
             request_payload={
                 "displayName": "NewTeam",
-                "value": "def"
+                "member": "def"
             }
         )
         print(create_team_response)
