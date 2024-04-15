@@ -27,8 +27,7 @@ class User(object):
         "Authorization": self.authorization_header,
         "Content-Type": "application/json"
         }
-        # response = requests.post(url, json=data, headers=headers)
-        response = {"status_code": 200} 
+        response = requests.post(url, json=data, headers=headers)
         if response['status_code'] == 200:
             return("User has been created!")
         return(f"User creation failed. Status code: {response['status_code']}")

@@ -74,5 +74,9 @@ if __name__ == "__main__":
 
     # Instantiate the User class with your credentials
     user = User(username, api_key)
+    request_payload = {
+        "email": "abc.com",
+        "name": "name"
+    }
     user._create_user(base_url , request_payload)
 
