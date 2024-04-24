@@ -7,7 +7,6 @@ jobs:
   convert_to_markdown:
     name: Convert Jupyter Notebooks to Markdown
     runs-on: ubuntu-latest
-    
     outputs:
       generated_markdown_files: ${{steps.convert_notebooks.outputs.generated_markdown_files}}
 
@@ -15,11 +14,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Install Python and dependencies
+    - name: Install Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-      run: pip install -r requirements.txt # To do  nbconvert, notebook
+
+    - name: Install Python dependencies
+      run: pip install -r requirements.txt
 
     - name: Find Modified Jupyter Notebooks
       id: find_notebooks
@@ -43,7 +44,7 @@ jobs:
           fi
         done
         # Get the list of generated markdown files
-        GENERATED_MARKDOWN_FILES=$(echo "$NOTEBOOK_FILES" | sed 's/\.ipynb$/.md/')
+        GENERATED_MARKDOWN_FILES=$(echo "$NOTEBOOK_FILES" | grep -E "\.md$" | tr '\n' ' ')
         # Pass the list to the next step
         echo "GENERATED_MARKDOWN_FILES=$GENERATED_MARKDOWN_FILES" >> $GITHUB_OUTPUT
 
@@ -70,7 +71,7 @@ jobs:
       if: $GENERATED_MARKDOWN_FILES != ''
       run: |
         # Retrieve generated markdown file names
-        PROCESSED_MARKDOWN=$(python post_process_notebook.py $GENERATED_MARKDOWN_FILES | grep -E "\.md$")
+        PROCESSED_MARKDOWN=$(python post_process_notebook.py $GENERATED_MARKDOWN_FILES)
         echo "PROCESSED_MARKDOWN=$PROCESSED_MARKDOWN" >> $GITHUB_ENV
 
     - name: Rename markdown Files
