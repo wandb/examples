@@ -26,10 +26,10 @@ class Teams(object):
         "Content-Type": "application/json"
         }
         response = requests.post(url, json=data , headers=headers)
-        
-        if response['status_code'] == 201:
-            return("team has been created!")
-        return(f"team creation failed. Status code: {response['status_code']}")
+
+        if response.status_code == 201:
+            return "team has been created!"
+        return f"team creation failed. Status code: {response.status_code}"
     
     def _get_team(self, url):
         print("Getting the team")
@@ -41,9 +41,9 @@ class Teams(object):
 
         response = requests.get(url, headers=headers)
 
-        if response['status_code'] == 200:
-            return(f"team detials: {response['text']}")
-        return(f"Get team failed. Status code: {response['status_code']}")
+        if response.status_code == 200:
+            return f"team details: {response.text}"
+        return f"Get team failed. Status code: {response.status_code}"
 
     def _get_all_teams(self, url):
         print("Getting all the teams in org")
@@ -55,13 +55,13 @@ class Teams(object):
 
         response = requests.get(url, headers=headers)
 
-        if response['status_code'] == 200:
-            return(f"teams detials: {response['text']}")
-        return(f"Get teams failed. Status code: {response['status_code']}")
+        if response.status_code == 200:
+            return f"teams details: {response.text}"
+        return f"Get teams failed. Status code: {response.status_code}"
 
     def _add_team(self, url, request_payload):
 
-        print("update team")
+        print("Update team")
         data = {
                 "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
                 "Operations": [
@@ -83,19 +83,19 @@ class Teams(object):
 
         response = requests.patch(url, json=data, headers=headers)
 
-        if response['status_code'] == 200:
+        if response.status_code == 200:
             updated_data = response.json()  # Get the updated resource data from the response
             print("Updated Data:", updated_data)
-            return("team updated successfully")
+            return "team updated successfully"
 
-        elif response['status_code'] == 404:
-            return("team not found")
+        elif response.status_code == 404:
+            return "team not found"
         else:
-            return(f"Failed to update team. Status code: {response['status_code']}")
+            return f"Failed to update team. Status code: {response.status_code}"
 
     def _remove_team(self, url, request_payload):
 
-        print("update team")
+        print("Update team")
         data = {
                 "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
                 "Operations": [
@@ -116,13 +116,13 @@ class Teams(object):
         }
         response = requests.patch(url, json=data, headers=headers)
 
-        if response['status_code'] == 200:
+        if response.status_code == 200:
             updated_data = response.json()  # Get the updated resource data from the response
             print("Updated Data:", updated_data)
-            return("team updated successfully")
+            return "team updated successfully"
 
-        elif response['status_code'] == 404:
-            return("team not found")
+        elif response.status_code == 404:
+            return "team not found"
         else:
-            return(f"Failed to update team. Status code: {response['status_code']}")
+            return f"Failed to update team. Status code: {response.status_code}"
         

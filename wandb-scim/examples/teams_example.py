@@ -3,24 +3,24 @@ import sys
 sys.path.append('../')
 from teams import Teams  # Assuming the Teams class is defined in teams.py
 
-def create_team(base_url, teams):
+def create_team(base_url, teams, display_name, member_id):
     try:
         # Create a new team
         create_team_response = teams._create_team(
             url=f"{base_url}/Groups",
             request_payload={
-                "displayName": "NewTeam",
-                "member": "def"
+                "displayName": display_name,
+                "member": member_id
             }
         )
         print(create_team_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
-def get_team(base_url, teams):
+def get_team(base_url, teams, team_id):
     try:
         # Get team details
-        get_team_response = teams._get_team(f"{base_url}/Groups/123")  # Replace "123" with the team ID
+        get_team_response = teams._get_team(f"{base_url}/Groups/{team_id}")
         print(get_team_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
@@ -33,27 +33,23 @@ def get_all_teams(base_url, teams):
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
-def update_team_add_member(base_url, teams):
+def update_team_add_member(base_url, teams, team_id, member_id):
     try:
         # Update team by adding a member
         update_team_response = teams._add_team(
-            url=f"{base_url}/Groups/123",  # Replace "123" with the team ID
-            request_payload={
-               "value" : "def"
-            }
+            url=f"{base_url}/Groups/{team_id}",
+            request_payload={"value": member_id}
         )
         print(update_team_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
-def update_team_remove_member(base_url, teams):
+def update_team_remove_member(base_url, teams, team_id, member_id):
     try:
         # Update team by removing a member
         update_team_response = teams._remove_team(
-            url=f"{base_url}/Groups/123",  # Replace "123" with the team ID
-            request_payload={
-                 "value" : "def"
-            }
+            url=f"{base_url}/Groups/{team_id}",
+            request_payload={"value": member_id}
         )
         print(update_team_response)
     except requests.exceptions.RequestException as e:
@@ -68,5 +64,4 @@ if __name__ == "__main__":
     teams = Teams(username, api_key)
 
     # Test different methods
-    create_team(base_url, teams)
-
+    get_all_teams(base_url, teams)
