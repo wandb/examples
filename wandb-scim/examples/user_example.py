@@ -122,5 +122,11 @@ if __name__ == "__main__":
 
     # Instantiate the User class with your credentials
     user = User(username, api_key)
-    # Retrieve details of all users in the organization
+
+    # Test Functions
     get_all_users(base_url, user)
+    # create_user(base_url, user, "test@example.com", "Test User")
+    # get_user(base_url, user, "user_id")
+    # deactivate_user(base_url, user, "user_id")
+    # assign_role_user(base_url, user, "user_id", "role_name")
+    # assign_team_user(base_url, user, "user_id", "team_name", "role_name")

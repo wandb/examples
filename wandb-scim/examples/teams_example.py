@@ -106,5 +106,10 @@ if __name__ == "__main__":
 
     # Instantiate the Teams class with your credentials
     teams = Teams(username, api_key)
-    # Retrieve details of all teams
+
+    # Test Functions
     get_all_teams(base_url, teams)
+    # create_team(base_url, teams, "test-team", "member_id")
+    # get_team(base_url, teams, "team_id")
+    # update_team_add_member(base_url, teams, "team_id", "member_id")
+    # update_team_remove_member(base_url, teams, "team_id", "member_id")

@@ -154,5 +154,14 @@ if __name__ == "__main__":
 
     # Instantiate the CustomRole class with your credentials
     custom_role = CustomRole(username, api_key)
-    # Retrieve details of all roles in the organization
+    role_id = "abc"  # Replace with actual role ID
+    permission_json = {"name": "project:update"} # Replace with required permissions
+
+    # Test Functions
     get_all_roles(base_url, custom_role)
+    # create_custom_role(base_url, custom_role, permission_json, "member")
+    # get_custom_role(base_url, custom_role, role_id)
+    # add_permission(base_url, custom_role, role_id, permission_json)
+    # remove_permission(base_url, custom_role, role_id, permission_json)
+    # update_custom_role(base_url, custom_role, role_id, "test-role", "sample test role description", "member")
+    # delete_custom_role(base_url,custom_role,role_id)
