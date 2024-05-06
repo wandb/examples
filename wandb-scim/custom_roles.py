@@ -1,29 +1,31 @@
-import requests
 import base64
+import json
+import requests
 
 class CustomRole(object):
-    def __init__(self, username, api_key):
+    def __init__(self, base_url, username, api_key):
         """
         Initializes the CustomRole object with username and API key.
 
         Args:
+            base_url (str): Host url.
             username (str): The username for authentication.
             api_key (str): The API key for authentication.
         """
         # Encode the username and API key into a base64-encoded string for Basic Authentication
         auth_str = f"{username}:{api_key}"
         auth_bytes = auth_str.encode('ascii')
+        base_url = base_url
         self.auth_token = base64.b64encode(auth_bytes).decode('ascii')
 
         # Create the authorization header for API requests
         self.authorization_header = f"Basic {self.auth_token}"
 
-    def _create_custom_role(self, url, request_payload):
+    def create(self, request_payload):
         """
         Creates a new custom role.
 
         Args:
-            url (str): The URL for the custom role creation endpoint.
             request_payload (dict): The payload containing custom role data.
                 It should contain the following keys:
                     - 'permissionJson': The permissions JSON for the custom role.
@@ -44,18 +46,19 @@ class CustomRole(object):
             "Authorization": self.authorization_header,
             "Content-Type": "application/json"
         }
+        url = f"{self.base_url}/scim/Roles"
         response = requests.post(url, json=data, headers=headers)
 
         if response.status_code == 201:
             return "Custom role has been created!"
         return f"Custom role creation failed. Status code: {response.status_code}"
 
-    def _get_custom_role(self, url):
+    def get(self, role_id):
         """
-        Retrieves custom role details.
+        Retrieves custom role details for role_id.
 
         Args:
-            url (str): The URL for the custom role retrieval endpoint.
+            role_id (str): role_id from the custom role.
 
         Returns:
             str: A message containing custom role details or indicating failure.
@@ -66,19 +69,16 @@ class CustomRole(object):
             "Authorization": self.authorization_header,
             "Content-Type": "application/json"
         }
-
+        url = f"{self.base_url}/scim/Roles/{role_id}"
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            return f"Custom role details: {response.text}"
+            return json.dumps(response.json, indent=4)
         return f"Get custom role failed. Status code: {response.status_code}"
 
-    def _get_all_custom_role(self, url):
+    def get_all(self):
         """
         Retrieves details of all custom roles in the organization.
-
-        Args:
-            url (str): The URL for the endpoint to get all custom roles.
 
         Returns:
             str: A message containing details of all custom roles or indicating failure.
@@ -89,19 +89,19 @@ class CustomRole(object):
             "Authorization": self.authorization_header,
             "Content-Type": "application/json"
         }
-
+        url = f"{self.base_url}/scim/Roles"
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            return f"All the custom roles details: {response.text}"
+            return json.dumps(response.json, indent=4)
         return f"Get all custom roles failed. Status code: {response.status_code}"
 
-    def _add_permission(self, url, request_payload):
+    def add_permissions(self, role_id, request_payload):
         """
         Adds permission to a custom role.
 
         Args:
-            url (str): The URL for the endpoint to add permission to the custom role.
+            role_id (str): role_id from the custom role.
             request_payload (dict): The payload containing permission information.
                 It should contain the following key:
                     - 'permissionJson': The permissions JSON to be added to the custom role.
@@ -120,7 +120,7 @@ class CustomRole(object):
                 }
             ]
         }
-
+        url = f"{self.base_url}/scim/Roles/{role_id}"
         headers = {
             "Authorization": self.authorization_header,
             "Content-Type": "application/json"
@@ -138,12 +138,12 @@ class CustomRole(object):
         else:
             return f"Failed to update custom role. Status code: {response.status_code}"
 
-    def _remove_permission(self, url, request_payload):
+    def remove_permission(self, role_id, request_payload):
         """
         Removes permission from a custom role.
 
         Args:
-            url (str): The URL for the endpoint to remove permission from the custom role.
+            role_id (str): role_id from the custom role.
             request_payload (dict): The payload containing permission information.
                 It should contain the following key:
                     - 'permissionJson': The permissions JSON to be removed from the custom role.
@@ -166,7 +166,7 @@ class CustomRole(object):
             "Authorization": self.authorization_header,
             "Content-Type": "application/json"
         }
-
+        url = f"{self.base_url}/scim/Roles/{role_id}"
         response = requests.patch(url, json=data, headers=headers)
 
         if response.status_code == 200:
@@ -179,12 +179,12 @@ class CustomRole(object):
         else:
             return f"Failed to update custom role. Status code: {response.status_code}"
 
-    def _update_custom_role(self, url, request_payload):
+    def update_custom_role(self, role_id, request_payload):
         """
         Updates name and description of a custom role.
 
         Args:
-            url (str): The URL for the endpoint to update the custom role.
+            role_id (str): role_id from the custom role.
             request_payload (dict): The payload containing role information.
                 It should contain the following keys:
                     - 'roleName': The name of the custom role.
@@ -205,7 +205,7 @@ class CustomRole(object):
             "Authorization": self.authorization_header,
             "Content-Type": "application/json"
         }
-
+        url = f"{self.base_url}/scim/Roles/{role_id}"
         response = requests.put(url, json=data, headers=headers)
 
         if response.status_code == 200:
@@ -218,12 +218,12 @@ class CustomRole(object):
         else:
             return f"Failed to update custom role. Status code: {response.status_code}"
 
-    def _delete_custom_role(self, url):
+    def delete_custom_role(self, role_id):
         """
         Deletes a custom role.
 
         Args:
-            url (str): The URL for the endpoint to delete the custom role.
+            role_id (str): role_id from the custom role.
 
         Returns:
             str: A message indicating whether the custom role deletion was successful or failed.
@@ -234,7 +234,7 @@ class CustomRole(object):
             "Authorization": self.authorization_header,
             "Content-Type": "application/json"
         }
-
+        url = f"{self.base_url}/scim/Roles/{role_id}"
         response = requests.delete(url, headers=headers)
 
         if response.status_code == 204:

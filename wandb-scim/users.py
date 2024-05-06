@@ -1,12 +1,14 @@
-import requests
 import base64
+import json
+import requests
 
 class User(object):
-    def __init__(self, username, api_key):
+    def __init__(self, base_url, username, api_key):
         """
         Initialize User object with username and API key.
 
         Args:
+            base_url (str): Host url.
             username (str): The username for authentication.
             api_key (str): The API key for authentication.
         """
@@ -18,12 +20,11 @@ class User(object):
         # Create the authorization header for API requests
         self.authorization_header = f"Basic {self.auth_token}"
 
-    def _create_user(self, url, request_payload):
+    def create(self, request_payload):
         """
         Creates a new user.
 
         Args:
-            url (str): The URL for the user creation endpoint.
             request_payload (dict): The payload containing user data.
 
         Returns:
@@ -47,17 +48,18 @@ class User(object):
             "Content-Type": "application/json"
         }
         # Send a POST request to create the user
+        url = f"{self.base_url}/scim/Users"
         response = requests.post(url, json=data, headers=headers)
         if response.status_code == 201:
             return "User has been created!"
         return f"User creation failed. Status code: {response.status_code}"
     
-    def _get_user(self, url):
+    def get(self, user_id):
         """
         Retrieves user details.
 
         Args:
-            url (str): The URL for the user retrieval endpoint.
+            user_id (str): user_id of the user.
 
         Returns:
             str: A message containing user details or indicating failure.
@@ -68,18 +70,16 @@ class User(object):
             "Content-Type": "application/json"
         }
         # Send a GET request to retrieve the user
+        url = f"{self.base_url}/scim/Users/{user_id}"
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            return f"user details: {response.text}"
+            return json.dumps(response.json, indent=4)
         return f"Get user failed. Status code: {response.status_code}"
 
-    def _get_all_user(self, url):
+    def get_all(self):
         """
         Retrieves details of all users in the organization.
-
-        Args:
-            url (str): The URL for the endpoint to get all users.
 
         Returns:
             str: A message containing details of all users or indicating failure.
@@ -89,19 +89,20 @@ class User(object):
             "Authorization": self.authorization_header,
             "Content-Type": "application/json"
         }
+        url = f"{self.base_url}/scim/Users"
         # Send a GET request to retrieve all users
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            return f"users details: {response.text}"
+            return json.dumps(response.json, indent=4)
         return f"Get users failed. Status code: {response.status_code}"
 
-    def _deactivate_user(self, url):
+    def deactivate(self, user_id):
         """
         Deactivates a user.
 
         Args:
-            url (str): The URL for the user deactivation endpoint.
+            user_id (str): user_id of the user.
 
         Returns:
             str: A message indicating whether the user deactivation was successful or failed.
@@ -112,6 +113,7 @@ class User(object):
             "Content-Type": "application/json"
         }
         # Send a DELETE request to deactivate the user
+        url = f"{self.base_url}/scim/Users/{user_id}"
         response = requests.delete(url, headers=headers)
 
         if response.status_code == 204:
@@ -121,12 +123,12 @@ class User(object):
         else:
             return f"Failed to delete user. Status code: {response.status_code}"
 
-    def _assign_role_user(self, url, request_payload):
+    def assign_org_role(self, user_id, request_payload):
         """
         Assigns a role to a user.
 
         Args:
-            url (str): The URL for the endpoint to assign a role to the user.
+            user_id (str): user_id of the user.
             request_payload (dict): The payload containing role information.
                 It should contain the following key:
                     - 'roleName': The role to be assigned to the user. It can be one of 'admin', 'viewer', or 'member'.
@@ -150,6 +152,7 @@ class User(object):
             "Content-Type": "application/json"
         }
         # Send a PATCH request to assign the role to the user
+        url = f"{self.base_url}/scim/Users/{user_id}"
         response = requests.patch(url, json=data, headers=headers)
         if response.status_code == 200:
             updated_data = response.json()  # Get the updated resource data from the response
@@ -160,12 +163,12 @@ class User(object):
         else:
             return f"Failed to update user. Status code: {response.status_code}"
 
-    def _assign_role_team(self, url, request_payload):
+    def assign_team_role(self, user_id, request_payload):
         """
         Assigns a role to a user of the team.
 
         Args:
-            url (str): The URL for the endpoint to assign a role to the user of the team.
+            user_id (str): user_id of the user.
             request_payload (dict): The payload containing role information.
 
         Returns:
@@ -192,6 +195,7 @@ class User(object):
             "Content-Type": "application/json"
         }
         # Send a PATCH request to assign the role to the user of the team
+        url = f"{self.base_url}/scim/Users/{user_id}"
         response = requests.patch(url, json=data, headers=headers)
 
         if response.status_code == 200:

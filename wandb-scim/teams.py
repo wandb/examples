@@ -1,12 +1,14 @@
-import requests
 import base64
+import json
+import requests
 
 class Teams(object):
-    def __init__(self, username, api_key):
+    def __init__(self, base_url, username, api_key):
         """
         Initializes the Teams object with username and API key.
 
         Args:
+            base_url (str): Host url.
             username (str): The username for authentication.
             api_key (str): The API key for authentication.
         """
@@ -18,12 +20,11 @@ class Teams(object):
         # Create the authorization header for API requests
         self.authorization_header = f"Basic {self.auth_token}"
 
-    def _create_team(self, url, request_payload):
+    def create(self, request_payload):
         """
         Creates a new team.
 
         Args:
-            url (str): The URL for the team creation endpoint.
             request_payload (dict): The payload containing team data.
                 It should contain the following keys:
                     - 'displayName': The display name of the team.
@@ -47,18 +48,19 @@ class Teams(object):
             "Content-Type": "application/json"
         }
         # Send a POST request to create the team
+        url = f"{self.base_url}/scim/Groups"
         response = requests.post(url, json=data, headers=headers)
 
         if response.status_code == 201:
             return "Team has been created!"
         return f"Team creation failed. Status code: {response.status_code}"
 
-    def _get_team(self, url):
+    def get(self, team_id):
         """
         Retrieves team details.
 
         Args:
-            url (str): The URL for the team retrieval endpoint.
+            team_id (str): team_id of the team_id.
 
         Returns:
             str: A message containing team details or indicating failure.
@@ -69,18 +71,16 @@ class Teams(object):
             "Content-Type": "application/json"
         }
         # Send a GET request to retrieve the team
+        url = f"{self.base_url}/scim/Groups/{team_id}"
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            return f"Team details: {response.text}"
+            return json.dumps(response.json, indent=4)
         return f"Get team failed. Status code: {response.status_code}"
 
-    def _get_all_teams(self, url):
+    def get_all(self):
         """
         Retrieves details of all teams in the organization.
-
-        Args:
-            url (str): The URL for the endpoint to get all teams.
 
         Returns:
             str: A message containing details of all teams or indicating failure.
@@ -91,18 +91,19 @@ class Teams(object):
             "Content-Type": "application/json"
         }
         # Send a GET request to retrieve all teams
+        url = f"{self.base_url}/scim/Groups"
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            return f"Teams details: {response.text}"
+            return json.dumps(response.json, indent=4)
         return f"Get teams failed. Status code: {response.status_code}"
 
-    def _add_team(self, url, request_payload):
+    def update(self, team_id, request_payload):
         """
         Adds a member to the team.
 
         Args:
-            url (str): The URL for the endpoint to add a member to the team.
+            team_id (str): team_id of the team_id.
             request_payload (dict): The payload containing member information.
                 It should contain the following key:
                     - 'value': The value of the member to be added to the team.
@@ -130,6 +131,7 @@ class Teams(object):
             "Content-Type": "application/json"
         }
         # Send a PATCH request to add the member to the team
+        url = f"{self.base_url}/scim/Groups/{team_id}"
         response = requests.patch(url, json=data, headers=headers)
 
         if response.status_code == 200:
@@ -142,12 +144,12 @@ class Teams(object):
         else:
             return f"Failed to update team. Status code: {response.status_code}"
 
-    def _remove_team(self, url, request_payload):
+    def remove(self, team_id, request_payload):
         """
         Removes a member from the team.
 
         Args:
-            url (str): The URL for the endpoint to remove a member from the team.
+            team_id (str): team_id of the team_id.
             request_payload (dict): The payload containing member information.
                 It should contain the following key:
                     - 'value': The value of the member to be removed from the team.
@@ -175,6 +177,7 @@ class Teams(object):
             "Content-Type": "application/json"
         }
         # Send a PATCH request to remove the member from the team
+        url = f"{self.base_url}/scim/Groups/{team_id}"
         response = requests.patch(url, json=data, headers=headers)
 
         if response.status_code == 200:
