@@ -15,6 +15,7 @@ class User(object):
         # Encode the username and API key into a base64-encoded string for Basic Authentication
         auth_str = f"{username}:{api_key}"
         auth_bytes = auth_str.encode('ascii')
+        self.base_url = base_url
         self.auth_token = base64.b64encode(auth_bytes).decode('ascii')
 
         # Create the authorization header for API requests

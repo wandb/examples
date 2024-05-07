@@ -15,6 +15,7 @@ class Teams(object):
         # Encode the username and API key into a base64-encoded string for Basic Authentication
         auth_str = f"{username}:{api_key}"
         auth_bytes = auth_str.encode('ascii')
+        self.base_url = base_url
         self.auth_token = base64.b64encode(auth_bytes).decode('ascii')
 
         # Create the authorization header for API requests
@@ -28,7 +29,7 @@ class Teams(object):
             request_payload (dict): The payload containing team data.
                 It should contain the following keys:
                     - 'displayName': The display name of the team.
-                    - 'member': The member to be added to the team.
+                    - 'members': The member ids to be added to the team.
 
         Returns:
             str: A message indicating whether the team creation was successful or failed.
@@ -39,7 +40,7 @@ class Teams(object):
             "displayName": request_payload['displayName'],
             "members": [
                 {
-                    "value": request_payload['member']
+                    "value": request_payload['members']
                 }
             ]
         }
@@ -98,15 +99,15 @@ class Teams(object):
             return json.dumps(response.json, indent=4)
         return f"Get teams failed. Status code: {response.status_code}"
 
-    def update(self, team_id, request_payload):
+    def add_members(self, team_id, request_payload):
         """
-        Adds a member to the team.
+        Adds a members to the team.
 
         Args:
             team_id (str): team_id of the team_id.
             request_payload (dict): The payload containing member information.
                 It should contain the following key:
-                    - 'value': The value of the member to be added to the team.
+                    - 'value': The ids of the members to be added to the team.
 
         Returns:
             str: A message indicating whether the member addition was successful or failed.
@@ -144,15 +145,15 @@ class Teams(object):
         else:
             return f"Failed to update team. Status code: {response.status_code}"
 
-    def remove(self, team_id, request_payload):
+    def remove_members(self, team_id, request_payload):
         """
-        Removes a member from the team.
+        Removes members from the team.
 
         Args:
             team_id (str): team_id of the team_id.
             request_payload (dict): The payload containing member information.
                 It should contain the following key:
-                    - 'value': The value of the member to be removed from the team.
+                    - 'value': The ids of the members to be removed from the team.
 
         Returns:
             str: A message indicating whether the member removal was successful or failed.

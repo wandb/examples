@@ -5,21 +5,21 @@ import sys
 sys.path.append('../')
 from teams import Teams  # Assuming the Teams class is defined in teams.py
 
-def create_team(teams, display_name, member_id):
+def create_team(teams, display_name, member_ids):
     """
     Creates a new team.
 
     Args:
         teams (Teams): An instance of the Teams class.
         display_name (str): The display name of the new team.
-        member_id (str): The ID of the member to be added to the team.
+        member_ids (list): The ID of the member to be added to the team.
     """
     try:
         # Create a new team
         create_team_response = teams.create(
             request_payload={
                 "displayName": display_name,
-                "member": member_id
+                "members": member_ids
             }
         )
         print(create_team_response)
@@ -55,39 +55,39 @@ def get_all_teams(teams):
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
-def update_team_add_member(teams, team_id, member_id):
+def add_members(teams, team_id, member_ids):
     """
-    Updates a team by adding a member.
+    Updates a team by adding members.
 
     Args:
         teams (Teams): An instance of the Teams class.
         team_id (str): The ID of the team to update.
-        member_id (str): The ID of the member to add to the team.
+        member_ids (list): The IDs of the members to added to the team.
     """
     try:
-        # Update team by adding a member
-        update_team_response = teams.update(
+        # Update team by adding members
+        update_team_response = teams.add_members(
             team_id,
-            request_payload={"value": member_id}
+            request_payload={"value": member_ids}
         )
         print(update_team_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
-def update_team_remove_member(teams, team_id, member_id):
+def remove_members(teams, team_id, member_ids):
     """
-    Updates a team by removing a member.
+    Updates a team by removing members.
 
     Args:
         teams (Teams): An instance of the Teams class.
         team_id (str): The ID of the team to update.
-        member_id (str): The ID of the member to remove from the team.
+        member_ids (list): The IDs of the members to removed from the team.
     """
     try:
-        # Update team by removing a member
-        update_team_response = teams.remove(
+        # Update team by removing members
+        update_team_response = teams.remove_members(
             team_id,
-            request_payload={"value": member_id}
+            request_payload={"value": member_ids}
         )
         print(update_team_response)
     except requests.exceptions.RequestException as e:
@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     # Test Functions
     get_all_teams(teams)
-    # create_team(teams, "test-team", "member_id")
+    # create_team(teams, "test-team", ["member_id"])
     # get_team(teams, "team_id")
-    # update_team_add_member(teams, "team_id", "member_id")
-    # update_team_remove_member(teams, "team_id", "member_id")
+    # add_members(teams, "team_id", ["member_id"])
+    # remove_members(teams, "team_id", ["member_id"])

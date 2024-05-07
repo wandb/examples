@@ -15,7 +15,7 @@ class CustomRole(object):
         # Encode the username and API key into a base64-encoded string for Basic Authentication
         auth_str = f"{username}:{api_key}"
         auth_bytes = auth_str.encode('ascii')
-        base_url = base_url
+        self.base_url = base_url
         self.auth_token = base64.b64encode(auth_bytes).decode('ascii')
 
         # Create the authorization header for API requests
@@ -138,7 +138,7 @@ class CustomRole(object):
         else:
             return f"Failed to update custom role. Status code: {response.status_code}"
 
-    def remove_permission(self, role_id, request_payload):
+    def remove_permissions(self, role_id, request_payload):
         """
         Removes permission from a custom role.
 
@@ -179,14 +179,14 @@ class CustomRole(object):
         else:
             return f"Failed to update custom role. Status code: {response.status_code}"
 
-    def update_custom_role(self, role_id, request_payload):
+    def update(self, role_id, request_payload):
         """
         Updates name and description of a custom role.
 
         Args:
             role_id (str): role_id from the custom role.
             request_payload (dict): The payload containing role information.
-                It should contain the following keys:
+                It should contain any of the following keys:
                     - 'roleName': The name of the custom role.
                     - 'roleDescription': The description of the custom role.
                     - 'inheritedFrom': The inheritance information for the custom role.
@@ -196,11 +196,9 @@ class CustomRole(object):
         """
         print("Update name and description of custom role")
         data = {
-            "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Role"],
-            "name": request_payload['roleName'],
-            "description": request_payload['roleDescription'],
-            "inheritedFrom": request_payload['inheritedFrom']
+            "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Role"]
         }
+        data.update(request_payload)
         headers = {
             "Authorization": self.authorization_header,
             "Content-Type": "application/json"
@@ -218,7 +216,7 @@ class CustomRole(object):
         else:
             return f"Failed to update custom role. Status code: {response.status_code}"
 
-    def delete_custom_role(self, role_id):
+    def delete(self, role_id):
         """
         Deletes a custom role.
 

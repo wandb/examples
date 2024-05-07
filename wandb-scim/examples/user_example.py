@@ -69,7 +69,7 @@ def deactivate_user(user, user_id):
 
 def assign_role_user(user, user_id, role_name):
     """
-    Assigns a role to a user.
+    Assigns a org-level role to a user.
 
     Args:
         user (User): An instance of the User class.
@@ -89,7 +89,7 @@ def assign_role_user(user, user_id, role_name):
 
 def assign_team_user(user, user_id, team_name, role_name):
     """
-    Assigns a team role to a user.
+    Assigns a team-level role to a user.
 
     Args:
         user (User): An instance of the User class.
