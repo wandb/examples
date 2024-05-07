@@ -27,9 +27,10 @@ class Teams(object):
 
         Args:
             request_payload (dict): The payload containing team data.
-                It should contain the following keys:
-                    - 'displayName': The display name of the team.
-                    - 'members': The member ids to be added to the team.
+                - 'displayName': The display name of the team.
+                - 'members' (list[dict]): The payload containing members information.
+                    It should contain the key in each element:
+                    - 'value': The id of the member to be added to the team.
 
         Returns:
             str: A message indicating whether the team creation was successful or failed.
@@ -38,11 +39,7 @@ class Teams(object):
         data = {
             "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
             "displayName": request_payload['displayName'],
-            "members": [
-                {
-                    "value": request_payload['members']
-                }
-            ]
+            "members": request_payload['members']
         }
         headers = {
             "Authorization": self.authorization_header,
@@ -105,9 +102,9 @@ class Teams(object):
 
         Args:
             team_id (str): team_id of the team_id.
-            request_payload (dict): The payload containing members information.
-                It should contain the following key:
-                    - 'value': The ids of the members to be added to the team.
+            request_payload (list[dict]): The payload containing members information.
+                It should contain the key in each element:
+                    - 'value': The id of the member to be added to the team.
 
         Returns:
             str: A message indicating whether the member addition was successful or failed.
@@ -119,11 +116,7 @@ class Teams(object):
                 {
                     "op": "add",
                     "path": "members",
-                    "value": [
-                        {
-                            "value": request_payload['value'],
-                        }
-                    ]
+                    "value": request_payload
                 }
             ]
         }
@@ -151,9 +144,9 @@ class Teams(object):
 
         Args:
             team_id (str): team_id of the team_id.
-            request_payload (dict): The payload containing members information.
-                It should contain the following key:
-                    - 'value': The ids of the members to be removed from the team.
+            request_payload (list[dict]): The payload containing members information.
+                It should contain the following key in each element:
+                    - 'value': The id of the member to be removed from the team.
 
         Returns:
             str: A message indicating whether the member removal was successful or failed.
@@ -165,11 +158,7 @@ class Teams(object):
                 {
                     "op": "remove",
                     "path": "members",
-                    "value": [
-                        {
-                            "value": request_payload['value'],
-                        }
-                    ]
+                    "value": request_payload
                 }
             ]
         }

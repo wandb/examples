@@ -16,10 +16,13 @@ def create_team(teams, display_name, member_ids):
     """
     try:
         # Create a new team
+        member_object = []
+        for id in member_ids:
+            member_object.append({"value": id})
         create_team_response = teams.create(
             request_payload={
                 "displayName": display_name,
-                "members": member_ids
+                "members": member_object
             }
         )
         print(create_team_response)
@@ -66,9 +69,12 @@ def add_members(teams, team_id, member_ids):
     """
     try:
         # Update team by adding members
+        member_object = []
+        for id in member_ids:
+            member_object.append({"value": id})
         add_members_response = teams.add_members(
             team_id,
-            request_payload={"value": member_ids}
+            member_object
         )
         print(add_members_response)
     except requests.exceptions.RequestException as e:
@@ -85,9 +91,12 @@ def remove_members(teams, team_id, member_ids):
     """
     try:
         # Update team by removing members
+        member_object = []
+        for id in member_ids:
+            member_object.append({"value": id})
         remove_members_response = teams.remove_members(
             team_id,
-            request_payload={"value": member_ids}
+            member_object
         )
         print(remove_members_response)
     except requests.exceptions.RequestException as e:
@@ -103,7 +112,7 @@ if __name__ == "__main__":
 
     # Test Functions
     get_all_teams(teams)
-    # create_team(teams, "test-team", ["member_id"])
+    # create_team(teams, "team-name-asdfghjsdfgh",["VXNlcjoxNjg1NzA5"])
     # get_team(teams, "team_id")
-    # add_members(teams, "team_id", ["member_id"])
-    # remove_members(teams, "team_id", ["member_id"])
+    # add_members(teams, "RW50aXR5OjIyMTgyMjI=", ["VXNlcjoxODcxODU1", "VXNlcjoxNjg1NzA5"])
+    # remove_members(teams, "RW50aXR5OjIyMTgyMjI=", ["VXNlcjoxODcxODU1", "VXNlcjoxNjg1NzA5"])
