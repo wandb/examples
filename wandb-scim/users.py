@@ -75,7 +75,7 @@ class User(object):
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            return json.dumps(response.json, indent=4)
+            return json.dumps(response.text, indent=4)
         return f"Get user failed. Status code: {response.status_code}"
 
     def get_all(self):
@@ -95,7 +95,7 @@ class User(object):
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            return json.dumps(response.json, indent=4)
+            return json.dumps(response.text, indent=4)
         return f"Get users failed. Status code: {response.status_code}"
 
     def deactivate(self, user_id):

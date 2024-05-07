@@ -73,7 +73,7 @@ class CustomRole(object):
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            return json.dumps(response.json, indent=4)
+            return json.dumps(response.text, indent=4)
         return f"Get custom role failed. Status code: {response.status_code}"
 
     def get_all(self):
@@ -93,7 +93,7 @@ class CustomRole(object):
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            return json.dumps(response.json, indent=4)
+            return json.dumps(response.text, indent=4)
         return f"Get all custom roles failed. Status code: {response.status_code}"
 
     def add_permissions(self, role_id, request_payload):

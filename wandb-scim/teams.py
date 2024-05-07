@@ -76,7 +76,7 @@ class Teams(object):
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            return json.dumps(response.json, indent=4)
+            return json.dumps(response.text, indent=4)
         return f"Get team failed. Status code: {response.status_code}"
 
     def get_all(self):
@@ -96,7 +96,7 @@ class Teams(object):
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-            return json.dumps(response.json, indent=4)
+            return json.dumps(response.text, indent=4)
         return f"Get teams failed. Status code: {response.status_code}"
 
     def add_members(self, team_id, request_payload):
