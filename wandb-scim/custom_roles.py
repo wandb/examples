@@ -28,8 +28,8 @@ class CustomRole(object):
         Args:
             request_payload (dict): The payload containing custom role data.
                 It should contain the following keys:
-                    - 'permissions': The permissions object for the custom role.
-                    - 'inheritedFrom': The inheritance information for the custom role.
+                    - 'permissions' (list[dict]): The permissions object for the custom role.
+                    - 'inheritedFrom' (str): The inheritance information for the custom role.
 
         Returns:
             str: A message indicating whether the custom role creation was successful or failed.
@@ -104,7 +104,7 @@ class CustomRole(object):
             role_id (str): role_id from the custom role.
             request_payload (dict): The payload containing permission information.
                 It should contain the following key:
-                    - 'permissions': The permissions object to be added to the custom role.
+                    - 'permissions' (list[dict]): The permissions object to be added to the custom role.
 
         Returns:
             str: A message indicating whether the permission addition was successful or failed.
@@ -146,7 +146,7 @@ class CustomRole(object):
             role_id (str): role_id from the custom role.
             request_payload (dict): The payload containing permission information.
                 It should contain the following key:
-                    - 'permissions': The permissions Object to be removed from the custom role.
+                    - 'permissions' (list[dict]): The permissions Object to be removed from the custom role.
 
         Returns:
             str: A message indicating whether the permission removal was successful or failed.
@@ -187,9 +187,9 @@ class CustomRole(object):
             role_id (str): role_id from the custom role.
             request_payload (dict): The payload containing role information.
                 It should contain any of the following keys:
-                    - 'roleName': The name of the custom role.
-                    - 'roleDescription': The description of the custom role.
-                    - 'inheritedFrom': The inheritance information for the custom role.
+                    - 'roleName' (str): The name of the custom role.
+                    - 'roleDescription' (str): The description of the custom role.
+                    - 'inheritedFrom' (str): The inheritance information for the custom role.
 
         Returns:
             str: A message indicating whether the custom role update was successful or failed.
