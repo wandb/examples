@@ -28,7 +28,7 @@ class CustomRole(object):
         Args:
             request_payload (dict): The payload containing custom role data.
                 It should contain the following keys:
-                    - 'permissionJson': The permissions JSON for the custom role.
+                    - 'permissions': The permissions object for the custom role.
                     - 'inheritedFrom': The inheritance information for the custom role.
 
         Returns:
@@ -39,7 +39,7 @@ class CustomRole(object):
             "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Role"],
             "name": "Sample custom role",
             "description": "A sample custom role for example",
-            "permissions": [request_payload['permissionJson']],
+            "permissions": request_payload['permissions'],
             "inheritedFrom": request_payload['inheritedFrom']
         }
         headers = {
@@ -104,7 +104,7 @@ class CustomRole(object):
             role_id (str): role_id from the custom role.
             request_payload (dict): The payload containing permission information.
                 It should contain the following key:
-                    - 'permissionJson': The permissions JSON to be added to the custom role.
+                    - 'permissions': The permissions object to be added to the custom role.
 
         Returns:
             str: A message indicating whether the permission addition was successful or failed.
@@ -116,7 +116,7 @@ class CustomRole(object):
                 {
                     "op": "add",
                     "path": "permissions",
-                    "value": [request_payload['permissionJson']]
+                    "value": request_payload['permissions']
                 }
             ]
         }
@@ -146,7 +146,7 @@ class CustomRole(object):
             role_id (str): role_id from the custom role.
             request_payload (dict): The payload containing permission information.
                 It should contain the following key:
-                    - 'permissionJson': The permissions JSON to be removed from the custom role.
+                    - 'permissions': The permissions Object to be removed from the custom role.
 
         Returns:
             str: A message indicating whether the permission removal was successful or failed.
@@ -158,7 +158,7 @@ class CustomRole(object):
                 {
                     "op": "remove",
                     "path": "permissions",
-                    "value": [request_payload['permissionJson']]
+                    "value": request_payload['permissions']
                 }
             ]
         }

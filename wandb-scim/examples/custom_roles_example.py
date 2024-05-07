@@ -5,20 +5,20 @@ import sys
 sys.path.append('../')
 from custom_roles import CustomRole  # Assuming CustomRole class is defined in custom_role.py
 
-def create_custom_role(custom_role, permission_json, inherited_from):
+def create_custom_role(custom_role, permission_object, inherited_from):
     """
     Creates a new custom role.
 
     Args:
         custom_role (CustomRole): An instance of the CustomRole class.
-        permission_json (str): JSON string representing permissions for the custom role.
+        permission_object (list[dict]): Array of permission objects where each object has name field. 
         inherited_from (str): The source from which the custom role inherits permissions.
     """
     try:
         # Create a new custom role
         create_custom_role_response = custom_role.create(
             request_payload={
-                "permissionJson": permission_json,
+                "permissions": permission_object,
                 "inheritedFrom": inherited_from
             }
         )
@@ -55,42 +55,42 @@ def get_all_custom_roles(custom_role):
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
-def add_permissions(custom_role, role_id, permission_json):
+def add_permissions(custom_role, role_id, permission_object):
     """
     Adds permission to a custom role.
 
     Args:
         custom_role (CustomRole): An instance of the CustomRole class.
         role_id (str): The ID of the custom role to update.
-        permission_json (str): JSON string representing the permission to add.
+        permission_object (list[dict]): Array of permission objects where each object has name field. 
     """
     try:
         # Add permission to a custom role
         add_permissions_response = custom_role.add_permissions(
             role_id,
             request_payload={
-                "permissionJson": permission_json
+                "permissions": permission_object
             }
         )
         print(add_permissions_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
-def remove_permissions(custom_role, role_id, permission_json):
+def remove_permissions(custom_role, role_id, permission_object):
     """
     Removes permission from a custom role.
 
     Args:
         custom_role (CustomRole): An instance of the CustomRole class.
         role_id (str): The ID of the custom role to update.
-        permission_json (str): JSON string representing the permission to remove.
+        permission_object (list[dict]): Array of permission objects where each object has name field. 
     """
     try:
         # Remove permission from a custom role
         remove_permissions_response = custom_role.remove_permissions(
             role_id,
             request_payload={
-                "permissionJson": permission_json
+                "permissions": permission_object
             }
         )
         print(remove_permissions_response)
@@ -148,13 +148,13 @@ if __name__ == "__main__":
     # Instantiate the CustomRole class with your credentials
     custom_role = CustomRole(base_url, username, api_key)
     role_id = "abc"  # Replace with actual role ID
-    permission_json = {"name": "project:update"} # Replace with required permissions
+    permission_object = [{"name": "project:create"}, {"name": "project:update"}, {"name": "project:delete"}] # Replace with required permissions
 
     # Test Functions
     get_all_custom_roles(custom_role)
-    # create_custom_role(custom_role, permission_json, "member")
+    # create_custom_role(custom_role, permission_object, "member")
     # get_custom_role(custom_role, role_id)
-    # add_permissions(custom_role, role_id, permission_json)
-    # remove_permissions(custom_role, role_id, permission_json)
-    # update_custom_role(custom_role, role_id, {"name": "test-role", "description":"sample test role description", "inherited_from":"member"})
+    # add_permissions(custom_role, role_id, permission_object)
+    # remove_permissions(custom_role, role_id, permission_object)
+    # update_custom_role(custom_role, role_id, {"name": "test-role1"})
     # delete_custom_role(custom_role, role_id)
