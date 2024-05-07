@@ -41,7 +41,7 @@ def get_custom_role(custom_role, role_id):
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
-def get_all_roles(custom_role):
+def get_all_custom_roles(custom_role):
     """
     Retrieves details of all custom roles.
 
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     permission_json = {"name": "project:update"} # Replace with required permissions
 
     # Test Functions
-    get_all_roles(custom_role)
+    get_all_custom_roles(custom_role)
     # create_custom_role(custom_role, permission_json, "member")
     # get_custom_role(custom_role, role_id)
     # add_permissions(custom_role, role_id, permission_json)

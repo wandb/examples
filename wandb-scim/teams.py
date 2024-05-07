@@ -105,7 +105,7 @@ class Teams(object):
 
         Args:
             team_id (str): team_id of the team_id.
-            request_payload (dict): The payload containing member information.
+            request_payload (dict): The payload containing members information.
                 It should contain the following key:
                     - 'value': The ids of the members to be added to the team.
 
@@ -151,7 +151,7 @@ class Teams(object):
 
         Args:
             team_id (str): team_id of the team_id.
-            request_payload (dict): The payload containing member information.
+            request_payload (dict): The payload containing members information.
                 It should contain the following key:
                     - 'value': The ids of the members to be removed from the team.
 

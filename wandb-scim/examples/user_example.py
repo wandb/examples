@@ -67,7 +67,7 @@ def deactivate_user(user, user_id):
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
-def assign_role_user(user, user_id, role_name):
+def assign_org_role_to_user(user, user_id, role_name):
     """
     Assigns a org-level role to a user.
 
@@ -87,7 +87,7 @@ def assign_role_user(user, user_id, role_name):
         print(f"Error occurred during API request: {str(e)}")
 
 
-def assign_team_user(user, user_id, team_name, role_name):
+def assign_team_role_to_user(user, user_id, team_name, role_name):
     """
     Assigns a team-level role to a user.
 
@@ -121,5 +121,5 @@ if __name__ == "__main__":
     # create_user(user, "test@example.com", "Test User")
     # get_user(user, "user_id")
     # deactivate_user(user, "user_id")
-    # assign_role_user(user, "user_id", "role_name")
-    # assign_team_user(user, "user_id", "team_name", "role_name")
+    # assign_org_role_to_user(user, "user_id", "role_name")
+    # assign_team_role_to_user(user, "user_id", "team_name", "role_name")
