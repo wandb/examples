@@ -78,11 +78,11 @@ def assign_org_role_to_user(user, user_id, role_name):
     """
     try:
         # Assign a role to the user
-        assign_role_response = user.assign_org_role(
+        assign_org_role_response = user.assign_org_role(
             user_id,
             request_payload={"roleName": role_name}
         )
-        print(assign_role_response)
+        print(assign_org_role_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 

@@ -66,11 +66,11 @@ def add_members(teams, team_id, member_ids):
     """
     try:
         # Update team by adding members
-        update_team_response = teams.add_members(
+        add_members_response = teams.add_members(
             team_id,
             request_payload={"value": member_ids}
         )
-        print(update_team_response)
+        print(add_members_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
@@ -85,11 +85,11 @@ def remove_members(teams, team_id, member_ids):
     """
     try:
         # Update team by removing members
-        update_team_response = teams.remove_members(
+        remove_members_response = teams.remove_members(
             team_id,
             request_payload={"value": member_ids}
         )
-        print(update_team_response)
+        print(remove_members_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 

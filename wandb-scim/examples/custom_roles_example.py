@@ -16,13 +16,13 @@ def create_custom_role(custom_role, permission_json, inherited_from):
     """
     try:
         # Create a new custom role
-        create_role_response = custom_role.create(
+        create_custom_role_response = custom_role.create(
             request_payload={
                 "permissionJson": permission_json,
                 "inheritedFrom": inherited_from
             }
         )
-        print(create_role_response)
+        print(create_custom_role_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
@@ -36,8 +36,8 @@ def get_custom_role(custom_role, role_id):
     """
     try:
         # Get details of a custom role
-        get_role_response = custom_role.get(role_id)
-        print(get_role_response)
+        get_custom_role_response = custom_role.get(role_id)
+        print(get_custom_role_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
@@ -50,8 +50,8 @@ def get_all_custom_roles(custom_role):
     """
     try:
         # Get all custom roles
-        get_all_roles_response = custom_role.get_all()
-        print(get_all_roles_response)
+        get_all_custom_roles_response = custom_role.get_all()
+        print(get_all_custom_roles_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
@@ -66,13 +66,13 @@ def add_permissions(custom_role, role_id, permission_json):
     """
     try:
         # Add permission to a custom role
-        update_role_response = custom_role.add_permissions(
+        add_permissions_response = custom_role.add_permissions(
             role_id,
             request_payload={
                 "permissionJson": permission_json
             }
         )
-        print(update_role_response)
+        print(add_permissions_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
@@ -87,13 +87,13 @@ def remove_permissions(custom_role, role_id, permission_json):
     """
     try:
         # Remove permission from a custom role
-        remove_role_response = custom_role.remove_permissions(
+        remove_permissions_response = custom_role.remove_permissions(
             role_id,
             request_payload={
                 "permissionJson": permission_json
             }
         )
-        print(remove_role_response)
+        print(remove_permissions_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
@@ -135,8 +135,8 @@ def delete_custom_role(custom_role, role_id):
     """
     try:
         # Delete the custom role
-        delete_role_response = custom_role.delete(role_id)
-        print(delete_role_response)
+        delete_custom_role_response = custom_role.delete(role_id)
+        print(delete_custom_role_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
