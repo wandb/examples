@@ -70,7 +70,7 @@ pytz==2021.3
 pytz-deprecation-shim==0.1.0.post0
 PyYAML==6.0
 pyzmq==22.3.0
-requests==2.31.0
+requests==2.32.0
 Send2Trash==1.8.0
 sentry-sdk==1.14.0
 shortuuid==1.0.1
