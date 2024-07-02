@@ -52,6 +52,21 @@ def get_all_users(user):
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
+def activate_user(user, user_id):
+    """
+    Activates a user.
+
+    Args:
+        user (User): An instance of the User class.
+        user_id (str): The ID of the user to activate.
+    """
+    try:
+        # Activate a user
+        activate_user_response = user.activate(user_id)
+        print(activate_user_response)
+    except requests.exceptions.RequestException as e:
+        print(f"Error occurred during API request: {str(e)}")
+
 def deactivate_user(user, user_id):
     """
     Deactivates a user.
@@ -64,6 +79,21 @@ def deactivate_user(user, user_id):
         # Deactivate a user
         deactivate_user_response = user.deactivate(user_id)
         print(deactivate_user_response)
+    except requests.exceptions.RequestException as e:
+        print(f"Error occurred during API request: {str(e)}")
+
+def delete_user(user, user_id):
+    """
+    Deletes a user.
+
+    Args:
+        user (User): An instance of the User class.
+        user_id (str): The ID of the user to delete.
+    """
+    try:
+        # Delete a user
+        delete_user_response = user.delete(user_id)
+        print(delete_user_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
@@ -118,8 +148,10 @@ if __name__ == "__main__":
 
     # Test Functions
     get_all_users(user)
-    # create_user(user, "test@example.com", "Test User")
+    # create_user(user, "marc@blub.com", "Marc-Steffen TEST")
     # get_user(user, "user_id")
     # deactivate_user(user, "user_id")
+    # activate_user(user, "user_id")
+    # delete_user(user, "user_id")
     # assign_org_role_to_user(user, "user_id", "role_name")
     # assign_team_role_to_user(user, "user_id", "team_name", "role_name")

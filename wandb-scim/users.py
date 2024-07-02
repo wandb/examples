@@ -98,6 +98,41 @@ class User(object):
             return json.dumps(response.text, indent=4)
         return f"Get users failed. Status code: {response.status_code}"
 
+    def activate(self, user_id):
+        """
+        Activates a user.
+
+        Args:
+            user_id (str): user_id of the user.
+
+        Returns:
+            str: A message indicating whether the user activation was successful or failed.
+        """
+        print("Activating the User")
+        headers = {
+            "Authorization": self.authorization_header,
+            "Content-Type": "application/json"
+        }
+        # Send a PATCH request to activate the user
+        url = f"{self.base_url}/scim/Users/{user_id}"
+        payload = {
+            "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+            "Operations": [
+                {
+                    "op": "replace",
+                    "value": {"active": True}
+                }
+            ]
+        }
+        response = requests.patch(url, headers=headers, json=payload)
+
+        if response.status_code == 200:
+            return "User activated successfully!"
+        elif response.status_code == 404:
+            return "User not found"
+        else:
+            return f"Failed to activate user. Status code: {response.status_code}"
+    
     def deactivate(self, user_id):
         """
         Deactivates a user.
@@ -108,17 +143,52 @@ class User(object):
         Returns:
             str: A message indicating whether the user deactivation was successful or failed.
         """
-        print("deleting the User")
+        print("Deactivating the User")
         headers = {
             "Authorization": self.authorization_header,
             "Content-Type": "application/json"
         }
-        # Send a DELETE request to deactivate the user
+        # Send a PATCH request to deactivate the user
+        url = f"{self.base_url}/scim/Users/{user_id}"
+        payload = {
+            "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+            "Operations": [
+                {
+                    "op": "replace",
+                    "value": {"active": False}
+                }
+            ]
+        }
+        response = requests.patch(url, headers=headers, json=payload)
+
+        if response.status_code == 200:
+            return "User deactivated successfully!"
+        elif response.status_code == 404:
+            return "User not found"
+        else:
+            return f"Failed to deactivate user. Status code: {response.status_code}"
+
+    def delete(self, user_id):
+        """
+        Delete a user.
+
+        Args:
+            user_id (str): user_id of the user.
+
+        Returns:
+            str: A message indicating whether the user deletion was successful or failed.
+        """
+        print("Delete the User")
+        headers = {
+            "Authorization": self.authorization_header,
+            "Content-Type": "application/json"
+        }
+        # Send a DELETE request to delete the user
         url = f"{self.base_url}/scim/Users/{user_id}"
         response = requests.delete(url, headers=headers)
 
         if response.status_code == 204:
-            return "User has deleted successfully!"
+            return "User deleted successfully!"
         elif response.status_code == 404:
             return "User not found"
         else:
@@ -155,6 +225,7 @@ class User(object):
         # Send a PATCH request to assign the role to the user
         url = f"{self.base_url}/scim/Users/{user_id}"
         response = requests.patch(url, json=data, headers=headers)
+
         if response.status_code == 200:
             updated_data = response.json()  # Get the updated resource data from the response
             print("Updated Data:", updated_data)
