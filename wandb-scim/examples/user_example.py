@@ -148,7 +148,7 @@ if __name__ == "__main__":
 
     # Test Functions
     get_all_users(user)
-    # create_user(user, "marc@blub.com", "Marc-Steffen TEST")
+    # create_user(user, "test@example.com", "Test User")
     # get_user(user, "user_id")
     # deactivate_user(user, "user_id")
     # activate_user(user, "user_id")
