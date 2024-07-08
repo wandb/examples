@@ -16,3 +16,4 @@ log.txt
 colabs/log.txt
 artifacts
 examples/jax/jax-llm/proteins-base/
+colabs/anthropic/.env
