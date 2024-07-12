@@ -2,6 +2,7 @@ import arxiv
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+import weave
 
 class Author(BaseModel):
     full_name: str
@@ -25,21 +26,10 @@ class ArxivPaper(BaseModel):
     primary_category: str
     categories: List[str]
     links: List[Link]
+    pdf_url: Optional[str] = None
 
-    @property
-    def pdf_url(self):
-        """
-        Finds the PDF link among a result's links and returns its URL.
-
-        Should only be called once for a given `Result`, in its constructor.
-        After construction, the URL should be available in `Result.pdf_url`.
-        """
-        pdf_urls = [link.href for link in self.links if link.title == "pdf"]
-        if len(pdf_urls) == 0:
-            return None
-        elif len(pdf_urls) > 1:
-            print("Result has multiple PDF links; using %s", pdf_urls[0])
-        return pdf_urls[0]
+    def __getitem__(self, key):
+        return getattr(self, key)
 
 def convert_raw_arxiv_to_pydantic(paper):
     return ArxivPaper(
@@ -55,5 +45,6 @@ def convert_raw_arxiv_to_pydantic(paper):
         primary_category=paper.primary_category,
         categories=paper.categories,
         links=[Link(href=link.href, title=link.title, rel=link.rel, content_type=link.content_type) 
-                for link in paper.links]
+                for link in paper.links],
+        pdf_url=paper.pdf_url
     )
