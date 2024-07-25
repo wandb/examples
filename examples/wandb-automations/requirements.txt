@@ -1,4 +1,4 @@
-torch==1.13.1
+torch==2.2.0
 torchvision==0.13.1
 timm==0.6.12
 wandb>=0.13
