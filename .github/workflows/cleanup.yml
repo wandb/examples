@@ -1,0 +1,32 @@
+name: Clean Notebooks
+on:
+  push:
+    paths:
+      - '**.ipynb'
+  workflow_dispatch:
+
+jobs:
+    fix:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout Repository
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 2
+        - name: Setup Python
+          uses: actions/setup-python@v5
+          with:
+            python-version: 3.11
+        - name: Install Dependencies
+          run: |
+            python -m pip install -r requirements.txt
+        - name: Test clean up .ipynb files
+          shell: bash
+          run: |
+            nb_helpers.fix_nbs .
+            git status -s # display the status to see which nbs need cleaning up
+            if [[ `git status --porcelain -uno` ]]; then
+              git status -uno
+              echo -e "!!! Detected unstripped out notebooks\n!!!Remeber to run nb_helpers.fix_nbs"
+              false
+            fi
