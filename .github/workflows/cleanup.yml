@@ -23,7 +23,7 @@ jobs:
         - name: Test clean up .ipynb files
           shell: bash
           run: |
-            nb_helpers.fix_nbs .
+            nb_helpers.fix_nbs ./colabs/
             git status -s # display the status to see which nbs need cleaning up
             if [[ `git status --porcelain -uno` ]]; then
               git status -uno
