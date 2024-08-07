@@ -1,0 +1,12 @@
+arxiv
+anthropic
+python-dotenv
+requests
+tqdm
+PyPDF2
+weave
+filetype
+Pillow
+pdf2image
+openai
+numpy
