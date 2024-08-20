@@ -76,7 +76,7 @@ sentry-sdk==1.14.0
 shortuuid==1.0.1
 six==1.16.0
 smmap==5.0.0
-streamlit==1.30.0
+streamlit==1.37.0
 subprocess32==3.5.4
 termcolor==1.1.0
 terminado==0.12.1
