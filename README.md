@@ -282,7 +282,7 @@ small_train_dataset = dataset["train"].shuffle(seed=42).select(range(1000))
 small_eval_dataset = dataset["test"].shuffle(seed=42).select(range(300))
 
 small_train_dataset = small_train_dataset.map(tokenize_function, batched=True)
-small_eval_dataset = small_train_dataset.map(tokenize_function, batched=True)
+small_eval_dataset = small_eval_dataset.map(tokenize_function, batched=True)
 
 # download the model
 model = AutoModelForSequenceClassification.from_pretrained(
