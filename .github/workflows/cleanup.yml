@@ -1,32 +1,42 @@
 name: Clean Notebooks
 on:
-  push:
-    paths:
-      - '**.ipynb'
+  pull_request_review:
+    types: [submitted]
   workflow_dispatch:
 
 jobs:
-    fix:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout Repository
-          uses: actions/checkout@v4
-          with:
-            fetch-depth: 2
-        - name: Setup Python
-          uses: actions/setup-python@v5
-          with:
-            python-version: 3.11
-        - name: Install Dependencies
-          run: |
-            python -m pip install nb_helpers
-        - name: Test clean up .ipynb files
-          shell: bash
-          run: |
-            nb_helpers.fix_nbs ./colabs/
-            git status -s # display the status to see which nbs need cleaning up
-            if [[ `git status --porcelain -uno` ]]; then
-              git status -uno
-              echo -e "!!! Detected unstripped out notebooks\n!!!Remeber to run nb_helpers.fix_nbs"
-              false
-            fi
+  fix:
+    if: github.event.review.state == 'approved'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - name: Install Dependencies
+        run: |
+          python -m pip install nb_helpers
+      - name: Clean up .ipynb files
+        run: |
+          nb_helpers.fix_nbs ./colabs/
+      - name: Commit and push if changed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-clean notebooks"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
