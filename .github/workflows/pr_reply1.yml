@@ -22,7 +22,7 @@ jobs:
       run: |
         pip install -Uq ghapi nb_helpers
         python .github/scripts/pr_reply1.py
-    - uses: actions/upload-artifact@latest
+    - uses: actions/upload-artifact@v4
       with:
         name: pr_comment
         path: modified_colabs.json
