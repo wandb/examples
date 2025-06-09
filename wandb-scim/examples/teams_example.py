@@ -80,25 +80,52 @@ def add_members(teams, team_id, member_ids):
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
-def remove_members(teams, team_id, member_ids):
+def remove_member(teams, team_id, member_id):
     """
-    Updates a team by removing members.
+    Updates a team by removing a specific member.
 
     Args:
         teams (Teams): An instance of the Teams class.
         team_id (str): The ID of the team to update.
-        member_ids (list): The IDs of the members to removed from the team.
+        member_id (str): The ID of the member to be removed from the team.
     """
     try:
-        # Update team by removing members
-        member_object = []
-        for id in member_ids:
-            member_object.append({"value": id})
-        remove_members_response = teams.remove_members(
-            team_id,
-            member_object
-        )
-        print(remove_members_response)
+        # Update team by removing a specific member
+        remove_member_response = teams.remove_member(team_id, member_id)
+        print(remove_member_response)
+    except requests.exceptions.RequestException as e:
+        print(f"Error occurred during API request: {str(e)}")
+
+def remove_multiple_members(teams, team_id, member_ids):
+    """
+    Updates a team by removing multiple members (one API call per member).
+
+    Args:
+        teams (Teams): An instance of the Teams class.
+        team_id (str): The ID of the team to update.
+        member_ids (list): The IDs of the members to be removed from the team.
+    """
+    try:
+        # Remove each member individually since API only supports one operation at a time
+        for member_id in member_ids:
+            print(f"Removing member: {member_id}")
+            remove_member_response = teams.remove_member(team_id, member_id)
+            print(remove_member_response)
+    except requests.exceptions.RequestException as e:
+        print(f"Error occurred during API request: {str(e)}")
+
+def remove_all_members(teams, team_id):
+    """
+    Removes all members from a team.
+
+    Args:
+        teams (Teams): An instance of the Teams class.
+        team_id (str): The ID of the team to remove all members from.
+    """
+    try:
+        # Remove all members from the team
+        remove_all_response = teams.remove_all_members(team_id)
+        print(remove_all_response)
     except requests.exceptions.RequestException as e:
         print(f"Error occurred during API request: {str(e)}")
 
@@ -115,4 +142,6 @@ if __name__ == "__main__":
     # create_team(teams, "team-name-asdfghjsdfgh",["VXNlcjoxNjg1NzA5"])
     # get_team(teams, "team_id")
     # add_members(teams, "RW50aXR5OjIyMTgyMjI=", ["VXNlcjoxODcxODU1", "VXNlcjoxNjg1NzA5"])
-    # remove_members(teams, "RW50aXR5OjIyMTgyMjI=", ["VXNlcjoxODcxODU1", "VXNlcjoxNjg1NzA5"])
+    # remove_member(teams, "RW50aXR5OjIyMTgyMjI=", "VXNlcjoxODcxODU1")  # Remove single member
+    # remove_multiple_members(teams, "RW50aXR5OjIyMTgyMjI=", ["VXNlcjoxODcxODU1", "VXNlcjoxNjg1NzA5"])  # Remove multiple members
+    # remove_all_members(teams, "RW50aXR1OjIyMTgyMjI=")  # Remove all members

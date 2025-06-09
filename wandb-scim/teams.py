@@ -138,27 +138,25 @@ class Teams(object):
         else:
             return f"Failed to update team. Status code: {response.status_code}"
 
-    def remove_members(self, team_id, request_payload):
+    def remove_member(self, team_id, member_id):
         """
-        Removes members from the team.
+        Removes a specific member from the team using path filters.
 
         Args:
             team_id (str): team_id of the team_id.
-            request_payload (list[dict]): The payload containing members information.
-                It should contain the following key in each element:
-                    - 'value': The id of the member to be removed from the team.
+            member_id (str): The id of the member to be removed from the team.
 
         Returns:
             str: A message indicating whether the member removal was successful or failed.
         """
         print("Removing member from the team")
+        
         data = {
             "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
             "Operations": [
                 {
                     "op": "remove",
-                    "path": "members",
-                    "value": request_payload
+                    "path": f"members[value eq \"{member_id}\"]"
                 }
             ]
         }
@@ -174,6 +172,44 @@ class Teams(object):
             updated_data = response.json()  # Get the updated resource data from the response
             print("Updated Data:", updated_data)
             return "Team updated successfully"
+
+        elif response.status_code == 404:
+            return "Team not found"
+        else:
+            return f"Failed to update team. Status code: {response.status_code}"
+
+    def remove_all_members(self, team_id):
+        """
+        Removes all members from the team.
+
+        Args:
+            team_id (str): team_id of the team_id.
+
+        Returns:
+            str: A message indicating whether removing all members was successful or failed.
+        """
+        print("Removing all members from the team")
+        data = {
+            "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+            "Operations": [
+                {
+                    "op": "remove",
+                    "path": "members"
+                }
+            ]
+        }
+        headers = {
+            "Authorization": self.authorization_header,
+            "Content-Type": "application/json"
+        }
+        # Send a PATCH request to remove all members from the team
+        url = f"{self.base_url}/scim/Groups/{team_id}"
+        response = requests.patch(url, json=data, headers=headers)
+
+        if response.status_code == 200:
+            updated_data = response.json()  # Get the updated resource data from the response
+            print("Updated Data:", updated_data)
+            return "All team members removed successfully"
 
         elif response.status_code == 404:
             return "Team not found"
