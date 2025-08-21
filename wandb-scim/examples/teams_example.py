@@ -144,4 +144,4 @@ if __name__ == "__main__":
     # add_members(teams, "RW50aXR5OjIyMTgyMjI=", ["VXNlcjoxODcxODU1", "VXNlcjoxNjg1NzA5"])
     # remove_member(teams, "RW50aXR5OjIyMTgyMjI=", "VXNlcjoxODcxODU1")  # Remove single member
     # remove_multiple_members(teams, "RW50aXR5OjIyMTgyMjI=", ["VXNlcjoxODcxODU1", "VXNlcjoxNjg1NzA5"])  # Remove multiple members
-    # remove_all_members(teams, "RW50aXR1OjIyMTgyMjI=")  # Remove all members
+    # remove_all_members(teams, "RW50aXR5OjIyMTgyMjI=")  # Remove all members
