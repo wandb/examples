@@ -1,5 +1,7 @@
 import base64
+
 import requests
+
 
 class User(object):
     def __init__(self, base_url, username, api_key):
@@ -14,9 +16,9 @@ class User(object):
         # Encode the username and API key into a base64-encoded string for Basic Authentication
         # For service accounts, use ":api_key" format (empty username)
         auth_str = f"{username}:{api_key}"
-        auth_bytes = auth_str.encode('ascii')
+        auth_bytes = auth_str.encode("ascii")
         self.base_url = base_url
-        self.auth_token = base64.b64encode(auth_bytes).decode('ascii')
+        self.auth_token = base64.b64encode(auth_bytes).decode("ascii")
 
         # Create the authorization header for API requests
         self.authorization_header = f"Basic {self.auth_token}"
@@ -38,22 +40,25 @@ class User(object):
             "emails": [
                 {
                     "primary": True,
-                    "value": request_payload['email']
+                    "value": request_payload["email"],
                 }
             ],
-            "userName": request_payload['name']
+            "userName": request_payload["name"],
         }
         headers = {
             "Authorization": self.authorization_header,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         # Send a POST request to create the user
         url = f"{self.base_url}/scim/Users"
         response = requests.post(url, json=data, headers=headers)
         if response.status_code == 201:
             return response.json()
-        return {"error": f"User creation failed. Status code: {response.status_code}", "details": response.text}
-    
+        return {
+            "error": f"User creation failed. Status code: {response.status_code}",
+            "details": response.text,
+        }
+
     def get(self, user_id):
         """
         Retrieves user details.
@@ -67,7 +72,7 @@ class User(object):
         print("Getting the User")
         headers = {
             "Authorization": self.authorization_header,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         # Send a GET request to retrieve the user
         url = f"{self.base_url}/scim/Users/{user_id}"
@@ -76,10 +81,13 @@ class User(object):
         if response.status_code == 200:
             result = response.json()
             # Store ETag if present for conditional updates
-            if 'ETag' in response.headers:
-                result['_etag'] = response.headers['ETag']
+            if "ETag" in response.headers:
+                result["_etag"] = response.headers["ETag"]
             return result
-        return {"error": f"Get user failed. Status code: {response.status_code}", "details": response.text}
+        return {
+            "error": f"Get user failed. Status code: {response.status_code}",
+            "details": response.text,
+        }
 
     def get_all(self, filter=None):
         """
@@ -94,19 +102,22 @@ class User(object):
         print("Getting all the Users in org")
         headers = {
             "Authorization": self.authorization_header,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         url = f"{self.base_url}/scim/Users"
         params = {}
         if filter:
             params["filter"] = filter
-        
+
         # Send a GET request to retrieve all users
         response = requests.get(url, headers=headers, params=params)
 
         if response.status_code == 200:
             return response.json()
-        return {"error": f"Get users failed. Status code: {response.status_code}", "details": response.text}
+        return {
+            "error": f"Get users failed. Status code: {response.status_code}",
+            "details": response.text,
+        }
 
     def activate(self, user_id):
         """
@@ -121,7 +132,7 @@ class User(object):
         print("Activating the User")
         headers = {
             "Authorization": self.authorization_header,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         # Send a PATCH request to activate the user
         url = f"{self.base_url}/scim/Users/{user_id}"
@@ -130,9 +141,9 @@ class User(object):
             "Operations": [
                 {
                     "op": "replace",
-                    "value": {"active": True}
+                    "value": {"active": True},
                 }
-            ]
+            ],
         }
         response = requests.patch(url, headers=headers, json=payload)
 
@@ -142,7 +153,7 @@ class User(object):
             return "User not found"
         else:
             return f"Failed to activate user. Status code: {response.status_code}"
-    
+
     def deactivate(self, user_id):
         """
         Deactivates a user.
@@ -156,7 +167,7 @@ class User(object):
         print("Deactivating the User")
         headers = {
             "Authorization": self.authorization_header,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         # Send a PATCH request to deactivate the user
         url = f"{self.base_url}/scim/Users/{user_id}"
@@ -165,9 +176,9 @@ class User(object):
             "Operations": [
                 {
                     "op": "replace",
-                    "value": {"active": False}
+                    "value": {"active": False},
                 }
-            ]
+            ],
         }
         response = requests.patch(url, headers=headers, json=payload)
 
@@ -191,7 +202,7 @@ class User(object):
         print("Delete the User")
         headers = {
             "Authorization": self.authorization_header,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         # Send a DELETE request to delete the user
         url = f"{self.base_url}/scim/Users/{user_id}"
@@ -224,20 +235,22 @@ class User(object):
                 {
                     "op": "replace",
                     "path": "organizationRole",
-                    "value": request_payload['roleName']
+                    "value": request_payload["roleName"],
                 }
-            ]
+            ],
         }
         headers = {
             "Authorization": self.authorization_header,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         # Send a PATCH request to assign the role to the user
         url = f"{self.base_url}/scim/Users/{user_id}"
         response = requests.patch(url, json=data, headers=headers)
 
         if response.status_code == 200:
-            updated_data = response.json()  # Get the updated resource data from the response
+            updated_data = (
+                response.json()
+            )  # Get the updated resource data from the response
             print("Updated Data:", updated_data)
             return "User updated successfully"
         elif response.status_code == 404:
@@ -267,16 +280,18 @@ class User(object):
                     "path": "teamRoles",
                     "value": [
                         {
-                            "roleName": request_payload['roleName'],
-                            "teamName": request_payload['teamName']  # Fixed: was using roleName for both
+                            "roleName": request_payload["roleName"],
+                            "teamName": request_payload[
+                                "teamName"
+                            ],  # Fixed: was using roleName for both
                         }
-                    ]
+                    ],
                 }
-            ]
+            ],
         }
         headers = {
             "Authorization": self.authorization_header,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         # Send a PATCH request to assign the role to the user of the team
         url = f"{self.base_url}/scim/Users/{user_id}"
@@ -287,4 +302,93 @@ class User(object):
         elif response.status_code == 404:
             return {"error": "User not found"}
         else:
-            return {"error": f"Failed to update user. Status code: {response.status_code}", "details": response.text}
+            return {
+                "error": f"Failed to update user. Status code: {response.status_code}",
+                "details": response.text,
+            }
+
+    def assign_registry_role(self, user_id, request_payload):
+        """
+        Assigns a new registry role to a user.
+
+        Args:
+            user_id (str): user_id of the user.
+            request_payload (dict): The payload containing registry role information.
+                - 'registryName': The name of the registry.
+                - 'roleName': The role to assign.
+
+        Returns:
+            dict: Updated user resource or error message.
+        """
+        print("Assign registry role(s) to the User")
+        data = {
+            "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+            "Operations": [
+                {
+                    "op": "add",
+                    "path": "registryRoles",
+                    "value": [
+                        {
+                            "roleName": request_payload["roleName"],
+                            "registryName": request_payload["registryName"],
+                        }
+                    ],
+                }
+            ],
+        }
+        headers = {
+            "Authorization": self.authorization_header,
+            "Content-Type": "application/json",
+        }
+        # Send a PATCH request to assign the role to the user of the registry
+        url = f"{self.base_url}/scim/Users/{user_id}"
+        response = requests.patch(url, json=data, headers=headers)
+
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            return {"error": "User not found"}
+        else:
+            return {
+                "error": f"Failed to update user. Status code: {response.status_code}",
+                "details": response.text,
+            }
+
+    def remove_registry_role(self, user_id, registry_name):
+        """
+        Removes a user from a registry.
+
+        Args:
+            user_id (str): user_id of the user.
+            registry_name (str): The name of the registry.
+
+        Returns:
+            dict: Updated user resource or error message.
+        """
+        print("Remove the User's registry role")
+        data = {
+            "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+            "Operations": [
+                {
+                    "op": "remove",
+                    "path": f'registryRoles[registryName eq \\"{registry_name}\\"]',
+                }
+            ],
+        }
+        headers = {
+            "Authorization": self.authorization_header,
+            "Content-Type": "application/json",
+        }
+        # Send a PATCH request to assign the role to the user of the registry
+        url = f"{self.base_url}/scim/Users/{user_id}"
+        response = requests.patch(url, json=data, headers=headers)
+
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            return {"error": "User not found"}
+        else:
+            return {
+                "error": f"Failed to update user. Status code: {response.status_code}",
+                "details": response.text,
+            }
