@@ -1,10 +1,13 @@
-import base64
+from __future__ import annotations
+
+from typing import Any, TypedDict
 
 import requests
+from requests.auth import HTTPBasicAuth
 
 
-class User(object):
-    def __init__(self, base_url, username, api_key):
+class User:
+    def __init__(self, base_url: str, username: str, api_key: str):
         """
         Initialize User object with username and API key.
 
@@ -13,17 +16,18 @@ class User(object):
             username (str): The username for authentication (use empty string for service accounts).
             api_key (str): The API key for authentication.
         """
-        # Encode the username and API key into a base64-encoded string for Basic Authentication
-        # For service accounts, use ":api_key" format (empty username)
-        auth_str = f"{username}:{api_key}"
-        auth_bytes = auth_str.encode("ascii")
         self.base_url = base_url
-        self.auth_token = base64.b64encode(auth_bytes).decode("ascii")
 
-        # Create the authorization header for API requests
-        self.authorization_header = f"Basic {self.auth_token}"
+        self.request_kwargs = dict(
+            headers={"Content-Type": "application/json"},
+            # Encode the username and API key into a base64-encoded string for Basic Authentication
+            # For service accounts, use ":api_key" format (empty username)
+            auth=HTTPBasicAuth(username, api_key),
+            # Request hook to automatically raise for non-2XX status codes
+            hooks={"response": lambda rsp, *_, **__: rsp.raise_for_status()},
+        )
 
-    def create(self, request_payload):
+    def create(self, request_payload: dict[str, str]) -> dict[str, str]:
         """
         Creates a new user.
 
@@ -45,21 +49,18 @@ class User(object):
             ],
             "userName": request_payload["name"],
         }
-        headers = {
-            "Authorization": self.authorization_header,
-            "Content-Type": "application/json",
-        }
         # Send a POST request to create the user
         url = f"{self.base_url}/scim/Users"
-        response = requests.post(url, json=data, headers=headers)
-        if response.status_code == 201:
-            return response.json()
-        return {
-            "error": f"User creation failed. Status code: {response.status_code}",
-            "details": response.text,
-        }
+        try:
+            response = requests.post(url, json=data, **self.request_kwargs)
+        except requests.HTTPError:
+            return {
+                "error": f"User creation failed. Status code: {response.status_code}",
+                "details": response.text,
+            }
+        return response.json()
 
-    def get(self, user_id):
+    def get(self, user_id: str) -> dict[str, str]:
         """
         Retrieves user details.
 
@@ -70,26 +71,24 @@ class User(object):
             dict: User resource with ETag in meta.version or error message.
         """
         print("Getting the User")
-        headers = {
-            "Authorization": self.authorization_header,
-            "Content-Type": "application/json",
-        }
         # Send a GET request to retrieve the user
         url = f"{self.base_url}/scim/Users/{user_id}"
-        response = requests.get(url, headers=headers)
+        try:
+            response = requests.get(url, **self.request_kwargs)
+        except requests.HTTPError:
+            return {
+                "error": f"Get user failed. Status code: {response.status_code}",
+                "details": response.text,
+            }
 
-        if response.status_code == 200:
-            result = response.json()
-            # Store ETag if present for conditional updates
-            if "ETag" in response.headers:
-                result["_etag"] = response.headers["ETag"]
-            return result
-        return {
-            "error": f"Get user failed. Status code: {response.status_code}",
-            "details": response.text,
-        }
+        result = response.json()
 
-    def get_all(self, filter=None):
+        # Store ETag if present for conditional updates
+        if etag := response.headers.get("ETag"):
+            result["_etag"] = etag
+        return result
+
+    def get_all(self, filter: str | None = None) -> dict[str, str]:
         """
         Retrieves details of all users in the organization.
 
@@ -100,26 +99,18 @@ class User(object):
             dict: User list or error message.
         """
         print("Getting all the Users in org")
-        headers = {
-            "Authorization": self.authorization_header,
-            "Content-Type": "application/json",
-        }
-        url = f"{self.base_url}/scim/Users"
-        params = {}
-        if filter:
-            params["filter"] = filter
-
         # Send a GET request to retrieve all users
-        response = requests.get(url, headers=headers, params=params)
+        url = f"{self.base_url}/scim/Users"
+        params = {"filter": filter} if filter else {}
+        try:
+            response = requests.get(url, params=params, **self.request_kwargs)
+        except requests.HTTPError:
+            return {
+                "error": f"Get users failed. Status code: {response.status_code}",
+                "details": response.text,
+            }
 
-        if response.status_code == 200:
-            return response.json()
-        return {
-            "error": f"Get users failed. Status code: {response.status_code}",
-            "details": response.text,
-        }
-
-    def activate(self, user_id):
+    def activate(self, user_id: str) -> str:
         """
         Activates a user.
 
@@ -130,10 +121,6 @@ class User(object):
             str: A message indicating whether the user activation was successful or failed.
         """
         print("Activating the User")
-        headers = {
-            "Authorization": self.authorization_header,
-            "Content-Type": "application/json",
-        }
         # Send a PATCH request to activate the user
         url = f"{self.base_url}/scim/Users/{user_id}"
         payload = {
@@ -145,16 +132,15 @@ class User(object):
                 }
             ],
         }
-        response = requests.patch(url, headers=headers, json=payload)
-
-        if response.status_code == 200:
-            return "User activated successfully!"
-        elif response.status_code == 404:
-            return "User not found"
-        else:
+        try:
+            response = requests.patch(url, json=payload, **self.request_kwargs)
+        except requests.HTTPError:
+            if response.status_code == 404:
+                return "User not found"
             return f"Failed to activate user. Status code: {response.status_code}"
+        return "User activated successfully!"
 
-    def deactivate(self, user_id):
+    def deactivate(self, user_id: str) -> str:
         """
         Deactivates a user.
 
@@ -165,10 +151,6 @@ class User(object):
             str: A message indicating whether the user deactivation was successful or failed.
         """
         print("Deactivating the User")
-        headers = {
-            "Authorization": self.authorization_header,
-            "Content-Type": "application/json",
-        }
         # Send a PATCH request to deactivate the user
         url = f"{self.base_url}/scim/Users/{user_id}"
         payload = {
@@ -180,16 +162,15 @@ class User(object):
                 }
             ],
         }
-        response = requests.patch(url, headers=headers, json=payload)
-
-        if response.status_code == 200:
-            return "User deactivated successfully!"
-        elif response.status_code == 404:
-            return "User not found"
-        else:
+        try:
+            response = requests.patch(url, json=payload, **self.request_kwargs)
+        except requests.HTTPError:
+            if response.status_code == 404:
+                return "User not found"
             return f"Failed to deactivate user. Status code: {response.status_code}"
+        return "User deactivated successfully!"
 
-    def delete(self, user_id):
+    def delete(self, user_id: str) -> str:
         """
         Delete a user.
 
@@ -200,22 +181,20 @@ class User(object):
             str: A message indicating whether the user deletion was successful or failed.
         """
         print("Delete the User")
-        headers = {
-            "Authorization": self.authorization_header,
-            "Content-Type": "application/json",
-        }
         # Send a DELETE request to delete the user
         url = f"{self.base_url}/scim/Users/{user_id}"
-        response = requests.delete(url, headers=headers)
-
-        if response.status_code == 204:
-            return "User deleted successfully!"
-        elif response.status_code == 404:
-            return "User not found"
-        else:
+        try:
+            response = requests.delete(url, **self.request_kwargs)
+        except requests.HTTPError:
+            if response.status_code == 404:
+                return "User not found"
             return f"Failed to delete user. Status code: {response.status_code}"
+        return "User deleted successfully!"
 
-    def assign_org_role(self, user_id, request_payload):
+    class _OrgRoleDict(TypedDict):
+        roleName: str
+
+    def assign_org_role(self, user_id: str, request_payload: _OrgRoleDict) -> str:
         """
         Assigns a role to a user.
 
@@ -236,29 +215,31 @@ class User(object):
                     "op": "replace",
                     "path": "organizationRole",
                     "value": request_payload["roleName"],
+                    "value": request_payload["roleName"],
                 }
             ],
         }
-        headers = {
-            "Authorization": self.authorization_header,
-            "Content-Type": "application/json",
-        }
         # Send a PATCH request to assign the role to the user
         url = f"{self.base_url}/scim/Users/{user_id}"
-        response = requests.patch(url, json=data, headers=headers)
-
-        if response.status_code == 200:
-            updated_data = (
-                response.json()
-            )  # Get the updated resource data from the response
-            print("Updated Data:", updated_data)
-            return "User updated successfully"
-        elif response.status_code == 404:
-            return "User not found"
-        else:
+        try:
+            response = requests.patch(url, json=data, **self.request_kwargs)
+        except requests.HTTPError:
+            if response.status_code == 404:
+                return "User not found"
             return f"Failed to update user. Status code: {response.status_code}"
 
-    def assign_team_role(self, user_id, request_payload):
+        # Get the updated resource data from the response
+        updated_data = response.json()
+        print("Updated Data:", updated_data)
+        return "User updated successfully"
+
+    class _TeamRoleDict(TypedDict):
+        teamName: str
+        roleName: str
+
+    def assign_team_role(
+        self, user_id: str, request_payload: _TeamRoleDict
+    ) -> dict[str, str]:
         """
         Assigns a role to a user of the team.
 
@@ -278,36 +259,30 @@ class User(object):
                 {
                     "op": "replace",
                     "path": "teamRoles",
-                    "value": [
-                        {
-                            "roleName": request_payload["roleName"],
-                            "teamName": request_payload[
-                                "teamName"
-                            ],  # Fixed: was using roleName for both
-                        }
-                    ],
+                    "value": [request_payload],
                 }
             ],
         }
-        headers = {
-            "Authorization": self.authorization_header,
-            "Content-Type": "application/json",
-        }
         # Send a PATCH request to assign the role to the user of the team
         url = f"{self.base_url}/scim/Users/{user_id}"
-        response = requests.patch(url, json=data, headers=headers)
-
-        if response.status_code == 200:
-            return response.json()
-        elif response.status_code == 404:
-            return {"error": "User not found"}
-        else:
+        try:
+            response = requests.patch(url, json=data, **self.request_kwargs)
+        except requests.HTTPError:
+            if response.status_code == 404:
+                return {"error": "User not found"}
             return {
                 "error": f"Failed to update user. Status code: {response.status_code}",
                 "details": response.text,
             }
+        return response.json()
 
-    def assign_registry_role(self, user_id, request_payload):
+    class _RegistryRoleDict(TypedDict):
+        registryName: str
+        roleName: str
+
+    def assign_registry_role(
+        self, user_id: str, request_payload: _RegistryRoleDict
+    ) -> dict[str, Any]:
         """
         Assigns a new registry role to a user.
 
@@ -327,34 +302,23 @@ class User(object):
                 {
                     "op": "add",
                     "path": "registryRoles",
-                    "value": [
-                        {
-                            "roleName": request_payload["roleName"],
-                            "registryName": request_payload["registryName"],
-                        }
-                    ],
+                    "value": [request_payload],
                 }
             ],
         }
-        headers = {
-            "Authorization": self.authorization_header,
-            "Content-Type": "application/json",
-        }
         # Send a PATCH request to assign the role to the user of the registry
         url = f"{self.base_url}/scim/Users/{user_id}"
-        response = requests.patch(url, json=data, headers=headers)
-
-        if response.status_code == 200:
-            return response.json()
-        elif response.status_code == 404:
-            return {"error": "User not found"}
-        else:
+        try:
+            response = requests.patch(url, json=data, **self.request_kwargs)
+        except requests.HTTPError:
+            if response.status_code == 404:
+                return {"error": "User not found"}
             return {
                 "error": f"Failed to update user. Status code: {response.status_code}",
                 "details": response.text,
             }
 
-    def remove_registry_role(self, user_id, registry_name):
+    def remove_registry_role(self, user_id: str, registry_name: str) -> dict[str, Any]:
         """
         Removes a user from a registry.
 
@@ -375,19 +339,13 @@ class User(object):
                 }
             ],
         }
-        headers = {
-            "Authorization": self.authorization_header,
-            "Content-Type": "application/json",
-        }
         # Send a PATCH request to assign the role to the user of the registry
         url = f"{self.base_url}/scim/Users/{user_id}"
-        response = requests.patch(url, json=data, headers=headers)
-
-        if response.status_code == 200:
-            return response.json()
-        elif response.status_code == 404:
-            return {"error": "User not found"}
-        else:
+        try:
+            response = requests.patch(url, json=data, **self.request_kwargs)
+        except requests.HTTPError:
+            if response.status_code == 404:
+                return {"error": "User not found"}
             return {
                 "error": f"Failed to update user. Status code: {response.status_code}",
                 "details": response.text,
