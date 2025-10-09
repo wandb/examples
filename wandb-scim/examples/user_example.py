@@ -107,7 +107,7 @@ def delete_user(user: str, user_id: str) -> None:
 
 def assign_org_role_to_user(user: str, user_id: str, role_name: str) -> None:
     """
-    Assigns a org-level role to a user.
+    Assigns an org-level role to a user.
 
     Args:
         user (User): An instance of the User class.
