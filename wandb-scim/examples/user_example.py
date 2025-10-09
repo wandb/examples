@@ -1,14 +1,13 @@
 # calling_module.py
 
-import sys
+from __future__ import annotations
 
-import requests
+from requests import RequestException
 
-sys.path.append("../")
-from users import User  # Assuming the User class is defined in user_module.py
+from ..users import User
 
 
-def create_user(user, email, name):
+def create_user(user: str, email: str, name: str) -> None:
     """
     Creates a new user.
 
@@ -23,11 +22,11 @@ def create_user(user, email, name):
             request_payload={"email": email, "name": name}
         )
         print(create_user_response)
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred during API request: {str(e)}")
+    except RequestException as e:
+        print(f"Error occurred during API request: {e}")
 
 
-def get_user(user, user_id):
+def get_user(user: str, user_id: str) -> None:
     """
     Retrieves details of a specific user.
 
@@ -39,11 +38,11 @@ def get_user(user, user_id):
         # Get user details
         get_user_response = user.get(user_id)
         print(get_user_response)
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred during API request: {str(e)}")
+    except RequestException as e:
+        print(f"Error occurred during API request: {e}")
 
 
-def get_all_users(user):
+def get_all_users(user: str) -> None:
     """
     Retrieves details of all users in the organization.
 
@@ -54,11 +53,11 @@ def get_all_users(user):
         # Get all users in the organization
         get_all_users_response = user.get_all()
         print(get_all_users_response)
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred during API request: {str(e)}")
+    except RequestException as e:
+        print(f"Error occurred during API request: {e}")
 
 
-def activate_user(user, user_id):
+def activate_user(user: str, user_id: str) -> None:
     """
     Activates a user.
 
@@ -70,11 +69,11 @@ def activate_user(user, user_id):
         # Activate a user
         activate_user_response = user.activate(user_id)
         print(activate_user_response)
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred during API request: {str(e)}")
+    except RequestException as e:
+        print(f"Error occurred during API request: {e}")
 
 
-def deactivate_user(user, user_id):
+def deactivate_user(user: str, user_id: str) -> None:
     """
     Deactivates a user.
 
@@ -86,11 +85,11 @@ def deactivate_user(user, user_id):
         # Deactivate a user
         deactivate_user_response = user.deactivate(user_id)
         print(deactivate_user_response)
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred during API request: {str(e)}")
+    except RequestException as e:
+        print(f"Error occurred during API request: {e}")
 
 
-def delete_user(user, user_id):
+def delete_user(user: str, user_id: str) -> None:
     """
     Deletes a user.
 
@@ -102,13 +101,13 @@ def delete_user(user, user_id):
         # Delete a user
         delete_user_response = user.delete(user_id)
         print(delete_user_response)
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred during API request: {str(e)}")
+    except RequestException as e:
+        print(f"Error occurred during API request: {e}")
 
 
-def assign_org_role_to_user(user, user_id, role_name):
+def assign_org_role_to_user(user: str, user_id: str, role_name: str) -> None:
     """
-    Assigns a org-level role to a user.
+    Assigns an org-level role to a user.
 
     Args:
         user (User): An instance of the User class.
@@ -121,11 +120,13 @@ def assign_org_role_to_user(user, user_id, role_name):
             user_id, request_payload={"roleName": role_name}
         )
         print(assign_org_role_response)
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred during API request: {str(e)}")
+    except RequestException as e:
+        print(f"Error occurred during API request: {e}")
 
 
-def assign_team_role_to_user(user, user_id, team_name, role_name):
+def assign_team_role_to_user(
+    user: str, user_id: str, team_name: str, role_name: str
+) -> None:
     """
     Assigns a team-level role to a user.
 
@@ -141,11 +142,13 @@ def assign_team_role_to_user(user, user_id, team_name, role_name):
             user_id, request_payload={"roleName": role_name, "teamName": team_name}
         )
         print(assign_team_role_response)
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred during API request: {str(e)}")
+    except RequestException as e:
+        print(f"Error occurred during API request: {e}")
 
 
-def assign_registry_role_to_user(user, user_id, registry_name, role_name):
+def assign_registry_role_to_user(
+    user: str, user_id: str, registry_name: str, role_name: str
+) -> None:
     """
     Assigns a registry-level role to a user.
 
@@ -162,8 +165,8 @@ def assign_registry_role_to_user(user, user_id, registry_name, role_name):
             request_payload={"roleName": role_name, "registryName": registry_name},
         )
         print(assign_registry_role_response)
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred during API request: {str(e)}")
+    except RequestException as e:
+        print(f"Error occurred during API request: {e}")
 
 
 if __name__ == "__main__":
