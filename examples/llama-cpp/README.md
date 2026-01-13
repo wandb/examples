@@ -9,9 +9,9 @@ This script automates the evaluation of different LLM's with W&B.  It was origin
 ```bash
 pip install wandb
 
-# Find your api key at https://wandb.ai/authorize
+# Create a new API key at https://wandb.ai/settings and store it securely
 export WANDB_API_KEY=XXX
-# Find your openai api key at https://platform.openai.com/account/api-keys
+# Create a new OpenAI API key at https://platform.openai.com/account/api-keys
 export OPENAI_API_KEY=XXX
 ```
 
