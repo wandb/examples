@@ -1,0 +1,3 @@
+varek-guardrails>=1.1.1
+wandb>=0.16
+weave>=0.50
