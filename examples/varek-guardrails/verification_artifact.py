@@ -1,5 +1,5 @@
 """
-verification_artifact.py — VAREK Guardrails verification report uploaded
+verification_artifact.py -- VAREK Guardrails verification report uploaded
 as a W&B Artifact.
 
 Exercises the public VAREK Guardrails API end-to-end and produces a
@@ -47,7 +47,7 @@ def is_contained(outcome) -> bool:
     """Derive containment from outcome fields.
 
     The containment boundary fires when the contained code does not exit
-    cleanly. A benign payload that runs to completion is NOT contained —
+    cleanly. A benign payload that runs to completion is NOT contained --
     there was nothing to contain. This matches the working demo's logic
     in 16-wandb-pipeline-verification-intercept.py.
     """
@@ -208,7 +208,7 @@ def main() -> int:
     for check_fn in CHECKS:
         try:
             r = check_fn()
-        except Exception as exc:  # noqa: BLE001 — record uncaught failures
+        except Exception as exc:  # noqa: BLE001 -- record uncaught failures
             r = CheckResult(check_fn.__name__, False, f"uncaught: {exc!r}")
         marker = "PASS" if r.passed else "FAIL"
         print(f"  [{marker}] {r.name}: {r.detail}")

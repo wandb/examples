@@ -1,5 +1,5 @@
 #!/bin/bash
-# with-cgroup.sh — ensure cgroup v2 controllers are enabled in varek.slice
+# with-cgroup.sh -- ensure cgroup v2 controllers are enabled in varek.slice
 # before delegating to the wrapped command.
 #
 # This is idempotent and safe to run unconditionally. The 2>/dev/null and

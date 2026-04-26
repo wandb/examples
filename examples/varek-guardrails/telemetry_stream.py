@@ -1,5 +1,5 @@
 """
-telemetry_stream.py — bridge VAREK Guardrails telemetry into W&B run logs.
+telemetry_stream.py -- bridge VAREK Guardrails telemetry into W&B run logs.
 
 VAREK Guardrails emits PEP 578-style audit events through `subscribe_telemetry`.
 This example subscribes a callback that buffers every event and flushes them
@@ -17,7 +17,7 @@ what each payload tried to do.
 POST-FORK SAFETY NOTE:
   Audit hooks installed via subscribe_telemetry are inherited by forked
   children. VAREK Guardrails uses subprocess.Popen with a preexec_fn
-  (seccomp + cgroup setup) that makes ctypes calls — each ctypes call
+  (seccomp + cgroup setup) that makes ctypes calls -- each ctypes call
   triggers our audit hook in the child. Calling wandb.log directly from
   that context breaks the preexec_fn because wandb's threading state does
   not survive fork. We guard the callback with an os.getpid() check so it

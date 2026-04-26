@@ -1,5 +1,5 @@
 """
-benchmark_suite.py — VAREK Guardrails containment regression battery.
+benchmark_suite.py -- VAREK Guardrails containment regression battery.
 
 Runs eight payloads spanning four categories (benign, malicious, resource,
 edge) and verifies the actual outcome matches the expected containment
@@ -9,10 +9,10 @@ behavior diverges from expectation, making it suitable as a CI gate or
 pre-commit hook.
 
 Categories:
-  benign     — payloads that should run to completion (exit_code=0, no containment)
-  malicious  — payloads that should be blocked at the kernel boundary
-  resource   — payloads that should be killed by resource limits
-  edge       — payloads that should fail to parse/execute cleanly
+  benign     -- payloads that should run to completion (exit_code=0, no containment)
+  malicious  -- payloads that should be blocked at the kernel boundary
+  resource   -- payloads that should be killed by resource limits
+  edge       -- payloads that should fail to parse/execute cleanly
 
 Run with the cgroup wrapper:
 
