@@ -15,21 +15,21 @@ can resolve them automatically.
 - A W&B account. Run `wandb login` once in your shell before launching the
   notebook &mdash; this notebook does not prompt for an API key interactively.
 - A W&B **Registry** must exist in your org for the final linking step. The
-  built-in Model registry is provisioned automatically in newer orgs. If
+  built-in Model Registry is provisioned automatically in newer orgs. If
   linking fails, the notebook surfaces a remediation message in the last
   Registry cell instead of crashing.
 - GPU is optional. Defaults are tuned to finish in roughly two minutes on CPU.
 
 ## Run
 
-The recommended entry point is `uvx` with marimo's sandbox mode &mdash; it
-creates an isolated venv from the inline dependencies in the notebook:
+Use `uvx` with marimo's sandbox mode &mdash; it creates an isolated virtual
+environment from the inline dependencies in the notebook:
 
 ```bash
 uvx marimo edit mnist_registry.py --sandbox
 ```
 
-Marimo opens in your browser. Adjust hyperparameters in the form, then click
+marimo opens in your browser. Adjust hyperparameters in the form, then click
 **Train model** to start the run. The run URL appears inline as soon as
 training begins.
 
@@ -41,7 +41,7 @@ marimo edit mnist_registry.py
 ```
 
 The notebook is interactive-only by design: training is gated by a button
-click, so `marimo run` will render the form but never start training without
+click, so `marimo run` renders the form but never starts training without
 an explicit click.
 
 ## What you get
@@ -67,20 +67,20 @@ art.download()  # writes mnist_cnn.pt under ./artifacts/
 
 ## Design notes
 
-- **Training is gated by a button.** Marimo cells re-run reactively when their
+- **Training is gated by a button.** marimo cells re-run reactively when their
   inputs change. Before the first click of **Train model**, slider changes do
-  not start a run. After a run has completed, clicking **Train model** again
-  starts a new run with whatever the form values are at that moment; the
-  previous run is finished cleanly first.
-- **`wandb.run` is finished defensively** at the top of the training cell so
-  the second click of **Train model** does not nest runs in the same marimo
+  not start a run. After a run completes, clicking **Train model** again
+  starts a new run with the current form values; the previous run finishes
+  cleanly first.
+- **`wandb.run` finishes defensively** at the top of the training cell so
+  a second click of **Train model** does not nest runs in the same marimo
   kernel.
-- **`logged.wait()` is called** after `log_artifact` and before
-  `link_artifact` to avoid a race where the link tries to resolve a version
-  that has not finished committing server-side.
+- **`logged.wait()` runs** after `log_artifact` and before `link_artifact`
+  to avoid a race where the link tries to resolve a version that has not
+  finished committing server-side.
 - **Registry failures soft-fail.** If `link_artifact` raises &mdash; usually
   because the Registry does not exist in your org &mdash; the notebook
-  surfaces remediation guidance via `mo.callout` rather than aborting.
+  surfaces remediation guidance through `mo.callout` rather than aborting.
 
 ## Reference
 

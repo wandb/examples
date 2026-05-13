@@ -44,15 +44,14 @@ def _():
 
         ## Prerequisites
 
-        - **`wandb login`** completed in your shell before starting marimo.
-          This notebook will not prompt for an API key interactively.
+        - Run **`wandb login`** in your shell before starting marimo.
+          This notebook does not prompt for an API key interactively.
         - A W&B entity (your user or a team) the run will be written to.
         - A **W&B Registry** must exist in your org. The built-in Model
           registry is provisioned automatically in newer orgs. If linking
-          fails, the Registry step surfaces remediation guidance inline
+          fails, the Registry step shows remediation guidance inline
           instead of crashing.
-        - A GPU is optional. The defaults are tuned to finish in ~2 minutes
-          on CPU.
+        - A GPU is optional. The defaults finish in about 2 minutes on CPU.
         """
     )
     return (mo,)
@@ -100,7 +99,7 @@ def _(mo, torch):
         device = torch.device("cpu")
         device_note = (
             "No GPU detected. Training will run on CPU. With the default "
-            "hyperparameters this takes ~2 minutes."
+            "hyperparameters this takes about 2 minutes."
         )
         callout_kind = "warn"
 
@@ -219,11 +218,10 @@ def _(mo):
         """
         ## Train
 
-        Training is gated by an explicit button click so changing a
-        hyperparameter does not by itself start a run. Click **Train model**
-        to begin. Once the first run has completed, clicking the button again
-        starts a new run with whatever the form values are at that moment;
-        the previous run is finished cleanly first.
+        Click **Train model** to begin. Changing a hyperparameter does not
+        start a run by itself — the button gates execution. Once a run
+        completes, clicking the button again starts a new run using the
+        current form values; the previous run finishes cleanly first.
         """
     )
     return
@@ -274,8 +272,8 @@ def _(DataLoader, batch_size, datasets, device, mo, transforms):
     train_ds = datasets.MNIST("./data", train=True, download=True, transform=transform)
     test_ds = datasets.MNIST("./data", train=False, download=True, transform=transform)
 
-    # Only batch_size and device affect the loaders, so we depend on them
-    # directly rather than the full config dict; this avoids re-creating the
+    # Only `batch_size` and `device` affect the loaders, so we depend on them
+    # directly rather than the full `config` dict; this avoids re-creating the
     # loaders whenever an unrelated hyperparameter changes.
     bs = int(batch_size.value)
     loader_kwargs = (
@@ -312,10 +310,10 @@ def _(
 ):
     mo.stop(not train_button.value, mo.md("Click **Train model** to begin."))
 
-    # Defensive: finish any prior run still attached to this Python process.
+    # Finish any prior run still attached to this Python process.
     # marimo keeps the kernel alive across re-clicks, so a second click — or
     # a slider change after the first click — re-executes this cell. Without
-    # this guard `wandb.init` would warn about a run already being active.
+    # this guard, `wandb.init` warns about a run already being active.
     # `wandb.finish` blocks until the prior run's tail logs are uploaded.
     if wandb.run is not None:
         wandb.finish()
@@ -330,14 +328,14 @@ def _(
         job_type="train",
     )
 
-    # Use `epoch` as the x-axis for train and test metrics in the W&B UI.
+    # Use `epoch` as the x-axis for training and test metrics in the W&B UI.
     wandb.define_metric("epoch")
     wandb.define_metric("train/*", step_metric="epoch")
     wandb.define_metric("test/*", step_metric="epoch")
 
     model = Net().to(device)
-    # `log="gradients"` is the conventional choice for didactic examples;
-    # `log="all"` would additionally log parameter histograms at extra cost.
+    # `log="gradients"` is the standard choice for tutorial examples;
+    # `log="all"` also logs parameter histograms at extra cost.
     wandb.watch(model, log="gradients", log_freq=100)
     optimizer = optim.SGD(
         model.parameters(), lr=config["lr"], momentum=config["momentum"]
@@ -497,15 +495,15 @@ def _(
     )
     artifact.add_file(model_path)
 
-    # We only log a single artifact per run (the final-epoch weights), so we
-    # tag it `latest` unconditionally. Use the Registry UI or the API to
-    # promote a specific version with aliases like `best` or `production`
-    # after comparing across runs.
+    # Log a single artifact per run (the final-epoch weights) and tag it
+    # `latest` unconditionally. Use the Registry UI or the API to promote a
+    # specific version with aliases like `best` or `production` after
+    # comparing runs.
     aliases = ["latest"]
 
     logged = run.log_artifact(artifact, aliases=aliases)
     # Block until the artifact has fully committed server-side. Without this,
-    # link_artifact below may race on the version reference.
+    # `link_artifact` below may race on the version reference.
     logged.wait()
 
     mo.md(
@@ -581,7 +579,7 @@ def _(collection_name_v, mo, registry_name_v, run, train_button):
         ## Verify
 
         1. Open the run page: [{run.name}]({run.url}). Confirm the
-           **Charts**, **System**, and **Examples** panels populated.
+           **Charts**, **System**, and **Examples** panels are populated.
         2. Click **Artifacts** in the run's left nav. Confirm the
            `mnist-cnn-{run.id}` model artifact is listed with metadata
            (test accuracy, hyperparameters, number of parameters).
@@ -625,8 +623,8 @@ def _(mo):
         """
         ## Finish
 
-        Closes the W&B run so the run summary and the Registry version
-        finalize on the server.
+        This cell closes the W&B run so the run summary and the Registry
+        version finalize on the server.
         """
     )
     return
@@ -635,7 +633,7 @@ def _(mo):
 @app.cell
 def _(mo, train_button, wandb):
     mo.stop(not train_button.value, mo.md(""))
-    # Mirror of the defensive `wandb.finish` at the top of the training cell:
+    # Mirrors the `wandb.finish` guard at the top of the training cell:
     # leaves the kernel in a clean state for the next Train click.
     if wandb.run is not None:
         wandb.finish()
