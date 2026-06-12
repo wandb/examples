@@ -20,8 +20,9 @@ header: |-
 
       uvx marimo edit mnist_registry.py --sandbox
 
-  This notebook is interactive: hyperparameters live in a form, and training is
-  gated by a button so slider changes do not trigger runs.
+  The notebook has three interactive cells: fill in the form, click **Train
+  model**, then read the results. Everything between the inputs and the button
+  runs as a single step, so one click trains, logs, saves, and registers.
   """
 ---
 
@@ -48,17 +49,21 @@ mo.md(
       **W&B API key** field in the form below. Get your key from
       [wandb.ai/authorize](https://wandb.ai/authorize).
     - A W&B entity (your user or a team) the run will be written to.
-    - A **W&B Registry** must exist in your org, and your account needs
-      **write access** to it. The built-in Model registry is provisioned
-      automatically in newer orgs. If linking fails (for example, from a
-      view-only seat), the Registry step shows remediation guidance
-      inline instead of crashing.
+    - A **W&B Registry** must exist in your org, and your account needs at
+      least the **Member** role on it (linking an artifact is a write
+      action). The built-in Model registry is provisioned automatically in
+      newer orgs. If linking fails (for example, from a view-only seat),
+      the run still completes and the Registry step explains how to fix it.
     - A GPU is optional. The defaults finish in about 2 minutes on CPU.
     """
 )
 ```
 
 ```python {.marimo}
+# Imports, device detection, and the input form all live in one cell: this
+# is "everything up to collecting your inputs". It defines the form widgets
+# but never reads their `.value` — marimo only makes a widget reactive when
+# a *different* cell consumes it, which the training cell below does.
 import os
 
 import torch
@@ -70,36 +75,23 @@ from torchvision import datasets, transforms
 
 import wandb
 from tqdm.auto import tqdm
-```
 
-```python {.marimo}
 if torch.cuda.is_available():
     device = torch.device("cuda")
     device_note = "CUDA GPU detected. Training will be fast."
-    callout_kind = "success"
+    device_kind = "success"
 elif torch.backends.mps.is_available():
     device = torch.device("mps")
     device_note = "Apple MPS detected. Training will run on the GPU."
-    callout_kind = "success"
+    device_kind = "success"
 else:
     device = torch.device("cpu")
     device_note = (
         "No GPU detected. Training will run on CPU. With the default "
         "hyperparameters this takes about 2 minutes."
     )
-    callout_kind = "warn"
+    device_kind = "warn"
 
-mo.callout(mo.md(f"**Device:** `{device}` &mdash; {device_note}"), kind=callout_kind)
-```
-
-## Hyperparameters
-
-Configure the training run and the Registry target. The defaults reach
-roughly 98% test accuracy in about two minutes on CPU. The **Registry**
-section controls where the trained model is linked after training
-finishes.
-
-```python {.marimo}
 epochs = mo.ui.slider(start=1, stop=10, step=1, value=3, label="Epochs")
 batch_size = mo.ui.dropdown(
     options=["32", "64", "128", "256"], value="64", label="Batch size"
@@ -136,10 +128,49 @@ form = mo.vstack(
         mo.hstack([registry_name, collection_name, link_to_registry]),
     ]
 )
-form
+
+mo.vstack(
+    [
+        mo.callout(
+            mo.md(f"**Device:** `{device}` &mdash; {device_note}"), kind=device_kind
+        ),
+        mo.md(
+            "## Configure\n\nSet the hyperparameters and W&B targets, then click "
+            "**Train model** below. Changing a value here never starts a run on "
+            "its own — only the button does."
+        ),
+        form,
+    ]
+)
 ```
 
 ```python {.marimo}
+# The button must be its own cell: the training cell reads
+# `train_button.value`, and a widget is only reactive when a *different*
+# cell consumes it. run_button's value is True for exactly the cascade its
+# click triggers, then resets to False — so editing the form afterwards
+# re-runs the training cell but it stops immediately instead of retraining.
+train_button = mo.ui.run_button(label="Train model", kind="success")
+mo.vstack(
+    [
+        mo.md(
+            "## Train\n\nOne click runs the whole pipeline below: start the "
+            "run, build and train the model, log metrics and example "
+            "predictions, save the weights as an Artifact, and link it to the "
+            "Registry. Click again to retrain with new settings — the previous "
+            "run is finished first."
+        ),
+        train_button,
+    ]
+)
+```
+
+```python {.marimo}
+# Everything the Train button triggers, in one cell — no reason to make you
+# advance through a chain of output-less code blocks. Each milestone is
+# streamed to the cell output with `mo.output.append` as it happens.
+mo.stop(not train_button.value, mo.md("Click **Train model** above to begin."))
+
 config = {
     "epochs": epochs.value,
     "batch_size": int(batch_size.value),
@@ -149,38 +180,36 @@ config = {
     "architecture": "CNN",
     "dataset": "MNIST",
 }
-wandb_project = project.value or None
-wandb_entity = entity.value or None
-wandb_run_name = run_name.value or None
-# Resolve the key but keep it out of `config` so it is never logged to
-# W&B. Blank falls back to your ambient login (shell `wandb login`, the
-# WANDB_API_KEY env var, or netrc).
-wandb_api_key = api_key.value or None
 registry_name_v = registry_name.value.strip()
 collection_name_v = collection_name.value.strip()
-link_to_registry_v = link_to_registry.value
-```
 
-## Train
+# Authenticate. Finish any prior run first (marimo keeps the kernel alive
+# across re-clicks). A key pasted into the form wins; otherwise fall back to
+# ambient login (shell `wandb login`, WANDB_API_KEY, or netrc). The key is
+# never written to the run config.
+if wandb.run is not None:
+    wandb.finish()
+if api_key.value:
+    wandb.login(key=api_key.value)
 
-Click **Train model** to begin. Changing a hyperparameter does not
-start a run by itself — the button gates execution. Once a run
-completes, clicking the button again starts a new run using the
-current form values; the previous run finishes cleanly first.
+torch.manual_seed(config["seed"])
 
-```python {.marimo}
-train_button = mo.ui.run_button(label="Train model", kind="success")
-train_button
-```
+run = wandb.init(
+    project=project.value or None,
+    entity=entity.value or None,
+    name=run_name.value or None,
+    config=config,
+    job_type="train",
+)
+# Use `epoch` as the x-axis for train/test metrics in the W&B UI.
+wandb.define_metric("epoch")
+wandb.define_metric("train/*", step_metric="epoch")
+wandb.define_metric("test/*", step_metric="epoch")
+# Surface the run link right away so you can watch metrics stream live.
+mo.output.append(mo.md(f"**Run started:** [`{run.name}`]({run.url})"))
 
-```python {.marimo}
 class Net(nn.Module):
-    """The same small CNN used in examples/pytorch/pytorch-cnn-mnist.
-
-    Two convolutional layers (10 and 20 filters, 5x5 kernels) feed into two
-    fully connected layers (50 hidden units, 10 outputs). Roughly 21k
-    parameters.
-    """
+    """Small CNN: 2 conv layers (10, 20 filters, 5x5) + 2 FC (50, 10)."""
 
     def __init__(self):
         super().__init__()
@@ -198,89 +227,31 @@ class Net(nn.Module):
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
-```
-
-```python {.marimo}
-transform = transforms.Compose(
-    [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
-)
-train_ds = datasets.MNIST("./data", train=True, download=True, transform=transform)
-test_ds = datasets.MNIST("./data", train=False, download=True, transform=transform)
-
-# Only `batch_size` and `device` affect the loaders, so we depend on them
-# directly rather than the full `config` dict; this avoids re-creating the
-# loaders whenever an unrelated hyperparameter changes.
-bs = int(batch_size.value)
-loader_kwargs = (
-    {"num_workers": 2, "pin_memory": True} if device.type == "cuda" else {}
-)
-train_loader = DataLoader(
-    train_ds, batch_size=bs, shuffle=True, **loader_kwargs
-)
-test_loader = DataLoader(
-    test_ds, batch_size=1000, shuffle=False, **loader_kwargs
-)
-
-mo.md(
-    f"**Train:** {len(train_ds):,} examples &middot; "
-    f"**Test:** {len(test_ds):,} examples &middot; "
-    f"**Batch size:** {bs}"
-)
-```
-
-```python {.marimo}
-mo.stop(not train_button.value, mo.md("Click **Train model** to begin."))
-
-# Finish any prior run still attached to this Python process.
-# marimo keeps the kernel alive across re-clicks, so a second click — or
-# a slider change after the first click — re-executes this cell. Without
-# this guard, `wandb.init` warns about a run already being active.
-# `wandb.finish` blocks until the prior run's tail logs are uploaded.
-if wandb.run is not None:
-    wandb.finish()
-
-# Authenticate. A key pasted into the form takes precedence; otherwise
-# fall back to your ambient login (shell `wandb login`, the WANDB_API_KEY
-# env var, or netrc). The key is never written to the run config.
-if wandb_api_key:
-    wandb.login(key=wandb_api_key)
-
-torch.manual_seed(config["seed"])
-
-run = wandb.init(
-    project=wandb_project,
-    entity=wandb_entity,
-    name=wandb_run_name,
-    config=config,
-    job_type="train",
-)
-
-# Use `epoch` as the x-axis for training and test metrics in the W&B UI.
-wandb.define_metric("epoch")
-wandb.define_metric("train/*", step_metric="epoch")
-wandb.define_metric("test/*", step_metric="epoch")
 
 model = Net().to(device)
-# `log="gradients"` is the standard choice for tutorial examples;
-# `log="all"` also logs parameter histograms at extra cost.
+# `log="gradients"` is the standard choice; `log="all"` also logs parameter
+# histograms at extra cost.
 wandb.watch(model, log="gradients", log_freq=100)
 optimizer = optim.SGD(
     model.parameters(), lr=config["lr"], momentum=config["momentum"]
 )
 
-mo.md(f"Run started: [`{run.name}`]({run.url})")
-```
-
-```python {.marimo}
-mo.stop(not train_button.value, mo.md(""))
+transform = transforms.Compose(
+    [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+)
+train_ds = datasets.MNIST("./data", train=True, download=True, transform=transform)
+test_ds = datasets.MNIST("./data", train=False, download=True, transform=transform)
+loader_kwargs = (
+    {"num_workers": 2, "pin_memory": True} if device.type == "cuda" else {}
+)
+train_loader = DataLoader(
+    train_ds, batch_size=config["batch_size"], shuffle=True, **loader_kwargs
+)
+test_loader = DataLoader(test_ds, batch_size=1000, shuffle=False, **loader_kwargs)
 
 history = []
 best_acc = 0.0
-final_acc = 0.0
-final_loss = 0.0
-
 for epoch in range(1, config["epochs"] + 1):
-    # ---- train ----
     model.train()
     for batch_idx, (data, target) in enumerate(
         tqdm(train_loader, desc=f"epoch {epoch}/{config['epochs']}")
@@ -294,7 +265,6 @@ for epoch in range(1, config["epochs"] + 1):
         if batch_idx % 50 == 0:
             wandb.log({"train/loss": loss.item(), "epoch": epoch})
 
-    # ---- test ----
     model.eval()
     test_loss = 0.0
     correct = 0
@@ -306,24 +276,19 @@ for epoch in range(1, config["epochs"] + 1):
             test_loss += F.nll_loss(output, target, reduction="sum").item()
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
-            # Pull up to 16 example predictions from the first batch we see.
+            # Pull up to 16 example predictions from the first batch.
             while len(example_images) < 16 and len(example_images) < data.size(0):
                 j = len(example_images)
                 example_images.append(
                     wandb.Image(
                         data[j],
-                        caption=(
-                            f"pred={pred[j].item()} "
-                            f"true={target[j].item()}"
-                        ),
+                        caption=f"pred={pred[j].item()} true={target[j].item()}",
                     )
                 )
 
     test_loss /= len(test_loader.dataset)
     test_acc = correct / len(test_loader.dataset)
     best_acc = max(best_acc, test_acc)
-    final_acc = test_acc
-    final_loss = test_loss
     wandb.log(
         {
             "test/loss": test_loss,
@@ -333,40 +298,23 @@ for epoch in range(1, config["epochs"] + 1):
         }
     )
     history.append(
-        {"epoch": epoch, "test_loss": test_loss, "test_acc": test_acc}
+        {"epoch": epoch, "test_loss": round(test_loss, 4), "test_acc": round(test_acc, 4)}
     )
-```
 
-```python {.marimo}
-mo.stop(not train_button.value, mo.md(""))
-mo.vstack(
-    [
-        mo.md("### Training summary"),
-        mo.ui.table(history, selection=None),
-        mo.md(
-            f"**Final test accuracy:** {final_acc:.2%} &middot; "
-            f"**Final test loss:** {final_loss:.4f}"
-        ),
-    ]
+final_acc = history[-1]["test_acc"]
+mo.output.append(
+    mo.vstack(
+        [
+            mo.md("### Training summary"),
+            mo.ui.table(history, selection=None),
+            mo.md(f"**Final test accuracy:** {final_acc:.2%}"),
+        ]
+    )
 )
-```
 
-```python {.marimo}
-mo.stop(not train_button.value, mo.md(""))
-
+# Save the weights and log them as a model Artifact tagged `latest`.
 model_path = "mnist_cnn.pt"
 torch.save(model.state_dict(), model_path)
-
-mo.md(
-    f"Saved `{model_path}` ({os.path.getsize(model_path) / 1024:.1f} KB)"
-)
-```
-
-```python {.marimo}
-mo.stop(not train_button.value, mo.md(""))
-
-num_params = sum(p.numel() for p in model.parameters())
-
 artifact = wandb.Artifact(
     name=f"mnist-cnn-{run.id}",
     type="model",
@@ -377,7 +325,7 @@ artifact = wandb.Artifact(
     metadata={
         "framework": "pytorch",
         "architecture": "CNN",
-        "num_parameters": num_params,
+        "num_parameters": sum(p.numel() for p in model.parameters()),
         "dataset": "MNIST",
         "train_size": len(train_ds),
         "test_size": len(test_ds),
@@ -387,137 +335,90 @@ artifact = wandb.Artifact(
     },
 )
 artifact.add_file(model_path)
-
-# Log a single artifact per run (the final-epoch weights) and tag it
-# `latest` unconditionally. Use the Registry UI or the API to promote a
-# specific version with aliases like `best` or `production` after
-# comparing runs.
-aliases = ["latest"]
-
-logged = run.log_artifact(artifact, aliases=aliases)
-# Block until the artifact has fully committed server-side. Without this,
-# `link_artifact` below may race on the version reference.
+logged = run.log_artifact(artifact, aliases=["latest"])
+# Block until the artifact has committed before linking, to avoid a race.
 logged.wait()
+mo.output.append(mo.md(f"**Artifact logged:** `{artifact.name}` (alias `latest`)"))
 
-mo.md(
-    f"Artifact logged: `{artifact.name}` with aliases `{aliases}`"
-)
+# Link to the Registry, surfacing a remediation note instead of crashing.
+if link_to_registry.value:
+    target_path = f"wandb-registry-{registry_name_v}/{collection_name_v}"
+    try:
+        run.link_artifact(artifact=logged, target_path=target_path)
+        mo.output.append(
+            mo.callout(
+                mo.md(
+                    f"**Linked to Registry:** `{target_path}` — see "
+                    f"[wandb.ai/registry](https://wandb.ai/registry)."
+                ),
+                kind="success",
+            )
+        )
+    except Exception as exc:  # noqa: BLE001 - surface any failure to the reader
+        mo.output.append(
+            mo.callout(
+                mo.md(
+                    f"**Registry link failed.** Target `{target_path}` — `{exc}`\n\n"
+                    f"- Linking needs at least the **Member** role on the "
+                    f"Registry. `view-only member cannot write to project` means "
+                    f"your seat is view-only: the run and artifact succeed, but "
+                    f"linking is blocked. An admin can grant access from the "
+                    f"Registry **Members** settings, the Python SDK "
+                    f"(`wandb.Api().registry(...)` then `add_member()` / "
+                    f"`update_member()`), or SCIM (`PATCH /scim/Users/{{id}}` with "
+                    f"`registryRoles`) — see "
+                    f"https://docs.wandb.ai/guides/registry/configure_registry/. "
+                    f"Or set **W&B entity** to an org/team where you have write "
+                    f"access.\n"
+                    f"- The Registry `{registry_name_v}` may not exist; an admin "
+                    f"can create it from the W&B Registry UI.\n"
+                    f"- On the legacy Model Registry, link with "
+                    f"`target_path='model-registry/{collection_name_v}'` instead."
+                ),
+                kind="danger",
+            )
+        )
+else:
+    mo.output.append(
+        mo.md(
+            "_Registry linking is disabled — the artifact is logged to the run "
+            "but not linked to a collection._"
+        )
+    )
+
+# Close the run so its summary and any Registry link finalize server-side.
+wandb.finish()
 ```
 
-````python {.marimo}
-mo.stop(not train_button.value, mo.md(""))
-mo.stop(
-    not link_to_registry_v,
-    mo.md(
-        "_Registry linking is disabled (checkbox unchecked). "
-        "The artifact is logged to the run but not linked to a Registry "
-        "collection._"
-    ),
-)
-
-target_path = f"wandb-registry-{registry_name_v}/{collection_name_v}"
-
-try:
-    run.link_artifact(artifact=logged, target_path=target_path)
-    link_result = mo.callout(
-        mo.md(
-            f"**Linked to Registry:** `{target_path}`\n\n"
-            f"Open the Registry at "
-            f"[https://wandb.ai/registry](https://wandb.ai/registry) to "
-            f"see the version."
-        ),
-        kind="success",
-    )
-except Exception as exc:  # noqa: BLE001 - we want to surface any failure to the reader
-    link_result = mo.callout(
-        mo.md(
-            f"**Registry link failed.**\n\n"
-            f"Target path: `{target_path}`\n\n"
-            f"Error: `{exc}`\n\n"
-            f"Common causes:\n\n"
-            f"- Your account lacks **write access** to the Registry. The "
-            f"error `view-only member cannot write to project` means you "
-            f"are signed in as a view-only member: the run and artifact "
-            f"succeed, but linking needs at least the **Member** role on "
-            f"the Registry. An admin can grant it from the Registry's "
-            f"**Members** settings, with the Python SDK "
-            f"(`wandb.Api().registry(...)` then `add_member()` or "
-            f"`update_member()`), or via SCIM (`PATCH /scim/Users/{{id}}` "
-            f"with `registryRoles`) — see "
-            f"https://docs.wandb.ai/guides/registry/configure_registry/. "
-            f"Alternatively, set the **W&B entity** field to an org or "
-            f"team where you already have write access.\n"
-            f"- The Registry `{registry_name_v}` does not exist in your "
-            f"org. An org admin can create the Model registry from the "
-            f"W&B Registry UI.\n"
-            f"- Your org is on the legacy Model Registry. In that case "
-            f"use the legacy pattern:\n\n"
-            f"  ```python\n"
-            f"  run.link_artifact(\n"
-            f"      logged,\n"
-            f"      target_path='model-registry/{collection_name_v}',\n"
-            f"  )\n"
-            f"  ```"
-        ),
-        kind="danger",
-    )
-link_result
-````
-
 ````python {.marimo hide_code="true"}
-mo.stop(not train_button.value, mo.md(""))
+# Renders only after a run exists (it consumes `run` from the training
+# cell), so it appears once training finishes.
 mo.md(
     f"""
-    ## Verify
+    ## Verify and next steps
 
-    1. Open the run page: [{run.name}]({run.url}). Confirm the
-       **Charts**, **System**, and **Examples** panels are populated.
-    2. Click **Artifacts** in the run's left nav. Confirm the
-       `mnist-cnn-{run.id}` model artifact is listed with metadata
-       (test accuracy, hyperparameters, number of parameters).
-    3. Go to [wandb.ai/registry](https://wandb.ai/registry), open the
-       **{registry_name_v.title()}** registry, then the
-       **{collection_name_v}** collection. Confirm the linked version
-       is present.
+    1. Open the run: [{run.name}]({run.url}) — check the **Charts**,
+       **System**, and **Examples** panels.
+    2. In the run's **Artifacts** tab, confirm `mnist-cnn-{run.id}` is listed
+       with its metadata (test accuracy, parameter count, hyperparameters).
+    3. At [wandb.ai/registry](https://wandb.ai/registry), open the
+       **{registry_name_v.title()}** registry, then the **{collection_name_v}**
+       collection, and confirm the linked version.
 
-    ## Consume the registered model
-
-    From any other script or notebook, fetch the latest registered version:
+    **Consume the registered model** from any script or notebook:
 
     ```python
     import wandb
-    api = wandb.Api()
-    art = api.artifact(
+    art = wandb.Api().artifact(
         "wandb-registry-{registry_name_v}/{collection_name_v}:latest"
     )
-    art.download()  # writes mnist_cnn.pt under ./artifacts/.../
+    art.download()  # writes mnist_cnn.pt under ./artifacts/
     ```
 
-    ## Next steps
-
-    - **Promote a version.** From the Registry UI, add the `production`
-      alias to the version you want consumers to pick up. The same
-      collection path with `:production` will then resolve to it.
-    - **Compare runs.** Re-run with a deeper architecture or a different
-      learning rate. Group runs in the W&B UI to compare test accuracy
-      across configurations.
-    - **Automate on promotion.** Configure a W&B Automation on the
-      collection to trigger evaluation jobs or webhooks when a new
-      version is linked.
+    **Next steps:** promote a version by adding the `production` alias from
+    the Registry UI; re-run with a deeper architecture or a different
+    learning rate and compare runs in the W&B UI; or add a W&B Automation to
+    trigger evaluation when a new version is linked.
     """
 )
 ````
-
-## Finish
-
-This cell closes the W&B run so the run summary and the Registry
-version finalize on the server.
-
-```python {.marimo}
-mo.stop(not train_button.value, mo.md(""))
-# Mirrors the `wandb.finish` guard at the top of the training cell:
-# leaves the kernel in a clean state for the next Train click.
-if wandb.run is not None:
-    wandb.finish()
-mo.md("Run finished. Click **Train model** again to start a new run.")
-```
