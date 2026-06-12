@@ -44,8 +44,10 @@ def _():
 
         ## Prerequisites
 
-        - Run **`wandb login`** in your shell before starting marimo.
-          This notebook does not prompt for an API key interactively.
+        - Authenticate with W&B one of two ways: run **`wandb login`** in
+          your shell before starting marimo, or paste your key into the
+          **W&B API key** field in the form below. Get your key from
+          [wandb.ai/authorize](https://wandb.ai/authorize).
         - A W&B entity (your user or a team) the run will be written to.
         - A **W&B Registry** must exist in your org. The built-in Model
           registry is provisioned automatically in newer orgs. If linking
@@ -139,6 +141,9 @@ def _(mo):
     project = mo.ui.text(value="marimo-mnist-registry", label="W&B project")
     entity = mo.ui.text(value="", label="W&B entity (blank uses your default)")
     run_name = mo.ui.text(value="", label="Run name (blank auto-generates)")
+    api_key = mo.ui.text(
+        value="", kind="password", label="W&B API key (blank uses your shell login)"
+    )
 
     registry_name = mo.ui.text(value="model", label="W&B Registry name")
     collection_name = mo.ui.text(value="MNIST Classifiers", label="Registry collection")
@@ -151,6 +156,7 @@ def _(mo):
             mo.hstack([lr, momentum]),
             seed,
             mo.md("### W&B run"),
+            api_key,
             mo.hstack([project, entity, run_name]),
             mo.md("### Registry"),
             mo.hstack([registry_name, collection_name, link_to_registry]),
@@ -158,6 +164,7 @@ def _(mo):
     )
     form
     return (
+        api_key,
         batch_size,
         collection_name,
         entity,
@@ -174,6 +181,7 @@ def _(mo):
 
 @app.cell
 def _(
+    api_key,
     batch_size,
     collection_name,
     entity,
@@ -198,6 +206,10 @@ def _(
     wandb_project = project.value or None
     wandb_entity = entity.value or None
     wandb_run_name = run_name.value or None
+    # Resolve the key but keep it out of `config` so it is never logged to
+    # W&B. Blank falls back to your ambient login (shell `wandb login`, the
+    # WANDB_API_KEY env var, or netrc).
+    wandb_api_key = api_key.value or None
     registry_name_v = registry_name.value.strip()
     collection_name_v = collection_name.value.strip()
     link_to_registry_v = link_to_registry.value
@@ -206,6 +218,7 @@ def _(
         config,
         link_to_registry_v,
         registry_name_v,
+        wandb_api_key,
         wandb_entity,
         wandb_project,
         wandb_run_name,
@@ -304,6 +317,7 @@ def _(
     torch,
     train_button,
     wandb,
+    wandb_api_key,
     wandb_entity,
     wandb_project,
     wandb_run_name,
@@ -317,6 +331,12 @@ def _(
     # `wandb.finish` blocks until the prior run's tail logs are uploaded.
     if wandb.run is not None:
         wandb.finish()
+
+    # Authenticate. A key pasted into the form takes precedence; otherwise
+    # fall back to your ambient login (shell `wandb login`, the WANDB_API_KEY
+    # env var, or netrc). The key is never written to the run config.
+    if wandb_api_key:
+        wandb.login(key=wandb_api_key)
 
     torch.manual_seed(config["seed"])
 

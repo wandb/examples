@@ -12,8 +12,10 @@ can resolve them automatically.
 ## Prerequisites
 
 - Python 3.10 or newer.
-- A W&B account. Run `wandb login` once in your shell before launching the
-  notebook &mdash; this notebook does not prompt for an API key interactively.
+- A W&B account, authenticated one of two ways: run `wandb login` in your
+  shell before launching the notebook, or paste your key into the **W&B API
+  key** field in the form. Get your key from
+  [wandb.ai/authorize](https://wandb.ai/authorize).
 - A W&B **Registry** must exist in your org for the final linking step. The
   built-in Model Registry is provisioned automatically in newer orgs. If
   linking fails, the notebook surfaces a remediation message in the last
