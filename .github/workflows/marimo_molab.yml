@@ -32,7 +32,8 @@ jobs:
             const pr = context.payload.pull_request;
             const headOwner = pr.head.repo.owner.login;
             const headRepo = pr.head.repo.name;
-            const headSha = pr.head.sha;
+            const headSha = pr.head.sha;   // pin content detection to this PR revision
+            const headRef = pr.head.ref;   // branch name for the (auto-tracking) links
             const marker = '<!-- marimo-molab-links -->';
 
             // 1. List the files changed in this PR.
@@ -93,12 +94,13 @@ jobs:
               return;
             }
 
-            // 5. Build the comment. Links pin to the head commit SHA so they
-            //    always resolve — branch names containing slashes make the
-            //    molab `blob/<ref>/<path>` split ambiguous.
-            const shortSha = headSha.slice(0, 7);
+            // 5. Build the comment. Links use the branch ref, not a commit
+            //    SHA, so they always point at the latest revision without the
+            //    comment needing an update on every push. GitHub resolves
+            //    multi-segment (slashed) branch names in `blob/<ref>/<path>`,
+            //    and molab fetches from GitHub, so slashed branches are fine.
             const rows = notebooks.map((path) => {
-              const url = `https://molab.marimo.io/github/${headOwner}/${headRepo}/blob/${headSha}/${path}`;
+              const url = `https://molab.marimo.io/github/${headOwner}/${headRepo}/blob/${headRef}/${path}`;
               return `| \`${path}\` | [![Open in molab](https://marimo.io/molab-shield.svg)](${url}) |`;
             }).join('\n');
 
@@ -113,11 +115,16 @@ jobs:
               '| --- | --- |',
               rows,
               '',
-              `_Links pin to commit \`${shortSha}\` and refresh on every push._`,
+              `_Links track the head of \`${headRef}\`._`,
             ].join('\n');
 
-            // 6. Upsert the comment.
+            // 6. Upsert the comment (skip the write when nothing changed, so
+            //    pushes that add no new notebook don't churn the comment).
             if (existing) {
+              if (existing.body === body) {
+                core.info('Comment already up to date.');
+                return;
+              }
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
