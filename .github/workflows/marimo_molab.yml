@@ -99,7 +99,7 @@ jobs:
             const shortSha = headSha.slice(0, 7);
             const rows = notebooks.map((path) => {
               const url = `https://molab.marimo.io/github/${headOwner}/${headRepo}/blob/${headSha}/${path}`;
-              return `| \`${path}\` | [Open in molab ▶](${url}) |`;
+              return `| \`${path}\` | [![Open in molab](https://marimo.io/molab-shield.svg)](${url}) |`;
             }).join('\n');
 
             const body = [
