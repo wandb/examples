@@ -16,10 +16,13 @@ can resolve them automatically.
   shell before launching the notebook, or paste your key into the **W&B API
   key** field in the form. Get your key from
   [wandb.ai/authorize](https://wandb.ai/authorize).
-- A W&B **Registry** must exist in your org for the final linking step. The
-  built-in Model Registry is provisioned automatically in newer orgs. If
-  linking fails, the notebook surfaces a remediation message in the last
-  Registry cell instead of crashing.
+- A W&B **Registry** must exist in your org, and your account needs at least
+  the **Member** role on it for the final linking step (linking an artifact is
+  a write action). The built-in Model registry is provisioned automatically in
+  newer orgs. If linking fails (for example, from a view-only seat), the
+  notebook surfaces a remediation message in the last Registry cell instead of
+  crashing. See
+  [configuring registry access](https://docs.wandb.ai/guides/registry/configure_registry/).
 - GPU is optional. Defaults are tuned to finish in roughly two minutes on CPU.
 
 ## Run
