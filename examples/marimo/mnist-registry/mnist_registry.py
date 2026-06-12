@@ -49,10 +49,11 @@ def _():
           **W&B API key** field in the form below. Get your key from
           [wandb.ai/authorize](https://wandb.ai/authorize).
         - A W&B entity (your user or a team) the run will be written to.
-        - A **W&B Registry** must exist in your org. The built-in Model
-          registry is provisioned automatically in newer orgs. If linking
-          fails, the Registry step shows remediation guidance inline
-          instead of crashing.
+        - A **W&B Registry** must exist in your org, and your account needs
+          **write access** to it. The built-in Model registry is provisioned
+          automatically in newer orgs. If linking fails (for example, from a
+          view-only seat), the Registry step shows remediation guidance
+          inline instead of crashing.
         - A GPU is optional. The defaults finish in about 2 minutes on CPU.
         """
     )
@@ -572,10 +573,16 @@ def _(
                 f"Target path: `{target_path}`\n\n"
                 f"Error: `{exc}`\n\n"
                 f"Common causes:\n\n"
+                f"- Your account lacks **write access** to the Registry. The "
+                f"error `view-only member cannot write to project` means you "
+                f"are signed in as a view-only member of the org that owns the "
+                f"Registry: the run and artifact succeed, but linking is "
+                f"blocked. Ask an org admin for a non-view-only role, or set "
+                f"the **W&B entity** field to an org or team where you have "
+                f"write access (and sign in with that account).\n"
                 f"- The Registry `{registry_name_v}` does not exist in your "
                 f"org. An org admin can create the Model registry from the "
                 f"W&B Registry UI.\n"
-                f"- Your account lacks Registry write permission.\n"
                 f"- Your org is on the legacy Model Registry. In that case "
                 f"use the legacy pattern:\n\n"
                 f"  ```python\n"
