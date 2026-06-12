@@ -100,7 +100,9 @@ jobs:
             //    multi-segment (slashed) branch names in `blob/<ref>/<path>`,
             //    and molab fetches from GitHub, so slashed branches are fine.
             const rows = notebooks.map((path) => {
-              const url = `https://molab.marimo.io/github/${headOwner}/${headRepo}/blob/${headRef}/${path}`;
+              // The `/server` suffix opens the notebook in a hosted runtime;
+              // without it molab shows a static, non-runnable preview.
+              const url = `https://molab.marimo.io/github/${headOwner}/${headRepo}/blob/${headRef}/${path}/server`;
               return `| \`${path}\` | [![Open in molab](https://marimo.io/molab-shield.svg)](${url}) |`;
             }).join('\n');
 
