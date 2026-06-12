@@ -445,20 +445,20 @@ clf.load_state_dict(torch.load(f"{weights_dir}/mnist_cnn.pt", map_location="cpu"
 clf.eval()
 
 cards = []
-correct = 0
+n_correct = 0
 with torch.no_grad():
     for i in range(10):
         image, true_label = test_ds[i]
-        pred = clf(image.unsqueeze(0)).argmax(dim=1).item()
-        correct += int(pred == true_label)
+        prediction = clf(image.unsqueeze(0)).argmax(dim=1).item()
+        n_correct += int(prediction == true_label)
         # Undo the Normalize transform so the digit renders as a clean image.
         digit = (image * 0.3081 + 0.1307).clamp(0, 1).squeeze().numpy()
-        mark = "✅" if pred == true_label else "❌"
+        mark = "✅" if prediction == true_label else "❌"
         cards.append(
             mo.vstack(
                 [
                     mo.image(digit, width=64, vmin=0, vmax=1),
-                    mo.md(f"{mark} **{pred}** · true {true_label}"),
+                    mo.md(f"{mark} **{prediction}** · true {true_label}"),
                 ],
                 align="center",
             )
@@ -469,7 +469,7 @@ mo.vstack(
         mo.md(
             f"## Classify 10 test digits\n\nConsumed the model from {source}, "
             f"loaded the weights into a fresh network, and ran it on 10 held-out "
-            f"MNIST test images — **{correct}/10 correct**."
+            f"MNIST test images — **{n_correct}/10 correct**."
         ),
         mo.hstack(cards, wrap=True, justify="start"),
     ]
