@@ -64,8 +64,6 @@ mo.md(
 # is "everything up to collecting your inputs". It defines the form widgets
 # but never reads their `.value` — marimo only makes a widget reactive when
 # a *different* cell consumes it, which the training cell below does.
-import os
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -301,7 +299,8 @@ for epoch in range(1, config["epochs"] + 1):
         {"epoch": epoch, "test_loss": round(test_loss, 4), "test_acc": round(test_acc, 4)}
     )
 
-final_acc = history[-1]["test_acc"]
+# Full-precision last-epoch accuracy; `history` rounds only for display.
+final_acc = test_acc
 mo.output.append(
     mo.vstack(
         [
