@@ -147,6 +147,32 @@ mo.vstack(
 ```
 
 ```python {.marimo}
+class Net(nn.Module):
+    """Small CNN: 2 conv layers (10, 20 filters, 5x5) + 2 FC (50, 10).
+
+    Defined in its own cell so the training cell and the consume cell can
+    share it (marimo forbids defining the same name in two cells).
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
+        self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
+        self.conv2_drop = nn.Dropout2d()
+        self.fc1 = nn.Linear(320, 50)
+        self.fc2 = nn.Linear(50, 10)
+
+    def forward(self, x):
+        x = F.relu(F.max_pool2d(self.conv1(x), 2))
+        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
+        x = x.view(-1, 320)
+        x = F.relu(self.fc1(x))
+        x = F.dropout(x, training=self.training)
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
+```
+
+```python {.marimo}
 # Everything the Train button triggers, in one cell — no reason to make you
 # advance through a chain of output-less code blocks. Each milestone is
 # streamed to the cell output with `mo.output.append` as it happens.
@@ -211,26 +237,6 @@ wandb.define_metric("train/*", step_metric="epoch")
 wandb.define_metric("test/*", step_metric="epoch")
 # Surface the run link right away so you can watch metrics stream live.
 mo.output.append(mo.md(f"**Run started:** [`{run.name}`]({run.url})"))
-
-class Net(nn.Module):
-    """Small CNN: 2 conv layers (10, 20 filters, 5x5) + 2 FC (50, 10)."""
-
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
-        self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        self.conv2_drop = nn.Dropout2d()
-        self.fc1 = nn.Linear(320, 50)
-        self.fc2 = nn.Linear(50, 10)
-
-    def forward(self, x):
-        x = F.relu(F.max_pool2d(self.conv1(x), 2))
-        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
-        x = x.view(-1, 320)
-        x = F.relu(self.fc1(x))
-        x = F.dropout(x, training=self.training)
-        x = self.fc2(x)
-        return F.log_softmax(x, dim=1)
 
 model = Net().to(device)
 # `log="gradients"` is the standard choice; `log="all"` also logs parameter
@@ -413,6 +419,59 @@ mo.vstack(
             "again to retrain after editing the form (the previous run is "
             "finished first)."
         ),
+    ]
+)
+```
+
+```python {.marimo}
+# Consume the model: download it from W&B (preferring the registered
+# version, falling back to the run's own artifact), load the weights into a
+# fresh network, and classify 10 held-out test digits.
+api = wandb.Api()
+try:
+    consumed = api.artifact(
+        f"wandb-registry-{registry_name_v}/{collection_name_v}:latest", type="model"
+    )
+    source = f"registry `wandb-registry-{registry_name_v}/{collection_name_v}:latest`"
+except Exception:  # noqa: BLE001 - registry link may be absent (e.g. a view-only seat)
+    consumed = api.artifact(
+        f"{run.entity}/{run.project}/mnist-cnn-{run.id}:latest", type="model"
+    )
+    source = f"run artifact `mnist-cnn-{run.id}:latest`"
+weights_dir = consumed.download()
+
+clf = Net()
+clf.load_state_dict(torch.load(f"{weights_dir}/mnist_cnn.pt", map_location="cpu"))
+clf.eval()
+
+cards = []
+correct = 0
+with torch.no_grad():
+    for i in range(10):
+        image, true_label = test_ds[i]
+        pred = clf(image.unsqueeze(0)).argmax(dim=1).item()
+        correct += int(pred == true_label)
+        # Undo the Normalize transform so the digit renders as a clean image.
+        digit = (image * 0.3081 + 0.1307).clamp(0, 1).squeeze().numpy()
+        mark = "✅" if pred == true_label else "❌"
+        cards.append(
+            mo.vstack(
+                [
+                    mo.image(digit, width=64, vmin=0, vmax=1),
+                    mo.md(f"{mark} **{pred}** · true {true_label}"),
+                ],
+                align="center",
+            )
+        )
+
+mo.vstack(
+    [
+        mo.md(
+            f"## Classify 10 test digits\n\nConsumed the model from {source}, "
+            f"loaded the weights into a fresh network, and ran it on 10 held-out "
+            f"MNIST test images — **{correct}/10 correct**."
+        ),
+        mo.hstack(cards, wrap=True, justify="start"),
     ]
 )
 ```
