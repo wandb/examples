@@ -143,31 +143,17 @@ mo.vstack(
 ```
 
 ```python {.marimo}
-# The button must be its own cell: the training cell reads
-# `train_button.value`, and a widget is only reactive when a *different*
-# cell consumes it. run_button's value is True for exactly the cascade its
-# click triggers, then resets to False — so editing the form afterwards
-# re-runs the training cell but it stops immediately instead of retraining.
-train_button = mo.ui.run_button(label="Train model", kind="success")
-mo.vstack(
-    [
-        mo.md(
-            "## Train\n\nOne click runs the whole pipeline below: start the "
-            "run, build and train the model, log metrics and example "
-            "predictions, save the weights as an Artifact, and link it to the "
-            "Registry. Click again to retrain with new settings — the previous "
-            "run is finished first."
-        ),
-        train_button,
-    ]
-)
-```
-
-```python {.marimo}
 # Everything the Train button triggers, in one cell — no reason to make you
 # advance through a chain of output-less code blocks. Each milestone is
 # streamed to the cell output with `mo.output.append` as it happens.
-mo.stop(not train_button.value, mo.md("Click **Train model** above to begin."))
+mo.stop(
+    not train_button.value,
+    mo.md(
+        "This cell runs the whole pipeline — start the run, train, log "
+        "metrics and example predictions, save the model Artifact, and link "
+        "it to the Registry. Click **Train model** below to run it."
+    ),
+)
 
 config = {
     "epochs": epochs.value,
@@ -387,6 +373,28 @@ else:
 
 # Close the run so its summary and any Registry link finalize server-side.
 wandb.finish()
+```
+
+```python {.marimo}
+# Placed after the training cell on purpose: it's the explicit "run" trigger
+# for the pipeline above. It must be its own cell because that cell reads
+# `train_button.value`, and a widget only drives reactivity when a
+# *different* cell consumes it. The gate also stops the pipeline from
+# running automatically when the notebook opens; run_button's value is True
+# only for the cascade a click triggers (then resets to False), so editing
+# the form afterwards re-runs the training cell but it stops immediately.
+train_button = mo.ui.run_button(label="Train model", kind="success")
+mo.vstack(
+    [
+        train_button,
+        mo.md(
+            "Runs the training cell above. It is gated so it does not "
+            "execute when the notebook opens — click to run, and click "
+            "again to retrain after editing the form (the previous run is "
+            "finished first)."
+        ),
+    ]
+)
 ```
 
 ````python {.marimo hide_code="true"}
