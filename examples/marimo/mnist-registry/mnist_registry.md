@@ -48,7 +48,9 @@ mo.md(
       your shell before starting marimo, or paste your key into the
       **W&B API key** field in the form below. Get your key from
       [wandb.ai/authorize](https://wandb.ai/authorize).
-    - A W&B entity (your user or a team) the run will be written to.
+    - A W&B **team** to write the run to, set in the **W&B entity** field.
+      Accounts created after May 2024 have no personal entity, so the run
+      must go to a team — your username will not work as an entity.
     - A **W&B Registry** must exist in your org, and your account needs at
       least the **Member** role on it (linking an artifact is a write
       action). The built-in Model registry is provisioned automatically in
@@ -104,7 +106,7 @@ seed = mo.ui.number(start=0, stop=99999, value=42, label="Random seed")
 
 project = mo.ui.text(value="marimo-mnist-registry", label="W&B project")
 entity = mo.ui.text(
-    value="", label="W&B entity — username or team (blank uses your default)"
+    value="", label="W&B entity — a team you belong to (blank uses your default)"
 )
 run_name = mo.ui.text(value="", label="Run name (blank auto-generates)")
 api_key = mo.ui.text(
@@ -180,13 +182,29 @@ if api_key.value:
 
 torch.manual_seed(config["seed"])
 
-run = wandb.init(
-    project=project.value or None,
-    entity=entity.value or None,
-    name=run_name.value or None,
-    config=config,
-    job_type="train",
-)
+try:
+    run = wandb.init(
+        project=project.value or None,
+        entity=entity.value or None,
+        name=run_name.value or None,
+        config=config,
+        job_type="train",
+    )
+except Exception as exc:  # noqa: BLE001 - turn the raw traceback into guidance
+    mo.stop(
+        True,
+        mo.callout(
+            mo.md(
+                f"**Could not start the run.** `{exc}`\n\n"
+                f"An `entity ... not found` error means the **W&B entity** is "
+                f"not a team you can write to. Personal-username entities were "
+                f"removed for accounts created after 21 May 2024, so set the "
+                f"**W&B entity** field to one of your teams (find them in the "
+                f"left sidebar at [wandb.ai](https://wandb.ai))."
+            ),
+            kind="danger",
+        ),
+    )
 # Use `epoch` as the x-axis for train/test metrics in the W&B UI.
 wandb.define_metric("epoch")
 wandb.define_metric("train/*", step_metric="epoch")
