@@ -1,0 +1,135 @@
+name: marimo molab links
+
+# Posts — and keeps updated — a PR comment linking each modified marimo
+# notebook to molab (https://molab.marimo.io), which runs any public marimo
+# notebook on GitHub in a hosted environment with no local setup.
+#
+# Security note: this uses `pull_request_target` so the comment can also be
+# posted on PRs from forks (a plain `pull_request` event gives fork PRs a
+# read-only token that cannot comment). The job NEVER checks out or executes
+# PR code — it only reads changed-file metadata and file contents as text
+# through the API, then posts a comment. Do not add a checkout of the PR head
+# or run any PR-provided code in this workflow.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**.py'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  molab-links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment molab links for modified marimo notebooks
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const headOwner = pr.head.repo.owner.login;
+            const headRepo = pr.head.repo.name;
+            const headSha = pr.head.sha;
+            const marker = '<!-- marimo-molab-links -->';
+
+            // 1. List the files changed in this PR.
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              per_page: 100,
+            });
+
+            // 2. Keep added/modified .py files and decide whether each is a
+            //    marimo notebook by inspecting its content (never executing it).
+            //    Every marimo notebook constructs `marimo.App(...)`.
+            const isMarimo = /\bmarimo\.App\s*\(/;
+            const notebooks = [];
+            for (const f of files) {
+              if (f.status === 'removed') continue;
+              if (!f.filename.endsWith('.py')) continue;
+              try {
+                const res = await github.rest.repos.getContent({
+                  owner: headOwner,
+                  repo: headRepo,
+                  path: f.filename,
+                  ref: headSha,
+                });
+                if (!res.data.content) {
+                  core.warning(`Skipping ${f.filename}: content not inlined (file too large?).`);
+                  continue;
+                }
+                const content = Buffer.from(res.data.content, res.data.encoding).toString('utf8');
+                if (isMarimo.test(content)) notebooks.push(f.filename);
+              } catch (err) {
+                core.warning(`Could not read ${f.filename}: ${err.message}`);
+              }
+            }
+
+            // 3. Find any prior comment so we update it in place instead of
+            //    posting a new one on every push.
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              per_page: 100,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+
+            // 4. No marimo notebooks: clear a stale comment if present, else exit.
+            if (notebooks.length === 0) {
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id,
+                  body: `${marker}\n_No marimo notebooks in the current changes._`,
+                });
+              }
+              core.info('No marimo notebooks found; nothing to link.');
+              return;
+            }
+
+            // 5. Build the comment. Links pin to the head commit SHA so they
+            //    always resolve — branch names containing slashes make the
+            //    molab `blob/<ref>/<path>` split ambiguous.
+            const shortSha = headSha.slice(0, 7);
+            const rows = notebooks.map((path) => {
+              const url = `https://molab.marimo.io/github/${headOwner}/${headRepo}/blob/${headSha}/${path}`;
+              return `| \`${path}\` | [Open in molab ▶](${url}) |`;
+            }).join('\n');
+
+            const body = [
+              marker,
+              '### ▶️ Run the marimo notebook(s) in this PR',
+              '',
+              '[molab](https://molab.marimo.io) launches any public marimo notebook on '
+                + 'GitHub in a hosted environment — no local setup required.',
+              '',
+              '| Notebook | molab |',
+              '| --- | --- |',
+              rows,
+              '',
+              `_Links pin to commit \`${shortSha}\` and refresh on every push._`,
+            ].join('\n');
+
+            // 6. Upsert the comment.
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body,
+              });
+            }
+            core.info(`Linked ${notebooks.length} marimo notebook(s).`);
