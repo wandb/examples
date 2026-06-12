@@ -106,7 +106,9 @@ def _(mo):
     seed = mo.ui.number(start=0, stop=99999, value=42, label="Random seed")
 
     project = mo.ui.text(value="marimo-mnist-registry", label="W&B project")
-    entity = mo.ui.text(value="", label="W&B entity (blank uses your default)")
+    entity = mo.ui.text(
+        value="", label="W&B entity — username or team (blank uses your default)"
+    )
     run_name = mo.ui.text(value="", label="Run name (blank auto-generates)")
     api_key = mo.ui.text(
         value="", kind="password", label="W&B API key (blank uses your shell login)"
@@ -406,8 +408,8 @@ def _(
                         f"`update_member()`), or SCIM (`PATCH /scim/Users/{{id}}` with "
                         f"`registryRoles`) — see "
                         f"https://docs.wandb.ai/guides/registry/configure_registry/. "
-                        f"Or set **W&B entity** to an org/team where you have write "
-                        f"access.\n"
+                        f"Or set **W&B entity** to a team in an org where you have "
+                        f"Registry write access.\n"
                         f"- The Registry `{registry_name_v}` may not exist; an admin "
                         f"can create it from the W&B Registry UI.\n"
                         f"- On the legacy Model Registry, link with "
