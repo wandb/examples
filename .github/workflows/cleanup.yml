@@ -30,6 +30,10 @@ jobs:
       - name: Commit and push if changed
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Bind the untrusted PR head ref to an env var so the shell never sees the raw
+          # ${{ }} expansion. A malicious branch name (e.g. containing $(...) or ;) is then
+          # treated as literal data by the quoted "$HEAD_REF" below, not executed. (CWE-78)
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
@@ -38,5 +42,5 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Auto-clean notebooks"
-            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+            git push origin "HEAD:$HEAD_REF"
           fi
