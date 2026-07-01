@@ -30,6 +30,7 @@ jobs:
       - name: Commit and push if changed
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
@@ -38,5 +39,5 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Auto-clean notebooks"
-            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+            git push origin "HEAD:$HEAD_REF"
           fi
