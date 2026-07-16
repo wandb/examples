@@ -61,8 +61,8 @@ def _():
 
     ## What you will build
 
-    - A **W&B run** with training and test metrics, gradient histograms,
-      and example test-set predictions logged as images.
+    - A **W&B run** with a single **Training** section charting loss and
+      accuracy.
     - A **model Artifact** named `mnist-cnn-<run-id>` of type `model`,
       carrying metadata (test accuracy, parameter count, hyperparameters).
     - A version of that Artifact **linked into a W&B Registry collection**
@@ -246,9 +246,9 @@ def _(form):
         form.value is None,
         mo.md(
             "Training hasn't started yet. Fill in the form above and click "
-            "**Train model** to start the run — it trains the model, logs metrics "
-            "and example predictions, saves the weights as an Artifact, and links "
-            "them to the Registry."
+            "**Train model** to start the run — it trains the model, logs loss "
+            "and accuracy, saves the weights as an Artifact, links them to the "
+            "Registry, and classifies a few test digits."
         ),
     )
 
@@ -299,10 +299,6 @@ def _(form):
             ),
         )
 
-    # Use `epoch` as the x-axis for train/test metrics in the W&B UI.
-    wandb.define_metric("epoch")
-    wandb.define_metric("train/*", step_metric="epoch")
-    wandb.define_metric("test/*", step_metric="epoch")
     return cfg, collection_name_v, config, registry_name_v, run
 
 
@@ -488,12 +484,12 @@ def _(artifact_name, collection_name_v, registry_name_v, run, test_ds):
 
 
 @app.cell(hide_code=True)
-def _():
-    mo.md(r"""
+def _(collection_name_v, registry_name_v, run):
+    mo.md(f"""
     ## Verify and next steps
 
-    1. Open the run: [{run.name}]({run.url}) — check the **Charts**,
-       **System**, and **Examples** panels.
+    1. Open the run: [{run.name}]({run.url}) — check the **Training** charts
+       and the **System** metrics.
     2. In the run's **Artifacts** tab, confirm `mnist-cnn-{run.id}` is listed
        with its metadata (test accuracy, parameter count, hyperparameters).
     3. At [wandb.ai/registry](https://wandb.ai/registry), open the
@@ -570,16 +566,15 @@ def train_one_epoch(model, loader, optimizer, epoch, epochs):
         loss.backward()
         optimizer.step()
         if batch_idx % 50 == 0:
-            wandb.log({"train/loss": loss.item(), "epoch": epoch})
+            wandb.log({"Training/loss": loss.item()})
 
 
 @app.function
-def evaluate(model, loader, max_examples=16):
-    """Compute test loss/accuracy and collect a few labelled example images."""
+def evaluate(model, loader):
+    """Compute test loss and accuracy over a data loader."""
     model.eval()
     test_loss = 0.0
     correct = 0
-    example_images = []
     with torch.no_grad():
         for data, target in loader:
             data, target = data.to(device), target.to(device)
@@ -587,19 +582,8 @@ def evaluate(model, loader, max_examples=16):
             test_loss += F.nll_loss(output, target, reduction="sum").item()
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
-            # Pull up to `max_examples` predictions for the W&B Examples panel.
-            while len(example_images) < max_examples and len(
-                example_images
-            ) < data.size(0):
-                j = len(example_images)
-                example_images.append(
-                    wandb.Image(
-                        data[j],
-                        caption=f"pred={pred[j].item()} true={target[j].item()}",
-                    )
-                )
     n = len(loader.dataset)
-    return test_loss / n, correct / n, example_images
+    return test_loss / n, correct / n
 
 
 @app.function
@@ -609,9 +593,6 @@ def run_training(run, config, train_ds, test_ds):
         train_ds, test_ds, config["batch_size"]
     )
     model = Net().to(device)
-    # `log="gradients"` is the standard choice; `log="all"` also logs parameter
-    # histograms at extra cost.
-    wandb.watch(model, log="gradients", log_freq=100)
     optimizer = optim.SGD(
         model.parameters(), lr=config["lr"], momentum=config["momentum"]
     )
@@ -621,16 +602,11 @@ def run_training(run, config, train_ds, test_ds):
     test_acc = 0.0
     for epoch in range(1, config["epochs"] + 1):
         train_one_epoch(model, train_loader, optimizer, epoch, config["epochs"])
-        test_loss, test_acc, example_images = evaluate(model, test_loader)
+        test_loss, test_acc = evaluate(model, test_loader)
         best_acc = max(best_acc, test_acc)
-        wandb.log(
-            {
-                "test/loss": test_loss,
-                "test/accuracy": test_acc,
-                "epoch": epoch,
-                "examples": example_images,
-            }
-        )
+        # `train_one_epoch` logs `Training/loss`; logging `Training/accuracy`
+        # here keeps both charts in a single "Training" section.
+        wandb.log({"Training/accuracy": test_acc})
         history.append(
             {
                 "epoch": epoch,
