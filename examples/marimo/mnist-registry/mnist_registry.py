@@ -61,8 +61,8 @@ def _():
 
     ## What you will build
 
-    - A **W&B run** with a single **Training** section charting loss and
-      accuracy.
+    - A **W&B run** whose **Training** section charts loss and accuracy, plus a
+      confusion matrix and a table of example predictions.
     - A **model Artifact** named `mnist-cnn-<run-id>` of type `model`,
       carrying metadata (test accuracy, parameter count, hyperparameters).
     - A version of that Artifact **linked into a W&B Registry collection**
@@ -488,8 +488,12 @@ def _(collection_name_v, registry_name_v, run):
     mo.md(f"""
     ## Verify and next steps
 
-    1. Open the run: [{run.name}]({run.url}) — check the **Training** charts
-       and the **System** metrics.
+    1. Open the run: [{run.name}]({run.url}). The **Training** section has the
+       loss and **accuracy** charts (accuracy = the fraction of held-out test
+       digits whose top prediction matches the true label), a **confusion
+       matrix** showing which digits get mistaken for which, and a
+       **predictions** table of example digits. **System** shows hardware
+       metrics.
     2. In the run's **Artifacts** tab, confirm `mnist-cnn-{run.id}` is listed
        with its metadata (test accuracy, parameter count, hyperparameters).
     3. At [wandb.ai/registry](https://wandb.ai/registry), open the
@@ -587,6 +591,50 @@ def evaluate(model, loader):
 
 
 @app.function
+def log_eval_report(model, loader, n_examples=24):
+    """Log a confusion matrix and a table of example predictions to W&B.
+
+    Both are logged once, after training, so they render as static panels
+    without a per-step slider. The table stores un-normalized images so the
+    digits are visible (logging the normalized tensors renders them black).
+    """
+    model.eval()
+    all_true, all_pred = [], []
+    examples = []
+    with torch.no_grad():
+        for data, target in loader:
+            probs = model(data.to(device)).exp()  # model returns log_softmax
+            pred = probs.argmax(dim=1).cpu()
+            all_true.extend(target.tolist())
+            all_pred.extend(pred.tolist())
+            for k in range(data.size(0)):
+                if len(examples) >= n_examples:
+                    break
+                digit = (data[k] * 0.3081 + 0.1307).clamp(0, 1).squeeze().numpy()
+                examples.append(
+                    [
+                        wandb.Image(digit),
+                        int(target[k]),
+                        int(pred[k]),
+                        round(float(probs[k].max()), 4),
+                    ]
+                )
+    wandb.log(
+        {
+            "Training/predictions": wandb.Table(
+                columns=["image", "true", "predicted", "confidence"],
+                data=examples,
+            ),
+            "Training/confusion_matrix": wandb.plot.confusion_matrix(
+                y_true=all_true,
+                preds=all_pred,
+                class_names=[str(i) for i in range(10)],
+            ),
+        }
+    )
+
+
+@app.function
 def run_training(run, config, train_ds, test_ds):
     """Train the CNN, logging metrics each epoch; return the model and history."""
     train_loader, test_loader = make_loaders(
@@ -614,6 +662,8 @@ def run_training(run, config, train_ds, test_ds):
                 "test_acc": round(test_acc, 4),
             }
         )
+    # Log a confusion matrix and example predictions once, after training.
+    log_eval_report(model, test_loader)
     # Full-precision last-epoch accuracy; `history` rounds only for display.
     return model, history, test_acc, best_acc
 
