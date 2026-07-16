@@ -61,8 +61,9 @@ def _():
 
     ## What you will build
 
-    - A **W&B run** whose **Training** section charts loss and accuracy, plus a
-      confusion matrix and a table of example predictions.
+    - A **W&B run** with a **Training** section (loss, accuracy), a confusion
+      matrix, a PR curve, a predictions table, and penultimate-layer embeddings
+      for the 2D projector — plus headline metrics on the run overview.
     - A **model Artifact** named `mnist-cnn-<run-id>` of type `model`,
       carrying metadata (test accuracy, parameter count, hyperparameters).
     - A version of that Artifact **linked into a W&B Registry collection**
@@ -222,12 +223,15 @@ class Net(nn.Module):
         self.fc1 = nn.Linear(320, 50)
         self.fc2 = nn.Linear(50, 10)
 
-    def forward(self, x):
+    def features(self, x):
+        """Penultimate 50-dim representation, used for the embedding projector."""
         x = F.relu(F.max_pool2d(self.conv1(x), 2))
         x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
         x = x.view(-1, 320)
-        x = F.relu(self.fc1(x))
-        x = F.dropout(x, training=self.training)
+        return F.relu(self.fc1(x))
+
+    def forward(self, x):
+        x = F.dropout(self.features(x), training=self.training)
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
 
@@ -491,12 +495,17 @@ def _(collection_name_v, registry_name_v, run):
     1. Open the run: [{run.name}]({run.url}). The **Training** section has the
        loss and **accuracy** charts (accuracy = the fraction of held-out test
        digits whose top prediction matches the true label), a **confusion
-       matrix** showing which digits get mistaken for which, and a
-       **predictions** table of example digits. **System** shows hardware
-       metrics.
-    2. In the run's **Artifacts** tab, confirm `mnist-cnn-{run.id}` is listed
+       matrix** showing which digits get mistaken for which, a per-digit
+       **PR curve**, and a **predictions** table of example digits. The run
+       **Overview** shows headline numbers (final/best accuracy, parameter
+       count); **System** shows hardware metrics.
+    2. **See the digit clusters.** Add a panel → **2D Projection**, choose the
+       `Training/embeddings` table, set the vector to `embedding` and color by
+       `digit`. W&B projects the penultimate-layer features to 2D — one cluster
+       per digit, tighter as the model improves.
+    3. In the run's **Artifacts** tab, confirm `mnist-cnn-{run.id}` is listed
        with its metadata (test accuracy, parameter count, hyperparameters).
-    3. At [wandb.ai/registry](https://wandb.ai/registry), open the
+    4. At [wandb.ai/registry](https://wandb.ai/registry), open the
        **{registry_name_v.title()}** registry, then the **{collection_name_v}**
        collection, and confirm the linked version.
 
@@ -591,22 +600,34 @@ def evaluate(model, loader):
 
 
 @app.function
-def log_eval_report(model, loader, n_examples=24):
-    """Log a confusion matrix and a table of example predictions to W&B.
+def log_eval_report(model, loader, n_examples=24, n_embeddings=500):
+    """Log evaluation visuals to W&B once, after training:
 
-    Both are logged once, after training, so they render as static panels
-    without a per-step slider. The table stores un-normalized images so the
-    digits are visible (logging the normalized tensors renders them black).
+    - a **predictions** table of un-normalized example digits (true /
+      predicted / confidence) — logged once, so there is no per-step slider;
+    - a **confusion matrix** over the whole test set;
+    - a per-digit **PR curve** from the predicted probabilities;
+    - **penultimate-layer embeddings** for the W&B 2D projector (add a "2D
+      Projection" panel and color by `digit` to see one cluster per class).
     """
     model.eval()
-    all_true, all_pred = [], []
-    examples = []
+    all_true, all_pred, all_probs = [], [], []
+    examples, embeddings = [], []
     with torch.no_grad():
         for data, target in loader:
-            probs = model(data.to(device)).exp()  # model returns log_softmax
+            data_dev = data.to(device)
+            probs = model(data_dev).exp()  # model returns log_softmax
             pred = probs.argmax(dim=1).cpu()
+            probs = probs.cpu()
             all_true.extend(target.tolist())
             all_pred.extend(pred.tolist())
+            all_probs.extend(probs.tolist())
+            if len(embeddings) < n_embeddings:
+                feats = model.features(data_dev).cpu()
+                for k in range(data.size(0)):
+                    if len(embeddings) >= n_embeddings:
+                        break
+                    embeddings.append([int(target[k]), feats[k].tolist()])
             for k in range(data.size(0)):
                 if len(examples) >= n_examples:
                     break
@@ -619,6 +640,7 @@ def log_eval_report(model, loader, n_examples=24):
                         round(float(probs[k].max()), 4),
                     ]
                 )
+    class_names = [str(i) for i in range(10)]
     wandb.log(
         {
             "Training/predictions": wandb.Table(
@@ -626,9 +648,13 @@ def log_eval_report(model, loader, n_examples=24):
                 data=examples,
             ),
             "Training/confusion_matrix": wandb.plot.confusion_matrix(
-                y_true=all_true,
-                preds=all_pred,
-                class_names=[str(i) for i in range(10)],
+                y_true=all_true, preds=all_pred, class_names=class_names
+            ),
+            "Training/pr_curve": wandb.plot.pr_curve(
+                all_true, all_probs, labels=class_names
+            ),
+            "Training/embeddings": wandb.Table(
+                columns=["digit", "embedding"], data=embeddings
             ),
         }
     )
@@ -662,8 +688,12 @@ def run_training(run, config, train_ds, test_ds):
                 "test_acc": round(test_acc, 4),
             }
         )
-    # Log a confusion matrix and example predictions once, after training.
+    # Log a confusion matrix, PR curve, predictions, and embeddings once.
     log_eval_report(model, test_loader)
+    # Headline numbers on the run overview page.
+    run.summary["final_test_accuracy"] = test_acc
+    run.summary["best_test_accuracy"] = best_acc
+    run.summary["num_parameters"] = sum(p.numel() for p in model.parameters())
     # Full-precision last-epoch accuracy; `history` rounds only for display.
     return model, history, test_acc, best_acc
 
