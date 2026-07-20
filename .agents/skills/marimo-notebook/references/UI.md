@@ -66,7 +66,7 @@ You can also add validation to a form using the `validate` parameter. Return an 
 ```python
 group_by_form = mo.ui.dropdown(
     options=df_columns,
-    label="Select column to filter for duplicate analyzis",
+    label="Select column to filter for duplicate analysis",
     allow_select_none=True,
     value=None,  # start with nothing selected
     searchable=True,

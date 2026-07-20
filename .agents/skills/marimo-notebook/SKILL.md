@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
 ```
 
-Notice how the notebook is structured with functions can represent cell contents. Each cell is defined with the `@app.cell` decorator and the inputs/outputs of the function are the inputs/outputs of the cell. marimo usually takes care of the dependencies between cells automatically. 
+Notice how the notebook is structured with functions that represent cell contents. Each cell is defined with the `@app.cell` decorator and the inputs/outputs of the function are the inputs/outputs of the cell. marimo usually takes care of the dependencies between cells automatically.
 
 ## Running Marimo Notebooks
 
@@ -255,7 +255,7 @@ uv --with marimo run python -c "import marimo as mo; help(mo.ui.form)"
 By default, marimo discovers and executes tests inside your notebook.
 When the optional `pytest` dependency is present, marimo runs `pytest` on cells that
 consist exclusively of test code - i.e. functions whose names start with `test_`. 
-If the user asks you to add tests, make sure to add the `pytest` dependency is added and that
+If the user asks you to add tests, make sure the `pytest` dependency is added and that
 there is a cell that contains only test code.
 
 For more information on testing with pytest see [PYTEST.md](references/PYTEST.md)
@@ -268,7 +268,7 @@ pytest <notebook.py>
 
 ## Additional resources
 
-- For marimo notebooks that run in width=columns [SQL.md](references/COLUMNS.md)
+- For marimo notebooks that run in width=columns [COLUMNS.md](references/COLUMNS.md)
 - For SQL use in marimo see [SQL.md](references/SQL.md)
 - For UI elements in marimo [UI.md](references/UI.md)
 - For exposing functions/classes as top level imports [TOP-LEVEL-IMPORTS.md](references/TOP-LEVEL-IMPORTS.md)

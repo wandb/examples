@@ -15,7 +15,7 @@ class CounterWidget(anywidget.AnyWidget):
     // Define the main render function
     function render({ model, el }) {
       let count = () => model.get("number");
-      let btn = document.createElement("b8utton");
+      let btn = document.createElement("button");
       btn.innerHTML = `count is ${count()}`;
       btn.addEventListener("click", () => {
         model.set("number", count() + 1);

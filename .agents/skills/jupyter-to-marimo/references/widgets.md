@@ -168,11 +168,11 @@ When one widget should drive another (not bidirectional), just read and assign a
 ```python
 # cell 1
 slider = mo.ui.slider(0, 10)
-counter = Counter(value=0)  # an anywidget
+counter = mo.ui.anywidget(Counter(value=0))  # wrap the anywidget for display
 mo.vstack([slider, counter])
 
 # cell 2 — runs when slider changes, updates counter
-counter.count = slider.value
+counter.widget.count = slider.value
 ```
 
 ## Custom widgets / anywidget integration

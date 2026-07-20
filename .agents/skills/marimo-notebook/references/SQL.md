@@ -12,7 +12,7 @@ def _(df, mo):
     return (grouped,)
 ```
 
-`grouped` is a polars dataframe. By defauly marimo uses DuckDB in memory and can refer to dataframe variables that are in scope. 
+`grouped` is a polars dataframe. By default marimo uses DuckDB in memory and can refer to dataframe variables that are in scope.
 
 This is what the signature is of `mo.sql`: 
 

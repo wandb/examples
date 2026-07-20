@@ -23,6 +23,6 @@ network access.
 - Upstream commit: `62d78d97278e0517c2270a8fbafd3f95a59df9cd`
 - Vendored: 2026-07-20
 
-To refresh, re-copy `skills/marimo-notebook` and `skills/jupyter-to-marimo`
+To refresh, re-copy `marimo-notebook/` and `jupyter-to-marimo/`
 from upstream and update the commit SHA above. Do not edit vendored files
 in place — repo-specific guidance belongs in `marimo-example-notebook`.
