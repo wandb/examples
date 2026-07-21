@@ -247,7 +247,7 @@ Make sure these are checked before handing a notebook back to the user.
 If the user specifically wants you to use a marimo function, you can locally check the docs via: 
 
 ```
-uv --with marimo run python -c "import marimo as mo; help(mo.ui.form)"
+uv run --with marimo python -c "import marimo as mo; help(mo.ui.form)"
 ```
 
 ## tests 

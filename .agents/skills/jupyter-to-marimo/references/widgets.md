@@ -168,7 +168,7 @@ When one widget should drive another (not bidirectional), just read and assign a
 ```python
 # cell 1
 slider = mo.ui.slider(0, 10)
-counter = mo.ui.anywidget(Counter(value=0))  # wrap the anywidget for display
+counter = mo.ui.anywidget(Counter(count=0))  # wrap the anywidget for display
 mo.vstack([slider, counter])
 
 # cell 2 — runs when slider changes, updates counter
@@ -179,7 +179,7 @@ counter.widget.count = slider.value
 
 For ipywidgets with **no marimo equivalent** (marked "—" above), check if the widget is an anywidget or has an anywidget-compatible version. If so, wrap it with `mo.ui.anywidget()`.
 
-If it is not an anywidget, let the user know they should check whether it's a candidate for the [anywidget spec](https://anywidget.dev) — most ipywidgets can be ported. For building custom anywidgets from scratch, invoke the `anywidget-generator` skill.
+If it is not an anywidget, let the user know they should check whether it's a candidate for the [anywidget spec](https://anywidget.dev) — most ipywidgets can be ported. For building custom anywidgets from scratch, see [ANYWIDGET.md](../../marimo-notebook/references/ANYWIDGET.md).
 
 ### Wrapping an existing anywidget
 

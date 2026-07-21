@@ -52,4 +52,4 @@ Use case: develop logic in Python modules, use the notebook as an orchestrating 
 
 ## Responding to other files
 
-marimo has `mo.watch.file` and `mo.watch.file` utilities that can cause cells to update when a file/folder updates. 
+marimo has `mo.watch.file` and `mo.watch.directory` utilities that can cause cells to update when a file/folder updates. 
