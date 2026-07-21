@@ -1,0 +1,76 @@
+name: marimo export markdown
+
+# On every push that changes a marimo notebook under examples/marimo/, export
+# each notebook to a peer Markdown file (notebook.py -> notebook.md) and commit
+# the result back to the branch, so the rendered Markdown always tracks the
+# notebook.
+#
+# Loop safety (three independent guards):
+#   1. Pushes made with GITHUB_TOKEN do not trigger new workflow runs — a
+#      GitHub Actions built-in, and the primary protection here.
+#   2. The trigger watches only *.py; this job only ever commits *.md.
+#   3. The commit message carries [skip ci].
+#
+# marimo is pinned so exports are byte-deterministic (the front matter records
+# the marimo version), which means an unchanged notebook never produces a
+# spurious commit. Bump MARIMO_VERSION to refresh all exports on the next push.
+
+on:
+  push:
+    paths:
+      - 'examples/marimo/**/*.py'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: marimo-export-md-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MARIMO_VERSION: "0.23.9"
+
+jobs:
+  export-md:
+    # Redundant with the GITHUB_TOKEN protection above, but keeps things safe
+    # if someone later swaps in a personal access token.
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install marimo
+        run: python -m pip install --quiet "marimo==${MARIMO_VERSION}"
+
+      - name: Export marimo notebooks to Markdown
+        run: |
+          shopt -s globstar nullglob
+          for nb in examples/marimo/**/*.py; do
+            # Only real marimo notebooks construct marimo.App(...).
+            if grep -q 'marimo\.App(' "$nb"; then
+              echo "Exporting $nb -> ${nb%.py}.md"
+              marimo export md "$nb" -o "${nb%.py}.md" -f
+            fi
+          done
+
+      - name: Commit and push if the Markdown changed
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Only Markdown peers are generated, so staging the tree captures
+          # exactly the exported files (the notebooks themselves are untouched).
+          git add -A examples/marimo
+          if git diff --cached --quiet; then
+            echo "Markdown already up to date."
+          else
+            git commit -m "docs: export marimo notebook(s) to Markdown [skip ci]"
+            git push origin "HEAD:${{ github.ref_name }}"
+          fi
