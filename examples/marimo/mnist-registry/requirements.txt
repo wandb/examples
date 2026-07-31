@@ -1,0 +1,7 @@
+# Mirror of the PEP 723 inline dependency block in mnist_registry.py.
+# Keep these two in sync.
+marimo>=0.9
+torch>=2.1
+torchvision>=0.16
+wandb>=0.18
+tqdm
