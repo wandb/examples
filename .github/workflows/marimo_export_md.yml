@@ -1,6 +1,6 @@
 name: marimo export markdown
 
-# On every push that changes a marimo notebook under examples/marimo/, export
+# On every push that changes a marimo notebook under marimo/, export
 # each notebook to a peer Markdown file (notebook.py -> notebook.md) and commit
 # the result back to the branch, so the rendered Markdown always tracks the
 # notebook.
@@ -18,7 +18,7 @@ name: marimo export markdown
 on:
   push:
     paths:
-      - 'examples/marimo/**/*.py'
+      - 'marimo/**/*.py'
 
 permissions:
   contents: write
@@ -53,7 +53,7 @@ jobs:
       - name: Export marimo notebooks to Markdown
         run: |
           shopt -s globstar nullglob
-          for nb in examples/marimo/**/*.py; do
+          for nb in marimo/**/*.py; do
             # Only real marimo notebooks construct marimo.App(...).
             if grep -q 'marimo\.App(' "$nb"; then
               echo "Exporting $nb -> ${nb%.py}.md"
@@ -67,7 +67,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           # Only Markdown peers are generated, so staging the tree captures
           # exactly the exported files (the notebooks themselves are untouched).
-          git add -A examples/marimo
+          git add -A marimo
           if git diff --cached --quiet; then
             echo "Markdown already up to date."
           else
