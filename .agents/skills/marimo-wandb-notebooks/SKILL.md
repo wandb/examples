@@ -1,15 +1,16 @@
 ---
-name: marimo-example-notebook
+name: marimo-wandb-notebooks
 description: Create or refactor a high-quality marimo example notebook for the wandb/examples repo. Use whenever adding a new example under examples/marimo/, converting a Jupyter example to marimo, or reviewing/refactoring an existing marimo example. Encodes this repo's structure conventions and W&B integration patterns.
 ---
 
 # marimo example notebooks for wandb/examples
 
 Read [`../marimo-notebook/SKILL.md`](../marimo-notebook/SKILL.md) first for
-the marimo file format, reactivity rules, and `marimo check`. If converting
-an existing Jupyter notebook, also read
-[`../jupyter-to-marimo/SKILL.md`](../jupyter-to-marimo/SKILL.md). This skill
-layers repo-specific conventions on top of those.
+the marimo file format and reactivity rules. If converting an existing Jupyter
+notebook, first run
+[`../../scripts/prepare-marimo-example.sh`](../../scripts/prepare-marimo-example.sh),
+then read [`references/conversion-cleanup.md`](references/conversion-cleanup.md)
+alongside the generated `conversion-report.md` and `marimo-check.txt`.
 
 The canonical exemplar is
 `examples/marimo/mnist-registry/mnist_registry.py` — when in doubt, match
