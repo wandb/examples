@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: $0 notebook.ipynb --name example-name [--fail-on-check]" >&2
+  echo "usage: $0 notebook.ipynb --name example-name [--force] [--fail-on-check]" >&2
 }
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,6 +19,7 @@ fi
 shift
 
 name=""
+force=0
 fail_on_check=0
 while (($#)); do
   case "$1" in
@@ -29,6 +30,9 @@ while (($#)); do
         exit 1
       }
       name="$1"
+      ;;
+    --force)
+      force=1
       ;;
     --fail-on-check)
       fail_on_check=1
@@ -51,6 +55,14 @@ done
   exit 1
 }
 
+[[ -f "$input" ]] || {
+  echo "input file does not exist: $input" >&2
+  exit 1
+}
+
+input_dir="$(cd -- "$(dirname -- "$input")" && pwd)"
+input="$input_dir/$(basename -- "$input")"
+
 slug="$name"
 [[ "$slug" =~ ^[A-Za-z0-9][A-Za-z0-9_-]*$ ]] || {
   echo "--name must be a slug like 'mnist-registry' or 'mnist_registry' (no paths, dots, or spaces): $slug" >&2
@@ -65,6 +77,11 @@ report="$debug_dir/conversion-report.md"
 check_output="$debug_dir/marimo-check.txt"
 
 cd "$repo_root"
+if [[ -e "$target_py" && "$force" -eq 0 ]]; then
+  echo "target notebook already exists: $target_py" >&2
+  echo "pass --force to overwrite it" >&2
+  exit 1
+fi
 mkdir -p "$target_dir" "$debug_dir"
 
 uvx marimo convert "$input" -o "$target_py"
