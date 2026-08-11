@@ -1,19 +1,18 @@
 ---
 name: marimo-wandb-notebooks
-description: Create or refactor a high-quality marimo example notebook for the wandb/examples repo. Use whenever adding a new example under examples/marimo/, converting a Jupyter example to marimo, or reviewing/refactoring an existing marimo example. Encodes this repo's structure conventions and W&B integration patterns.
+description: Create, convert, review, or refactor repo-ready marimo example notebooks for wandb/examples.
 ---
 
 # marimo example notebooks for wandb/examples
 
-Read [`references/marimo-idioms.md`](references/marimo-idioms.md) first for
-the marimo file format, reactivity rules, rendering behavior, and UI style. If
-converting an existing Jupyter notebook, first run
-[`../../scripts/prepare-marimo-example.sh`](../../scripts/prepare-marimo-example.sh),
-then read [`references/conversion-cleanup.md`](references/conversion-cleanup.md)
-alongside the generated `.conversion/conversion-report.md` and
-`.conversion/marimo-check.txt`.
-When the notebook uses W&B runs, metrics, artifacts, or registry operations,
-also read [`references/wandb-patterns.md`](references/wandb-patterns.md).
+## Read order
+
+| Situation | Do this |
+| --- | --- |
+| Always | Read [`references/marimo-idioms.md`](references/marimo-idioms.md). |
+| Starting from an existing marimo `.py` | Do not run `prepare-marimo-example.sh`. Inspect the `.py`, run `uvx marimo check <notebook.py>`, and polish against the repo conventions below. |
+| Starting from `.ipynb` | Run [`../../scripts/prepare-marimo-example.sh`](../../scripts/prepare-marimo-example.sh) `<notebook.ipynb> --name <example-name>`, then read [`references/conversion-cleanup.md`](references/conversion-cleanup.md) with `.conversion/conversion-report.md` and `.conversion/marimo-check.txt`. |
+| Notebook uses W&B | Read [`references/wandb-patterns.md`](references/wandb-patterns.md). |
 
 The canonical exemplar is
 `examples/marimo/mnist-registry/mnist_registry.py` — when in doubt, match
@@ -65,55 +64,15 @@ Order the notebook as a narrative the reader scrolls through top to bottom:
 
 ## Gate execution once, then let the graph run
 
-Batch every control into one form so nothing expensive runs until the user
-submits:
-
-```python
-form = (
-    mo.md(
-        """
-        **Training.**
-
-        {epochs}  {batch_size}
-        ...
-        """
-    )
-    .batch(epochs=epochs, batch_size=batch_size, ...)
-    .form(submit_button_label="Train model", bordered=False)
-)
-form
-```
-
-`form.value` is `None` until submit. Gate **one** cell on it, with a message
-that tells the reader what will happen:
-
-```python
-mo.stop(
-    form.value is None,
-    mo.md("Fill in the form above and click **Train model** to ..."),
-)
-cfg = form.value
-```
-
-Every downstream cell references names defined *after* the gate (`cfg`,
-`run`, `model`, ...), so marimo's dependency graph holds them all back until
-the form is submitted. Do **not** re-check the button/form in later cells,
-wrap cells in `if` guards, or use `mo.ui.run_button()` when a form fits —
-one `mo.stop()` replaces all of that.
+Batch expensive controls into one form, gate once with `mo.stop`, and let
+downstream cells depend on names defined after the gate. See
+[`references/marimo-idioms.md`](references/marimo-idioms.md) for the detailed
+pattern.
 
 ## Separate logic from presentation
 
-- Heavy lifting (loading data, training, logging, saving artifacts) goes in
-  named `@app.function` helpers; the cell body becomes a short, readable
-  call: `model, history, final_acc, best_acc = run_training(...)`.
-- View cells (`hide_code=True`) render results and contain no logic worth
-  reading.
-- Push temporaries into functions to keep notebook globals to a minimum —
-  marimo notebooks work best with few globals, and every global name is
-  reserved across the whole file.
-- Present results with real components — `mo.ui.table(rows, selection=None)`
-  for tabular results, `mo.callout(..., kind="success"/"warn"/"danger")` for
-  status, `mo.vstack` for grouping — not markdown with emoji.
+Put heavy work in named helpers and keep view cells focused on rendering. See
+[`references/marimo-idioms.md`](references/marimo-idioms.md) for details.
 
 ## Final verification
 
@@ -123,3 +82,5 @@ one `mo.stop()` replaces all of that.
   shows output or is a named helper.
 - Fresh-eyes test: a reader with a new W&B account can follow Prerequisites,
   submit the form, and verify the result from "Verify and next steps" alone.
+- `.conversion/` files are temporary debugging artifacts and must not be
+  referenced by the final notebook or docs.

@@ -24,6 +24,43 @@ for this repo.
   Gate once with `mo.stop`, then make later cells depend on names defined after
   the gate.
 
+## Gating Expensive Work
+
+Batch every control into one form so nothing expensive runs until the user
+submits:
+
+```python
+form = (
+    mo.md(
+        """
+        **Training.**
+
+        {epochs}  {batch_size}
+        ...
+        """
+    )
+    .batch(epochs=epochs, batch_size=batch_size, ...)
+    .form(submit_button_label="Train model", bordered=False)
+)
+form
+```
+
+`form.value` is `None` until submit. Gate one cell on it, with a message that
+tells the reader what will happen:
+
+```python
+mo.stop(
+    form.value is None,
+    mo.md("Fill in the form above and click **Train model** to ..."),
+)
+cfg = form.value
+```
+
+Every downstream cell references names defined after the gate, such as `cfg`,
+`run`, or `model`, so marimo's dependency graph holds them all back until the
+form is submitted. Do not re-check the form in later cells, wrap cells in `if`
+guards, or use `mo.ui.run_button()` when a form fits.
+
 ## Rendering
 
 - The final expression of a cell is what renders.
@@ -32,13 +69,24 @@ for this repo.
 - Use markdown cells for prose. Use view cells for rendering. Keep heavy logic
   in named helpers.
 
+## Logic And Presentation
+
+- Heavy lifting, such as loading data, training, logging, and saving artifacts,
+  goes in named `@app.function` helpers. The cell body should become a short,
+  readable call like `model, history = run_training(...)`.
+- View cells, often `hide_code=True`, render results and contain no logic worth
+  reading.
+- Push temporaries into functions to keep notebook globals to a minimum. Every
+  returned name is reserved across the whole file.
+- Present results with real components, such as `mo.ui.table`,
+  `mo.callout(kind="success")`, `mo.vstack`, and `mo.hstack`, instead of
+  formatting complex UI as markdown.
+
 ## UI
 
 - Prefer a single submittable form for controls that trigger expensive work.
 - Show widgets directly; downstream cells should read `.value`.
 - Prefer native `mo.ui` components before reaching for anywidget.
-- Use real marimo display components, such as `mo.ui.table`, `mo.callout`,
-  `mo.vstack`, and `mo.hstack`, instead of formatting complex UI as markdown.
 
 ## Error Handling
 
