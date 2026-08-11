@@ -10,3 +10,10 @@ plus optional `references/` files.
 | Skill | Purpose |
 | --- | --- |
 | [`marimo-wandb-notebooks`](marimo-wandb-notebooks/SKILL.md) | **Start here** for creating or refactoring example notebooks in this repo. Encodes wandb/examples conventions and best practices. |
+
+## Scripts
+
+Use [`../scripts/prepare-marimo-example.sh`](../scripts/prepare-marimo-example.sh)
+to create the initial marimo notebook from a Jupyter `.ipynb`, capture
+`marimo check` output, and write a temporary `.conversion/` report directory
+for the polishing pass.

@@ -5,8 +5,8 @@ marimo notebook from a Jupyter `.ipynb`.
 
 ## Start From The Report
 
-- Read `conversion-report.md` in the generated example directory.
-- Read `marimo-check.txt` before editing the notebook.
+- Read `.conversion/conversion-report.md` in the generated example directory.
+- Read `.conversion/marimo-check.txt` before editing the notebook.
 - Fix `marimo check` issues first; they often point to converted cells that
   need to be split, reordered, or moved into helpers.
 

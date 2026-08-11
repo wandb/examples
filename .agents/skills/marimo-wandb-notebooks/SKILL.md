@@ -10,7 +10,10 @@ the marimo file format, reactivity rules, rendering behavior, and UI style. If
 converting an existing Jupyter notebook, first run
 [`../../scripts/prepare-marimo-example.sh`](../../scripts/prepare-marimo-example.sh),
 then read [`references/conversion-cleanup.md`](references/conversion-cleanup.md)
-alongside the generated `conversion-report.md` and `marimo-check.txt`.
+alongside the generated `.conversion/conversion-report.md` and
+`.conversion/marimo-check.txt`.
+When the notebook uses W&B runs, metrics, artifacts, or registry operations,
+also read [`references/wandb-patterns.md`](references/wandb-patterns.md).
 
 The canonical exemplar is
 `examples/marimo/mnist-registry/mnist_registry.py` — when in doubt, match
@@ -112,28 +115,7 @@ one `mo.stop()` replaces all of that.
   for tabular results, `mo.callout(..., kind="success"/"warn"/"danger")` for
   status, `mo.vstack` for grouping — not markdown with emoji.
 
-## W&B integration patterns
-
-- **Auth**: offer a `mo.ui.text(kind="password")` API-key field that falls
-  back to ambient login (`wandb login`, `WANDB_API_KEY`, netrc) when blank.
-  Never write the key into the run config.
-- **Re-runs**: marimo keeps the kernel alive across form re-submits, so
-  finish any prior run first: `if wandb.run is not None: wandb.finish()`.
-- **Entity**: include an entity field and explain that accounts created
-  after May 2024 have no personal entity — the run must go to a team.
-- **Surface the run URL immediately** after `wandb.init` so readers can
-  watch metrics stream: `mo.md(f"**Run started:** [`{run.name}`]({run.url})")`.
-- **Expected failures become guidance, not tracebacks.** Wrap only the calls
-  that fail for account-setup reasons (`wandb.init`, registry linking) and
-  render a `mo.callout(kind="danger")` that names the likely cause and the
-  fix. Let everything else fail naturally — no try/except for control flow.
-- A recoverable step (e.g. registry linking) should capture its outcome in a
-  status value that a separate view cell renders, so the pipeline completes
-  either way.
-- Group metrics into UI sections with slash-prefixed names
-  (`Training/loss`), and put headline numbers in `run.summary`.
-
-## Before handing back
+## Final verification
 
 - `uvx marimo check <notebook.py>` passes.
 - Globals audit: anything only used inside one step should live in a helper.

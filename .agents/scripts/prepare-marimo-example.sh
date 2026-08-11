@@ -60,11 +60,12 @@ slug="$name"
 module_name="${slug//-/_}"
 target_dir="examples/marimo/$slug"
 target_py="$target_dir/$module_name.py"
-report="$target_dir/conversion-report.md"
-check_output="$target_dir/marimo-check.txt"
+debug_dir="$target_dir/.conversion"
+report="$debug_dir/conversion-report.md"
+check_output="$debug_dir/marimo-check.txt"
 
 cd "$repo_root"
-mkdir -p "$target_dir"
+mkdir -p "$target_dir" "$debug_dir"
 
 uvx marimo convert "$input" -o "$target_py"
 
@@ -80,6 +81,7 @@ Generated notebook: \`$target_py\`
 ## Processing
 
 - Created target directory: \`$target_dir\`
+- Created temporary debug directory: \`$debug_dir\`
 - Ran: \`uvx marimo convert "$input" -o "$target_py"\`
 - Ran: \`uvx marimo check "$target_py"\`
 
@@ -87,7 +89,7 @@ Generated notebook: \`$target_py\`
 
 Exit code: \`$check_status\`
 
-See \`marimo-check.txt\`.
+See \`.conversion/marimo-check.txt\`.
 
 ## Next Agent Step
 
