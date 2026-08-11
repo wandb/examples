@@ -5,9 +5,9 @@ description: Create or refactor a high-quality marimo example notebook for the w
 
 # marimo example notebooks for wandb/examples
 
-Read [`../marimo-notebook/SKILL.md`](../marimo-notebook/SKILL.md) first for
-the marimo file format and reactivity rules. If converting an existing Jupyter
-notebook, first run
+Read [`references/marimo-idioms.md`](references/marimo-idioms.md) first for
+the marimo file format, reactivity rules, rendering behavior, and UI style. If
+converting an existing Jupyter notebook, first run
 [`../../scripts/prepare-marimo-example.sh`](../../scripts/prepare-marimo-example.sh),
 then read [`references/conversion-cleanup.md`](references/conversion-cleanup.md)
 alongside the generated `conversion-report.md` and `marimo-check.txt`.

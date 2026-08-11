@@ -10,18 +10,3 @@ plus optional `references/` files.
 | Skill | Purpose |
 | --- | --- |
 | [`marimo-wandb-notebooks`](marimo-wandb-notebooks/SKILL.md) | **Start here** for creating or refactoring example notebooks in this repo. Encodes wandb/examples conventions and best practices. |
-| [`marimo-notebook`](marimo-notebook/SKILL.md) | General marimo notebook format and mechanics (vendored). |
-
-## Vendored skills
-
-`marimo-notebook` is vendored verbatim from
-[marimo-team/skills](https://github.com/marimo-team/skills) (Apache-2.0,
-LICENSE included in each directory) so agents can use them without
-network access.
-
-- Upstream commit: `62d78d97278e0517c2270a8fbafd3f95a59df9cd`
-- Vendored: 2026-07-20
-
-To refresh, re-copy `marimo-notebook/`
-from upstream and update the commit SHA above. Do not edit vendored files
-in place — repo-specific guidance belongs in `marimo-wandb-notebooks`.
