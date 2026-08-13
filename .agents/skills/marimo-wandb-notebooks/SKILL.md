@@ -10,8 +10,8 @@ description: Create, convert, review, or refactor repo-ready marimo example note
 | Situation | Do this |
 | --- | --- |
 | Always | Read [`references/marimo-idioms.md`](references/marimo-idioms.md). |
-| Starting from an existing marimo `.py` | Do not run `prepare-marimo-example.sh`. Inspect the `.py`, run `uvx marimo check <notebook.py>`, and polish against the repo conventions below. |
-| Starting from `.ipynb` | Run [`../../scripts/prepare-marimo-example.sh`](../../scripts/prepare-marimo-example.sh) `<notebook.ipynb> --name <example-name>`, then read [`references/conversion-cleanup.md`](references/conversion-cleanup.md) with `.conversion/conversion-report.md` and `.conversion/marimo-check.txt`. |
+| Starting from an existing marimo `.py` | Do not run `prepare-marimo-example.py`. Inspect the `.py`, run `uvx marimo check <notebook.py>`, and polish against the repo conventions below. |
+| Starting from `.ipynb` | Run [`../../../scripts/prepare-marimo-example.py`](../../../scripts/prepare-marimo-example.py) `<notebook.ipynb> --name <example-name>`, then read [`references/conversion-cleanup.md`](references/conversion-cleanup.md) with `.conversion/conversion-report.md`, `.conversion/marimo-convert.txt`, `.conversion/marimo-check.txt`, and `.conversion/conversion.json`. |
 | Notebook uses W&B | Read [`references/wandb-patterns.md`](references/wandb-patterns.md). |
 
 The canonical exemplar is

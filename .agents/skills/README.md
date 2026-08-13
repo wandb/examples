@@ -13,7 +13,8 @@ plus optional `references/` files.
 
 ## Scripts
 
-Use [`../scripts/prepare-marimo-example.sh`](../scripts/prepare-marimo-example.sh)
+Use [`../../scripts/prepare-marimo-example.py`](../../scripts/prepare-marimo-example.py)
 to create the initial marimo notebook from a Jupyter `.ipynb`, capture
 `marimo check` output, and write a temporary `.conversion/` report directory
-for the polishing pass.
+for the polishing pass. The report directory includes a Markdown handoff,
+raw convert/check output, structured JSON metadata, and an event log.

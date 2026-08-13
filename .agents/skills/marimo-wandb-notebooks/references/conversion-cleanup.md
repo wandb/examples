@@ -1,12 +1,16 @@
 # Conversion Cleanup
 
-Use this after `.agents/scripts/prepare-marimo-example.sh` creates the initial
+Use this after `scripts/prepare-marimo-example.py` creates the initial
 marimo notebook from a Jupyter `.ipynb`.
 
 ## Start From The Report
 
 - Read `.conversion/conversion-report.md` in the generated example directory.
+- Read `.conversion/marimo-convert.txt` if conversion failed or produced
+  unexpected output.
 - Read `.conversion/marimo-check.txt` before editing the notebook.
+- Read `.conversion/conversion.json` for structured command results and parsed
+  marimo check issues.
 - Fix `marimo check` issues first; they often point to converted cells that
   need to be split, reordered, or moved into helpers.
 
