@@ -1,6 +1,6 @@
 # Conversion Cleanup
 
-Use this after `scripts/prepare-marimo-example.py` creates the initial
+Use this after `scripts/convert-colab-to-marimo.py` creates the initial
 marimo notebook from a Jupyter `.ipynb`.
 
 ## Start From The Report
