@@ -2,7 +2,7 @@
 """Convert Jupyter notebooks into marimo examples.
 
 Convert one notebook at a time, or in batch from a list of paths. Creates
-diagnostic output in marimo/convert/<name>/.logs/result.json.
+diagnostic output in marimo/convert/<name>/.logs/.
 
 Usage:
   convert-colab-to-marimo.py notebook.ipynb --name example-name
@@ -182,7 +182,7 @@ def write_diagnostics(
     failed_stage: str | None,
     commands: dict[str, subprocess.CompletedProcess[str]],
 ) -> None:
-    """Write conversion diagnostics as JSON file.
+    """Write conversion diagnostics to a JSON file and failure logs.
 
     Args:
         debug_dir: Directory for ``result.json`` and failure logs.
