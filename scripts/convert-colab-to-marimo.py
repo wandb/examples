@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Convert Jupyter notebooks into marimo examples with minimal diagnostics.
+"""Convert Jupyter notebooks into marimo examples.
+
+Convert one notebook at a time, or in batch from a list of paths. Creates
+diagnostic output in marimo/convert/<name>/.logs/result.json.
 
 Usage:
-  prepare-marimo-example.py notebook.ipynb --name example-name
-  prepare-marimo-example.py notebook.ipynb --name example-name --force
-  prepare-marimo-example.py notebook-path-list.txt --batch
+  convert-colab-to-marimo.py notebook.ipynb --name example-name
+  convert-colab-to-marimo.py notebook.ipynb --name example-name --force
+  convert-colab-to-marimo.py notebook-path-list.txt --batch
 """
 
 from __future__ import annotations
@@ -19,16 +22,22 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Sequence
 
-
-class PrepareError(RuntimeError):
-    """Expected user-facing input or setup error."""
-
-
 MARIMO_DIR = Path("marimo")
 
 
+class PrepareError(RuntimeError):
+    """User-facing setup or input error."""
+
+
 def validate_repo_root(repo_root: Path) -> None:
-    """Require the script to be run from the examples repository root."""
+    """Validate that ``repo_root`` contains the marimo examples directory.
+
+    Args:
+        repo_root: Expected root of the examples repository.
+
+    Raises:
+        PrepareError: If ``repo_root`` does not contain ``marimo/``.
+    """
 
     if not (repo_root / MARIMO_DIR).is_dir():
         raise PrepareError(
@@ -38,7 +47,18 @@ def validate_repo_root(repo_root: Path) -> None:
 
 
 def resolve_file(raw_path: str, *, base_dir: Path) -> Path:
-    """Resolve a file relative to one explicit base directory."""
+    """Resolve an input file path.
+
+    Args:
+        raw_path: Absolute path, user path, or path relative to ``base_dir``.
+        base_dir: Directory used to resolve relative paths.
+
+    Returns:
+        Absolute resolved path to an existing file.
+
+    Raises:
+        PrepareError: If the resolved path is not a file.
+    """
 
     path = Path(raw_path).expanduser()
     if not path.is_absolute():
@@ -51,7 +71,15 @@ def resolve_file(raw_path: str, *, base_dir: Path) -> Path:
 
 
 def display_path(path: Path, repo_root: Path) -> str:
-    """Prefer repo-relative paths in messages and metadata."""
+    """Format a path for logs and terminal output.
+
+    Args:
+        path: Path to display.
+        repo_root: Repository root used for relative display.
+
+    Returns:
+        Repository-relative path when possible; otherwise an absolute path.
+    """
 
     try:
         return str(path.resolve().relative_to(repo_root.resolve()))
@@ -60,7 +88,17 @@ def display_path(path: Path, repo_root: Path) -> str:
 
 
 def slug_from_notebook(notebook: Path) -> str:
-    """Derive a lowercase file-safe name from a notebook filename."""
+    """Create a batch-mode example name from a notebook filename.
+
+    Args:
+        notebook: Source notebook path.
+
+    Returns:
+        Lowercase, dash-separated slug derived from the notebook stem.
+
+    Raises:
+        PrepareError: If the filename cannot produce a non-empty slug.
+    """
 
     slug = re.sub(r"[^a-z0-9]+", "-", notebook.stem.lower()).strip("-")
     if not slug:
@@ -69,6 +107,15 @@ def slug_from_notebook(notebook: Path) -> str:
 
 
 def validate_name(name: str) -> None:
+    """Validate a caller-provided marimo example name.
+
+    Args:
+        name: Target directory name under ``marimo/convert``.
+
+    Raises:
+        PrepareError: If ``name`` contains unsupported characters.
+    """
+
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", name):
         raise PrepareError(
             "--name must start with a letter or number and contain only "
@@ -77,7 +124,16 @@ def validate_name(name: str) -> None:
 
 
 def run_command(argv: Sequence[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
-    """Run a command and capture stdout/stderr as one diagnostic stream."""
+    """Run a command and capture stdout and stderr together.
+
+    Args:
+        argv: Command and arguments to execute.
+        cwd: Working directory for the command.
+
+    Returns:
+        Completed process, including a 127 return code if the executable is
+        missing.
+    """
 
     try:
         return subprocess.run(
@@ -97,7 +153,12 @@ def run_command(argv: Sequence[str], *, cwd: Path) -> subprocess.CompletedProces
 
 
 def write_command_log(path: Path, result: subprocess.CompletedProcess[str]) -> None:
-    """Write a self-contained transcript for a failed conversion attempt."""
+    """Write a command transcript for a failed run.
+
+    Args:
+        path: Output log file path.
+        result: Completed process to serialize.
+    """
 
     output = result.stdout or ""
     text = (
@@ -121,7 +182,17 @@ def write_diagnostics(
     failed_stage: str | None,
     commands: dict[str, subprocess.CompletedProcess[str]],
 ) -> None:
-    """Write result.json and, on failure, raw command transcripts."""
+    """Write conversion diagnostics as JSON file.
+
+    Args:
+        debug_dir: Directory for ``result.json`` and failure logs.
+        source: Source notebook path.
+        target: Generated marimo Python file path.
+        repo_root: Repository root used for display paths.
+        status: Final status string for the conversion attempt.
+        failed_stage: Stage name that failed, if any.
+        commands: Completed commands keyed by stage name.
+    """
 
     # Successful reruns should not leave old failure logs behind.
     for old_log in debug_dir.glob("marimo-*.log"):
@@ -163,7 +234,22 @@ def prepare_notebook(
     repo_root: Path,
     force: bool,
 ) -> str:
-    """Convert one notebook, check it, and record the outcome."""
+    """Convert and check one notebook.
+    
+    Uses ``uvx marimo convert`` and ``uvx marimo check``.
+
+    Args:
+        source: Source ``.ipynb`` file.
+        name: Target example name under ``marimo/convert``.
+        repo_root: Repository root for output paths and command execution.
+        force: Whether to overwrite an existing target.
+
+    Returns:
+        One of ``"ok"``, ``"conversion_failed"``, or ``"check_failed"``.
+
+    Raises:
+        PrepareError: If the input or target name is invalid.
+    """
 
     if source.suffix.lower() != ".ipynb":
         raise PrepareError(f"input must be a .ipynb file: {source}")
@@ -171,7 +257,7 @@ def prepare_notebook(
 
     target_dir = repo_root / MARIMO_DIR / "convert" / name
     target = target_dir / f"{name.replace('-', '_')}.py"
-    debug_dir = target_dir / ".conversion"
+    debug_dir = target_dir / ".logs"
 
     if target.exists() and not force:
         raise PrepareError(f"target already exists: {display_path(target, repo_root)}")
@@ -219,7 +305,14 @@ def prepare_notebook(
 
 
 def iter_path_list(path_list: Path) -> list[str]:
-    """Read non-empty, non-comment entries from a path-list file."""
+    """Read notebook paths from a batch file.
+
+    Args:
+        path_list: Text file with one notebook path per line.
+
+    Returns:
+        Non-empty, non-comment path entries.
+    """
 
     return [
         line.strip()
@@ -235,7 +328,17 @@ def run_batch(
     force: bool,
     fail_on_check: bool,
 ) -> int:
-    """Prepare every notebook listed in a text file."""
+    """Convert every notebook listed in a batch file.
+
+    Args:
+        path_list: Text file containing notebook paths.
+        repo_root: Repository root used for resolving batch entries.
+        force: Whether to overwrite existing targets.
+        fail_on_check: Whether check failures should make the batch fail.
+
+    Returns:
+        ``0`` when all required stages pass; otherwise ``1``.
+    """
 
     had_failure = False
 
@@ -261,6 +364,11 @@ def run_batch(
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the command-line parser.
+
+    Returns:
+        Parser for single-notebook and batch conversion modes.
+    """
     parser = argparse.ArgumentParser(
         description="Convert Jupyter notebooks to marimo examples with minimal diagnostics."
     )
@@ -277,6 +385,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Run the CLI.
+
+    Args:
+        argv: Optional argument list for tests; defaults to ``sys.argv``.
+
+    Returns:
+        Process exit code.
+    """
+
     args = build_parser().parse_args(argv)
     repo_root = Path.cwd().resolve()
 
