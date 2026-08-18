@@ -12,18 +12,20 @@ links artifacts and registry entries.
 
 ## Runs And Reruns
 
-- When possible use context managers when initializing runs.
+- When possible, initialize runs with context managers.
 
   ```python
   import wandb
 
-  if wandb.init() as run:
-    run.log()
+  with wandb.init() as run:
+      run.log({"loss": 0.1})
   ```
 
-  If you do not use a context manager, explicitly finish a run with `wandb.Run.finish()`.
+  If you do not use a context manager, explicitly finish the run with
+  `run.finish()`.
 
-- When possible, avoid [global functions](https://docs.wandb.ai/reference), with the exception of `wandb.init()`
+- Prefer run-bound methods such as `run.log`, `run.log_artifact`, and
+  `run.summary` unless the notebook is intentionally teaching a global API.
 
 - marimo keeps the kernel alive across form re-submits, so finish any prior run
   before starting a new one:
@@ -46,13 +48,13 @@ links artifacts and registry entries.
 ## Entity
 
 - Include an entity field.
-- Explain that accounts created after May 2024 have no personal entity; the run
-  must go to a team.
+- Some accounts require a team/entity. Explain how to find the right entity in
+  W&B, and make the field easy to override.
 
 ## Expected Failures
 
 - Expected failures should become guidance, not tracebacks.
-- Wrap only calls that fail for account-setup reasons, such as `wandb.init` or
+- Wrap only calls that fail for account-setup reasons, such as `wandb.init()` or
   registry linking.
 - Render a `mo.callout(kind="danger")` that names the likely cause and fix.
 - Let everything else fail naturally. Do not use `try`/`except` for normal

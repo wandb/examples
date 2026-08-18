@@ -22,16 +22,11 @@ its structure.
 
 ## Existing conversion triage
 
-For notebooks under `marimo/convert/`, diagnose before polishing:
-
-1. Read `.logs/result.json` to identify the failed stage.
-2. If `check` failed, read `.logs/marimo-check.log` and fix those errors first.
-3. If `convert` failed, read `.logs/marimo-convert.log` before inspecting style.
-4. After editing a check failure, run a fresh `uvx marimo check` because the
-   pipeline logs describe the pre-edit notebook.
-5. After check blockers are fixed, polish against the notebook structure and W&B conventions.
-6. For common converted-notebook failures and cleanup scope, see
-   [`references/convert-cleanup.md`](references/convert-cleanup.md).
+For notebooks under `marimo/convert/`, diagnose logs before polishing. Read
+`.logs/result.json`, inspect the failed stage's log, fix `marimo check`
+blockers first, then run a fresh `uvx marimo check`. See
+[`references/convert-cleanup.md`](references/convert-cleanup.md) for the full
+triage and cleanup checklist.
 
 ## Repo conventions
 
@@ -64,20 +59,11 @@ mechanics and
 [`references/tutorial-notebook-objectives.md`](references/tutorial-notebook-objectives.md)
 for narrative structure.
 
-## Gate execution once, then let the graph run
+## Core priorities
 
-Batch expensive controls into one form, gate once with `mo.stop`, and let
-downstream cells depend on names defined after the gate. See
-[`references/marimo-idioms.md`](references/marimo-idioms.md) for the detailed
-pattern.
-
-## Separate logic from presentation
-
-Put reusable or distracting implementation detail in named helpers, and keep
-view cells focused on rendering. See
-[`references/marimo-idioms.md`](references/marimo-idioms.md) for mechanics and
-[`references/tutorial-notebook-objectives.md`](references/tutorial-notebook-objectives.md)
-for teaching-surface tradeoffs.
+- Gate expensive work once, then let marimo's graph run.
+- Preserve visible teaching code, especially featured W&B API calls.
+- Keep notebook globals scarce; move distracting scratch work into helpers.
 
 ## Final verification
 
