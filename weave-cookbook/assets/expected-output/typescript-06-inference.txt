@@ -1,0 +1,12 @@
+$ npm run inference
+
+> weave-cookbook-ts@0.1.0 inference
+> tsx examples/06-inference.ts
+
+View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+30 models available through one API key; using meta-llama/Llama-3.1-8B-Instruct
+"Game Night is about to begin, folks, in just ten minutes, so get your snacks ready and your competitive spirits warmed up!"
+usage: 62 prompt + 28 completion tokens
+
+The model count and wording vary; temperature 0.2 keeps replies stable but not identical.
+Captured 2026-08-02 with weave (npm) 0.16.5 on Node.js 26.4.0.

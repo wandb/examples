@@ -1,0 +1,12 @@
+$ uv run python examples/05_prompts.py
+weave: Logged in as Weights & Biases user: <your-username>.
+weave: View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+weave: 📦 Published to https://wandb.ai/<entity>/weave-cookbook/weave/objects/game-night-system/versions/<digest>
+weave: 📦 Published to https://wandb.ai/<entity>/weave-cookbook/weave/objects/game-night-request/versions/<digest>
+weave: 🍩 https://wandb.ai/<entity>/weave-cookbook/r/call/<call-id>
+The Alchemist's Cellar
+
+fetched game-night-system:latest -> You are the Game Night Agent. Pick exactly one game from the candidate list. Cho...
+
+The model's pick varies between runs; the prompt preview does not.
+Expected output shape for weave 0.53.4 on Python 3.11.13.

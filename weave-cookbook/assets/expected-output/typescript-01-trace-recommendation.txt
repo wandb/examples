@@ -1,0 +1,10 @@
+$ npm run recommend -- --players 4 --minutes 60 --vibe "cooperative"
+
+> weave-cookbook-ts@0.1.0 recommend
+> tsx examples/01-trace-recommendation.ts --players 4 --minutes 60 --vibe cooperative
+
+View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+The Alchemist's Cellar
+
+The model's pick varies between runs; the output remains one catalog name or "none".
+Expected output shape for weave (npm) 0.16.5 on Node.js 26.4.0.

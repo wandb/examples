@@ -1,0 +1,110 @@
+[
+  {
+    "name": "Orchard Sprint",
+    "min_players": 3,
+    "max_players": 8,
+    "playtime_minutes": 20,
+    "difficulty": "light",
+    "tags": ["party", "speed"],
+    "description": "Race the other orchards to fill your fruit crates before the harvest bell rings."
+  },
+  {
+    "name": "Tidepool",
+    "min_players": 2,
+    "max_players": 2,
+    "playtime_minutes": 15,
+    "difficulty": "light",
+    "tags": ["abstract", "duel"],
+    "description": "A two-player abstract duel about claiming shells as the tide slides in and out."
+  },
+  {
+    "name": "Pocket Dungeon",
+    "min_players": 1,
+    "max_players": 2,
+    "playtime_minutes": 25,
+    "difficulty": "light",
+    "tags": ["cooperative", "adventure"],
+    "description": "Delve a pocket-sized dungeon together and escape before your torch burns out."
+  },
+  {
+    "name": "Whisper Network",
+    "min_players": 4,
+    "max_players": 10,
+    "playtime_minutes": 30,
+    "difficulty": "light",
+    "tags": ["party", "social-deduction"],
+    "description": "Pass coded messages to your allies while sniffing out the rival spy ring."
+  },
+  {
+    "name": "Sky Ferry",
+    "min_players": 2,
+    "max_players": 5,
+    "playtime_minutes": 40,
+    "difficulty": "light",
+    "tags": ["family", "route-building"],
+    "description": "Build airship routes between floating islands to deliver passengers and cargo."
+  },
+  {
+    "name": "The Alchemist's Cellar",
+    "min_players": 2,
+    "max_players": 4,
+    "playtime_minutes": 45,
+    "difficulty": "medium",
+    "tags": ["deduction", "puzzle"],
+    "description": "Deduce which unlabeled ingredients brew gold and which brew disaster."
+  },
+  {
+    "name": "Signal Lost",
+    "min_players": 2,
+    "max_players": 6,
+    "playtime_minutes": 50,
+    "difficulty": "medium",
+    "tags": ["cooperative", "communication"],
+    "description": "Guide a drifting station crew home using only fragments of a shared code."
+  },
+  {
+    "name": "Gemcutter's Guild",
+    "min_players": 2,
+    "max_players": 4,
+    "playtime_minutes": 60,
+    "difficulty": "medium",
+    "tags": ["strategy", "engine-building"],
+    "description": "Cut, polish, and set gems to build the most prestigious workshop in the guild."
+  },
+  {
+    "name": "Harbor & Hearth",
+    "min_players": 1,
+    "max_players": 4,
+    "playtime_minutes": 70,
+    "difficulty": "medium",
+    "tags": ["strategy", "worker-placement"],
+    "description": "Send villagers to the docks, fields, and markets to grow a seaside town."
+  },
+  {
+    "name": "Caravan Kings",
+    "min_players": 3,
+    "max_players": 6,
+    "playtime_minutes": 75,
+    "difficulty": "medium",
+    "tags": ["negotiation", "trading"],
+    "description": "Haggle, ally, and betray your way to control of the desert trade routes."
+  },
+  {
+    "name": "Moonbase Delta",
+    "min_players": 1,
+    "max_players": 4,
+    "playtime_minutes": 90,
+    "difficulty": "heavy",
+    "tags": ["cooperative", "sci-fi"],
+    "description": "Keep a failing lunar base alive through cascading system failures."
+  },
+  {
+    "name": "Ironroot",
+    "min_players": 2,
+    "max_players": 4,
+    "playtime_minutes": 120,
+    "difficulty": "heavy",
+    "tags": ["strategy", "asymmetric"],
+    "description": "Four asymmetric factions struggle for control of an ancient forest kingdom."
+  }
+]
