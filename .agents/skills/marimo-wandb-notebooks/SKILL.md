@@ -10,13 +10,29 @@ description: Create, convert, review, or refactor repo-ready marimo example note
 | Situation | Do this |
 | --- | --- |
 | Always | Read [`references/marimo-idioms.md`](references/marimo-idioms.md). |
-| Starting from an existing marimo `.py` | Do not convert. Inspect the `.py`, run `uvx marimo check <notebook.py>`, and polish against the repo conventions below. |
+| Starting from an existing marimo `.py` | Inspect the `.py` and read nearby pipeline logs (`result.json`, `marimo-check.log`, and `marimo-convert.log`) in `.logs/` first. For converted notebooks under `marimo/convert/`, also read [`references/convert-cleanup.md`](references/convert-cleanup.md) before broad cleanup. |
 | Starting from `.ipynb` | Run [`../../../scripts/convert-colab-to-marimo.py`](../../../scripts/convert-colab-to-marimo.py) `<notebook.ipynb> --name <example-name>`, then read [`references/convert-cleanup.md`](references/convert-cleanup.md) and the generated `marimo/convert/<name>/.logs/result.json`. |
 | Notebook uses W&B | Read [`references/wandb-patterns.md`](references/wandb-patterns.md). |
 
 The canonical exemplar is
 `examples/marimo/mnist-registry/mnist_registry.py` — when in doubt, match
 its structure.
+
+## Existing conversion triage
+
+For notebooks under `marimo/convert/`, diagnose before polishing:
+
+1. Read `.logs/result.json` to identify the failed stage.
+2. If `check` failed, read `.logs/marimo-check.log` and fix those errors first.
+3. If `convert` failed, read `.logs/marimo-convert.log` before inspecting style.
+4. After check blockers are fixed, polish against the notebook structure and W&B conventions.
+
+## Common conversion issues
+
+- Circular dependencies often come from imports or helper names returned by a
+  later cell and consumed by an earlier helper cell. Fix by moving shared
+  imports/constants into `app.setup(...)` or into the helper cell that uses
+  them, and avoid returning imported symbols from downstream logic cells.
 
 ## Repo conventions
 
