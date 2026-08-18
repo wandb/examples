@@ -11,7 +11,7 @@ description: Create, convert, review, or refactor repo-ready marimo example note
 | --- | --- |
 | Always | Read [`references/marimo-idioms.md`](references/marimo-idioms.md). |
 | Starting from an existing marimo `.py` | Do not convert. Inspect the `.py`, run `uvx marimo check <notebook.py>`, and polish against the repo conventions below. |
-| Starting from `.ipynb` | Run [`../../../scripts/convert-colab-to-marimo.py`](../../../scripts/convert-colab-to-marimo.py) `<notebook.ipynb> --name <example-name>`, then read [`references/conversion-cleanup.md`](references/conversion-cleanup.md) and the generated `marimo/convert/<name>/.logs/result.json`. |
+| Starting from `.ipynb` | Run [`../../../scripts/convert-colab-to-marimo.py`](../../../scripts/convert-colab-to-marimo.py) `<notebook.ipynb> --name <example-name>`, then read [`references/convert-cleanup.md`](references/convert-cleanup.md) and the generated `marimo/convert/<name>/.logs/result.json`. |
 | Notebook uses W&B | Read [`references/wandb-patterns.md`](references/wandb-patterns.md). |
 
 The canonical exemplar is
