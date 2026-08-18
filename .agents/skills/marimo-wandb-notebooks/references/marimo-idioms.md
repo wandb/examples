@@ -3,7 +3,7 @@
 Use this as a short review checklist when writing or polishing marimo notebooks
 for this repo.
 
-## Notebook Shape
+## Marimo Notebook Shape
 
 - A marimo notebook is a Python file. Cells are functions decorated with
   `@app.cell`; dependencies are the function arguments and return values.
@@ -66,14 +66,11 @@ guards, or use `mo.ui.run_button()` when a form fits.
 - The final expression of a cell is what renders.
 - Indented expressions inside `if`, `for`, `with`, or helper blocks do not
   become the cell output. Assign the display object, then put it last.
-- Use markdown cells for prose. Use view cells for rendering. Keep heavy logic
-  in named helpers.
+- Use markdown cells for prose. Use view cells for rendering. Keep
+  non-teaching heavy logic in named helpers.
 
 ## Logic And Presentation
 
-- Heavy lifting, such as loading data, training, logging, and saving artifacts,
-  goes in named `@app.function` helpers. The cell body should become a short,
-  readable call like `model, history = run_training(...)`.
 - View cells, often `hide_code=True`, render results and contain no logic worth
   reading.
 - Push temporaries into functions to keep notebook globals to a minimum. Every

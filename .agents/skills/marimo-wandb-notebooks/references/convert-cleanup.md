@@ -21,6 +21,8 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
 
 ## Common Converter Leftovers
 
+- Follow [`tutorial-notebook-objectives.md`](tutorial-notebook-objectives.md)
+  when deciding which instructional cells and W&B API examples to preserve.
 - Ensure the PEP 723 script metadata lists every runtime package the notebook
   imports. The converter may miss dependencies.
 - Remove Jupyter-only artifacts such as `%magic` commands, shell escapes, and
@@ -31,6 +33,16 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
   functions when they are only used in one step.
 - Prefer explicit markdown cells for prose. Do not leave tutorial text inside
   code comments or string literals in logic cells.
+
+## Common Check Failures
+
+- Circular dependencies often come from imports or helper names returned by a
+  later cell and consumed by an earlier helper cell. Fix by moving shared
+  imports/constants into `app.setup(...)` or into the helper cell that uses
+  them, and avoid returning imported symbols from downstream logic cells.
+- `multiple-definitions` errors can happen after moving the same import into
+  multiple cells. Keep cell-local imports private with an underscore alias
+  such as `from torch.utils.data import DataLoader as _DataLoader`.
 
 ## Widget Cleanup
 

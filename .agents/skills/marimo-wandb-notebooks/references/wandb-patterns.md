@@ -12,6 +12,19 @@ links artifacts and registry entries.
 
 ## Runs And Reruns
 
+- When possible use context managers when initializing runs.
+
+  ```python
+  import wandb
+
+  if wandb.init() as run:
+    run.log()
+  ```
+
+  If you do not use a context manager, explicitly finish a run with `wandb.Run.finish()`.
+
+- When possible, avoid [global functions](https://docs.wandb.ai/reference), with the exception of `wandb.init()`
+
 - marimo keeps the kernel alive across form re-submits, so finish any prior run
   before starting a new one:
 
