@@ -1,0 +1,112 @@
+Convert Summary
+Generated: 2026-08-18T03:52:17+00:00
+Path list: scripts/colab_sources/notebook_paths.txt
+
+- Total: 37
+- Needs action: 13
+- Passed: 24
+
+Needs Action
+- prepare_failed: colabs/keras/Keras_pipeline_with_Weights_and_Biases.ipynb
+  target: -
+  failed_stage: prepare
+  log: -
+  error: input file does not exist: colabs/keras/Keras_pipeline_with_Weights_and_Biases.ipynb
+
+- check_failed: colabs/pytorch/Organizing_Hyperparameter_Sweeps_in_PyTorch_with_W&B.ipynb
+  target: marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py
+  failed_stage: check
+  log: marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/.logs/marimo-check.log
+  error: -
+
+- check_failed: colabs/tables/AlphaFold_with_W&B_Align,_Fold,_Log.ipynb
+  target: marimo/convert/alphafold-with-w-b-align-fold-log/alphafold_with_w_b_align_fold_log.py
+  failed_stage: check
+  log: marimo/convert/alphafold-with-w-b-align-fold-log/.logs/marimo-check.log
+  error: -
+
+- check_failed: colabs/torchtune/torchtune_and_wandb.ipynb
+  target: marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py
+  failed_stage: check
+  log: marimo/convert/torchtune-and-wandb/.logs/marimo-check.log
+  error: -
+
+- check_failed: colabs/wandb-artifacts/Pipeline_Versioning_with_W&B_Artifacts.ipynb
+  target: marimo/convert/pipeline-versioning-with-w-b-artifacts/pipeline_versioning_with_w_b_artifacts.py
+  failed_stage: check
+  log: marimo/convert/pipeline-versioning-with-w-b-artifacts/.logs/marimo-check.log
+  error: -
+
+- check_failed: colabs/wandb_registry/zoo_wandb.ipynb
+  target: marimo/convert/zoo-wandb/zoo_wandb.py
+  failed_stage: check
+  log: marimo/convert/zoo-wandb/.logs/marimo-check.log
+  error: -
+
+- prepare_failed: examples/boosting-algorithms/xgboost-housing/train.py
+  target: marimo/convert/train/train.py
+  failed_stage: prepare
+  log: -
+  error: input must be a .ipynb file: /Users/noahluna/Desktop/examples_group/examples/examples/boosting-algorithms/xgboost-housing/train.py
+
+- prepare_failed: examples/keras/keras-cnn-fashion/train.py
+  target: marimo/convert/train/train.py
+  failed_stage: prepare
+  log: -
+  error: input must be a .ipynb file: /Users/noahluna/Desktop/examples_group/examples/examples/keras/keras-cnn-fashion/train.py
+
+- prepare_failed: examples/pytorch/pytorch-cnn-fashion/fashion_data.py
+  target: marimo/convert/fashion-data/fashion_data.py
+  failed_stage: prepare
+  log: -
+  error: input must be a .ipynb file: /Users/noahluna/Desktop/examples_group/examples/examples/pytorch/pytorch-cnn-fashion/fashion_data.py
+
+- prepare_failed: examples/pytorch/pytorch-ddp/log-ddp.py
+  target: marimo/convert/log-ddp/log_ddp.py
+  failed_stage: prepare
+  log: -
+  error: input must be a .ipynb file: /Users/noahluna/Desktop/examples_group/examples/examples/pytorch/pytorch-ddp/log-ddp.py
+
+- prepare_failed: examples/tensorflow/tf-cnn-fashion/train.py
+  target: marimo/convert/train/train.py
+  failed_stage: prepare
+  log: -
+  error: input must be a .ipynb file: /Users/noahluna/Desktop/examples_group/examples/examples/tensorflow/tf-cnn-fashion/train.py
+
+- prepare_failed: examples/tensorflow/tf-estimator-mnist/mnist.py
+  target: marimo/convert/mnist/mnist.py
+  failed_stage: prepare
+  log: -
+  error: input must be a .ipynb file: /Users/noahluna/Desktop/examples_group/examples/examples/tensorflow/tf-estimator-mnist/mnist.py
+
+- prepare_failed: examples/wandb-sweeps/sweeps-xgboost/xgboost_tune.py
+  target: marimo/convert/xgboost-tune/xgboost_tune.py
+  failed_stage: prepare
+  log: -
+  error: input must be a .ipynb file: /Users/noahluna/Desktop/examples_group/examples/examples/wandb-sweeps/sweeps-xgboost/xgboost_tune.py
+
+Passed
+- colabs/boosting/Credit_Scorecards_with_XGBoost_and_W&B.ipynb -> marimo/convert/credit-scorecards-with-xgboost-and-w-b/credit_scorecards_with_xgboost_and_w_b.py
+- colabs/boosting/Using_W&B_Sweeps_with_XGBoost.ipynb -> marimo/convert/using-w-b-sweeps-with-xgboost/using_w_b_sweeps_with_xgboost.py
+- colabs/datasets-predictions/W&B_Tables_Quickstart.ipynb -> marimo/convert/w-b-tables-quickstart/w_b_tables_quickstart.py
+- colabs/diffusers/lcm-diffusers.ipynb -> marimo/convert/lcm-diffusers/lcm_diffusers.py
+- colabs/huggingface/Custom_Progress_Callback.ipynb -> marimo/convert/custom-progress-callback/custom_progress_callback.py
+- colabs/huggingface/Huggingface_wandb.ipynb -> marimo/convert/huggingface-wandb/huggingface_wandb.py
+- colabs/huggingface/Optimize_Hugging_Face_models_with_Weights_&_Biases.ipynb -> marimo/convert/optimize-hugging-face-models-with-weights-biases/optimize_hugging_face_models_with_weights_biases.py
+- colabs/intro/Intro_to_Weights_&_Biases.ipynb -> marimo/convert/intro-to-weights-biases/intro_to_weights_biases.py
+- colabs/intro/Intro_to_Weights_&_Biases_keras.ipynb -> marimo/convert/intro-to-weights-biases-keras/intro_to_weights_biases_keras.py
+- colabs/intro/Report_API_Quickstart.ipynb -> marimo/convert/report-api-quickstart/report_api_quickstart.py
+- colabs/intro/run_quickstart.ipynb -> marimo/convert/run-quickstart/run_quickstart.py
+- colabs/keras/Use_WandbEvalCallback_in_your_Keras_workflow.ipynb -> marimo/convert/use-wandbevalcallback-in-your-keras-workflow/use_wandbevalcallback_in_your_keras_workflow.py
+- colabs/keras/Use_WandbMetricLogger_in_your_Keras_workflow.ipynb -> marimo/convert/use-wandbmetriclogger-in-your-keras-workflow/use_wandbmetriclogger_in_your_keras_workflow.py
+- colabs/keras/Use_WandbModelCheckpoint_in_your_Keras_workflow.ipynb -> marimo/convert/use-wandbmodelcheckpoint-in-your-keras-workflow/use_wandbmodelcheckpoint_in_your_keras_workflow.py
+- colabs/openai/OpenAI_API_Autologger_Quickstart.ipynb -> marimo/convert/openai-api-autologger-quickstart/openai_api_autologger_quickstart.py
+- colabs/pytorch-lightning/Optimize_PyTorch_Lightning_models_with_Weights_&_Biases.ipynb -> marimo/convert/optimize-pytorch-lightning-models-with-weights-biases/optimize_pytorch_lightning_models_with_weights_biases.py
+- colabs/pytorch/Simple_PyTorch_Integration.ipynb -> marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py
+- colabs/tensorflow/Hyperparameter_Optimization_in_TensorFlow_using_W&B_Sweeps.ipynb -> marimo/convert/hyperparameter-optimization-in-tensorflow-using-w-b-sweeps/hyperparameter_optimization_in_tensorflow_using_w_b_sweeps.py
+- colabs/wandb-artifacts/WandB_Artifacts_Time_to_live_TTL_Walkthrough.ipynb -> marimo/convert/wandb-artifacts-time-to-live-ttl-walkthrough/wandb_artifacts_time_to_live_ttl_walkthrough.py
+- colabs/wandb-log/Configs_in_W&B.ipynb -> marimo/convert/configs-in-w-b/configs_in_w_b.py
+- colabs/wandb-log/Log_(Almost)_Anything_with_W&B_Media.ipynb -> marimo/convert/log-almost-anything-with-w-b-media/log_almost_anything_with_w_b_media.py
+- colabs/wandb-log/Log_a_Confusion_Matrix_with_W&B.ipynb -> marimo/convert/log-a-confusion-matrix-with-w-b/log_a_confusion_matrix_with_w_b.py
+- colabs/wandb-log/Plot_ROC_Curves_with_W&B.ipynb -> marimo/convert/plot-roc-curves-with-w-b/plot_roc_curves_with_w_b.py
+- colabs/yolo/Train_and_Debug_YOLOv5_Models_with_Weights_&_Biases_.ipynb -> marimo/convert/train-and-debug-yolov5-models-with-weights-biases/train_and_debug_yolov5_models_with_weights_biases.py

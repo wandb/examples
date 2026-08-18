@@ -13,7 +13,8 @@ plus optional `references/` files.
 
 ## Scripts
 
-Use [`../scripts/prepare-marimo-example.sh`](../scripts/prepare-marimo-example.sh)
+Use [`../../scripts/convert-colab-to-marimo.py`](../../scripts/convert-colab-to-marimo.py)
 to create the initial marimo notebook from a Jupyter `.ipynb`, capture
 `marimo check` output, and write a temporary `.conversion/` report directory
-for the polishing pass.
+for the polishing pass. The report directory includes a Markdown handoff,
+raw convert/check output, structured JSON metadata, and an event log.

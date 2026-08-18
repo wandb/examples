@@ -3,13 +3,11 @@
 Use this as a short review checklist when writing or polishing marimo notebooks
 for this repo.
 
-## Notebook Shape
+## Marimo Notebook Shape
 
 - A marimo notebook is a Python file. Cells are functions decorated with
   `@app.cell`; dependencies are the function arguments and return values.
 - Use a single setup cell for imports, constants, and environment detection.
-- Add PEP 723 script metadata at the top so `uvx marimo ... --sandbox` can
-  recreate the runtime environment.
 - Keep globals scarce. Every returned name is notebook-wide, so move
   step-local scratch work into helper functions.
 
@@ -26,27 +24,15 @@ for this repo.
 
 ## Gating Expensive Work
 
-Batch every control into one form so nothing expensive runs until the user
-submits:
+Batch controls into one form, then gate exactly once:
 
 ```python
-form = (
-    mo.md(
-        """
-        **Training.**
-
-        {epochs}  {batch_size}
-        ...
-        """
-    )
-    .batch(epochs=epochs, batch_size=batch_size, ...)
-    .form(submit_button_label="Train model", bordered=False)
-)
+form = mo.md("{epochs} {batch_size}").batch(
+    epochs=epochs,
+    batch_size=batch_size,
+).form(submit_button_label="Train model", bordered=False)
 form
 ```
-
-`form.value` is `None` until submit. Gate one cell on it, with a message that
-tells the reader what will happen:
 
 ```python
 mo.stop(
@@ -56,26 +42,20 @@ mo.stop(
 cfg = form.value
 ```
 
-Every downstream cell references names defined after the gate, such as `cfg`,
-`run`, or `model`, so marimo's dependency graph holds them all back until the
-form is submitted. Do not re-check the form in later cells, wrap cells in `if`
-guards, or use `mo.ui.run_button()` when a form fits.
+Downstream cells should depend on post-gate names such as `cfg`, `run`, or
+`model`. Do not re-check the form in later cells or wrap cells in `if` guards.
 
 ## Rendering
 
 - The final expression of a cell is what renders.
 - Indented expressions inside `if`, `for`, `with`, or helper blocks do not
   become the cell output. Assign the display object, then put it last.
-- Use markdown cells for prose. Use view cells for rendering. Keep heavy logic
-  in named helpers.
+- Use markdown cells for prose. Use view cells for rendering. Keep
+  non-teaching heavy logic in named helpers.
 
 ## Logic And Presentation
 
-- Heavy lifting, such as loading data, training, logging, and saving artifacts,
-  goes in named `@app.function` helpers. The cell body should become a short,
-  readable call like `model, history = run_training(...)`.
-- View cells, often `hide_code=True`, render results and contain no logic worth
-  reading.
+- View cells should keep rendering code short and avoid unrelated computation.
 - Push temporaries into functions to keep notebook globals to a minimum. Every
   returned name is reserved across the whole file.
 - Present results with real components, such as `mo.ui.table`,
@@ -94,11 +74,3 @@ guards, or use `mo.ui.run_button()` when a form fits.
 - Let unexpected programming errors surface.
 - Catch only specific, expected failures where the notebook can give useful
   recovery guidance, such as W&B auth or account setup problems.
-
-## Verification
-
-Run this before handing back:
-
-```bash
-uvx marimo check <notebook.py>
-```
