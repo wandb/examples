@@ -10,8 +10,8 @@ description: Create, convert, review, or refactor repo-ready marimo example note
 | Situation | Do this |
 | --- | --- |
 | Always | Read [`references/marimo-idioms.md`](references/marimo-idioms.md). |
-| Starting from an existing marimo `.py` | Do not run `prepare-marimo-example.py`. Inspect the `.py`, run `uvx marimo check <notebook.py>`, and polish against the repo conventions below. |
-| Starting from `.ipynb` | Run [`../../../scripts/convert-colab-to-marimo.py`](../../../scripts/convert-colab-to-marimo.py) `<notebook.ipynb> --name <example-name>`, then read [`references/conversion-cleanup.md`](references/conversion-cleanup.md) with `.conversion/conversion-report.md`, `.conversion/marimo-convert.txt`, `.conversion/marimo-check.txt`, and `.conversion/conversion.json`. |
+| Starting from an existing marimo `.py` | Do not convert. Inspect the `.py`, run `uvx marimo check <notebook.py>`, and polish against the repo conventions below. |
+| Starting from `.ipynb` | Run [`../../../scripts/convert-colab-to-marimo.py`](../../../scripts/convert-colab-to-marimo.py) `<notebook.ipynb> --name <example-name>`, then read [`references/conversion-cleanup.md`](references/conversion-cleanup.md) and the generated `marimo/convert/<name>/.logs/result.json`. |
 | Notebook uses W&B | Read [`references/wandb-patterns.md`](references/wandb-patterns.md). |
 
 The canonical exemplar is
@@ -82,5 +82,5 @@ Put heavy work in named helpers and keep view cells focused on rendering. See
   shows output or is a named helper.
 - Fresh-eyes test: a reader with a new W&B account can follow Prerequisites,
   submit the form, and verify the result from "Verify and next steps" alone.
-- `.conversion/` files are temporary debugging artifacts and must not be
+- `.logs/` files are temporary debugging artifacts and must not be
   referenced by the final notebook or docs.

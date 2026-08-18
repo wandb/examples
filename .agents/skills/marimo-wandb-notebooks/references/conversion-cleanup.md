@@ -1,16 +1,19 @@
 # Conversion Cleanup
 
 Use this after `scripts/convert-colab-to-marimo.py` creates the initial
-marimo notebook from a Jupyter `.ipynb`.
+marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
+`marimo/convert/<name>/.logs/`.
 
-## Start From The Report
+## Start from conversion logs
 
-- Read `.conversion/conversion-report.md` in the generated example directory.
-- Read `.conversion/marimo-convert.txt` if conversion failed or produced
-  unexpected output.
-- Read `.conversion/marimo-check.txt` before editing the notebook.
-- Read `.conversion/conversion.json` for structured command results and parsed
-  marimo check issues.
+- Read `marimo/convert/<name>/.logs/result.json` first. Check `status`,
+  `failed_stage`, `source`, `target`, and each command's exit code.
+- If `failed_stage` is `convert`, read
+  `marimo/convert/<name>/.logs/marimo-convert.log` before editing the notebook.
+- If `failed_stage` is `check`, read
+  `marimo/convert/<name>/.logs/marimo-check.log` before editing the notebook.
+- If `status` is `ok`, still skim `result.json` to confirm the source and target
+  paths before cleanup.
 - Fix `marimo check` issues first; they often point to converted cells that
   need to be split, reordered, or moved into helpers.
 
