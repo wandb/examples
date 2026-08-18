@@ -6,6 +6,8 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
 
 ## Start from conversion logs
 
+- For batch runs, start with `marimo/convert/conversion-summary.txt` to find
+  notebooks that need action.
 - Read `marimo/convert/<name>/.logs/result.json` first. Check `status`,
   `failed_stage`, `source`, `target`, and each command's exit code.
 - If `failed_stage` is `convert`, read

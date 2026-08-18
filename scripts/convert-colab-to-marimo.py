@@ -2,7 +2,8 @@
 """Convert Jupyter notebooks into marimo examples.
 
 Convert one notebook at a time, or in batch from a list of paths. Creates
-diagnostic output in marimo/convert/<name>/.logs/.
+per-notebook diagnostics in marimo/convert/<name>/.logs/. Batch runs also
+write marimo/convert/convert-summary.txt.
 
 Usage:
   convert-colab-to-marimo.py notebook.ipynb --name example-name
@@ -18,15 +19,31 @@ import re
 import shlex
 import subprocess
 import sys
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Sequence
 
 MARIMO_DIR = Path("marimo")
+CONVERT_DIR = MARIMO_DIR / "convert"
+BATCH_SUMMARY = CONVERT_DIR / "convert-summary.txt"
 
 
 class PrepareError(RuntimeError):
     """User-facing setup or input error."""
+
+
+@dataclass
+class BatchResult:
+    """One notebook entry in the batch summary."""
+
+    raw_path: str
+    status: str
+    source: Path | None = None
+    target: Path | None = None
+    failed_stage: str | None = None
+    log: Path | None = None
+    error: str | None = None
 
 
 def validate_repo_root(repo_root: Path) -> None:
@@ -123,6 +140,23 @@ def validate_name(name: str) -> None:
         )
 
 
+def target_paths(name: str, *, repo_root: Path) -> tuple[Path, Path, Path]:
+    """Return target directory, notebook file, and log directory for ``name``.
+
+    Args:
+        name: Target example name under ``marimo/convert``.
+        repo_root: Repository root used to resolve output paths.
+
+    Returns:
+        Tuple of ``(target_dir, target_file, debug_dir)``.
+    """
+
+    target_dir = repo_root / CONVERT_DIR / name
+    target = target_dir / f"{name.replace('-', '_')}.py"
+    debug_dir = target_dir / ".logs"
+    return target_dir, target, debug_dir
+
+
 def run_command(argv: Sequence[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
     """Run a command and capture stdout and stderr together.
 
@@ -182,14 +216,14 @@ def write_diagnostics(
     failed_stage: str | None,
     commands: dict[str, subprocess.CompletedProcess[str]],
 ) -> None:
-    """Write conversion diagnostics to a JSON file and failure logs.
+    """Write convert diagnostics to a JSON file and failure logs.
 
     Args:
         debug_dir: Directory for ``result.json`` and failure logs.
         source: Source notebook path.
         target: Generated marimo Python file path.
         repo_root: Repository root used for display paths.
-        status: Final status string for the conversion attempt.
+        status: Final status string for the convert attempt.
         failed_stage: Stage name that failed, if any.
         commands: Completed commands keyed by stage name.
     """
@@ -235,7 +269,7 @@ def prepare_notebook(
     force: bool,
 ) -> str:
     """Convert and check one notebook.
-    
+
     Uses ``uvx marimo convert`` and ``uvx marimo check``.
 
     Args:
@@ -245,7 +279,7 @@ def prepare_notebook(
         force: Whether to overwrite an existing target.
 
     Returns:
-        One of ``"ok"``, ``"conversion_failed"``, or ``"check_failed"``.
+        One of ``"ok"``, ``"convert_failed"``, or ``"check_failed"``.
 
     Raises:
         PrepareError: If the input or target name is invalid.
@@ -255,9 +289,7 @@ def prepare_notebook(
         raise PrepareError(f"input must be a .ipynb file: {source}")
     validate_name(name)
 
-    target_dir = repo_root / MARIMO_DIR / "convert" / name
-    target = target_dir / f"{name.replace('-', '_')}.py"
-    debug_dir = target_dir / ".logs"
+    target_dir, target, debug_dir = target_paths(name, repo_root=repo_root)
 
     if target.exists() and not force:
         raise PrepareError(f"target already exists: {display_path(target, repo_root)}")
@@ -274,7 +306,7 @@ def prepare_notebook(
     )
 
     if commands["convert"].returncode != 0:
-        status = "conversion_failed"
+        status = "convert_failed"
         failed_stage = "convert"
     else:
         print(f"Checking {display_path(target, repo_root)}...", flush=True)
@@ -321,6 +353,77 @@ def iter_path_list(path_list: Path) -> list[str]:
     ]
 
 
+def write_batch_summary(
+    *,
+    summary_path: Path,
+    path_list: Path,
+    repo_root: Path,
+    results: Sequence[BatchResult],
+) -> None:
+    """Write a human-readable summary for a batch convert.
+
+    Args:
+        summary_path: Text file to write.
+        path_list: Batch input file used for the run.
+        repo_root: Repository root used for display paths.
+        results: Per-notebook batch results.
+    """
+
+    needs_action = [result for result in results if result.status != "ok"]
+    passed = [result for result in results if result.status == "ok"]
+
+    lines = [
+        "Convert Summary",
+        f"Generated: {datetime.now(timezone.utc).isoformat(timespec='seconds')}",
+        f"Path list: {display_path(path_list, repo_root)}",
+        "",
+        f"- Total: {len(results)}",
+        f"- Needs action: {len(needs_action)}",
+        f"- Passed: {len(passed)}",
+        "",
+        "Needs Action",
+    ]
+
+    if needs_action:
+        for result in needs_action:
+            source = result.source if result.source is not None else result.raw_path
+            target = display_path(result.target, repo_root) if result.target else ""
+            log = display_path(result.log, repo_root) if result.log else ""
+            source_text = (
+                display_path(source, repo_root) if isinstance(source, Path) else source
+            )
+            lines.extend(
+                [
+                    f"- {result.status}: {source_text}",
+                    f"  target: {target or '-'}",
+                    f"  failed_stage: {result.failed_stage or '-'}",
+                    f"  log: {log or '-'}",
+                    f"  error: {result.error or '-'}",
+                    "",
+                ]
+            )
+    else:
+        lines.append("No notebooks need action.")
+        lines.append("")
+
+    lines.append("Passed")
+
+    if passed:
+        for result in passed:
+            source = (
+                display_path(result.source, repo_root)
+                if result.source
+                else result.raw_path
+            )
+            target = display_path(result.target, repo_root) if result.target else ""
+            lines.append(f"- {source} -> {target}")
+    else:
+        lines.append("No notebooks passed.")
+
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def run_batch(
     path_list: Path,
     *,
@@ -341,24 +444,72 @@ def run_batch(
     """
 
     had_failure = False
+    results: list[BatchResult] = []
 
     for raw_path in iter_path_list(path_list):
+        source: Path | None = None
+        target: Path | None = None
+        name: str | None = None
+
         try:
             # Batch entries are always relative to the repository root.
             source = resolve_file(raw_path, base_dir=repo_root)
+            name = slug_from_notebook(source)
+            _, target, debug_dir = target_paths(name, repo_root=repo_root)
             status = prepare_notebook(
                 source,
-                slug_from_notebook(source),
+                name,
                 repo_root=repo_root,
                 force=force,
             )
         except PrepareError as error:
             print(error, file=sys.stderr)
             had_failure = True
+            if name is not None and target is None:
+                _, target, _ = target_paths(name, repo_root=repo_root)
+            results.append(
+                BatchResult(
+                    raw_path=raw_path,
+                    source=source,
+                    target=target,
+                    status="prepare_failed",
+                    failed_stage="prepare",
+                    error=str(error),
+                )
+            )
             continue
 
-        if status == "conversion_failed" or (status == "check_failed" and fail_on_check):
+        failed_stage = None
+        log = None
+        if status == "convert_failed":
+            failed_stage = "convert"
+            log = debug_dir / "marimo-convert.log"
+        elif status == "check_failed":
+            failed_stage = "check"
+            log = debug_dir / "marimo-check.log"
+
+        results.append(
+            BatchResult(
+                raw_path=raw_path,
+                source=source,
+                target=target,
+                status=status,
+                failed_stage=failed_stage,
+                log=log,
+            )
+        )
+
+        if status == "convert_failed" or (status == "check_failed" and fail_on_check):
             had_failure = True
+
+    summary_path = repo_root / BATCH_SUMMARY
+    write_batch_summary(
+        summary_path=summary_path,
+        path_list=path_list,
+        repo_root=repo_root,
+        results=results,
+    )
+    print(f"Batch summary: {display_path(summary_path, repo_root)}")
 
     return int(had_failure)
 
@@ -367,7 +518,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser.
 
     Returns:
-        Parser for single-notebook and batch conversion modes.
+        Parser for single-notebook and batch convert modes.
     """
     parser = argparse.ArgumentParser(
         description="Convert Jupyter notebooks to marimo examples with minimal diagnostics."
@@ -385,14 +536,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run the CLI.
-
-    Args:
-        argv: Optional argument list for tests; defaults to ``sys.argv``.
-
-    Returns:
-        Process exit code.
-    """
+    """Convert one notebook or a batch of notebooks."""
 
     args = build_parser().parse_args(argv)
     repo_root = Path.cwd().resolve()
@@ -422,7 +566,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             force=args.force,
         )
 
-        if status == "conversion_failed":
+        if status == "convert_failed":
             return 1
         if status == "check_failed" and args.fail_on_check:
             return 1
