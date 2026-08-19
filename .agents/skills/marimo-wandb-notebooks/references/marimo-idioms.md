@@ -5,14 +5,17 @@ for this repo.
 
 ## Marimo Notebook Shape
 
-- A marimo notebook is a Python file. Cells are functions decorated with
-  `@app.cell`; dependencies are the function arguments and return values.
-- Add PEP 723 metadata at the top with `requires-python` and every runtime
-  package the notebook imports, using lower-bound pins such as `"marimo>=0.9"`
-  and `"wandb>=0.18"`.
-- Use a single setup cell for imports, constants, and environment detection.
-- Keep globals scarce. Every returned name is notebook-wide, so move
-  step-local scratch work into helper functions.
+- A marimo notebook is a Python file whose cells are decorated with
+  `@app.cell`. marimo derives dependencies from the global names each cell
+  defines and references; the serialized cell parameters and returns reflect
+  those dependencies.
+- Add PEP 723 metadata with `requires-python` and every runtime package the
+  notebook imports, using repository-approved minimum version constraints such
+  as `"marimo>=0.9"` and `"wandb>=0.18"`.
+- Use the marimo setup cell for shared imports, true constants, and environment
+  detection. Keep tutorial parameters and reactive values in regular cells.
+- Keep notebook globals scarce. Use underscore-prefixed variables for
+  cell-local temporaries; use helper functions when a cell has substantial scratch logic.
 
 ## Reactivity
 
@@ -24,10 +27,14 @@ for this repo.
 - Do not wrap downstream cells in repeated `if form.value` or button checks.
   Gate once with `mo.stop`, then make later cells depend on names defined after
   the gate.
+- Gate expensive or externally side-effecting operations so ordinary reactive
+  updates do not repeat them. Examples include model training, W&B run
+  creation, artifact uploads, and Registry mutations.
 
 ## Gating Expensive Work
 
-Batch controls into one form, then gate exactly once:
+For each expensive workflow stage, batch its controls into one form and gate
+once at the stage boundary:
 
 ```python
 form = mo.md("{epochs} {batch_size}").batch(
@@ -44,6 +51,9 @@ mo.stop(
 )
 cfg = form.value
 ```
+
+If an expensive action has no configuration inputs, prefer `mo.ui.run_button`
+with `mo.stop` instead of creating an empty form.
 
 Downstream cells should depend on post-gate names such as `cfg`, `run`, or
 `model`. Do not re-check the form in later cells or wrap cells in `if` guards.

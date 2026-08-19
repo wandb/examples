@@ -1,55 +1,37 @@
 # W&B Patterns
 
-Use these patterns when a marimo example initializes W&B runs, logs metrics, or
-links artifacts and registry entries.
+Use these patterns when a marimo example uses W&B Python SDK.
 
 ## Authentication
 
 - Offer a `mo.ui.text(kind="password")` API-key field.
-- Fall back to ambient login when the field is blank, such as `wandb login`,
-  `WANDB_API_KEY`, or netrc.
-- Never write the API key into the run config.
+- When the field is blank, rely on W&B's normal credential resolution
+  (`WANDB_API_KEY`, W&B settings, or credentials stored by `wandb login`).
+- Never display, log, or store the API key in run config.
 
 ## Runs And Reruns
 
-- When possible, initialize runs with context managers.
+- Prefer a context manager when the run lifecycle fits within one cell:
 
   ```python
-  import wandb
-
   with wandb.init() as run:
       run.log({"loss": 0.1})
   ```
 
-  If you do not use a context manager, explicitly finish the run with
-  `run.finish()`.
+  Otherwise, explicitly finish the run with `wandb.Run.finish()`.
 
-- Prefer run-bound methods such as `run.log`, `run.log_artifact`, and
-  `run.summary` unless the notebook is intentionally teaching a global API.
+  If a run must stay active across cells, do not use a context manager. Ensure
+  any prior active run is finished before starting another one.
 
-- marimo keeps the kernel alive across form re-submits, so finish any prior run
-  before starting a new one:
+- Prefer run-bound methods such as `wandb.Run.log()`, `wandb.Run.log_artifact()`, and
+  `wandb.Run.summary` unless the tutorial intentionally teaches a global
+  API from `wandb.apis.public`.
 
-  ```python
-  if wandb.run is not None:
-      wandb.finish()
-  ```
-
-- Surface the run URL immediately after `wandb.init` so readers can watch
-  metrics stream:
-
-  ```python
-  mo.md(f"**Run started:** [`{run.name}`]({run.url})")
-  ```
-
-- Group metrics into UI sections with slash-prefixed names, such as
-  `Training/loss`, and put headline numbers in `run.summary`.
 
 ## Entity
 
-- Include an entity field.
-- Some accounts require a team/entity. Explain how to find the right entity in
-  W&B, and make the field easy to override.
+- Include an overridable team entity field.
+- Explain how to find the appropriate team entity in W&B when needed.
 
 ## Expected Failures
 
