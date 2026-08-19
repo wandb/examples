@@ -7,6 +7,9 @@ for this repo.
 
 - A marimo notebook is a Python file. Cells are functions decorated with
   `@app.cell`; dependencies are the function arguments and return values.
+- Add PEP 723 metadata at the top with `requires-python` and every runtime
+  package the notebook imports, using lower-bound pins such as `"marimo>=0.9"`
+  and `"wandb>=0.18"`.
 - Use a single setup cell for imports, constants, and environment detection.
 - Keep globals scarce. Every returned name is notebook-wide, so move
   step-local scratch work into helper functions.

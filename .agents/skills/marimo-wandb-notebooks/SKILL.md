@@ -1,75 +1,113 @@
 ---
 name: marimo-wandb-notebooks
-description: Create, convert, review, or refactor repo-ready marimo example notebooks for wandb/examples.
+description: Convert existing Jupyter or Colab .ipynb tutorials in wandb/examples into repo-ready marimo .py notebooks suitable for molab. Use when converting notebooks, reviewing or cleaning up pre-converted marimo notebooks, diagnosing saved conversion logs, fixing marimo check failures, or refactoring Jupyter execution-order dependencies for marimo while preserving the original tutorial's W&B teaching value.
 ---
 
-# marimo example notebooks for wandb/examples
+# Convert W&B example notebooks to marimo
 
-## Read order
+## Determine the starting state
 
-| Situation | Do this |
-| --- | --- |
-| Always | Read [`references/marimo-idioms.md`](references/marimo-idioms.md) and [`references/tutorial-notebook-objectives.md`](references/tutorial-notebook-objectives.md). |
-| Starting from an existing marimo `.py` | Inspect the `.py` and read nearby pipeline logs (`result.json`, `marimo-check.log`, and `marimo-convert.log`) in `.logs/` first. For converted notebooks under `marimo/convert/`, also read [`references/convert-cleanup.md`](references/convert-cleanup.md) before broad cleanup. |
-| Starting from `.ipynb` | Run [`../../../scripts/convert-colab-to-marimo.py`](../../../scripts/convert-colab-to-marimo.py) `<notebook.ipynb> --name <example-name>`, then read [`references/convert-cleanup.md`](references/convert-cleanup.md) and the generated `marimo/convert/<name>/.logs/result.json`. |
-| Notebook uses W&B | Read [`references/wandb-patterns.md`](references/wandb-patterns.md). |
+### `.ipynb`
 
-Preserve tutorial teaching value while applying marimo conventions.
+If no usable marimo conversion exists:
 
-The canonical exemplar is
-`examples/marimo/mnist-registry/mnist_registry.py` — when in doubt, match
-its structure.
+1. Inspect the source notebook.
+2. From the repository root, run:
 
-## Existing conversion triage
+  ```bash
+  scripts/convert-colab-to-marimo.py <notebook.ipynb> --name <example-name>
+  ```
 
-For notebooks under `marimo/convert/`, diagnose logs before polishing. Read
-`.logs/result.json`, inspect the failed stage's log, fix `marimo check`
-blockers first, then run a fresh `uvx marimo check`. See
-[`references/convert-cleanup.md`](references/convert-cleanup.md) for the full
-triage and cleanup checklist.
+3. Inspect the generated `.py` and `.logs/`.
+4. Read [`references/convert-cleanup.md`](references/convert-cleanup.md).
+
+### Pre-converted `.py`
+
+Resume from the existing conversion:
+
+1. Inspect the `.py` and nearby `.logs/`.
+2. Read `.logs/result.json` first when available, then the relevant stage log.
+3. Run a fresh `uvx marimo check <notebook.py>`.
+4. Read [`references/convert-cleanup.md`](references/convert-cleanup.md).
+
+Do not reconvert solely because the original `.ipynb` exists. Treat saved
+logs as diagnostic history, not current state. Reconvert only when explicitly
+requested or when the existing conversion is unusable.
+
+## Reference routing
+
+Before modifying a notebook, read:
+
+* [`references/marimo-idioms.md`](references/marimo-idioms.md)
+* [`references/tutorial-notebook-objectives.md`](references/tutorial-notebook-objectives.md)
+
+Also read:
+
+* [`references/convert-cleanup.md`](references/convert-cleanup.md) for
+  generated, pre-converted, or failed conversions.
+* [`references/wandb-patterns.md`](references/wandb-patterns.md) when
+  reviewing or changing W&B API usage.
+
+## Sources of truth
+
+* Original `.ipynb`: tutorial intent, narrative, and featured W&B behavior.
+* Current `.py`: current conversion state.
+* `.logs/`: historical diagnostic evidence.
+* Fresh `marimo check`: current static validity.
+* `examples/marimo/mnist-registry/mnist_registry.py`: structural exemplar
+  when the references do not specify a choice. Do not copy tutorial-specific
+  details from the exemplar.
+
+## Conversion priorities
+
+1. Produce valid marimo with a correct reactive graph.
+2. Preserve tutorial behavior, teaching value, and visible featured W&B APIs.
+3. Remove marimo conversion artifacts and unnecessary global state.
+4. Apply repository conventions and polish the reader experience.
+
+Fix `marimo check` blockers first. Passing the check is necessary, but does
+not by itself complete the conversion.
 
 ## Repo conventions
 
-- Each example lives in its own directory: `examples/marimo/<example-name>/`,
-  with the notebook as `<example_name>.py`.
-- **The `.py` file is the source of truth.** A workflow generates the
-  markdown export; never hand-edit a generated `.md` next to a notebook.
-- Start the file with a PEP 723 script header (pinned lower bounds, e.g.
-  `"marimo>=0.9"`, `"wandb>=0.18"`) followed by a module docstring that says
-  what the notebook builds and how to run it:
+* Keep each completed example in `examples/marimo/<example-name>/` with the
+  notebook named `<example_name>.py`.
+* Treat `.py` as authoritative; never edit generated `.md` exports.
+* Start the notebook with a PEP 723 script header using the dependency
+  conventions in [`references/marimo-idioms.md`](references/marimo-idioms.md),
+  followed by a module docstring describing what the notebook builds and how
+  to run it.
+* Do not commit runtime-generated files such as `data/`, `wandb/`,
+  `artifacts/`, `__marimo__/`, model weights, or similar outputs.
+* Use `.logs/` only for diagnosis; final notebooks and docs must not depend
+  on them.
 
-  ```python
-  """One-paragraph summary of what the notebook builds.
+## Review-only tasks
 
-  Run:
+When reviewing without editing, inspect the notebook and relevant logs, run a
+fresh `marimo check` when possible, and compare with the source `.ipynb` when
+needed.
 
-      uvx marimo edit <example_name>.py --sandbox
-  """
-  ```
+Report material issues in this order:
 
-- Runtime droppings (`data/`, `wandb/`, `artifacts/`, `__marimo__/`, model
-  weights) must not be committed.
+1. correctness and marimo blockers;
+2. tutorial fidelity;
+3. W&B API usage;
+4. repository conventions.
 
-## Notebook structure
-
-Use this marimo skeleton: setup cell, intro, outline, configuration form,
-gated pipeline, verify/next steps, helper functions. See
-[`references/marimo-idioms.md`](references/marimo-idioms.md) for marimo
-mechanics and
-[`references/tutorial-notebook-objectives.md`](references/tutorial-notebook-objectives.md)
-for narrative structure.
-
-## Core priorities
-
-- Gate expensive work once, then let marimo's graph run.
-- Preserve visible teaching code, especially featured W&B API calls.
-- Keep notebook globals scarce; move distracting scratch work into helpers.
+Give a concrete fix for each issue. Do not modify files unless asked.
 
 ## Final verification
 
-- `uvx marimo check <notebook.py>` passes.
-- Globals audit: anything only used inside one step should live in a helper.
-- Tutorial-objectives audit passes: narrative flow, visible API examples, and
-  reader verification are preserved.
-- `.logs/` files are temporary debugging artifacts and must not be
-  referenced by the final notebook or docs.
+Before considering a conversion complete:
+
+* `uvx marimo check <notebook.py>` passes.
+* The globals audit in
+  [`references/marimo-idioms.md`](references/marimo-idioms.md) passes.
+* The tutorial-objectives audit in
+  [`references/tutorial-notebook-objectives.md`](references/tutorial-notebook-objectives.md)
+  passes.
+* Featured W&B APIs follow
+  [`references/wandb-patterns.md`](references/wandb-patterns.md).
+* No unintended generated or runtime files were introduced.
+* The notebook and docs do not depend on `.logs/`.
