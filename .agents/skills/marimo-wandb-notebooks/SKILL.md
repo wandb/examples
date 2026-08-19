@@ -73,10 +73,6 @@ not by itself complete the conversion.
 * Keep each completed example in `examples/marimo/<example-name>/` with the
   notebook named `<example_name>.py`.
 * Treat `.py` as authoritative; never edit generated `.md` exports.
-* Start the notebook with a PEP 723 script header using the dependency
-  conventions in [`references/marimo-idioms.md`](references/marimo-idioms.md),
-  followed by a module docstring describing what the notebook builds and how
-  to run it.
 * Do not commit runtime-generated files such as `data/`, `wandb/`,
   `artifacts/`, `__marimo__/`, model weights, or similar outputs.
 * Use `.logs/` only for diagnosis; final notebooks and docs must not depend
