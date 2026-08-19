@@ -27,6 +27,7 @@ Use these patterns when a marimo example uses W&B Python SDK.
   `wandb.Run.summary` unless the tutorial intentionally teaches a global
   API from `wandb.apis.public`.
 
+- 
 
 ## Entity
 
@@ -44,3 +45,12 @@ Use these patterns when a marimo example uses W&B Python SDK.
 - A recoverable step, such as registry linking, should capture its outcome in a
   status value that a separate view cell renders, so the pipeline completes
   either way.
+
+## Further reference
+
+For W&B behavior not covered here, prefer the official documentation:
+
+- [W&B documentation](https://docs.wandb.ai)
+- [W&B Python SDK reference](https://docs.wandb.ai/models/ref/python)
+
+Use the SDK source only when the documented behavior is insufficient.

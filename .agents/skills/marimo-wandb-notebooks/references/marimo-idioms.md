@@ -87,3 +87,13 @@ Downstream cells should depend on post-gate names such as `cfg`, `run`, or
 - Let unexpected programming errors surface.
 - Catch only specific, expected failures where the notebook can give useful
   recovery guidance, such as W&B auth or account setup problems.
+
+
+## Further reference
+
+For behavior not covered here, prefer the official documentation:
+
+- [marimo documentation](https://docs.marimo.io/guides/)
+- [marimo Python API reference](https://docs.marimo.io/api/)
+
+Use upstream source code only when the documented behavior is insufficient.
