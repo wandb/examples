@@ -30,13 +30,26 @@ triage and cleanup checklist.
 
 ## Repo conventions
 
-- Each example lives in its own directory: `examples/marimo/<example-name>/`,
+- Each new standalone example lives in `examples/marimo/<example-name>/`,
   with the notebook as `<example_name>.py`.
+- The conversion script uses `marimo/convert/` as a staging area. When a
+  converted `colabs/` notebook is ready to publish, place the reviewed `.py`
+  file beside its `.ipynb` source and keep the same basename.
+- Keep the Jupyter source until documentation no longer links to it.
+- Replace an embedded Colab launch badge with a molab badge that targets the
+  published `.py` source:
+
+  ```html
+  <a href="https://molab.marimo.io/github/wandb/examples/blob/main/<path>.py">
+    <img src="https://marimo.io/molab-shield.svg" alt="Open in molab">
+  </a>
+  ```
+
 - **The `.py` file is the source of truth.** A workflow generates the
   markdown export; never hand-edit a generated `.md` next to a notebook.
-- Start the file with a PEP 723 script header (pinned lower bounds, e.g.
-  `"marimo>=0.9"`, `"wandb>=0.18"`) followed by a module docstring that says
-  what the notebook builds and how to run it:
+- Start the file with PEP 723 metadata that lists its runtime dependencies.
+  Add version constraints only when required. Follow the metadata with a
+  module docstring that says what the notebook builds and how to run it:
 
   ```python
   """One-paragraph summary of what the notebook builds.
@@ -49,6 +62,11 @@ triage and cleanup checklist.
 
 - Runtime droppings (`data/`, `wandb/`, `artifacts/`, `__marimo__/`, model
   weights) must not be committed.
+- In the matching `wandb/docs` change, point both `MolabLink` and
+  `GitHubLink` to the `.py` source on the `main` branch.
+- Merge the notebook source before documentation that links to it. If these
+  changes cannot merge together, keep the Jupyter source and its Colab link
+  until the molab link is safe to merge.
 
 ## Notebook structure
 
@@ -73,3 +91,13 @@ for narrative structure.
   reader verification are preserved.
 - `.logs/` files are temporary debugging artifacts and must not be
   referenced by the final notebook or docs.
+- Opening the notebook does not create a run or another remote side effect.
+- Submitting the workflow creates the intended W&B objects exactly once.
+- Re-submitting finishes the prior run cleanly.
+- A fresh molab session can authenticate without credentials from the local
+  computer.
+- No credential appears in notebook output, run configuration, or the diff.
+- `git diff --check` passes, and the diff contains no runtime output.
+- Run the notebook in each intended mode and confirm its behavior.
+- After a live marimo edit, save the latest `.py` source before review or
+  commit.

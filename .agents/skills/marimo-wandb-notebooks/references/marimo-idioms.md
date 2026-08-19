@@ -45,6 +45,10 @@ cfg = form.value
 Downstream cells should depend on post-gate names such as `cfg`, `run`, or
 `model`. Do not re-check the form in later cells or wrap cells in `if` guards.
 
+Label the submit button with the remote action, such as **Start run** or
+**Train model**, and state what the action creates. Treat submission as the
+consent boundary for remote writes; do not use `mo.lazy()` for this purpose.
+
 ## Rendering
 
 - The final expression of a cell is what renders.

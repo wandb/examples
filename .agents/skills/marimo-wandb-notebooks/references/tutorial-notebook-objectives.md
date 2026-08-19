@@ -37,6 +37,9 @@ Use this when creating, reviewing, or polishing W&B example notebooks.
   named helpers. Keep this detail if it serves to teach how to use W&B.
 - Fix marimo graph issues while preserving the reader's ability to inspect the
   featured library calls.
+- Replace screenshots of run-specific data with data from the current W&B run
+  and native components when practical. Keep screenshots when the lesson
+  teaches the W&B interface, and keep a link to the relevant W&B page.
 
 ## Reader Verification
 
@@ -48,3 +51,6 @@ Use this when creating, reviewing, or polishing W&B example notebooks.
   section alone.
 - Suggest one or two natural variations the reader can try next, such as
   changing a hyperparameter, creating a new Artifact version, or comparing runs.
+- When practical, compare the source and converted notebooks side by side.
+  Content, controls, outputs, and workflow should match even when cell order or
+  layout differs.

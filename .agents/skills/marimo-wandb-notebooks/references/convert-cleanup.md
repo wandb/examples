@@ -24,9 +24,15 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
 - Follow [`tutorial-notebook-objectives.md`](tutorial-notebook-objectives.md)
   when deciding which instructional cells and W&B API examples to preserve.
 - Ensure the PEP 723 script metadata lists every runtime package the notebook
-  imports. The converter may miss dependencies.
-- Remove Jupyter-only artifacts such as `%magic` commands, shell escapes, and
+  imports. The converter may miss dependencies. Add version constraints only
+  when required.
+- Remove residual package-installation cells and stale installation prose.
+- Review converted magic commands. Keep valid conversions, and resolve
+  comments that report unsupported magics. Remove residual shell escapes and
   unnecessary `display()` calls.
+- Replace input methods that wait for terminal input or do not work in the
+  target interface. Use suitable marimo controls, script parameters, or
+  environment values.
 - Make the intended output the final expression of each display cell. Indented
   or conditional expressions will not render as cell output.
 - Replace notebook-global scratch variables with local variables inside helper
