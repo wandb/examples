@@ -1,65 +1,62 @@
 # W&B Patterns
 
-Use these patterns when a marimo example uses W&B Python SDK.
+Use these patterns when a marimo example uses the W&B Python SDK.
 
 ## Authentication
 
 - Offer a `mo.ui.text(kind="password")` API-key field.
 - When the field is blank, rely on W&B's normal credential resolution
   (`WANDB_API_KEY`, W&B settings, or credentials stored by `wandb login`).
-- Never display, log, or store the API key in run config.
+- Never display, log, or include the API key in run config.
 
 ## Runs And Reruns
 
-- Prefer a context manager when the run lifecycle fits within one cell:
+- Prefer a context manager when the run lifecycle fits within one function or
+  cell:
 
   ```python
   with wandb.init() as run:
       run.log({"loss": 0.1})
   ```
 
-  Otherwise, explicitly finish the run with `wandb.Run.finish()`.
+Otherwise, explicitly finish the run with `run.finish()`. If a run must stay
+active across cells, finish any prior active run before starting another one.
 
-  If a run must stay active across cells, do not use a context manager. Ensure
-  any prior active run is finished before starting another one.
-
-- Prefer run-bound methods such as `wandb.Run.log()`, `wandb.Run.log_artifact()`, and
-  `wandb.Run.summary` unless the tutorial intentionally teaches a global
-  API from `wandb.apis.public`.
-
-- 
+- Prefer methods on the active run, such as `run.log()`, `run.log_artifact()`,
+  and `run.summary`, unless the tutorial intentionally teaches another W&B API
+  pattern.
 
 ## Entity
 
 - Include an overridable team entity field.
 - Explain how to find the appropriate team entity in W&B when needed.
 
+## Visible W&B SDK Usage
 
-## Visible W&B SDK Calls
-
-- Keep W&B Python SDK calls visible to readers. Do not hide them in helpers,
-  callbacks, or other abstractions.
-- When gating a W&B step, keep the control separate from the implementation and
-  show the W&B calls that perform the step.
-- Move non-W&B plumbing into helpers when useful for readability.
+- Keep W&B SDK usage that teaches the tutorial objective easy for readers to
+  inspect.
+- Do not bury the featured W&B workflow inside marimo orchestration, callbacks,
+  or unrelated plumbing.
+- W&B SDK calls may live in a named `@app.function` when a clean reusable
+  function better serves the tutorial.
+- Move non-teaching plumbing into helpers when it improves the teaching
+  surface.
 
 ## Expected Failures
 
-- Expected failures should become guidance, not tracebacks.
-- Wrap only calls that fail for account-setup reasons, such as `wandb.init()` or
-  registry linking.
+- Catch only expected, recoverable W&B failures where the notebook can provide
+  actionable guidance, such as authentication, permissions, or Registry setup.
 - Render a `mo.callout(kind="danger")` that names the likely cause and fix.
-- Let everything else fail naturally. Do not use `try`/`except` for normal
-  control flow.
-- A recoverable step, such as registry linking, should capture its outcome in a
-  status value that a separate view cell renders, so the pipeline completes
-  either way.
+- Let unexpected failures surface; do not use `try`/`except` for normal control
+  flow.
+- For a recoverable optional step, capture the outcome in a status value and
+  render it from a separate view cell.
 
-## Further reference
+## Further Reference
 
 For W&B behavior not covered here, prefer the official documentation:
 
-- [W&B documentation](https://docs.wandb.ai)
-- [W&B Python SDK reference](https://docs.wandb.ai/models/ref/python)
+- [W&B documentation](https://docs.wandb.ai/)
+- [W&B Python SDK reference](https://docs.wandb.ai/models/ref/python/)
 
-Use the SDK source only when the documented behavior is insufficient.
+Use SDK source only when the documented behavior is insufficient.

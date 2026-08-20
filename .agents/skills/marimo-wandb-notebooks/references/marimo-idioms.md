@@ -5,27 +5,46 @@ this repo.
 
 ## Notebook Shape
 
-* A marimo notebook is a Python file whose cells are decorated with `@app.cell`.
+- A marimo notebook is a Python file whose cells are decorated with `@app.cell`.
   marimo derives dependencies from the global names each cell defines and
   references; serialized cell parameters and returns reflect those
   dependencies.
-* Add PEP 723 metadata with `requires-python` and every runtime package the
+- Add PEP 723 metadata with `requires-python` and every runtime package the
   notebook imports, using repository-approved minimum version constraints such
   as `"marimo>=0.9"` and `"wandb>=0.18"`.
-* Use one setup/import cell for shared imports, true constants, and environment
+- Use one setup/import cell for shared imports, true constants, and environment
   detection.
-* Keep notebook globals scarce. Use underscore-prefixed variables for simple
-  cell-local temporaries and helper functions when a cell has substantial
-  scratch logic.
+- Keep reactive notebook globals scarce.
+
+## Separate Teaching, Orchestration, and Helpers
+
+Distinguish these roles when converting a tutorial:
+
+- Teaching code: Code the reader is meant to learn from. Preserve a clean,
+  normal-Python shape similar to the source Colab notebook.
+- Marimo orchestration: Forms, buttons, `mo.stop`, widget `.value`, and
+  reactive wiring. Keep these in small `@app.cell` cells around the teaching
+  code.
+- Reusable helpers: Procedural code that is clearer as a named function.
+  Prefer `@app.function` for reusable top-level helpers and pass reactive values
+  as function arguments.
+
+Do not add marimo orchestration, generated dependency plumbing, or
+underscore-prefixed scratch variables to teaching code merely to satisfy the
+reactive graph.
+
+Use underscore-prefixed temporaries in orchestration or presentation cells when
+useful. When teaching code is naturally expressed as a function, keep the
+function clean and put its gate or UI wiring in separate cells.
 
 ## Reactivity
 
-* Let the dependency graph determine execution. A cell runs when its inputs are
+- Let the dependency graph determine execution. A cell runs when its inputs are
   ready.
-* Do not rely on cross-cell mutation for reactivity; marimo does not track
+- Do not rely on cross-cell mutation for reactivity; marimo does not track
   object mutations or attribute assignments. Prefer creating a new value, or
   mutate an object only in the cell that defines it.
-* Avoid `mo.state()` unless bidirectional UI sync or accumulated callback state
+- Avoid `mo.state()` unless bidirectional UI sync or accumulated callback state
   is required. Prefer ordinary variables and widget `.value` for normal
   notebook flow.
 
@@ -34,69 +53,65 @@ this repo.
 Gate each expensive or externally side-effecting workflow stage once at its
 boundary.
 
-When the stage has configuration inputs, batch them into one form:
+Keep forms, buttons, widget `.value`, and `mo.stop(...)` in small orchestration
+cells rather than mixing them into teaching code.
+
+When a stage has configuration inputs, batch them into a form. When it has no
+configuration inputs, use `mo.ui.run_button` with `mo.stop` instead of creating
+an empty form.
+
+Prefer this separation:
 
 ```python
-form = mo.md("{epochs} {batch_size}").batch(
-    epochs=epochs,
-    batch_size=batch_size,
-).form(submit_button_label="Train model", bordered=False)
-form
+@app.cell(hide_code=True)
+def _(form):
+    mo.stop(
+        form.value is None,
+        mo.md("Fill in the form above and click Train model to continue."),
+    )
+    config = form.value
+    return (config,)
 ```
 
 ```python
-mo.stop(
-    form.value is None,
-    mo.md("Fill in the form above and click **Train model** to ..."),
-)
-cfg = form.value
-```
-
-When the stage has no configuration inputs, use `mo.ui.run_button` with
-`mo.stop` instead of creating an empty form:
-
-```python
-run_step = mo.ui.run_button(label="Run step")
-run_step
+@app.function
+def train_model(config):
+    # Clean tutorial implementation.
+    ...
+    return model
 ```
 
 ```python
-mo.stop(
-    not run_step.value,
-    mo.md("Click **Run step** to continue."),
-)
-
-# Guarded implementation follows.
+@app.cell
+def _(config):
+    model = train_model(config)
+    return (model,)
 ```
 
-Keep the guarded implementation in the dependent code cell rather than hiding
-it in a button or form callback.
-
-Downstream cells should depend on post-gate names such as `cfg`, `model`, or
-`results`. Do not re-check the same form or button in downstream cells or wrap
-them in repeated `if` guards.
+Pass post-gate values into clean teaching code or named `@app.function`
+helpers. Do not repeat the same gate in downstream cells.
 
 ## Rendering and Presentation
 
-* The final expression of a cell is what renders.
-* Indented expressions inside `if`, `for`, `with`, or helper blocks do not
+- The final expression of a cell is what renders.
+- Indented expressions inside `if`, `for`, `with`, or helper blocks do not
   become the cell output. Assign the display object, then put it last.
-* Use markdown cells for prose and view cells for rendering.
-* Keep view cells focused on presentation; move non-teaching heavy logic into
+- Use markdown cells for prose and view cells for rendering.
+- Keep view cells focused on presentation; move non-teaching heavy logic into
   named helpers.
-* Prefer native components such as `mo.ui.table`, `mo.callout`, `mo.vstack`,
+- Prefer native components such as `mo.ui.table`, `mo.callout`, `mo.vstack`,
   and `mo.hstack` over formatting complex UI as markdown.
 
 ## UI
 
-* Show widgets directly and read their `.value` from dependent cells.
-* Prefer native `mo.ui` components before reaching for `anywidget`.
+- Show widgets directly and read their `.value` in orchestration cells.
+- Prefer native `mo.ui` components before reaching for `anywidget`.
 
 ## Error Handling
 
-* Do not use `try`/`except` for normal control flow.
-* Let unexpected programming errors surface.
-* Catch only specific, expected failures when the notebook can provide useful
+- Do not use `try`/`except` for normal control flow.
+- Let unexpected programming errors surface.
+- Catch only specific, expected failures when the notebook can provide useful
   recovery guidance.
 
 ## Further Reference
