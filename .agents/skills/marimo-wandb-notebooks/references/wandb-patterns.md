@@ -34,6 +34,15 @@ Use these patterns when a marimo example uses W&B Python SDK.
 - Include an overridable team entity field.
 - Explain how to find the appropriate team entity in W&B when needed.
 
+
+## Visible W&B SDK Calls
+
+- Keep W&B Python SDK calls visible to readers. Do not hide them in helpers,
+  callbacks, or other abstractions.
+- When gating a W&B step, keep the control separate from the implementation and
+  show the W&B calls that perform the step.
+- Move non-W&B plumbing into helpers when useful for readability.
+
 ## Expected Failures
 
 - Expected failures should become guidance, not tracebacks.

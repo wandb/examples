@@ -11,6 +11,8 @@ Use this when creating, reviewing, or polishing W&B example notebooks.
   rewrites.
 - Do not collapse a tutorial into one opaque pipeline helper. A reader should
   be able to see how the featured W&B workflow is implemented.
+- In `marimo run`, render a code snippet for W&B calls that teach the tutorial
+  objective when the executable source is otherwise hidden.    
 
 ## Narrative Structure
 
@@ -21,32 +23,10 @@ Use this when creating, reviewing, or polishing W&B example notebooks.
   needs before running the notebook.
 - Interleave pipeline code with `## Section` markdown cells that explain what
   the reader is about to run and why it matters.
-- Make each code cell justify its place in the tutorial: it should show output,
-  teach a core API step, or define a named helper.
-- Put reusable plumbing, model classes, and long utilities under a
-  `## Helper functions` section near the bottom.
-
-## Visible W&B SDK Calls
-
-- Keep all W&B Python SDK calls in visible code cells. This includes calls
-  through `wandb` and SDK objects such as runs, Artifacts, tables, Registry
-  objects, and API clients.
-- Do not hide W&B SDK calls in helpers, callbacks, or other abstractions.
-  Readers should be able to inspect the SDK code that performs each W&B
-  operation.
-- Gate side-effecting steps without hiding them. Put buttons/forms in small
-  control cells and use `mo.stop(...)` in the visible implementation cell
-  before the guarded W&B calls.
-- Verify the rendered app view with `marimo run --include-code` when the
-  notebook is intended to teach W&B APIs. Without `--include-code`, `marimo run`
-  hides source code by default and can make a correct notebook look like a
-  button-only app.
-- If the deployment target cannot expose code cells, add explicit markdown code
-  snippets for the W&B SDK calls so readers can still inspect the API usage in
-  the rendered tutorial.
-- Move only non-W&B implementation detail into helpers when useful for
-  readability, such as data loading, model definitions, repeated training
-  logic, or path handling.
+- Keep code cells purposeful: show a result, teach a core step, or define a
+  named helper.
+- Move reusable plumbing, model classes, and long utilities into named helpers,
+  preferably under a `## Helper functions` section near the bottom.
 
 ## Reader Verification
 
