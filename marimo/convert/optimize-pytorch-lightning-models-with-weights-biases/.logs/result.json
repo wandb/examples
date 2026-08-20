@@ -1,0 +1,30 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/optimize-pytorch-lightning-models-with-weights-biases/optimize_pytorch_lightning_models_with_weights_biases.py"
+      ],
+      "exit_code": 0
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/pytorch-lightning/Optimize_PyTorch_Lightning_models_with_Weights_&_Biases.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/optimize-pytorch-lightning-models-with-weights-biases/optimize_pytorch_lightning_models_with_weights_biases.py"
+      ],
+      "exit_code": 0
+    }
+  },
+  "completed_at": "2026-08-20T15:21:13+00:00",
+  "failed_stage": null,
+  "source": "colabs/pytorch-lightning/Optimize_PyTorch_Lightning_models_with_Weights_&_Biases.ipynb",
+  "status": "ok",
+  "target": "marimo/convert/optimize-pytorch-lightning-models-with-weights-biases/optimize_pytorch_lightning_models_with_weights_biases.py",
+  "target_exists": true
+}

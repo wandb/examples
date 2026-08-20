@@ -1,0 +1,32 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py"
+      ],
+      "exit_code": 1,
+      "log": "marimo/convert/torchtune-and-wandb/.logs/marimo-check.log"
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/torchtune/torchtune_and_wandb.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py"
+      ],
+      "exit_code": 0,
+      "log": "marimo/convert/torchtune-and-wandb/.logs/marimo-convert.log"
+    }
+  },
+  "completed_at": "2026-08-20T15:21:22+00:00",
+  "failed_stage": "check",
+  "source": "colabs/torchtune/torchtune_and_wandb.ipynb",
+  "status": "check_failed",
+  "target": "marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py",
+  "target_exists": true
+}

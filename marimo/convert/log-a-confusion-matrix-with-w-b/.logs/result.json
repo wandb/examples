@@ -1,0 +1,30 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/log-a-confusion-matrix-with-w-b/log_a_confusion_matrix_with_w_b.py"
+      ],
+      "exit_code": 0
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/wandb-log/Log_a_Confusion_Matrix_with_W&B.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/log-a-confusion-matrix-with-w-b/log_a_confusion_matrix_with_w_b.py"
+      ],
+      "exit_code": 0
+    }
+  },
+  "completed_at": "2026-08-20T15:21:31+00:00",
+  "failed_stage": null,
+  "source": "colabs/wandb-log/Log_a_Confusion_Matrix_with_W&B.ipynb",
+  "status": "ok",
+  "target": "marimo/convert/log-a-confusion-matrix-with-w-b/log_a_confusion_matrix_with_w_b.py",
+  "target_exists": true
+}

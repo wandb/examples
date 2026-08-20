@@ -1,0 +1,30 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/log-almost-anything-with-w-b-media/log_almost_anything_with_w_b_media.py"
+      ],
+      "exit_code": 0
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/wandb-log/Log_(Almost)_Anything_with_W&B_Media.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/log-almost-anything-with-w-b-media/log_almost_anything_with_w_b_media.py"
+      ],
+      "exit_code": 0
+    }
+  },
+  "completed_at": "2026-08-20T15:21:29+00:00",
+  "failed_stage": null,
+  "source": "colabs/wandb-log/Log_(Almost)_Anything_with_W&B_Media.ipynb",
+  "status": "ok",
+  "target": "marimo/convert/log-almost-anything-with-w-b-media/log_almost_anything_with_w_b_media.py",
+  "target_exists": true
+}

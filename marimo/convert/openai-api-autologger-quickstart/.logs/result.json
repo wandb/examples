@@ -1,0 +1,30 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/openai-api-autologger-quickstart/openai_api_autologger_quickstart.py"
+      ],
+      "exit_code": 0
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/openai/OpenAI_API_Autologger_Quickstart.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/openai-api-autologger-quickstart/openai_api_autologger_quickstart.py"
+      ],
+      "exit_code": 0
+    }
+  },
+  "completed_at": "2026-08-20T15:21:11+00:00",
+  "failed_stage": null,
+  "source": "colabs/openai/OpenAI_API_Autologger_Quickstart.ipynb",
+  "status": "ok",
+  "target": "marimo/convert/openai-api-autologger-quickstart/openai_api_autologger_quickstart.py",
+  "target_exists": true
+}

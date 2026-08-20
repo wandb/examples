@@ -1,0 +1,65 @@
+$ uvx marimo check /Users/noahluna/Desktop/examples_group/examples/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py
+
+exit_code: 1
+
+--- output ---
+
+critical[cycle-dependencies]: Cell is part of a circular dependency
+ --> /Users/noahluna/Desktop/examples_group/examples/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py:362:1
+ 362 | def _(build_dataset, build_network, build_optimizer, train_epoch, wandb):
+ 363 |     import torch
+     |     ^
+ 364 |     import torch.optim as optim
+ 363 |     import torch
+ 364 |     import torch.optim as optim
+     |     ^
+ 365 |     import torch.nn.functional as F
+ 364 |     import torch.optim as optim
+ 365 |     import torch.nn.functional as F
+     |     ^
+ 366 |     import torch.nn as nn
+ 365 |     import torch.nn.functional as F
+ 366 |     import torch.nn as nn
+     |     ^
+ 367 |     from torchvision import datasets, transforms
+ 366 |     import torch.nn as nn
+ 367 |     from torchvision import datasets, transforms
+     |     ^
+ 368 | 
+ 366 |     import torch.nn as nn
+ 367 |     from torchvision import datasets, transforms
+     |     ^
+ 368 | 
+ 368 | 
+ 369 |     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+     |     ^
+ 370 | 
+   ...
+ 406 | def _(F, datasets, device, nn, optim, torch, transforms, wandb):
+ 407 |     def build_dataset(batch_size):
+     |     ^
+ 408 |    
+   ...
+ 421 | 
+ 422 |     def build_network(fc_layer_size, dropout):
+     |     ^
+ 423 |         network = nn.Sequential(  # fully-connected, single hidden layer
+   ...
+ 432 | 
+ 433 |     def build_optimizer(network, optimizer, learning_rate):
+     |     ^
+ 434 |         if optimizer == "sgd":
+   ...
+ 442 | 
+ 443 |     def train_epoch(network, loader, optimizer):
+     |     ^
+ 444 |         cumu_loss = 0
+
+warning[empty-cells]: Empty cell can be removed (contains only whitespace, comments, or pass)
+ --> /Users/noahluna/Desktop/examples_group/examples/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py:81:0
+  81 | @app.cell
+  82 | def _():
+     |     ^
+  83 |     # packages added via marimo's package management: wandb !pip install wandb -Uq
+
+Found 2 issues.

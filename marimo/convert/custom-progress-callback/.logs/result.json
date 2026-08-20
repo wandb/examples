@@ -1,0 +1,30 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/custom-progress-callback/custom_progress_callback.py"
+      ],
+      "exit_code": 0
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/huggingface/Custom_Progress_Callback.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/custom-progress-callback/custom_progress_callback.py"
+      ],
+      "exit_code": 0
+    }
+  },
+  "completed_at": "2026-08-20T15:20:39+00:00",
+  "failed_stage": null,
+  "source": "colabs/huggingface/Custom_Progress_Callback.ipynb",
+  "status": "ok",
+  "target": "marimo/convert/custom-progress-callback/custom_progress_callback.py",
+  "target_exists": true
+}

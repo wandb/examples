@@ -1,0 +1,19 @@
+$ uvx marimo check /Users/noahluna/Desktop/examples_group/examples/marimo/convert/pipeline-versioning-with-w-b-artifacts/pipeline_versioning_with_w_b_artifacts.py
+
+exit_code: 1
+
+--- output ---
+
+critical[cycle-dependencies]: Cell is part of a circular dependency
+ --> /Users/noahluna/Desktop/examples_group/examples/marimo/convert/pipeline-versioning-with-w-b-artifacts/pipeline_versioning_with_w_b_artifacts.py:831:1
+ 831 | def _(DataLoader, F, device, test, torch):
+ 832 |     def evaluate(model, test_loader):
+     |     ^
+ 833 |         """
+   ...
+ 888 | def _(ConvNet, device, evaluate, os, read, torch, train, wandb):
+ 889 |     from torch.utils.data import DataLoader
+     |     ^
+ 890 | 
+
+Found 1 issue.

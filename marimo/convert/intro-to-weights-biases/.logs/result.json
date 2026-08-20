@@ -1,0 +1,30 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/intro-to-weights-biases/intro_to_weights_biases.py"
+      ],
+      "exit_code": 0
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/intro/Intro_to_Weights_&_Biases.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/intro-to-weights-biases/intro_to_weights_biases.py"
+      ],
+      "exit_code": 0
+    }
+  },
+  "completed_at": "2026-08-20T15:20:59+00:00",
+  "failed_stage": null,
+  "source": "colabs/intro/Intro_to_Weights_&_Biases.ipynb",
+  "status": "ok",
+  "target": "marimo/convert/intro-to-weights-biases/intro_to_weights_biases.py",
+  "target_exists": true
+}

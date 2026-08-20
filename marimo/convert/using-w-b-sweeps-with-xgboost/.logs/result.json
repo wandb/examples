@@ -1,0 +1,30 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/using-w-b-sweeps-with-xgboost/using_w_b_sweeps_with_xgboost.py"
+      ],
+      "exit_code": 0
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/boosting/Using_W&B_Sweeps_with_XGBoost.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/using-w-b-sweeps-with-xgboost/using_w_b_sweeps_with_xgboost.py"
+      ],
+      "exit_code": 0
+    }
+  },
+  "completed_at": "2026-08-20T15:20:33+00:00",
+  "failed_stage": null,
+  "source": "colabs/boosting/Using_W&B_Sweeps_with_XGBoost.ipynb",
+  "status": "ok",
+  "target": "marimo/convert/using-w-b-sweeps-with-xgboost/using_w_b_sweeps_with_xgboost.py",
+  "target_exists": true
+}

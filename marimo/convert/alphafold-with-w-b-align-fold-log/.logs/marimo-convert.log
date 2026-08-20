@@ -1,0 +1,7 @@
+$ uvx marimo convert '/Users/noahluna/Desktop/examples_group/examples/colabs/tables/AlphaFold_with_W&B_Align,_Fold,_Log.ipynb' -o /Users/noahluna/Desktop/examples_group/examples/marimo/convert/alphafold-with-w-b-align-fold-log/alphafold_with_w_b_align_fold_log.py
+
+exit_code: 0
+
+--- output ---
+
+Converted notebook saved to /Users/noahluna/Desktop/examples_group/examples/marimo/convert/alphafold-with-w-b-align-fold-log/alphafold_with_w_b_align_fold_log.py
