@@ -26,17 +26,27 @@ Use this when creating, reviewing, or polishing W&B example notebooks.
 - Put reusable plumbing, model classes, and long utilities under a
   `## Helper functions` section near the bottom.
 
-## Visible API Examples
+## Visible W&B SDK Calls
 
-- Keep short, pedagogically important W&B calls visible in narrative code cells
-  when the notebook is teaching those calls step by step. Common examples
-  include `wandb.init`, `wandb.Artifact`, `run.use_artifact()`,
-  `run.log_artifact()`, `run.log()`, and `run.summary`.
-- Move reusable or distracting implementation detail, such as long data-loading
-  utilities, model classes, repeated training loops, and path handling, into
-  named helpers. Keep this detail if it serves to teach how to use W&B.
-- Fix marimo graph issues while preserving the reader's ability to inspect the
-  featured library calls.
+- Keep all W&B Python SDK calls in visible code cells. This includes calls
+  through `wandb` and SDK objects such as runs, Artifacts, tables, Registry
+  objects, and API clients.
+- Do not hide W&B SDK calls in helpers, callbacks, or other abstractions.
+  Readers should be able to inspect the SDK code that performs each W&B
+  operation.
+- Gate side-effecting steps without hiding them. Put buttons/forms in small
+  control cells and use `mo.stop(...)` in the visible implementation cell
+  before the guarded W&B calls.
+- Verify the rendered app view with `marimo run --include-code` when the
+  notebook is intended to teach W&B APIs. Without `--include-code`, `marimo run`
+  hides source code by default and can make a correct notebook look like a
+  button-only app.
+- If the deployment target cannot expose code cells, add explicit markdown code
+  snippets for the W&B SDK calls so readers can still inspect the API usage in
+  the rendered tutorial.
+- Move only non-W&B implementation detail into helpers when useful for
+  readability, such as data loading, model definitions, repeated training
+  logic, or path handling.
 
 ## Reader Verification
 
