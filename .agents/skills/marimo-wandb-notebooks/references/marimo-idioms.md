@@ -53,6 +53,12 @@ function clean and put its gate or UI wiring in separate cells.
 Gate each expensive or externally side-effecting workflow stage once at its
 boundary.
 
+Treat an explicit form submission or run-button click as the reader's consent
+boundary for remote writes. Label the control with the action it performs and
+state what it creates. Opening the notebook, changing an unsubmitted control,
+or lazily rendering content must not create a remote object; `mo.lazy()` is not
+a substitute for explicit consent.
+
 Keep forms, buttons, widget `.value`, and `mo.stop(...)` in small orchestration
 cells rather than mixing them into teaching code.
 
