@@ -109,3 +109,12 @@ Before considering a conversion complete:
   [`references/wandb-patterns.md`](references/wandb-patterns.md).
 - No unintended generated or runtime files were introduced, and the notebook
   and docs do not depend on `.logs/`.
+- Opening the notebook and changing unsubmitted controls do not create W&B
+  objects or other remote side effects.
+- Each submission performs its intended remote writes once; re-submission
+  closes prior runs and avoids duplicate stateful updates where practical.
+- Cross-cell consumers of W&B state use explicit result or completion values,
+  and producers synchronize server-visible state before downstream reads.
+- A fresh molab session can authenticate without credentials from the local
+  computer, and no credential appears in notebook output, run configuration,
+  logs, or the diff.
