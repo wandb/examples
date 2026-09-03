@@ -89,7 +89,7 @@ artifacts, and model checkpoints with minimal code changes. Some integrations th
 - PyTorch Lightning
 - XGBoost
 
-See [Integrations](https://docs.wandb.ai/models/integrations) in the W&B Developer guide for more inforamtion.
+See [Integrations](https://docs.wandb.ai/models/integrations) in the W&B Developer guide for more information.
 
 If a framework is not listed here, start with the
 [Add W&B to a Python library](https://docs.wandb.ai/models/integrations/add-wandb-to-any-library) guide or use the core W&B Python SDK shown in
