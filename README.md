@@ -1,17 +1,16 @@
-Use W&B to build better models faster. Track and visualize all the pieces of your machine learning pipeline, from datasets to production machine learning models. Get started with W&B today, [sign up for an account](https://wandb.com?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme).
+# W&B Examples
 
+Use W&B to build better models faster. Track and visualize all the pieces of your machine learning pipeline, from datasets to production machine learning models. 
 
-# Getting Started
+Get started with W&B today, [sign up for an account](https://wandb.com?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme).
 
-Check out our libraries of [example scripts](https://github.com/wandb/examples/tree/master/examples) and [example colabs](https://github.com/wandb/examples/tree/master/colabs) or read on for code snippets and more.
+Check out [example scripts](https://github.com/wandb/examples/tree/master/examples) and [example colabs](https://github.com/wandb/examples/tree/master/colabs).
 
-# Never lose your progress again. 
-Save everything you need to compare and reproduce models — architecture, hyperparameters, weights, model predictions, GPU usage, git commits, datsets, models, prompts and more.
 
 ## Integrate with any framework
 Install `wandb` library and login:
 
-```
+```bash
 pip install wandb
 wandb login
 ```
@@ -55,8 +54,7 @@ wandb.config.architecture = "resnet"
 
 ## Use your favorite framework
 
-Use your favorite framework with W&B. W&B integrations make it fast and easy to set up experiment tracking and data versioning inside existing projects. For more information on how to integrate W&B with the framework of your choice, see the [Integrations chapter](https://docs.wandb.ai/guides/integrations) in the W&B Developer Guide.
-
+Use your favorite framework with W&B. W&B integrations make it fast and easy to set up experiment tracking and data versioning inside existing projects. For more information on how to integrate W&B with the framework of your choice, see [Integrations](https://docs.wandb.ai/guides/integrations) in the W&B Developer Guide.
 
 <details>
 <summary>🔥 PyTorch</summary>
@@ -67,19 +65,19 @@ Call `.watch` and pass in your PyTorch model to automatically log gradients and 
 import wandb
 
 # 1. Start a new run
-run = wandb.init(project="gpt4")
+with wandb.init(project="gpt4") as run:
 
-# 2. Save model inputs and hyperparameters
-config = run.config
-config.dropout = 0.01
+    # 2. Save model inputs and hyperparameters
+    config = run.config
+    config.dropout = 0.01
 
-# 3. Log gradients and model parameters
-run.watch(model)
-for batch_idx, (data, target) in enumerate(train_loader):
-    ...
-    if batch_idx % args.log_interval == 0:
-        # 4. Log metrics to visualize performance
-        run.log({"loss": loss})
+    # 3. Log gradients and model parameters
+    run.watch(model)
+    for batch_idx, (data, target) in enumerate(train_loader):
+        ...
+        if batch_idx % args.log_interval == 0:
+            # 4. Log metrics to visualize performance
+            run.log({"loss": loss})
 ```
 
 - Run an example [Google Colab Notebook](http://wandb.me/pytorch-colab).
@@ -88,7 +86,7 @@ for batch_idx, (data, target) in enumerate(train_loader):
 
 </details>
 <details>
-<summary>🌊 TensorFlow/Keras</summary>
+<summary>TensorFlow/Keras</summary>
 Use W&B Callbacks to automatically save metrics to W&B when you call `model.fit` during training.
 
 The following code example demonstrates how your script might look like when you integrate W&B with Keras:
@@ -162,7 +160,7 @@ history = model.fit(
     ],
 )
 
-# [optional] finish the wandb run, necessary in notebooks
+# finish the wandb run, necessary in notebooks
 run.finish()
 ```
 
@@ -186,7 +184,6 @@ The following example demonstrates how to integrate W&B with Hugging Face:
 ```python
 # This script needs these libraries to be installed:
 #   numpy, transformers, datasets
-
 import wandb
 
 import os
@@ -340,7 +337,7 @@ wandb.finish()
 - Read the [Developer Guide](https://docs.wandb.ai/guides/integrations/lightning?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations) for technical details on how to integrate PyTorch Lightning with W&B.
 </details>
 <details>
-<summary>💨 XGBoost</summary>
+<summary>XGBoost</summary>
 Use W&B Callbacks to automatically save metrics to W&B when you call `model.fit` during training.
 
 The following code example demonstrates how your script might look like when you integrate W&B with XGBoost:
@@ -420,7 +417,7 @@ run.finish()
 - Read the [Developer Guide](https://docs.wandb.ai/guides/integrations/xgboost?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=integrations) for technical details on how to integrate XGBoost with W&B.
 </details>
 <details>
-<summary>🧮 Sci-Kit Learn</summary>
+<summary>Sci-Kit Learn</summary>
 Use wandb to visualize and compare your scikit-learn models' performance:
 
 ```python
@@ -491,8 +488,6 @@ Use W&B Sweeps to automate hyperparameter optimization and explore the space of 
 
 [Try Sweeps in PyTorch in a Colab](http://wandb.me/sweeps-colab)
 [Try Sweeps in TensorFlow in a Colab](http://wandb.me/tf-sweeps-colab)
-
-
 [Try the quickstart](https://docs.wandb.com/sweeps/quickstart)
 
 <img src="https://gblobscdn.gitbook.com/assets%2F-Lqya5RvLedGEWPhtkjU%2F-LyfPCyvV8By5YBltxfh%2F-LyfQsxswLC-6WKGgfGj%2Fcentral%20sweep%20server%203.png?alt=media&token=c81e4fe7-7ee4-48ea-a4cd-7b28113c6088" width="400" alt="Weights & Biases" />
@@ -519,25 +514,14 @@ Reports let you [organize visualizations, describe your findings, and share upda
 - **Collaboration:** Share findings with your colleagues.
 - **Work log:** Track what you've tried and plan next steps.
 
-Explore reports in [The Gallery](https://wandb.ai/gallery) | Read the [Docs](https://docs.wandb.com/reports)
-
-Once you have experiments in W&B, you can visualize and document results in Reports with just a few clicks. Here's a quick [demo video](http://wandb.me/short-reports).
+Read the [Docs](https://docs.wandb.com/reports)
 
 ![](https://i.imgur.com/dn0Dyd8.png)
 
 ## Version control datasets and models with Artifacts
-Git and GitHub make code version control easy,
-but they're not optimized for tracking the other parts of the ML pipeline:
-datasets, models, and other large binary files.
-
-W&B's Artifacts are.
-With just a few extra lines of code,
-you can start tracking you and your team's outputs,
-all directly linked to run.
+Use W&B Artifacts to track and version data as the inputs and outputs of your runs. For example, a model training run might take in a dataset as input and produce a trained model as output. You can log hyperparameters, metadata, and metrics to a run, and you can use an artifact to log, track, and version the dataset used to train the model as input and another artifact for the resulting model checkpoints as output.
 
 Try Artifacts in a [Colab](http://wandb.me/artifacts-colab) with a [video tutorial](http://wandb.me/artifacts-video)
-
-![](https://i.imgur.com/zvBWhGx.png)
 
 ### Common use cases
 - **Pipeline Management:** Track and visualize the inputs and outputs of your runs as a graph
@@ -546,28 +530,29 @@ Try Artifacts in a [Colab](http://wandb.me/artifacts-colab) with a [video tutori
 
 ![](https://i.imgur.com/w92cYQm.png)
 
-Learn about Artifacts [here](https://www.wandb.com/articles/announcing-artifacts) | Read the [Docs](https://docs.wandb.com/artifacts)
-
-
+Read the [Docs](https://docs.wandb.com/artifacts).
 
 ## Visualize and Query data with Tables
 
-Group, sort, filter, generate calculated columns, and create charts from tabular data.
+Use W&B Tables to visualize and query tabular data.
 
-Spend more time deriving insights, and less time building charts manually.
+### Common use cases
+
+- Compare how different models perform on the same test set
+- Identify patterns in your data
+- Look at sample model predictions visually
+- Query to find commonly misclassified examples
+
+Copy and paste the following code snippet to create and log your first table to W&B:
 
 ```python
-# log my table
-
 import wandb
 
-with wandb.init() as run:
-
-    run.log({"table": my_dataframe})
+with wandb.init(project="table-demo") as run:
+    my_table = wandb.Table(columns=["a", "b"], data=[["a1", "b1"], ["a2", "b2"]])
+    run.log({"Table Name": my_table})
 ```
 
-![](https://i.imgur.com/Fg9xR6M.gif)
+See the Table Quickstart [Colab](http://wandb.me/tables-quickstart) or these [examples](https://github.com/wandb/examples/tree/master/colabs/tables).
 
-Try Tables in a [Colab](http://wandb.me/tables-quickstart) or these [examples](https://github.com/wandb/examples/tree/master/colabs/tables)
-
-Explore Tables [here](https://wandb.ai/site/tables) | Read the [Docs](https://docs.wandb.ai/guides/data-vis)
+Read the [Docs](https://docs.wandb.ai/guides/data-vis) to learn more.
