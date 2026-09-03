@@ -1,0 +1,32 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/pipeline-versioning-with-w-b-artifacts/pipeline_versioning_with_w_b_artifacts.py"
+      ],
+      "exit_code": 1,
+      "log": "marimo/convert/pipeline-versioning-with-w-b-artifacts/.logs/marimo-check.log"
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/wandb-artifacts/Pipeline_Versioning_with_W&B_Artifacts.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/pipeline-versioning-with-w-b-artifacts/pipeline_versioning_with_w_b_artifacts.py"
+      ],
+      "exit_code": 0,
+      "log": "marimo/convert/pipeline-versioning-with-w-b-artifacts/.logs/marimo-convert.log"
+    }
+  },
+  "completed_at": "2026-08-20T15:21:24+00:00",
+  "failed_stage": "check",
+  "source": "colabs/wandb-artifacts/Pipeline_Versioning_with_W&B_Artifacts.ipynb",
+  "status": "check_failed",
+  "target": "marimo/convert/pipeline-versioning-with-w-b-artifacts/pipeline_versioning_with_w_b_artifacts.py",
+  "target_exists": true
+}

@@ -1,0 +1,30 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/huggingface-wandb/huggingface_wandb.py"
+      ],
+      "exit_code": 0
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/huggingface/Huggingface_wandb.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/huggingface-wandb/huggingface_wandb.py"
+      ],
+      "exit_code": 0
+    }
+  },
+  "completed_at": "2026-08-20T15:20:51+00:00",
+  "failed_stage": null,
+  "source": "colabs/huggingface/Huggingface_wandb.ipynb",
+  "status": "ok",
+  "target": "marimo/convert/huggingface-wandb/huggingface_wandb.py",
+  "target_exists": true
+}

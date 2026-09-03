@@ -1,0 +1,30 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/configs-in-w-b/configs_in_w_b.py"
+      ],
+      "exit_code": 0
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/wandb-log/Configs_in_W&B.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/configs-in-w-b/configs_in_w_b.py"
+      ],
+      "exit_code": 0
+    }
+  },
+  "completed_at": "2026-08-20T15:21:28+00:00",
+  "failed_stage": null,
+  "source": "colabs/wandb-log/Configs_in_W&B.ipynb",
+  "status": "ok",
+  "target": "marimo/convert/configs-in-w-b/configs_in_w_b.py",
+  "target_exists": true
+}

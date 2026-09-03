@@ -1,0 +1,28 @@
+$ uvx marimo check /Users/noahluna/Desktop/examples_group/examples/marimo/convert/alphafold-with-w-b-align-fold-log/alphafold_with_w_b_align_fold_log.py
+
+exit_code: 1
+
+--- output ---
+
+critical[unparsable-cells]: Notebook contains unparsable code
+ --> /Users/noahluna/Desktop/examples_group/examples/marimo/convert/alphafold-with-w-b-align-fold-log/alphafold_with_w_b_align_fold_log.py:114:0
+ 114 | app._unparsable_cell(
+ 115 |     r"""
+     |     ^
+ 116 |     #@title Install third-party software
+
+critical[unparsable-cells]: Notebook contains unparsable code
+ --> /Users/noahluna/Desktop/examples_group/examples/marimo/convert/alphafold-with-w-b-align-fold-log/alphafold_with_w_b_align_fold_log.py:177:0
+ 177 | app._unparsable_cell(
+ 178 |     r"""
+     |     ^
+ 179 |     #@title Download AlphaFold
+
+warning[empty-cells]: Empty cell can be removed (contains only whitespace, comments, or pass)
+ --> /Users/noahluna/Desktop/examples_group/examples/marimo/convert/alphafold-with-w-b-align-fold-log/alphafold_with_w_b_align_fold_log.py:101:0
+ 101 | @app.cell
+ 102 | def _():
+     |     ^
+ 103 |     # now run this cell (again by pressing the play button)
+
+Found 3 issues.

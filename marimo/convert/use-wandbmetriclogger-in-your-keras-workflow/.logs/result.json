@@ -1,0 +1,30 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/use-wandbmetriclogger-in-your-keras-workflow/use_wandbmetriclogger_in_your_keras_workflow.py"
+      ],
+      "exit_code": 0
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/keras/Use_WandbMetricLogger_in_your_Keras_workflow.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/use-wandbmetriclogger-in-your-keras-workflow/use_wandbmetriclogger_in_your_keras_workflow.py"
+      ],
+      "exit_code": 0
+    }
+  },
+  "completed_at": "2026-08-20T15:21:07+00:00",
+  "failed_stage": null,
+  "source": "colabs/keras/Use_WandbMetricLogger_in_your_Keras_workflow.ipynb",
+  "status": "ok",
+  "target": "marimo/convert/use-wandbmetriclogger-in-your-keras-workflow/use_wandbmetriclogger_in_your_keras_workflow.py",
+  "target_exists": true
+}

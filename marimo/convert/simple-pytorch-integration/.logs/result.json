@@ -1,0 +1,30 @@
+{
+  "commands": {
+    "check": {
+      "command": [
+        "uvx",
+        "marimo",
+        "check",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py"
+      ],
+      "exit_code": 0
+    },
+    "convert": {
+      "command": [
+        "uvx",
+        "marimo",
+        "convert",
+        "/Users/noahluna/Desktop/examples_group/examples/colabs/pytorch/Simple_PyTorch_Integration.ipynb",
+        "-o",
+        "/Users/noahluna/Desktop/examples_group/examples/marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py"
+      ],
+      "exit_code": 0
+    }
+  },
+  "completed_at": "2026-08-20T15:21:17+00:00",
+  "failed_stage": null,
+  "source": "colabs/pytorch/Simple_PyTorch_Integration.ipynb",
+  "status": "ok",
+  "target": "marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py",
+  "target_exists": true
+}

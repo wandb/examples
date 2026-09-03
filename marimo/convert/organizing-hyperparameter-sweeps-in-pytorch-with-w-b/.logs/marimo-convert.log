@@ -1,0 +1,7 @@
+$ uvx marimo convert '/Users/noahluna/Desktop/examples_group/examples/colabs/pytorch/Organizing_Hyperparameter_Sweeps_in_PyTorch_with_W&B.ipynb' -o /Users/noahluna/Desktop/examples_group/examples/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py
+
+exit_code: 0
+
+--- output ---
+
+Converted notebook saved to /Users/noahluna/Desktop/examples_group/examples/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py

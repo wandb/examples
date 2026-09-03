@@ -1,0 +1,7 @@
+$ uvx marimo convert /Users/noahluna/Desktop/examples_group/examples/colabs/torchtune/torchtune_and_wandb.ipynb -o /Users/noahluna/Desktop/examples_group/examples/marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py
+
+exit_code: 0
+
+--- output ---
+
+Converted notebook saved to /Users/noahluna/Desktop/examples_group/examples/marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py

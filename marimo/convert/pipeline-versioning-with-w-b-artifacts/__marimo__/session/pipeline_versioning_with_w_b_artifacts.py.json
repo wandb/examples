@@ -1,0 +1,690 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.24.0",
+    "script_metadata_hash": "b47d70c8550352e868c8a71805746efe"
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "1d0db38904205bec4d6f6f6a1f6cec3e",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "7d30b37fc723d67f25afe9debc5db46e",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\"><a href=\"https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-artifacts/Pipeline_Versioning_with_W&B_Artifacts.ipynb\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a></span>\n<!--- @wandbcode{artifacts-pipeline} --></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "vblA",
+      "code_hash": "a30d2bdf84091b48cb4507625b06b8ea",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\"><img src=\"http://wandb.me/logo-im-png\" width=\"400\" alt=\"Weights & Biases\" /></span>\n<!--- @wandbcode{artifacts-pipeline} --></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "bkHC",
+      "code_hash": "467f9f6c5ef926526eca923482fe2b0d",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"artifacts\">\ud83c\udffa Artifacts \ud83c\udffa</h1>\n<span class=\"paragraph\">In this notebook, we'll show you how to use W&amp;B Artifacts (\ud83c\udffa)\nto track your ML experiment pipelines (\ud83e\uddea).\nOur sophisticated mathematical models predict the following result:</span>\n<marimo-tex class=\"arithmatex\">||[\n{\\Huge\n\ud83e\uddea + \ud83c\udffa = \ud83d\ude03}\n||]</marimo-tex></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "lEQa",
+      "code_hash": "62faed3ebb84d1804c31f2181d474e4d",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"follow-along-with-a-video-tutorial\">Follow along with a <a href=\"http://tiny.cc/wb-artifacts-video\" rel=\"noopener noreferrer\" target=\"_blank\">video tutorial</a>!</h3></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "PKri",
+      "code_hash": "01c70105fdd9304210d7402acff0ea20",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"what-are-artifacts-and-why-should-i-care\">\ud83e\udd14 What are Artifacts and Why Should I Care?</h3>\n<span class=\"paragraph\">An \"artifact\", like a Greek <a href=\"https://en.wikipedia.org/wiki/Amphora\" rel=\"noopener noreferrer\" target=\"_blank\">amphora \ud83c\udffa</a>,\nis a produced object -- the output of a process.\nIn ML, the most important artifacts are <em>datasets</em> and <em>models</em>.</span>\n<span class=\"paragraph\">And, like the <a href=\"https://indianajones.fandom.com/wiki/Cross_of_Coronado\" rel=\"noopener noreferrer\" target=\"_blank\">Cross of Coronado</a>, these important artifacts belong in a museum!\nThat is, they should be cataloged and organized\nso that you, your team, and the ML community at large can learn from them.\nAfter all, those who don't track training are doomed to repeat it.</span>\n<span class=\"paragraph\">Using our Artifacts API, you can log <code>Artifact</code>s as outputs of W&amp;B <code>Run</code>s or use <code>Artifact</code>s as input to <code>Run</code>s, as in this diagram,\nwhere a training run takes in a dataset and produces a model.</span>\n<span class=\"paragraph\"><img alt=\"\" src=\"https://gblobscdn.gitbook.com/assets%2F-Lqya5RvLedGEWPhtkjU%2F-M94QAXA-oJmE6q07_iT%2F-M94QJCXLeePzH1p_fW1%2Fsimple%20artifact%20diagram%202.png?alt=media&amp;token=94bc438a-bd3b-414d-a4e4-aa4f6f359f21\" /></span>\n<span class=\"paragraph\">Since one run can use another's output as an input, Artifacts and Runs together form a directed graph -- actually, a bipartite <a href=\"https://en.wikipedia.org/wiki/Directed_acyclic_graph\" rel=\"noopener noreferrer\" target=\"_blank\">DAG</a>! -- with nodes for <code>Artifact</code>s and <code>Run</code>s\nand arrows connecting <code>Run</code>s to the <code>Artifact</code>s they consume or produce.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Xref",
+      "code_hash": "70e56b89521495ddecd3e30c1a6a9678",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"0-install-and-import\">0\ufe0f\u20e3 Install and Import</h1></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "SFPL",
+      "code_hash": "d1b9ce94ef273cc086863a2cf615b077",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">Artifacts are part of our Python library, starting with version <code>0.9.2</code>.</span>\n<span class=\"paragraph\">Like most parts of the ML Python stack, it's available via <code>pip</code>.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "BYtC",
+      "code_hash": "644781511a73a041b673db66d14324cf",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">This marimo notebook declares its Python dependencies in the script metadata\nat the top of the file. Run it with <code>uvx marimo edit --sandbox</code> or install\nthe listed packages into your environment.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "RGSE",
+      "code_hash": "5c38c10aa272e97a7af62c920fc63d8a",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "Kclp",
+      "code_hash": "1286491b2e860cb281a74e80dac6ad6a",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "emfo",
+      "code_hash": "967debfb48ad3dcec3c620e12e382c89",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "Hstk",
+      "code_hash": "4471daf5ff81f3ce82b2f113a09c95b8",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"1-log-a-dataset\">1\ufe0f\u20e3 Log a Dataset</h1></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "nWHF",
+      "code_hash": "63069cddac6791e872bd1cab04003793",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">First, let's define some Artifacts.</span>\n<span class=\"paragraph\">This example is based off of this PyTorch\n<a href=\"https://github.com/pytorch/examples/tree/master/mnist/\" rel=\"noopener noreferrer\" target=\"_blank\">\"Basic MNIST Example\"</a>,\nbut could just as easily have been done in <a href=\"http://wandb.me/artifacts-colab\" rel=\"noopener noreferrer\" target=\"_blank\">TensorFlow</a>, in any other framework,\nor in pure Python.</span>\n<span class=\"paragraph\">We start with the <code>Dataset</code>s:</span>\n<ul>\n<li>a <code>train</code>ing set, for choosing the parameters,</li>\n<li>a <code>validation</code> set, for choosing the hyperparameters,</li>\n<li>a <code>test</code>ing set, for evaluating the final model</li>\n</ul>\n<span class=\"paragraph\">The first cell below defines these three datasets.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "iLit",
+      "code_hash": "7e57e84ba9cc3c2cc860b6e24d8a4ef3",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "ZHCJ",
+      "code_hash": "ec3d5e9f8f847fd52de31f1b2fb87170",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "ROlb",
+      "code_hash": "3eb632d6536a9c806b94ee53f33c74ae",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">This sets up a pattern we'll see repeated in this example:\nthe code to log the data as an Artifact is wrapped around the code for\nproducing that data.\nIn this case, the code for <code>load</code>ing the data is\nseparated out from the code for <code>load_and_log</code>ging the data.</span>\n<span class=\"paragraph\">This is good practice!</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "qnkX",
+      "code_hash": "5073dd3eeb825a24fbd33d888ccb58ba",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">In order to log these datasets as Artifacts,\nwe just need to</span>\n<ol>\n<li>create a <code>Run</code> with <code>wandb.init</code>,</li>\n<li>create an <code>Artifact</code> for the dataset, and</li>\n<li>save and log the associated <code>file</code>s with <code>run.log_artifact</code>.</li>\n</ol>\n<span class=\"paragraph\">Check out the example code below, then click <strong>Log raw dataset</strong> to run\nthis pipeline step.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "TqIu",
+      "code_hash": "5383c4585753a51b494ffc06d1bf5888",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "Vxnm",
+      "code_hash": "02ee4121dd12e81bbdf78035a355850b",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "DnEU",
+      "code_hash": "bd8a25dfd50c72355d7927d2481b2e71",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "ulZA",
+      "code_hash": "97ccff2022e6eb2b6d570cf14c0ee5d4",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"wandbinit\">\ud83d\ude80 <code>wandb.init</code></h3></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "ecfG",
+      "code_hash": "b20a64262db155b37b89d790836e6092",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">When we make the <code>Run</code> that's going to produce the <code>Artifact</code>s,\nwe need to state which <code>project</code> it belongs to.</span>\n<span class=\"paragraph\">Depending on your workflow,\na project might be as big as <code>car-that-drives-itself</code>\nor as small as <code>iterative-architecture-experiment-117</code>.</span>\n<blockquote>\n<span class=\"paragraph\"><strong>Rule of \ud83d\udc4d</strong>: if you can, keep all of the <code>Run</code>s that share <code>Artifact</code>s\ninside a single project. This keeps things simple,\nbut don't worry -- <code>Artifact</code>s are portable across projects!</span>\n</blockquote>\n<span class=\"paragraph\">To help keep track of all the different kinds of jobs you might run,\nit's useful to provide a <code>job_type</code> when making <code>Runs</code>.\nThis keeps the graph of your Artifacts nice and tidy.</span>\n<blockquote>\n<span class=\"paragraph\"><strong>Rule of \ud83d\udc4d</strong>: the <code>job_type</code> should be descriptive and correspond to a single step of your pipeline. Here, we separate out <code>load</code>ing data from <code>preprocess</code>ing data.</span>\n</blockquote></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Pvdt",
+      "code_hash": "3aae9a97da06c3b2ca5236e02ae3837b",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"wandbartifact\">\ud83c\udffa <code>wandb.Artifact</code></h3></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "ZBYS",
+      "code_hash": "4ee5c1a8359990a148af6a123d448c61",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">To log something as an <code>Artifact</code>, we have to first make an <code>Artifact</code> object.</span>\n<span class=\"paragraph\">Every <code>Artifact</code> has a <code>name</code> -- that's what the first argument sets.</span>\n<blockquote>\n<span class=\"paragraph\"><strong>Rule of \ud83d\udc4d</strong>: the <code>name</code> should be descriptive, but easy to remember and type --\nwe like to use names that are hyphen-separated and correspond to variable names in the code.</span>\n</blockquote>\n<span class=\"paragraph\">It also has a <code>type</code>. Just like <code>job_type</code>s for <code>Run</code>s,\nthis is used for organizing the graph of <code>Run</code>s and <code>Artifact</code>s.</span>\n<blockquote>\n<span class=\"paragraph\"><strong>Rule of \ud83d\udc4d</strong>: the <code>type</code> should be simple:\nmore like <code>dataset</code> or <code>model</code>\nthan <code>mnist-data-YYYYMMDD</code>.</span>\n</blockquote>\n<span class=\"paragraph\">You can also attach a <code>description</code> and some <code>metadata</code>, as a dictionary.\nThe <code>metadata</code> just needs to be serializable to JSON.</span>\n<blockquote>\n<span class=\"paragraph\"><strong>Rule of \ud83d\udc4d</strong>: the <code>metadata</code> should be as descriptive as possible.</span>\n</blockquote></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "aLJB",
+      "code_hash": "11f2c318f48b4d29c4c5508aacb369bf",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"artifactnew_file-and-runlog_artifact\">\ud83d\udc23 <code>artifact.new_file</code> and \u270d\ufe0f <code>run.log_artifact</code></h3></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "nHfw",
+      "code_hash": "13fd54252c108d4c64bfb27474027c7d",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">Once we've made an <code>Artifact</code> object, we need to add files to it.</span>\n<span class=\"paragraph\">You read that right: <em>files</em> with an <em>s</em>.\n<code>Artifact</code>s are structured like directories,\nwith files and sub-directories.</span>\n<blockquote>\n<span class=\"paragraph\"><strong>Rule of \ud83d\udc4d</strong>: whenever it makes sense to do so, split the contents\nof an <code>Artifact</code> up into multiple files. This will help if it comes time to scale!</span>\n</blockquote>\n<span class=\"paragraph\">We use the <code>new_file</code> method\nto simultaneously write the file and attach it to the <code>Artifact</code>.\nBelow, we'll use the <code>add_file</code> method,\nwhich separates those two steps.</span>\n<span class=\"paragraph\">Once we've added all of our files, we need to <code>log_artifact</code> to <a href=\"https://wandb.ai\" rel=\"noopener noreferrer\" target=\"_blank\">wandb.ai</a>.</span>\n<span class=\"paragraph\">You'll notice some URLs appeared in the output,\nincluding one for the Run page.\nThat's where you can view the results of the <code>Run</code>,\nincluding any <code>Artifact</code>s that got logged.</span>\n<span class=\"paragraph\">We'll see some examples that make better use of the other components of the Run page below.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "xXTn",
+      "code_hash": "5bb044ba4261fd3162dde9172a1d46f5",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"2-use-a-logged-dataset-artifact\">2\ufe0f\u20e3 Use a Logged Dataset Artifact</h1></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "AjVT",
+      "code_hash": "37f3e1bf896db723784f79c06ae76f83",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\"><code>Artifact</code>s in W&amp;B, unlike artifacts in museums,\nare designed to be <em>used</em>, not just stored.</span>\n<span class=\"paragraph\">Let's see what that looks like.</span>\n<span class=\"paragraph\">The cell below defines a pipeline step that takes in a raw dataset\nand uses it to produce a <code>preprocess</code>ed dataset:\n<code>normalize</code>d and shaped correctly.</span>\n<span class=\"paragraph\">Notice again that we split out the meat of the code, <code>preprocess</code>,\nfrom the code that interfaces with <code>wandb</code>.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "pHFh",
+      "code_hash": "22a99287d90604f311c5176e8d7b51e8",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "NCOB",
+      "code_hash": "b6a5767f778a3619c7dae559df642864",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">Now for the code that instruments this <code>preprocess</code> step with <code>wandb.Artifact</code> logging.</span>\n<span class=\"paragraph\">Note that the example below both <code>use</code>s an <code>Artifact</code>,\nwhich is new,\nand <code>log</code>s it,\nwhich is the same as the last step.\n<code>Artifact</code>s are both the inputs and the outputs of <code>Run</code>s!</span>\n<span class=\"paragraph\">We use a new <code>job_type</code>, <code>preprocess-data</code>,\nto make it clear that this is a different kind of job from the previous one.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "aqbW",
+      "code_hash": "d93b3fdf40e1a18d4db5813e9de25694",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "TRpd",
+      "code_hash": "1def96fe637a0cac6505e4fad6344750",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "TXez",
+      "code_hash": "f8b6615067db48d42052d00c931c1fe5",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">One thing to notice here is that the <code>steps</code> of the preprocessing\nare saved with the <code>preprocessed_data</code> as <code>metadata</code>.</span>\n<span class=\"paragraph\">If you're trying to make your experiments reproducible,\ncapturing lots of metadata is a good idea!</span>\n<span class=\"paragraph\">Also, even though our dataset is a \"<code>large artifact</code>\",\nthe <code>download</code> step is done in much less than a second.</span>\n<span class=\"paragraph\">Expand the markdown cell below for details.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "dNNg",
+      "code_hash": "62e57c939053b0c51911e24f82a5be2c",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "yCnT",
+      "code_hash": "1954c38399da7ef92f5701f75fae8a4e",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "wlCL",
+      "code_hash": "150ca9a2f9cec8f6f40ed51c6f23ccaa",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"runuse_artifact\">\u2714\ufe0f <code>run.use_artifact</code></h3></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "kqZH",
+      "code_hash": "91db0ad4bcd439bc6bc8b5a82b8202ff",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">These steps are simpler. The consumer just needs to know the <code>name</code> of the <code>Artifact</code>, plus a bit more.</span>\n<span class=\"paragraph\">That \"bit more\" is the <code>alias</code> of the particular version of the <code>Artifact</code> you want.</span>\n<span class=\"paragraph\">By default, the last version to be uploaded is tagged <code>latest</code>.\nOtherwise, you can pick older versions with <code>v0</code>/<code>v1</code>, etc.,\nor you can provide your own aliases, like <code>best</code> or <code>jit-script</code>.\nJust like <a href=\"https://hub.docker.com/\" rel=\"noopener noreferrer\" target=\"_blank\">Docker Hub</a> tags,\naliases are separated from names with <code>:</code>,\nso the <code>Artifact</code> we want is <code>mnist-raw:latest</code>.</span>\n<blockquote>\n<span class=\"paragraph\"><strong>Rule of \ud83d\udc4d</strong>: Keep aliases short and sweet.\nUse custom <code>alias</code>es like <code>latest</code> or <code>best</code> when you want an <code>Artifact</code>\nthat satisifies some property</span>\n</blockquote></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "wAgl",
+      "code_hash": "295c9be327357b123f20cdb001585050",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"artifactdownload\">\ud83d\udce5 <code>artifact.download</code></h3></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "rEll",
+      "code_hash": "5d59545f7eb78b097c2d35ccaa17699e",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">Now, you may be worrying about the <code>download</code> call.\nIf we download another copy, won't that double the burden on memory?</span>\n<span class=\"paragraph\">Don't worry friend. Before we actually download anything,\nwe check to see if the right version is available locally.\nThis uses the same technology that underlies <a href=\"https://en.wikipedia.org/wiki/Torrent_file\" rel=\"noopener noreferrer\" target=\"_blank\">torrenting</a> and <a href=\"https://blog.thoughtram.io/git/2014/11/18/the-anatomy-of-a-git-commit.html\" rel=\"noopener noreferrer\" target=\"_blank\">version control with <code>git</code></a>: hashing.</span>\n<span class=\"paragraph\">As <code>Artifact</code>s are created and logged,\na folder called <code>artifacts</code> in the working directory\nwill start to fill with sub-directories,\none for each <code>Artifact</code>.\nCheck out its contents with <code>!tree artifacts</code>:</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "dGlV",
+      "code_hash": "c363ca2df7dbba2b9b66ea061bf26c46",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">To inspect downloaded Artifacts locally, run <code>tree artifacts</code> in a shell\nfrom this notebook's directory after the preprocessing step completes.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "SdmI",
+      "code_hash": "571b5473e76c44283d71965f04aae999",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"the-artifacts-page-on-wandbai\">\ud83c\udf10 The Artifacts page on <a href=\"https://wandb.ai\" rel=\"noopener noreferrer\" target=\"_blank\">wandb.ai</a></h3>\n<span class=\"paragraph\">Now that we've logged and used an <code>Artifact</code>,\nlet's check out the Artifacts tab on the Run page.</span>\n<span class=\"paragraph\">Navigate to the Run page URL from the <code>wandb</code> output\nand select the \"Artifacts\" tab from the left sidebar\n(it's the one with the database icon,\nwhich looks like three hockey pucks stacked on top of one another).</span>\n<span class=\"paragraph\">Click a row in either the \"Input Artifacts\" table\nor in the \"Output Artifacts\" table,\nthen check out the tabs (\"Overview\", \"Metadata\")\nto see everything logged about the <code>Artifact</code>.</span>\n<span class=\"paragraph\">We particularly like the \"Graph View\".\nBy default, it shows a graph\nwith the <code>type</code>s of <code>Artifact</code>s\nand the <code>job_type</code>s of <code>Run</code> as the two types of nodes,\nwith arrows to represent consumption and production.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "lgWD",
+      "code_hash": "8d9bcedc0ba8ac705e2a3436ab4ff5f2",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"3-log-a-model\">3\ufe0f\u20e3 Log a Model</h1></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "yOPj",
+      "code_hash": "e178b524af1ea095eca5569ddbcfbea8",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">That's enough to see how the API for <code>Artifact</code>s works,\nbut let's follow this example through to the end of the pipeline\nso we can see how <code>Artifact</code>s can improve your ML workflow.</span>\n<span class=\"paragraph\">This first cell here builds a DNN <code>model</code> in PyTorch -- a really simple ConvNet.</span>\n<span class=\"paragraph\">We'll start by just initializing the <code>model</code>, not training it.\nThat way, we can repeat the training while keeping everything else constant.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "fwwy",
+      "code_hash": "6376b699ebf5c7dfdd87d35f0b3da13e",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "LJZf",
+      "code_hash": "8978c80ab1586124e9ff340c4d1977f3",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">Here, we're using W&amp;B to track the run,\nand so using the <a href=\"https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-config/Configs_in_W%26B.ipynb\" rel=\"noopener noreferrer\" target=\"_blank\"><code>wandb.config</code></a>\nobject to store all of the hyperparameters.</span>\n<span class=\"paragraph\">The <code>dict</code>ionary version of that <code>config</code> object is a really useful piece of <code>metadata</code>, so make sure to include it!</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "urSm",
+      "code_hash": "b6b4ad4e5922158b1a03c64b44f7fe6d",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "jxvo",
+      "code_hash": "420cc5e99de1934ee69a854fb6c48079",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "mWxS",
+      "code_hash": "524a1809589ccaf59ee9f857ab8b6fe6",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "CcZR",
+      "code_hash": "412aac4716cdabe542ab9b45bc9f5570",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"artifactadd_file\">\u2795 <code>artifact.add_file</code></h3></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "YWSi",
+      "code_hash": "df7d0c71144260bb19fc5683c1963386",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">Instead of simultaneously writing a <code>new_file</code> and adding it to the <code>Artifact</code>,\nas in the dataset logging examples,\nwe can also write files in one step\n(here, <code>torch.save</code>)\nand then <code>add</code> them to the <code>Artifact</code> in another.</span>\n<blockquote>\n<span class=\"paragraph\"><strong>Rule of \ud83d\udc4d</strong>: use <code>new_file</code> when you can, to prevent duplication.</span>\n</blockquote></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "zlud",
+      "code_hash": "ff2b542170162f40424ead743d38dfa5",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"4-use-a-logged-model-artifact\">4\ufe0f\u20e3 Use a Logged Model Artifact</h1></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "tZnO",
+      "code_hash": "574ac1c39c73512e6d53f393a5d67759",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">Just like we could call <code>use_artifact</code> on a <code>dataset</code>,\nwe can call it on our <code>initialized_model</code>\nto use it in another <code>Run</code>.</span>\n<span class=\"paragraph\">This time, let's <code>train</code> the <code>model</code>.</span>\n<span class=\"paragraph\">For more details, check out our Colab on\n<a href=\"http://wandb.me/pytorch-colab\" rel=\"noopener noreferrer\" target=\"_blank\">instrumenting W&amp;B with PyTorch</a>.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "xvXZ",
+      "code_hash": "3048195fd6d079a638a6ab7bf53be807",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "CLip",
+      "code_hash": "844c0cd5f38175cbfbfea1db7fc63ef6",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "YECM",
+      "code_hash": "5bad23983489cc0e0fe81b14852e352a",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "cEAS",
+      "code_hash": "219dd24ef677ef4d041c1e6493b3d4a0",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "iXej",
+      "code_hash": "c1fd9b5678314d54de1b5c5a85457f15",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "EJmg",
+      "code_hash": "d2eac8280ca6187d3b52d596e5aac3ff",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">We'll run two separate <code>Artifact</code>-producing <code>Run</code>s this time.</span>\n<span class=\"paragraph\">Once the first finishes <code>train</code>ing the <code>model</code>,\nthe <code>second</code> will consume the <code>trained-model</code> <code>Artifact</code>\nby <code>evaluate</code>ing its performance on the <code>test_dataset</code>.</span>\n<span class=\"paragraph\">Also, we'll pull out the 32 examples on which the network gets the most confused --\non which the <code>categorical_crossentropy</code> is highest.</span>\n<span class=\"paragraph\">This is a good way to diagnose issues with your dataset and your model!</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "UmEG",
+      "code_hash": "76d5227c4b155b2c47b479edcabe68a3",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "vEBW",
+      "code_hash": "71e246ea8db5245bf20731c2a197b75e",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "kLmu",
+      "code_hash": "2f94521ecf25602bf3da3a95dd51fd03",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">These logging functions don't add any new <code>Artifact</code> features,\nso we won't comment on them:\nwe're just <code>use</code>ing, <code>download</code>ing,\nand <code>log</code>ging <code>Artifact</code>s.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "IpqN",
+      "code_hash": "95a7b679c77b47cf95f84ddefe919f2e",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "dxZZ",
+      "code_hash": "54513f78055893d1d68e804837bb3c18",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "dlnW",
+      "code_hash": "28b08097699f64f30bd48f4ea63120fd",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "TTti",
+      "code_hash": "e7ad948b54b4d5d4fdef322b56ec5c7b",
+      "outputs": [],
+      "console": []
+    },
+    {
+      "id": "RKFZ",
+      "code_hash": "dd85106d32e58b09fe7d271758cb6c91",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><span class=\"paragraph\">You may have noticed a button labeled \"Explode\". Don't click that, as it will set off a small bomb underneath your humble author's desk in the W&amp;B HQ!</span>\n<span class=\"paragraph\">Just kidding. It \"explodes\" the graph in a much gentler way:\n<code>Artifact</code>s and <code>Run</code>s become separated at the level of a single instance,\nrather than a <code>type</code>:\nthe nodes are not <code>dataset</code> and <code>load-data</code>, but <code>dataset:mnist-raw:v1</code> and <code>load-data:sunny-smoke-1</code>, and so on.</span>\n<span class=\"paragraph\">This provides total insight into your pipeline,\nwith logged metrics, metadata, and more\nall at your fingertips --\nyou're only limited by what you choose to log with us.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "IaQp",
+      "code_hash": "ae6333288750c0e668fff9960b371621",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h2 id=\"verify-and-next-steps\">Verify and next steps</h2>\n<span class=\"paragraph\">In the W&amp;B project, open the runs created by this notebook and inspect:</span>\n<ul>\n<li>the <strong>Artifacts</strong> tab for <code>mnist-raw</code>, <code>mnist-preprocess</code>, <code>convnet</code>, and\n  <code>trained-model</code>;</li>\n<li>the Artifact graph to confirm each run consumes the previous step's\n  output and produces the next Artifact;</li>\n<li>the training run charts for <code>train/loss</code>, <code>validation/loss</code>, and\n  <code>validation/accuracy</code>;</li>\n<li>the report run summary for <code>loss</code> and <code>accuracy</code>, plus the\n  <code>high-loss-examples</code> media panel.</li>\n</ul>\n<span class=\"paragraph\">Re-run the model initialization or training steps with different\nhyperparameters to create new Artifact versions and compare them in W&amp;B.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    }
+  ]
+}

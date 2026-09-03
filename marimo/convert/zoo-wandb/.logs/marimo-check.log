@@ -1,0 +1,21 @@
+$ uvx marimo check /Users/noahluna/Desktop/examples_group/examples/marimo/convert/zoo-wandb/zoo_wandb.py
+
+exit_code: 1
+
+--- output ---
+
+critical[unparsable-cells]: Notebook contains unparsable code
+ --> /Users/noahluna/Desktop/examples_group/examples/marimo/convert/zoo-wandb/zoo_wandb.py:840:0
+ 840 | app._unparsable_cell(
+ 841 |     r"""
+     |     ^
+ 842 |     Predicted correctly
+
+warning[empty-cells]: Empty cell can be removed (contains only whitespace, comments, or pass)
+ --> /Users/noahluna/Desktop/examples_group/examples/marimo/convert/zoo-wandb/zoo_wandb.py:67:0
+  67 | @app.cell
+  68 | def _():
+     |     ^
+  69 |     # packages added via marimo's package management: wandb torch ucimlrepo scikit-learn pandas !pip install wandb torch ucimlrepo scikit-learn pandas
+
+Found 2 issues.

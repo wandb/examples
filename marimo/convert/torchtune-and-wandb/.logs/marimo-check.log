@@ -1,0 +1,28 @@
+$ uvx marimo check /Users/noahluna/Desktop/examples_group/examples/marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py
+
+exit_code: 1
+
+--- output ---
+
+critical[unparsable-cells]: Notebook contains unparsable code
+ --> /Users/noahluna/Desktop/examples_group/examples/marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py:76:0
+  76 | app._unparsable_cell(
+  77 |     r"""
+     |     ^
+  78 |     cd torchtune/
+
+warning[empty-cells]: Empty cell can be removed (contains only whitespace, comments, or pass)
+ --> /Users/noahluna/Desktop/examples_group/examples/marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py:84:0
+  84 | @app.cell
+  85 | def _():
+     |     ^
+  86 |     # packages added via marimo's package management: .[dev] !python -m pip install -qqq ".[dev]"
+
+warning[empty-cells]: Empty cell can be removed (contains only whitespace, comments, or pass)
+ --> /Users/noahluna/Desktop/examples_group/examples/marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py:146:0
+ 146 | @app.cell
+ 147 | def _():
+     |     ^
+ 148 |     # magic command not supported in marimo; please file an issue to add support
+
+Found 3 issues.
