@@ -1,110 +1,45 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/wandb/wandb/main/assets/logo-light.svg#gh-light-mode-only" width="600" alt="Weights & Biases"/>
-  <img src="https://raw.githubusercontent.com/wandb/wandb/main/assets/logo-dark.svg#gh-dark-mode-only" width="600" alt="Weights & Biases"/>
-</p>
+Use W&B to build better models faster. Track and visualize all the pieces of your machine learning pipeline, from datasets to production machine learning models. Get started with W&B today, [sign up for an account](https://wandb.com?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme).
 
-Use W&B to build better models faster. Track and visualize all the pieces of your machine learning pipeline, from datasets to production machine learning models. Get started with W&B today, [sign up for a free account!](https://wandb.com?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme)
 
-<!-- 
-&nbsp;
+# Getting Started
 
-<p align='center'>
-<a target="_blank" href="https://docs.wandb.ai/guides/track?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_dark_background/experiments-dark.svg" width="13.5%">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_light/experiments-light.svg" width="13.5%">
-  <img alt="Weights and Biases Experiments" src="">
-</picture>
-</a>
-<a target="_blank" href="https://docs.wandb.ai/guides/reports?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_dark_background/report-dark.svg" width="13.5%">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_light/report-light.svg" width="13.5%">
-  <img alt="Weights and Biases Reports" src="">
-</picture>
-</a>
-<a target="_blank" href="https://docs.wandb.ai/guides/artifacts?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_dark_background/artifacts-dark.svg" width="13.5%">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_light/artifacts-light.svg" width="13.5%">
-  <img alt="Weights and Biases Artifacts" src="">
-</picture>
-</a>
-<a target="_blank" href="https://docs.wandb.ai/guides/data-vis?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_dark_background/tables-dark.svg" width="13.5%">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_light/tables-light.svg" width="13.5%">
-  <img alt="Weights and Biases Tables" src="">
-</picture>
-</a>
-<a target="_blank" href="https://docs.wandb.ai/guides/sweeps?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_dark_background/sweeps-dark.svg" width="13.5%">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_light/sweeps-light.svg" width="13.5%">
-  <img alt="Weights and Biases Sweeps" src="">
-</picture>
-</a>
-<a target="_blank" href="https://docs.wandb.ai/guides/models?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_dark_background/models-dark.svg" width="13.5%">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_light/models-light.svg" width="13.5%">
-  <img alt="Weights and Biases Model Management" src="">
-</picture>
-</a>
-<a target="_blank" href="https://docs.wandb.ai/guides/launch?utm_source=github&utm_medium=code&utm_campaign=wandb&utm_content=readme">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_dark_background/launch-dark.svg" width="13.5%">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/wandb/wandb/main/docs/README_images/Product_Icons_light/launch-light.svg" width="13.5%">
-  <img alt="Weights and Biases Launch" src="">
-</picture>
-</a>
-</p>
+Check out our libraries of [example scripts](https://github.com/wandb/examples/tree/master/examples) and [example colabs](https://github.com/wandb/examples/tree/master/colabs) or read on for code snippets and more.
 
-&nbsp; -->
+# Never lose your progress again. 
+Save everything you need to compare and reproduce models — architecture, hyperparameters, weights, model predictions, GPU usage, git commits, datsets, models, prompts and more.
 
-# 🚀 Getting Started
-
-### Never lose your progress again. 
-Save everything you need to compare and reproduce models — architecture, hyperparameters, weights, model predictions, GPU usage, git commits, and even datasets — in 5 minutes. W&B is free for personal use and academic projects, and it's easy to get started.
-
-**Check out our libraries of [example scripts](https://github.com/wandb/examples/tree/master/examples) and [example colabs](https://github.com/wandb/examples/tree/master/colabs)**
-or read on for code snippets and more!
-
-If you have any questions, please don't hesitate to ask in our [Discourse forum](http://wandb.me/and-you).
-
-# 🤝 Simple integration with any framework
+## Integrate with any framework
 Install `wandb` library and login:
+
 ```
 pip install wandb
 wandb login
 ```
+
 Flexible integration for any Python script:
+
 ```python
 import wandb
 
 # 1. Start a W&B run
-wandb.init(project='gpt3')
+with wandb.init(project='gpt3') as run:
 
-# 2. Save model inputs and hyperparameters
-config = wandb.config
-config.learning_rate = 0.01
+    # 2. Save model inputs and hyperparameters
+    config = run.config
+    config.learning_rate = 0.01
 
-# Model training code here ...
+    # Model training code here ...
 
-# 3. Log metrics over time to visualize performance
-for i in range (10):
-    wandb.log({"loss": loss})
+    # 3. Log metrics over time to visualize performance
+    for i in range (10):
+    run.log({"loss": loss})
 ```
 
-### [Try in a colab →](http://wandb.me/intro-colab)
-
-If you have any questions, please don't hesitate to ask in our [Discourse forum](http://wandb.me/and-you).
+[Try in a colab](http://wandb.me/intro-colab)
 
 ![](https://i.imgur.com/TU34QFZ.png)
 
-**[Explore a W&B dashboard](https://www.youtube.com/watch?v=gnD8BFuyVUA)**
-
-# 📈 Track model and data pipeline hyperparameters
+## Track model and data pipeline hyperparameters
 Set `wandb.config` once at the beginning of your script to save your hyperparameters, input settings (like dataset name or model type), and any other independent variables for your experiments. This is useful for analyzing your experiments and reproducing your work in the future. Setting configs also allows you to [visualize](https://docs.wandb.com/sweeps/visualize-sweep-results) the relationships between features of your model architecture or data pipeline and the model performance (as seen in the screenshot above).
 
 ```python
@@ -115,16 +50,13 @@ wandb.config.learning_rate = 0.001
 wandb.config.architecture = "resnet"
 ```
 
-- **[See how to set configs in a colab →](http://wandb.me/config-colab)**
+- [See how to set configs in a colab](http://wandb.me/config-colab)
 - [Docs](https://docs.wandb.com/library/config)
 
-# 🏗 Use your favorite framework
+## Use your favorite framework
 
 Use your favorite framework with W&B. W&B integrations make it fast and easy to set up experiment tracking and data versioning inside existing projects. For more information on how to integrate W&B with the framework of your choice, see the [Integrations chapter](https://docs.wandb.ai/guides/integrations) in the W&B Developer Guide.
 
-<!-- <p align='center'>
-<img src="./docs/README_images/integrations.png" width="100%" />
-</p> -->
 
 <details>
 <summary>🔥 PyTorch</summary>
@@ -242,7 +174,7 @@ Get started integrating your Keras model with W&B today:
 
 </details>
 <details>
-<summary>🤗 Huggingface Transformers</summary>
+<summary>Huggingface Transformers</summary>
 
 Pass `wandb` to the `report_to` argument when you run a script using a HuggingFace Trainer. W&B will automatically log losses,
 evaluation metrics, model topology, and gradients.
@@ -330,7 +262,7 @@ wandb.finish()
 </details>
 
 <details>
-<summary>⚡️ PyTorch Lightning</summary>
+<summary>PyTorch Lightning</summary>
 
 Build scalable, structured, high-performance PyTorch models with Lightning and log them with W&B.
 
@@ -554,18 +486,14 @@ run.finish()
 </details>
 
 &nbsp;
-# 🧹 Optimize hyperparameters with Sweeps
-Use Weights & Biases Sweeps to automate hyperparameter optimization and explore the space of possible models.
+## Optimize hyperparameters with Sweeps
+Use W&B Sweeps to automate hyperparameter optimization and explore the space of possible models.
 
-### [Try Sweeps in PyTorch in a Colab →](http://wandb.me/sweeps-colab)
-### [Try Sweeps in TensorFlow in a Colab →](http://wandb.me/tf-sweeps-colab)
+[Try Sweeps in PyTorch in a Colab](http://wandb.me/sweeps-colab)
+[Try Sweeps in TensorFlow in a Colab](http://wandb.me/tf-sweeps-colab)
 
-### Benefits of using W&B Sweeps 
-- **Quick to setup:** With just a few lines of code you can run W&B sweeps.
-- **Transparent:** We cite all the algorithms we're using, and our code is [open source](https://github.com/wandb/client/blob/master/wandb/sdk/wandb_sweep.py).
-- **Powerful:** Our sweeps are completely customizable and configurable. You can launch a sweep across dozens of machines, and it's just as easy as starting a sweep on your laptop.
 
-### [Get started in 5 mins →](https://docs.wandb.com/sweeps/quickstart)
+[Try the quickstart](https://docs.wandb.com/sweeps/quickstart)
 
 <img src="https://gblobscdn.gitbook.com/assets%2F-Lqya5RvLedGEWPhtkjU%2F-LyfPCyvV8By5YBltxfh%2F-LyfQsxswLC-6WKGgfGj%2Fcentral%20sweep%20server%203.png?alt=media&token=c81e4fe7-7ee4-48ea-a4cd-7b28113c6088" width="400" alt="Weights & Biases" />
 
@@ -583,7 +511,7 @@ Parallel coordinates plots map hyperparameter values to model metrics. They're u
 
 <img src="https://i.imgur.com/THYXBN0.png" width="720" alt="Weights & Biases" />
 
-# 📜 Share insights with Reports
+## Share insights with Reports
 Reports let you [organize visualizations, describe your findings, and share updates with collaborators](http://wandb.me/reports-guide).
 
 ### Common use cases
@@ -591,13 +519,13 @@ Reports let you [organize visualizations, describe your findings, and share upda
 - **Collaboration:** Share findings with your colleagues.
 - **Work log:** Track what you've tried and plan next steps.
 
-**Explore reports in [The Gallery →](https://wandb.ai/gallery) | Read the [Docs](https://docs.wandb.com/reports)**
+Explore reports in [The Gallery](https://wandb.ai/gallery) | Read the [Docs](https://docs.wandb.com/reports)
 
 Once you have experiments in W&B, you can visualize and document results in Reports with just a few clicks. Here's a quick [demo video](http://wandb.me/short-reports).
 
 ![](https://i.imgur.com/dn0Dyd8.png)
 
-# 🏺 Version control datasets and models with Artifacts
+## Version control datasets and models with Artifacts
 Git and GitHub make code version control easy,
 but they're not optimized for tracking the other parts of the ML pipeline:
 datasets, models, and other large binary files.
@@ -607,7 +535,7 @@ With just a few extra lines of code,
 you can start tracking you and your team's outputs,
 all directly linked to run.
 
-### Try Artifacts in a [Colab](http://wandb.me/artifacts-colab) with a [video tutorial](http://wandb.me/artifacts-video)
+Try Artifacts in a [Colab](http://wandb.me/artifacts-colab) with a [video tutorial](http://wandb.me/artifacts-video)
 
 ![](https://i.imgur.com/zvBWhGx.png)
 
@@ -618,24 +546,28 @@ all directly linked to run.
 
 ![](https://i.imgur.com/w92cYQm.png)
 
-**Learn about Artifacts [here →](https://www.wandb.com/articles/announcing-artifacts) | Read the [Docs](https://docs.wandb.com/artifacts)**
+Learn about Artifacts [here](https://www.wandb.com/articles/announcing-artifacts) | Read the [Docs](https://docs.wandb.com/artifacts)
 
 
 
-# Visualize and Query data with Tables
+## Visualize and Query data with Tables
 
 Group, sort, filter, generate calculated columns, and create charts from tabular data.
 
 Spend more time deriving insights, and less time building charts manually.
 
-```
+```python
 # log my table
 
-wandb.log({"table": my_dataframe})
+import wandb
+
+with wandb.init() as run:
+
+    run.log({"table": my_dataframe})
 ```
 
 ![](https://i.imgur.com/Fg9xR6M.gif)
 
-### Try Tables in a [Colab](http://wandb.me/tables-quickstart) or these [examples](https://github.com/wandb/examples/tree/master/colabs/tables)
+Try Tables in a [Colab](http://wandb.me/tables-quickstart) or these [examples](https://github.com/wandb/examples/tree/master/colabs/tables)
 
-**Explore Tables [here →](https://wandb.ai/site/tables) | Read the [Docs](https://docs.wandb.ai/guides/data-vis)**
+Explore Tables [here](https://wandb.ai/site/tables) | Read the [Docs](https://docs.wandb.ai/guides/data-vis)
