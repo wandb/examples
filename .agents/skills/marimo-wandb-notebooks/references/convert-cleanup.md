@@ -29,8 +29,10 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
   unnecessary `display()` calls.
 - Make the intended output the final expression of each display cell. Indented
   or conditional expressions will not render as cell output.
-- Replace notebook-global scratch variables with local variables inside helper
-  functions when they are only used in one step.
+- When cleanup is requested and it improves clarity, replace notebook-global
+  scratch variables with locals inside helper functions. Do not do this during
+  an exact synchronization or when it would rename or obscure teaching code
+  without resolving a demonstrated graph problem.
 - Prefer explicit markdown cells for prose. Do not leave tutorial text inside
   code comments or string literals in logic cells.
 
@@ -49,15 +51,19 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
 - Do not assume molab's **Mirror from GitHub** action provides a checkout of the
   whole repository. A notebook and its dependency metadata can be present
   while sibling data files are not.
-- For public, read-only repository assets, prefer a named HTTP filesystem and
-  raw content URLs, for example `repo_fs = fsspec.filesystem("https")` with a
-  `raw.githubusercontent.com` base URL. A public filesystem name also makes the
-  source discoverable in marimo's Remote Storage panel.
-- Avoid an anonymous `fsspec.filesystem("github", ...)` in hosted notebooks.
-  Its repository lookup uses the rate-limited GitHub API, and users can share
-  one unauthenticated IP quota. Use it only when repository listing semantics
-  are required and an optional GitHub token comes from the runtime's secrets or
-  environment; never hardcode the token.
+- Preserve a working asset-loading backend. Do not replace it solely because a
+  different backend might avoid a hypothetical hosted-environment limit.
+- Use `fsspec.filesystem("github", org=..., repo=...)` with repository-relative
+  paths when repository listing or marimo's Remote Storage browser is useful.
+  Anonymous hosted sessions can share GitHub's API quota; respond to a
+  demonstrated rate-limit failure with an optional token from runtime secrets
+  or environment, or use raw HTTPS for the affected known files. Never hardcode
+  a token.
+- A named HTTP filesystem with `raw.githubusercontent.com` URLs avoids GitHub's
+  repository API when only known public files are required. A bare
+  `HTTPFileSystem` can open concrete URLs but has no listable root, so do not
+  select it solely to expose a browsable source in marimo's Remote Storage
+  panel.
 - Declare `fsspec[http]`, not only `fsspec`, for HTTP files, Git-LFS content,
   and GitHub files larger than 1 MB.
 - Pass file-like objects directly when the consumer supports them. Otherwise,

@@ -32,9 +32,13 @@ Use this when creating, reviewing, or polishing W&B example notebooks.
 
 ## Reader Verification
 
-- End with a clear "Verify and next steps" section.
-- Tell the reader exactly what to inspect in the W&B UI, including relevant
-  charts, tabs, panels, Artifacts, Registry collections, or run summary fields.
+- Preserve the source notebook's ending. Add or adapt concise verification and
+  next-step guidance only when readers otherwise lack a clear way to confirm
+  the tutorial result; do not append generic boilerplate during a repair or
+  exact synchronization.
+- When verification guidance is needed, tell the reader exactly what to inspect
+  in the W&B UI, including relevant charts, tabs, panels, Artifacts, Registry
+  collections, or run summary fields.
 - Apply a fresh-eyes test: a reader following the documented prerequisites
-  should be able to complete the tutorial and verify the result from the final
-  section alone.
+  should be able to complete the tutorial and verify the result from the
+  notebook's guidance.

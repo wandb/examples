@@ -33,9 +33,14 @@ Do not add marimo orchestration, generated dependency plumbing, or
 underscore-prefixed scratch variables to teaching code merely to satisfy the
 reactive graph.
 
-Use underscore-prefixed temporaries in orchestration or presentation cells when
-useful. When teaching code is naturally expressed as a function, keep the
-function clean and put its gate or UI wiring in separate cells.
+Preserve original identifiers in teaching code. Do not mechanically prefix a
+unique name with `_` merely because no later cell reads it. First inspect actual
+definitions and references across cells. Use private names to resolve a real
+cross-cell redefinition or for newly introduced implementation-only plumbing,
+such as file handles, context-manager targets, or UI internals.
+
+When teaching code is naturally expressed as a function, keep the function
+clean and put its gate or UI wiring in separate cells.
 
 ## Reactivity
 
@@ -43,9 +48,10 @@ function clean and put its gate or UI wiring in separate cells.
   ready.
 - `mo.stop()`, `if`, `for`, and `with` control runtime execution; they do not
   create a static scope. Imports, assignment targets, loop targets, and context
-  manager targets anywhere in a cell still define names in marimo's graph.
-  Give each shared name one owning cell, prefix cell-local temporaries with
-  `_`, or move procedural work into a function.
+  manager targets anywhere in a cell still define names in marimo's graph. Give
+  each shared name one owning cell. Keep unique teaching names public even when
+  they have no downstream consumer; use `_` for genuinely private plumbing or
+  repeated scratch names, or move procedural work into a function.
 - Do not rely on cross-cell mutation for reactivity; marimo does not track
   object mutations or attribute assignments. Prefer creating a new value, or
   mutate an object only in the cell that defines it.
@@ -115,8 +121,12 @@ helpers. Do not repeat the same gate in downstream cells.
 - Use `mo.video` for a direct video URL, file, or bytes. For a hosted player
   such as YouTube, use the provider's canonical HTTPS embed URL in a trusted
   `mo.Html` iframe with a descriptive title and a normal link fallback.
-- When official brand artwork has light- and dark-theme variants, select the
-  appropriate variant and visually verify both marimo themes.
+- For the W&B header pattern used by the media tutorial, use
+  `https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg`
+  in the light theme and
+  `https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg`
+  in the dark theme. Render both and switch them with marimo's `body.dark`
+  class; visually verify both themes.
 
 ## UI
 

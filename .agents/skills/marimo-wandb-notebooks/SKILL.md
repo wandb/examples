@@ -51,12 +51,23 @@ Also read:
 - Use the original `.ipynb` for tutorial intent, narrative, and featured W&B
   behavior.
 - Treat the current `.py` as the current conversion state.
+- When the user designates a live marimo or molab notebook, or an artifact
+  exported from it, as authoritative, it overrides the repository `.py` as the
+  current implementation state. The original `.ipynb` remains a reference for
+  intent, not a reason to rewrite the designated artifact. Do not edit the live
+  notebook or update a branch unless requested. When syncing is requested,
+  export or download after the final approved live edit and preserve cell order,
+  boundaries, setup status, identifiers, working integrations, and configuration
+  such as `hide_code` and `disabled` unless the request requires changing them.
 - Treat `.logs/` as historical diagnostic evidence.
 - Use a fresh `marimo check` for current static validity.
 - Use `examples/marimo/mnist-registry/mnist_registry.py` as the structural
   exemplar when the references do not specify a choice, especially its
   separation of marimo orchestration cells from reusable `@app.function`
   helpers. Do not copy tutorial-specific details from the exemplar.
+- Notebook review or repair does not authorize submitting live credentials or
+  remote-write controls, committing, pushing, or changing a pull request.
+  Perform those actions only when the user explicitly requests them.
 
 ## Conversion priorities
 
@@ -120,6 +131,8 @@ Before considering a conversion complete:
   closes prior runs and avoids duplicate stateful updates where practical.
 - Cross-cell consumers of W&B state use explicit result or completion values,
   and producers synchronize server-visible state before downstream reads.
-- A fresh molab session can authenticate without credentials from the local
-  computer, and no credential appears in notebook output, run configuration,
-  logs, or the diff.
+- A fresh molab session presents an authentication path that does not assume
+  credentials from the local computer. Inspect the inputs and gate without
+  submitting real credentials; test live authentication only when explicitly
+  requested or with a designated test backend. No credential appears in
+  notebook output, run configuration, logs, or the diff.
