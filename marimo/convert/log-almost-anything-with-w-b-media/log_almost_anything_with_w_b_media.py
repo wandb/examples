@@ -1,5 +1,15 @@
 # /// script
-# dependencies = ["soundfile", "wandb"]
+# requires-python = ">=3.10"
+# dependencies = [
+#     "fsspec[http]",
+#     "marimo",
+#     "matplotlib",
+#     "numpy",
+#     "pandas",
+#     "plotly",
+#     "soundfile",
+#     "wandb",
+# ]
 # ///
 
 import marimo
@@ -7,34 +17,49 @@ import marimo
 __generated_with = "0.24.0"
 app = marimo.App()
 
+with app.setup:
+    import io
+    import warnings
 
-@app.cell
-def _():
+    import fsspec
     import marimo as mo
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    import soundfile as sf
+    import wandb
 
-    return (mo,)
-
-
-@app.cell
-def _():
-    import subprocess
-
-    return (subprocess,)
+    warnings.filterwarnings("ignore", category=UserWarning)
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/master/marimo/convert/log-almost-anything-with-w-b-media/log_almost_anything_with_w_b_media.py/server)
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/log-almost-anything-with-w-b-media/log_almost_anything_with_w_b_media.py/server)
     <!--- @wandbcode{media-video} -->
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
+    <style>
+    .wandb-header-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-header-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-header-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-header-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases" />
+    <img class="wandb-header-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases" />
 
     <!--- @wandbcode{media-video} -->
 
@@ -52,18 +77,34 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    In this notebook, we'll show you how to visualize a model's predictions with Weights & Biases – images, videos, audio, tables, HTML, metrics, plots, 3D objects and point clouds.
+    In this notebook, we'll show you how to visualize a model's predictions with Weights & Biases: images, videos, audio, tables, HTML, metrics, plots, 3D objects, and point clouds.
 
-    ### Follow along with a [video tutorial →](http://wandb.me/media-video)!
-    #### View plots in interactive [dashboard →](https://app.wandb.ai/lavanyashukla/visualize-predictions/reports/Visualize-Model-Predictions--Vmlldzo1NjM4OA).
+    Follow along with the video below, or [open the tutorial on YouTube](https://wandb.me/media-video). View the finished examples in the interactive [W&B dashboard](https://app.wandb.ai/lavanyashukla/visualize-predictions/reports/Visualize-Model-Predictions--Vmlldzo1NjM4OA).
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
+    mo.Html(r"""
+    <iframe
+      width="100%"
+      height="450"
+      src="https://www.youtube.com/embed/96MxRvx15Ts"
+      title="Log (Almost) Anything with W&B Media"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allowfullscreen>
+    </iframe>
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
     mo.md(r"""
     ![](https://paper-attachments.dropbox.com/s_C0EC7008D045FC80715C08E7386E0BBDA59DC92DEE34C734FEA67BF25E4BA5CC_1578297638486_image.png)
     """)
@@ -71,407 +112,525 @@ def _(mo):
 
 
 @app.cell
-def _(subprocess):
-    # Fetch audio, video and other data files to log
-    import subprocess as _sp
-    _sp.run(['git', 'clone', '--depth', '1', 'https://github.com/wandb/examples.git'],
-            capture_output=True, text=True)
+def _():
+    # Stream the tutorial assets directly from the public GitHub repository.
+    # Keeping this as a public fsspec filesystem also exposes it in marimo's
+    # Remote Storage data source panel.
+    repo_fs = fsspec.filesystem("github", org="wandb", repo="examples")
+    mo.callout(
+        mo.md(
+            "Tutorial assets are streamed from "
+            "[`wandb/examples`](https://github.com/wandb/examples) with `fsspec`; "
+            "you don't need to clone the repository."
+        ),
+        kind="info",
+    )
+    return (repo_fs,)
 
-    import warnings
-    warnings.filterwarnings("ignore", category=UserWarning)
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Authentication
+
+    Enter your [W&B API key](https://wandb.ai/authorize) and, if needed, your team or entity. You can leave the key blank when this environment already has W&B credentials.
+    """)
     return
 
 
 @app.cell
 def _():
-    import pandas as pd
-    import numpy as np
-    import wandb
-
-    return np, pd, wandb
-
-
-@app.cell
-def _(mo):
-    mo.md("""
-    ## Authentication
-
-    Optionally provide your W&B API key below. If left blank, W&B will use
-    cached credentials or prompt for login.
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    api_key_field = mo.ui.text(
+    _api_key_input = mo.ui.text(
         kind="password",
-        label="W&B API Key (optional)",
-        placeholder="Leave blank to use cached credentials"
+        label="W&B API key (optional)",
+        placeholder="Paste a key or use cached credentials",
+        full_width=True,
     )
-    return (api_key_field,)
+    _entity_input = mo.ui.text(
+        label="W&B entity or team (optional)",
+        placeholder="Leave blank to use your default entity",
+        full_width=True,
+    )
+    wandb_login_form = (
+        mo.md("{api_key}\n\n{entity}")
+        .batch(api_key=_api_key_input, entity=_entity_input)
+        .form(submit_button_label="Connect to W&B", bordered=True)
+    )
+    wandb_login_form
+    return (wandb_login_form,)
 
 
 @app.cell
-def _(api_key_field):
-    if api_key_field.value:
-        import os
-        os.environ["WANDB_API_KEY"] = api_key_field.value
-    return
+def _(wandb_login_form):
+    mo.stop(
+        wandb_login_form.value is None,
+        mo.callout(
+            mo.md("Connect to W&B above before running a logging example."),
+            kind="info",
+        ),
+    )
+
+    _api_key = wandb_login_form.value["api_key"].strip()
+    _entity = wandb_login_form.value["entity"].strip()
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+        _login_error = None
+    except wandb.errors.Error as _error:
+        _login_ok = False
+        _login_error = str(_error)
+
+    mo.stop(
+        not _login_ok,
+        mo.callout(
+            mo.md(
+                "W&B authentication did not complete. "
+                f"Check the API key and try again. W&B reported: `{_login_error or 'unknown error'}`"
+            ),
+            kind="danger",
+        ),
+    )
+
+    wandb_settings = {
+        "project": "visualize-predictions",
+        "entity": _entity or None,
+    }
+    mo.callout(
+        mo.md("Connected. Each button below creates one separate W&B run."),
+        kind="success",
+    )
+    return (wandb_settings,)
 
 
-@app.cell
-def _(mo):
-    mo.md("""
-    ## Run Demonstrations
-
-    Click the button below to run all W&B logging demonstrations.
-    Each section will create a separate W&B run showing different
-    logging capabilities.
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    run_button = mo.ui.run_button(label="▶ Run Demonstrations")
-    return (run_button,)
+@app.function
+def finish_active_run():
+    """Finish a run left open by an interrupted demonstration."""
+    if wandb.run is not None:
+        wandb.finish()
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    # Log metrics
+    ## Run the demonstrations
+
+    Use the button in each section to create only the run you want to inspect. This keeps reactive edits from launching every W&B logging example at once.
     """)
     return
 
 
+@app.cell(hide_code=True)
+def _():
+    metrics_button = mo.ui.run_button(label="Log metrics")
+    mo.vstack([mo.md("## Log metrics"), metrics_button])
+    return (metrics_button,)
+
+
 @app.cell
-def _(pd):
-    # Get Apple stock price data from
+def _(repo_fs):
+    # Apple stock prices from
     # https://www.macrotrends.net/stocks/charts/AAPL/apple/stock-price-history
-    apple = pd.read_csv("examples/data/apple.csv")
-    apple = apple[-1000:]
-    return (apple,)
+    with repo_fs.open("examples/data/apple.csv", "rb") as _apple_file:
+        apple_prices = pd.read_csv(_apple_file).tail(1000)
+    apple_prices.head()
+    return (apple_prices,)
 
 
 @app.cell
-def _(apple, wandb, run_button, mo):
-    mo.stop(not run_button.clicked)
+def _(apple_prices, metrics_button, wandb_settings):
+    mo.stop(not metrics_button.value)
+    finish_active_run()
 
-    # Initialize a new run
-    with wandb.init(project="visualize-predictions", name="metrics") as run:
-        # Log the metric on each step
-        for price in apple['close']:
-            run.log({"Stock Price": price})
+    with wandb.init(name="metrics", **wandb_settings) as _run:
+        for _price in apple_prices["close"]:
+            _run.log({"Stock Price": _price})
+        _run_url = _run.url
 
-    mo.toast("✓ Metrics logged to W&B")
+    mo.callout(
+        mo.md(f"Metrics logged. [Open the W&B run]({_run_url})."),
+        kind="success",
+    )
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    # Log plots
-    """)
-    return
+def _():
+    plots_button = mo.ui.run_button(label="Log a plot")
+    mo.vstack([mo.md("## Log plots"), plots_button])
+    return (plots_button,)
 
 
 @app.cell
-def _(run_button, mo):
-    mo.stop(not run_button.clicked)
+def _(plots_button, wandb_settings):
+    mo.stop(not plots_button.value)
+    finish_active_run()
 
-    import matplotlib.pyplot as plt
-    import wandb
+    _fibonacci = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+    _fig, _ax = plt.subplots()
+    _ax.plot(_fibonacci)
+    _ax.set_ylabel("Fibonacci values")
 
-    # Initialize a new run
-    with wandb.init(project='visualize-predictions', name='plots') as run:
-        fibonacci = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
-        fig, ax = plt.subplots()
-        ax.plot(fibonacci)
-        ax.set_ylabel('Fibonacci values')
-        run.log({'plot': fig})
+    with wandb.init(name="plots", **wandb_settings) as _run:
+        _run.log({"plot": _fig})
+        _run_url = _run.url
 
-    mo.toast("✓ Plot logged to W&B")
-    return (plt,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    # Log Histograms
-    """)
-    return
-
-
-@app.cell
-def _(np, run_button, mo):
-    mo.stop(not run_button.clicked)
-
-    import wandb
-
-    # Initialize a new run
-    with wandb.init(project='visualize-predictions', name='histograms') as run:
-        fibonacci = np.array([0, 1, 1, 2, 3, 5, 8, 13, 21, 34])
-        for i in range(1, 10):
-            run.log({'histograms': wandb.Histogram(fibonacci / i)})
-
-    mo.toast("✓ Histograms logged to W&B")
+    mo.vstack(
+        [
+            _fig,
+            mo.callout(
+                mo.md(f"Plot logged. [Open the W&B run]({_run_url})."),
+                kind="success",
+            ),
+        ]
+    )
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    # Log images
-    """)
-    return
+def _():
+    histograms_button = mo.ui.run_button(label="Log histograms")
+    mo.vstack([mo.md("## Log histograms"), histograms_button])
+    return (histograms_button,)
 
 
 @app.cell
-def _(plt, run_button, mo):
-    mo.stop(not run_button.clicked)
+def _(histograms_button, wandb_settings):
+    mo.stop(not histograms_button.value)
+    finish_active_run()
 
-    import wandb
+    _fibonacci = np.array([0, 1, 1, 2, 3, 5, 8, 13, 21, 34])
+    with wandb.init(name="histograms", **wandb_settings) as _run:
+        for _step in range(1, 10):
+            _run.log({"histograms": wandb.Histogram(_fibonacci / _step)})
+        _run_url = _run.url
 
-    # Initialize a new run
-    with wandb.init(project='visualize-predictions', name='images') as run:
-        path_to_img = 'examples/data/cafe.jpg'
-        im = plt.imread(path_to_img)
-        run.log({'img': [wandb.Image(im, caption='Cafe')]})
-
-    mo.toast("✓ Image logged to W&B")
+    mo.callout(
+        mo.md(f"Histograms logged. [Open the W&B run]({_run_url})."),
+        kind="success",
+    )
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    # Log videos
-    """)
-    return
+def _():
+    images_button = mo.ui.run_button(label="Log an image")
+    mo.vstack([mo.md("## Log images"), images_button])
+    return (images_button,)
 
 
 @app.cell
-def _(run_button, mo):
-    mo.stop(not run_button.clicked)
+def _(images_button, repo_fs, wandb_settings):
+    mo.stop(not images_button.value)
+    finish_active_run()
 
-    import wandb
+    with repo_fs.open("examples/data/cafe.jpg", "rb") as _image_file:
+        _image = plt.imread(_image_file, format="jpg")
 
-    # Initialize a new run
-    with wandb.init(project="visualize-predictions", name="videos") as run:
-        path_to_video = "examples/data/openai-gym.mp4"
-        run.log({"video": wandb.Video(path_to_video, fps=4, format="gif")})
+    with wandb.init(name="images", **wandb_settings) as _run:
+        _run.log({"img": [wandb.Image(_image, caption="Cafe")]})
+        _run_url = _run.url
 
-    mo.toast("✓ Video logged to W&B")
+    mo.callout(
+        mo.md(f"Image logged. [Open the W&B run]({_run_url})."),
+        kind="success",
+    )
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ![](https://api.wandb.ai/files/lavanyashukla/visualize-predictions/0gv4owya/media/videos/openai-gym_89a16925.mp4)
+def _():
+    videos_button = mo.ui.run_button(label="Log a video")
+    mo.vstack([mo.md("## Log videos"), videos_button])
+    return (videos_button,)
+
+
+@app.cell
+def _(repo_fs, videos_button, wandb_settings):
+    mo.stop(not videos_button.value)
+    finish_active_run()
+
+    with repo_fs.open("examples/data/openai-gym.mp4", "rb") as _video_file:
+        _video = io.BytesIO(_video_file.read())
+
+    with wandb.init(name="videos", **wandb_settings) as _run:
+        _run.log({"video": wandb.Video(_video, format="mp4")})
+        _run_url = _run.url
+
+    mo.callout(
+        mo.md(f"Video logged. [Open the W&B run]({_run_url})."),
+        kind="success",
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.Html(r"""
+    <video controls preload="metadata" style="width: 100%; max-width: 720px;">
+      <source src="https://api.wandb.ai/files/lavanyashukla/visualize-predictions/0gv4owya/media/videos/openai-gym_89a16925.mp4" type="video/mp4" />
+      Your browser does not support embedded video.
+    </video>
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    # Log audio
-    """)
-    return
+def _():
+    audio_file_button = mo.ui.run_button(label="Log the piano recording")
+    generated_audio_button = mo.ui.run_button(label="Log generated audio")
+    mo.vstack(
+        [
+            mo.md("## Log audio"),
+            mo.hstack([audio_file_button, generated_audio_button], justify="start"),
+        ]
+    )
+    return audio_file_button, generated_audio_button
 
 
 @app.cell
-def _(run_button, mo):
-    mo.stop(not run_button.clicked)
+def _(audio_file_button, repo_fs, wandb_settings):
+    mo.stop(not audio_file_button.value)
+    finish_active_run()
 
-    import wandb
+    with repo_fs.open("examples/data/piano.wav", "rb") as _audio_file:
+        _samples, _sample_rate = sf.read(_audio_file, dtype="float32")
 
-    # Initialize a new run
-    with wandb.init(project="visualize-predictions", name="audio_file") as run:
-        path_to_audio = "examples/data/piano.wav"
-        run.log({"examples": [wandb.Audio(path_to_audio, caption="Piano", sample_rate=32)]})
-
-    mo.toast("✓ Audio file logged to W&B")
-    return
-
-
-@app.cell
-def _(np, run_button, mo):
-    mo.stop(not run_button.clicked)
-
-    import wandb
-
-    # Initialize a new run
-    with wandb.init(project="visualize-predictions", name="audio_generated") as run:
-        fs = 44100  # sampling frequency, Hz
-        length = 3  # length, seconds
-        xs = np.linspace(0, length, num=fs * length)
-        waveform = np.sin(fs * 2 * np.pi / 40 * xs ** 2)
-        run.log({"examples": [wandb.Audio(waveform, caption="Boop", sample_rate=fs)]})
-
-    mo.toast("✓ Generated audio logged to W&B")
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    # Log tables
-    """)
-    return
-
-
-@app.cell
-def _(run_button, mo):
-    mo.stop(not run_button.clicked)
-
-    import wandb
-
-    # Initialize a new run
-    with wandb.init(project="visualize-predictions", name="tables") as run:
-        # Create tabular data, method 1
-        data = [["I love my phone", "1", "1"], ["My phone sucks", "0", "-1"]]
-        run.log({"a_table": wandb.Table(data=data, columns=["Text", "Predicted Label", "True Label"])})
-
-        # Create tabular data, method 2
-        table = wandb.Table(columns=["Text", "Predicted Label", "True Label"])
-        table.add_data("I love my phone", "1", "1")
-        table.add_data("My phone sucks", "0", "-1")
-        run.log({"another_table": table})
-
-    mo.toast("✓ Tables logged to W&B")
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    # Log HTML
-    """)
-    return
-
-
-@app.cell
-def _(run_button, mo):
-    mo.stop(not run_button.clicked)
-
-    import wandb
-
-    # Initialize a new run
-    with wandb.init(project="visualize-predictions", name="html") as run:
-        # Log HTML from file
-        path_to_html = "examples/data/some_html.html"
-        run.log({"custom_file": wandb.Html(open(path_to_html))})
-
-        # Log raw HTML strings
-        run.log({"custom_string": wandb.Html('<a href="https://mysite">Link</a>')})
-
-    mo.toast("✓ HTML logged to W&B")
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    # Log 3D Objects
-    """)
-    return
-
-
-@app.cell
-def _(run_button, mo):
-    mo.stop(not run_button.clicked)
-
-    import wandb
-
-    # Initialize a new run
-    with wandb.init(project="visualize-predictions", name="3d_objects") as run:
-        path_to_obj = "examples/data/wolf.obj"
-        run.log({"3d_object": wandb.Object3D(open(path_to_obj))})
-
-    mo.toast("✓ 3D object logged to W&B")
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    # Log Point Clouds
-    """)
-    return
-
-
-@app.cell
-def _(np, run_button, mo):
-    mo.stop(not run_button.clicked)
-
-    import wandb
-
-    # Initialize a new run
-    with wandb.init(project="visualize-predictions", name="point_clouds") as run:
-        # Generate a cloud of points
-        points = np.random.uniform(size=(250, 3))
-
-        # Log points and boxes in W&B
-        run.log(
+    with wandb.init(name="audio_file", **wandb_settings) as _run:
+        _run.log(
             {
-                "point_scene": wandb.Object3D(
-                    {
-                        "type": "lidar/beta",
-                        "points": points,
-                        "boxes": np.array(
-                            [
-                                {
-                                    "corners": [
-                                        [0, 0, 0],
-                                        [0, 1, 0],
-                                        [0, 0, 1],
-                                        [1, 0, 0],
-                                        [1, 1, 0],
-                                        [0, 1, 1],
-                                        [1, 0, 1],
-                                        [1, 1, 1],
-                                    ],
-                                    "label": "Box",
-                                    "color": [123, 321, 111],
-                                },
-                                {
-                                    "corners": [
-                                        [0, 0, 0],
-                                        [0, 2, 0],
-                                        [0, 0, 2],
-                                        [2, 0, 0],
-                                        [2, 2, 0],
-                                        [0, 2, 2],
-                                        [2, 0, 2],
-                                        [2, 2, 2],
-                                    ],
-                                    "label": "Box-2",
-                                    "color": [111, 321, 0],
-                                },
-                            ]
-                        ),
-                        "vectors": np.array([]),
-                    }
+                "examples": [
+                    wandb.Audio(
+                        _samples,
+                        caption="Piano",
+                        sample_rate=_sample_rate,
+                    )
+                ]
+            }
+        )
+        _run_url = _run.url
+
+    mo.callout(
+        mo.md(f"Audio file logged. [Open the W&B run]({_run_url})."),
+        kind="success",
+    )
+    return
+
+
+@app.cell
+def _(generated_audio_button, wandb_settings):
+    mo.stop(not generated_audio_button.value)
+    finish_active_run()
+
+    _sample_rate = 44_100
+    _length = 3
+    _xs = np.linspace(0, _length, num=_sample_rate * _length)
+    _waveform = np.sin(_sample_rate * 2 * np.pi / 40 * _xs**2)
+
+    with wandb.init(name="audio_generated", **wandb_settings) as _run:
+        _run.log(
+            {
+                "examples": [
+                    wandb.Audio(
+                        _waveform,
+                        caption="Boop",
+                        sample_rate=_sample_rate,
+                    )
+                ]
+            }
+        )
+        _run_url = _run.url
+
+    mo.callout(
+        mo.md(f"Generated audio logged. [Open the W&B run]({_run_url})."),
+        kind="success",
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    tables_button = mo.ui.run_button(label="Log tables")
+    mo.vstack([mo.md("## Log tables"), tables_button])
+    return (tables_button,)
+
+
+@app.cell
+def _(tables_button, wandb_settings):
+    mo.stop(not tables_button.value)
+    finish_active_run()
+
+    with wandb.init(name="tables", **wandb_settings) as _run:
+        # Create tabular data, method 1.
+        _data = [
+            ["I love my phone", "1", "1"],
+            ["My phone sucks", "0", "-1"],
+        ]
+        _run.log(
+            {
+                "a_table": wandb.Table(
+                    data=_data,
+                    columns=["Text", "Predicted Label", "True Label"],
                 )
             }
         )
 
-    mo.toast("✓ Point cloud logged to W&B")
+        # Create tabular data, method 2.
+        _table = wandb.Table(
+            columns=["Text", "Predicted Label", "True Label"]
+        )
+        _table.add_data("I love my phone", "1", "1")
+        _table.add_data("My phone sucks", "0", "-1")
+        _run.log({"another_table": _table})
+        _run_url = _run.url
+
+    mo.callout(
+        mo.md(f"Tables logged. [Open the W&B run]({_run_url})."),
+        kind="success",
+    )
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
+    html_button = mo.ui.run_button(label="Log HTML")
+    mo.vstack([mo.md("## Log HTML"), html_button])
+    return (html_button,)
+
+
+@app.cell
+def _(html_button, repo_fs, wandb_settings):
+    mo.stop(not html_button.value)
+    finish_active_run()
+
+    with repo_fs.open("examples/data/some_html.html", "rt") as _html_file:
+        _html = _html_file.read()
+
+    with wandb.init(name="html", **wandb_settings) as _run:
+        _run.log(
+            {
+                "custom_file": wandb.Html(_html, data_is_not_path=True),
+                "custom_string": wandb.Html(
+                    '<a href="https://mysite">Link</a>',
+                    data_is_not_path=True,
+                ),
+            }
+        )
+        _run_url = _run.url
+
+    mo.callout(
+        mo.md(f"HTML logged. [Open the W&B run]({_run_url})."),
+        kind="success",
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    objects_button = mo.ui.run_button(label="Log a 3D object")
+    mo.vstack([mo.md("## Log 3D objects"), objects_button])
+    return (objects_button,)
+
+
+@app.cell
+def _(objects_button, repo_fs, wandb_settings):
+    mo.stop(not objects_button.value)
+    finish_active_run()
+
+    with repo_fs.open("examples/data/wolf.obj", "rt") as _object_file:
+        _object = io.StringIO(_object_file.read())
+
+    with wandb.init(name="3d_objects", **wandb_settings) as _run:
+        _run.log(
+            {"3d_object": wandb.Object3D(_object, file_type="obj")}
+        )
+        _run_url = _run.url
+
+    mo.callout(
+        mo.md(f"3D object logged. [Open the W&B run]({_run_url})."),
+        kind="success",
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    point_clouds_button = mo.ui.run_button(label="Log a point cloud")
+    mo.vstack([mo.md("## Log point clouds"), point_clouds_button])
+    return (point_clouds_button,)
+
+
+@app.cell
+def _(point_clouds_button, wandb_settings):
+    mo.stop(not point_clouds_button.value)
+    finish_active_run()
+
+    _points = np.random.default_rng(42).uniform(size=(250, 3))
+    _scene = {
+        "type": "lidar/beta",
+        "points": _points,
+        "boxes": np.array(
+            [
+                {
+                    "corners": [
+                        [0, 0, 0],
+                        [0, 1, 0],
+                        [0, 0, 1],
+                        [1, 0, 0],
+                        [1, 1, 0],
+                        [0, 1, 1],
+                        [1, 0, 1],
+                        [1, 1, 1],
+                    ],
+                    "label": "Box",
+                    "color": [123, 231, 111],
+                },
+                {
+                    "corners": [
+                        [0, 0, 0],
+                        [0, 2, 0],
+                        [0, 0, 2],
+                        [2, 0, 0],
+                        [2, 2, 0],
+                        [0, 2, 2],
+                        [2, 0, 2],
+                        [2, 2, 2],
+                    ],
+                    "label": "Box-2",
+                    "color": [111, 231, 0],
+                },
+            ]
+        ),
+        "vectors": np.array([]),
+    }
+
+    with wandb.init(name="point_clouds", **wandb_settings) as _run:
+        _run.log({"point_scene": wandb.Object3D(_scene)})
+        _run_url = _run.url
+
+    mo.callout(
+        mo.md(f"Point cloud logged. [Open the W&B run]({_run_url})."),
+        kind="success",
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _():
     mo.md(r"""
-    ## More Resources
-    Check out some other cool things you can do with Weights & Biases:
-    * [Track model performance](https://app.wandb.ai/lavanyashukla/visualize-models/reports/Visualize-Model-Performance--Vmlldzo1NTk2MA)
-    * [Visualize sklearn models](https://app.wandb.ai/lavanyashukla/visualize-sklearn/reports/Visualize-Sklearn-Model-Performance--Vmlldzo0ODIzNg)
-    * [Visualize model predictions](https://app.wandb.ai/lavanyashukla/visualize-predictions/reports/Visualize-Model-Predictions--Vmlldzo1NjM4OA/)
+    ## Verify and next steps
+
+    Open the run link produced by each demonstration and verify the result in the W&B workspace:
+
+    - **Metrics, plots, and histograms:** inspect the run charts.
+    - **Images, video, audio, HTML, and 3D data:** inspect the run's Media panels.
+    - **Tables:** open the logged Tables panels and compare the two construction methods.
+
+    Try changing the generated waveform or point cloud, then click that section's button again to create a new run you can compare.
+
+    ## More resources
+
+    - [Track model performance](https://app.wandb.ai/lavanyashukla/visualize-models/reports/Visualize-Model-Performance--Vmlldzo1NTk2MA)
+    - [Visualize sklearn models](https://app.wandb.ai/lavanyashukla/visualize-sklearn/reports/Visualize-Sklearn-Model-Performance--Vmlldzo0ODIzNg)
+    - [Visualize model predictions](https://app.wandb.ai/lavanyashukla/visualize-predictions/reports/Visualize-Model-Predictions--Vmlldzo1NjM4OA/)
     """)
     return
 
