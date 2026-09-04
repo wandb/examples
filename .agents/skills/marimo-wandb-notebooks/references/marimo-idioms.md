@@ -41,6 +41,11 @@ function clean and put its gate or UI wiring in separate cells.
 
 - Let the dependency graph determine execution. A cell runs when its inputs are
   ready.
+- `mo.stop()`, `if`, `for`, and `with` control runtime execution; they do not
+  create a static scope. Imports, assignment targets, loop targets, and context
+  manager targets anywhere in a cell still define names in marimo's graph.
+  Give each shared name one owning cell, prefix cell-local temporaries with
+  `_`, or move procedural work into a function.
 - Do not rely on cross-cell mutation for reactivity; marimo does not track
   object mutations or attribute assignments. Prefer creating a new value, or
   mutate an object only in the cell that defines it.
@@ -107,10 +112,20 @@ helpers. Do not repeat the same gate in downstream cells.
   named helpers.
 - Prefer native components such as `mo.ui.table`, `mo.callout`, `mo.vstack`,
   and `mo.hstack` over formatting complex UI as markdown.
+- Use `mo.video` for a direct video URL, file, or bytes. For a hosted player
+  such as YouTube, use the provider's canonical HTTPS embed URL in a trusted
+  `mo.Html` iframe with a descriptive title and a normal link fallback.
+- When official brand artwork has light- and dark-theme variants, select the
+  appropriate variant and visually verify both marimo themes.
 
 ## UI
 
-- Show widgets directly and read their `.value` in orchestration cells.
+- Constructing or assigning a widget does not display it. End the definition
+  cell with the widget or a layout containing it; returning it only wires the
+  reactive dependency graph.
+- Show widgets directly and read documented reactive state such as `.value` in
+  orchestration cells. Do not invent callback-style attributes such as
+  `.clicked`; inspect the live object or official API when uncertain.
 - Prefer native `mo.ui` components before reaching for `anywidget`.
 
 ## Error Handling

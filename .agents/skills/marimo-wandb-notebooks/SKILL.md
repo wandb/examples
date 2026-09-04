@@ -99,7 +99,12 @@ Give a concrete fix for each issue. Do not modify files unless asked.
 
 Before considering a conversion complete:
 
-- `uvx marimo check <notebook.py>` passes.
+- `uvx marimo check <notebook.py>` passes after the final notebook edit; do
+  not rely on a saved conversion log or an earlier successful check.
+- A fresh sandboxed local session or molab session opens without cell errors.
+  Every intended widget, form, and embedded player visibly renders, and each
+  orchestration cell reads a documented reactive value. Keep remote-write
+  controls unsubmitted, or use an offline/test backend, during this smoke test.
 - Notebook structure follows
   [`references/marimo-idioms.md`](references/marimo-idioms.md), including the
   separation of teaching code, marimo orchestration, and reusable helpers.

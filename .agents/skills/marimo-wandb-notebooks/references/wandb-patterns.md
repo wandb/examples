@@ -69,6 +69,19 @@ marimo orders cells through name dependencies; it cannot observe mutations to
 - Move non-teaching plumbing into helpers when it improves the teaching
   surface.
 
+## Media From Remote Filesystems
+
+- Preserve the real media format when adapting a remote file. For example,
+  pass MP4 bytes through `io.BytesIO` to `wandb.Video(..., format="mp4")`
+  instead of relabeling the source as a GIF.
+- Decode audio with a library such as `soundfile` and pass the detected sample
+  rate to `wandb.Audio`; do not guess from the tutorial text or source code.
+- For OBJ text read from a remote filesystem, use `io.StringIO` and pass
+  `file_type="obj"` to `wandb.Object3D`. Some file-like objects expose a
+  `.name` that an SDK can mistake for a local path.
+- When logging HTML content rather than a local path, pass the text explicitly
+  with `data_is_not_path=True`.
+
 ## Expected Failures
 
 - Catch only expected, recoverable W&B failures where the notebook can provide

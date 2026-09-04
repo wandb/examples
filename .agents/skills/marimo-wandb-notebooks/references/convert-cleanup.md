@@ -44,6 +44,23 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
   multiple cells. Keep cell-local imports private with an underscore alias
   such as `from torch.utils.data import DataLoader as _DataLoader`.
 
+## Molab and Remote Assets
+
+- Do not assume molab's **Mirror from GitHub** action provides a checkout of the
+  whole repository. A notebook and its dependency metadata can be present
+  while sibling data files are not.
+- For public, read-only repository assets, prefer a named filesystem such as
+  `repo_fs = fsspec.filesystem("github", org="wandb", repo="examples")` and
+  stream files from it. A public name also makes the source discoverable in
+  marimo's Remote Storage panel.
+- Declare `fsspec[http]`, not only `fsspec`, when the notebook reads Git-LFS
+  files or GitHub files larger than 1 MB.
+- Pass file-like objects directly when the consumer supports them. Otherwise,
+  adapt in memory with `io.BytesIO` or `io.StringIO`, or materialize only the
+  specific file an API requires.
+- Clone a repository only when the tutorial needs Git history, repository
+  semantics, or a local directory tree rather than a few read-only assets.
+
 ## Widget Cleanup
 
 - Replace ipywidgets with native `mo.ui` components when there is a direct
@@ -61,8 +78,15 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
 
 ## Final Check
 
-Run:
+After the final notebook edit, run:
 
 ```bash
 uvx marimo check marimo/convert/<example-name>/<example_name>.py
 ```
+
+Then open the notebook in a fresh molab session or a local sandbox. Confirm
+that intended controls and embeds render, change each safe control at least
+once, and inspect cell errors. Static checking cannot detect a nonexistent
+runtime attribute such as `.clicked` or a widget that was constructed but
+never returned for display. Keep remote-write controls unsubmitted, or use an
+offline/test backend, during this smoke test.
