@@ -1,23 +1,21 @@
 # /// script
-# requires-python = ">=3.10"
 # dependencies = [
-#     "fsspec[http]",
-#     "marimo",
-#     "matplotlib",
-#     "numpy",
-#     "pandas",
-#     "plotly",
-#     "soundfile",
-#     "wandb",
+#     "fsspec[http]==2026.7.0",
+#     "matplotlib==3.11.1",
+#     "numpy==2.5.2",
+#     "pandas==3.0.5",
+#     "plotly==7.0.0",
+#     "soundfile==0.14.0",
+#     "wandb==0.29.0",
 # ]
 # ///
 
 import marimo
 
 __generated_with = "0.24.0"
-app = marimo.App()
+app = marimo.App(auto_download=["html"])
 
-with app.setup:
+with app.setup(hide_code=True):
     import io
     import warnings
 
@@ -30,15 +28,6 @@ with app.setup:
     import wandb
 
     warnings.filterwarnings("ignore", category=UserWarning)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/log-almost-anything-with-w-b-media/log_almost_anything_with_w_b_media.py/server)
-    <!--- @wandbcode{media-video} -->
-    """)
-    return
 
 
 @app.cell(hide_code=True)
@@ -72,6 +61,7 @@ def _():
     <div><img /></div>
 
     # Log (Almost) Anything with W&B Media
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/log-almost-anything-with-w-b-media/log_almost_anything_with_w_b_media.py/server)
     """)
     return
 
@@ -113,23 +103,10 @@ def _():
 
 @app.cell
 def _():
-    # Stream tutorial assets without using GitHub's rate-limited repository API.
-    # Keeping this as a public fsspec filesystem also exposes it in marimo's
-    # Remote Storage data source panel.
-    repo_fs = fsspec.filesystem("https")
-    asset_base_url = (
-        "https://raw.githubusercontent.com/wandb/examples/main/examples/data"
-    )
-    mo.callout(
-        mo.md(
-            "Tutorial assets are streamed from the raw files in "
-            "[`wandb/examples`](https://github.com/wandb/examples) with "
-            "`fsspec`; you don't need to clone the repository or call the "
-            "GitHub API."
-        ),
-        kind="info",
-    )
-    return asset_base_url, repo_fs
+    # Stream tutorial assets: audio, video and other data files to log
+    fs = fsspec.filesystem("github", org="wandb", repo="examples")
+    asset_base_url = "examples/data"
+    return asset_base_url, fs
 
 
 @app.cell(hide_code=True)
@@ -142,7 +119,7 @@ def _():
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     _api_key_input = mo.ui.text(
         kind="password",
@@ -188,7 +165,7 @@ def _(wandb_login_form):
         mo.callout(
             mo.md(
                 "W&B authentication did not complete. "
-                f"Check the API key and try again. W&B reported: `{_login_error or 'unknown error'}`"
+                f"Check the API key and try again. \n\nW&B reported: `{_login_error or 'unknown error'}`"
             ),
             kind="danger",
         ),
@@ -230,10 +207,10 @@ def _():
 
 
 @app.cell
-def _(asset_base_url, repo_fs):
+def _(asset_base_url, fs):
     # Apple stock prices from
     # https://www.macrotrends.net/stocks/charts/AAPL/apple/stock-price-history
-    with repo_fs.open(f"{asset_base_url}/apple.csv", "rb") as _apple_file:
+    with fs.open(f"{asset_base_url}/apple.csv", "rb") as _apple_file:
         apple_prices = pd.read_csv(_apple_file).tail(1000)
     apple_prices.head()
     return (apple_prices,)
@@ -245,8 +222,8 @@ def _(apple_prices, metrics_button, wandb_settings):
     finish_active_run()
 
     with wandb.init(name="metrics", **wandb_settings) as _run:
-        for _price in apple_prices["close"]:
-            _run.log({"Stock Price": _price})
+        for price in apple_prices["close"]:
+            _run.log({"Stock Price": price})
         _run_url = _run.url
 
     mo.callout(
@@ -269,17 +246,17 @@ def _(plots_button, wandb_settings):
     finish_active_run()
 
     _fibonacci = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
-    _fig, _ax = plt.subplots()
-    _ax.plot(_fibonacci)
-    _ax.set_ylabel("Fibonacci values")
+    fig, ax = plt.subplots()
+    ax.plot(_fibonacci)
+    ax.set_ylabel("Fibonacci values")
 
     with wandb.init(name="plots", **wandb_settings) as _run:
-        _run.log({"plot": _fig})
+        _run.log({"plot": fig})
         _run_url = _run.url
 
     mo.vstack(
         [
-            _fig,
+            fig,
             mo.callout(
                 mo.md(f"Plot logged. [Open the W&B run]({_run_url})."),
                 kind="success",
@@ -303,8 +280,8 @@ def _(histograms_button, wandb_settings):
 
     _fibonacci = np.array([0, 1, 1, 2, 3, 5, 8, 13, 21, 34])
     with wandb.init(name="histograms", **wandb_settings) as _run:
-        for _step in range(1, 10):
-            _run.log({"histograms": wandb.Histogram(_fibonacci / _step)})
+        for i in range(1, 10):
+            _run.log({"histograms": wandb.Histogram(_fibonacci / i)})
         _run_url = _run.url
 
     mo.callout(
@@ -322,15 +299,15 @@ def _():
 
 
 @app.cell
-def _(asset_base_url, images_button, repo_fs, wandb_settings):
+def _(asset_base_url, fs, images_button, wandb_settings):
     mo.stop(not images_button.value)
     finish_active_run()
 
-    with repo_fs.open(f"{asset_base_url}/cafe.jpg", "rb") as _image_file:
-        _image = plt.imread(_image_file, format="jpg")
+    with fs.open(f"{asset_base_url}/cafe.jpg", "rb") as _image_file:
+        im = plt.imread(_image_file, format="jpg")
 
     with wandb.init(name="images", **wandb_settings) as _run:
-        _run.log({"img": [wandb.Image(_image, caption="Cafe")]})
+        _run.log({"img": [wandb.Image(im, caption="Cafe")]})
         _run_url = _run.url
 
     mo.callout(
@@ -348,11 +325,11 @@ def _():
 
 
 @app.cell
-def _(asset_base_url, repo_fs, videos_button, wandb_settings):
+def _(asset_base_url, fs, videos_button, wandb_settings):
     mo.stop(not videos_button.value)
     finish_active_run()
 
-    with repo_fs.open(f"{asset_base_url}/openai-gym.mp4", "rb") as _video_file:
+    with fs.open(f"{asset_base_url}/openai-gym.mp4", "rb") as _video_file:
         _video = io.BytesIO(_video_file.read())
 
     with wandb.init(name="videos", **wandb_settings) as _run:
@@ -391,11 +368,11 @@ def _():
 
 
 @app.cell
-def _(asset_base_url, audio_file_button, repo_fs, wandb_settings):
+def _(asset_base_url, audio_file_button, fs, wandb_settings):
     mo.stop(not audio_file_button.value)
     finish_active_run()
 
-    with repo_fs.open(f"{asset_base_url}/piano.wav", "rb") as _audio_file:
+    with fs.open(f"{asset_base_url}/piano.wav", "rb") as _audio_file:
         _samples, _sample_rate = sf.read(_audio_file, dtype="float32")
 
     with wandb.init(name="audio_file", **wandb_settings) as _run:
@@ -425,16 +402,16 @@ def _(generated_audio_button, wandb_settings):
     finish_active_run()
 
     _sample_rate = 44_100
-    _length = 3
-    _xs = np.linspace(0, _length, num=_sample_rate * _length)
-    _waveform = np.sin(_sample_rate * 2 * np.pi / 40 * _xs**2)
+    length = 3
+    xs = np.linspace(0, length, num=_sample_rate * length)
+    waveform = np.sin(_sample_rate * 2 * np.pi / 40 * xs**2)
 
     with wandb.init(name="audio_generated", **wandb_settings) as _run:
         _run.log(
             {
                 "examples": [
                     wandb.Audio(
-                        _waveform,
+                        waveform,
                         caption="Boop",
                         sample_rate=_sample_rate,
                     )
@@ -464,26 +441,26 @@ def _(tables_button, wandb_settings):
 
     with wandb.init(name="tables", **wandb_settings) as _run:
         # Create tabular data, method 1.
-        _data = [
+        data = [
             ["I love my phone", "1", "1"],
             ["My phone sucks", "0", "-1"],
         ]
         _run.log(
             {
                 "a_table": wandb.Table(
-                    data=_data,
+                    data=data,
                     columns=["Text", "Predicted Label", "True Label"],
                 )
             }
         )
 
         # Create tabular data, method 2.
-        _table = wandb.Table(
+        table = wandb.Table(
             columns=["Text", "Predicted Label", "True Label"]
         )
-        _table.add_data("I love my phone", "1", "1")
-        _table.add_data("My phone sucks", "0", "-1")
-        _run.log({"another_table": _table})
+        table.add_data("I love my phone", "1", "1")
+        table.add_data("My phone sucks", "0", "-1")
+        _run.log({"another_table": table})
         _run_url = _run.url
 
     mo.callout(
@@ -501,11 +478,11 @@ def _():
 
 
 @app.cell
-def _(asset_base_url, html_button, repo_fs, wandb_settings):
+def _(asset_base_url, fs, html_button, wandb_settings):
     mo.stop(not html_button.value)
     finish_active_run()
 
-    with repo_fs.open(f"{asset_base_url}/some_html.html", "rt") as _html_file:
+    with fs.open(f"{asset_base_url}/some_html.html", "rt") as _html_file:
         _html = _html_file.read()
 
     with wandb.init(name="html", **wandb_settings) as _run:
@@ -535,11 +512,11 @@ def _():
 
 
 @app.cell
-def _(asset_base_url, objects_button, repo_fs, wandb_settings):
+def _(asset_base_url, fs, objects_button, wandb_settings):
     mo.stop(not objects_button.value)
     finish_active_run()
 
-    with repo_fs.open(f"{asset_base_url}/wolf.obj", "rt") as _object_file:
+    with fs.open(f"{asset_base_url}/wolf.obj", "rt") as _object_file:
         _object = io.StringIO(_object_file.read())
 
     with wandb.init(name="3d_objects", **wandb_settings) as _run:
@@ -567,10 +544,10 @@ def _(point_clouds_button, wandb_settings):
     mo.stop(not point_clouds_button.value)
     finish_active_run()
 
-    _points = np.random.default_rng(42).uniform(size=(250, 3))
+    points = np.random.default_rng(42).uniform(size=(250, 3))
     _scene = {
         "type": "lidar/beta",
-        "points": _points,
+        "points": points,
         "boxes": np.array(
             [
                 {
