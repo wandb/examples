@@ -49,12 +49,17 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
 - Do not assume molab's **Mirror from GitHub** action provides a checkout of the
   whole repository. A notebook and its dependency metadata can be present
   while sibling data files are not.
-- For public, read-only repository assets, prefer a named filesystem such as
-  `repo_fs = fsspec.filesystem("github", org="wandb", repo="examples")` and
-  stream files from it. A public name also makes the source discoverable in
-  marimo's Remote Storage panel.
-- Declare `fsspec[http]`, not only `fsspec`, when the notebook reads Git-LFS
-  files or GitHub files larger than 1 MB.
+- For public, read-only repository assets, prefer a named HTTP filesystem and
+  raw content URLs, for example `repo_fs = fsspec.filesystem("https")` with a
+  `raw.githubusercontent.com` base URL. A public filesystem name also makes the
+  source discoverable in marimo's Remote Storage panel.
+- Avoid an anonymous `fsspec.filesystem("github", ...)` in hosted notebooks.
+  Its repository lookup uses the rate-limited GitHub API, and users can share
+  one unauthenticated IP quota. Use it only when repository listing semantics
+  are required and an optional GitHub token comes from the runtime's secrets or
+  environment; never hardcode the token.
+- Declare `fsspec[http]`, not only `fsspec`, for HTTP files, Git-LFS content,
+  and GitHub files larger than 1 MB.
 - Pass file-like objects directly when the consumer supports them. Otherwise,
   adapt in memory with `io.BytesIO` or `io.StringIO`, or materialize only the
   specific file an API requires.
