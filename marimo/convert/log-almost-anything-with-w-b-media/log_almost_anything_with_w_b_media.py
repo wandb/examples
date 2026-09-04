@@ -113,19 +113,23 @@ def _():
 
 @app.cell
 def _():
-    # Stream the tutorial assets directly from the public GitHub repository.
+    # Stream tutorial assets without using GitHub's rate-limited repository API.
     # Keeping this as a public fsspec filesystem also exposes it in marimo's
     # Remote Storage data source panel.
-    repo_fs = fsspec.filesystem("github", org="wandb", repo="examples")
+    repo_fs = fsspec.filesystem("https")
+    asset_base_url = (
+        "https://raw.githubusercontent.com/wandb/examples/main/examples/data"
+    )
     mo.callout(
         mo.md(
-            "Tutorial assets are streamed from "
-            "[`wandb/examples`](https://github.com/wandb/examples) with `fsspec`; "
-            "you don't need to clone the repository."
+            "Tutorial assets are streamed from the raw files in "
+            "[`wandb/examples`](https://github.com/wandb/examples) with "
+            "`fsspec`; you don't need to clone the repository or call the "
+            "GitHub API."
         ),
         kind="info",
     )
-    return (repo_fs,)
+    return asset_base_url, repo_fs
 
 
 @app.cell(hide_code=True)
@@ -226,10 +230,10 @@ def _():
 
 
 @app.cell
-def _(repo_fs):
+def _(asset_base_url, repo_fs):
     # Apple stock prices from
     # https://www.macrotrends.net/stocks/charts/AAPL/apple/stock-price-history
-    with repo_fs.open("examples/data/apple.csv", "rb") as _apple_file:
+    with repo_fs.open(f"{asset_base_url}/apple.csv", "rb") as _apple_file:
         apple_prices = pd.read_csv(_apple_file).tail(1000)
     apple_prices.head()
     return (apple_prices,)
@@ -318,11 +322,11 @@ def _():
 
 
 @app.cell
-def _(images_button, repo_fs, wandb_settings):
+def _(asset_base_url, images_button, repo_fs, wandb_settings):
     mo.stop(not images_button.value)
     finish_active_run()
 
-    with repo_fs.open("examples/data/cafe.jpg", "rb") as _image_file:
+    with repo_fs.open(f"{asset_base_url}/cafe.jpg", "rb") as _image_file:
         _image = plt.imread(_image_file, format="jpg")
 
     with wandb.init(name="images", **wandb_settings) as _run:
@@ -344,11 +348,11 @@ def _():
 
 
 @app.cell
-def _(repo_fs, videos_button, wandb_settings):
+def _(asset_base_url, repo_fs, videos_button, wandb_settings):
     mo.stop(not videos_button.value)
     finish_active_run()
 
-    with repo_fs.open("examples/data/openai-gym.mp4", "rb") as _video_file:
+    with repo_fs.open(f"{asset_base_url}/openai-gym.mp4", "rb") as _video_file:
         _video = io.BytesIO(_video_file.read())
 
     with wandb.init(name="videos", **wandb_settings) as _run:
@@ -387,11 +391,11 @@ def _():
 
 
 @app.cell
-def _(audio_file_button, repo_fs, wandb_settings):
+def _(asset_base_url, audio_file_button, repo_fs, wandb_settings):
     mo.stop(not audio_file_button.value)
     finish_active_run()
 
-    with repo_fs.open("examples/data/piano.wav", "rb") as _audio_file:
+    with repo_fs.open(f"{asset_base_url}/piano.wav", "rb") as _audio_file:
         _samples, _sample_rate = sf.read(_audio_file, dtype="float32")
 
     with wandb.init(name="audio_file", **wandb_settings) as _run:
@@ -497,11 +501,11 @@ def _():
 
 
 @app.cell
-def _(html_button, repo_fs, wandb_settings):
+def _(asset_base_url, html_button, repo_fs, wandb_settings):
     mo.stop(not html_button.value)
     finish_active_run()
 
-    with repo_fs.open("examples/data/some_html.html", "rt") as _html_file:
+    with repo_fs.open(f"{asset_base_url}/some_html.html", "rt") as _html_file:
         _html = _html_file.read()
 
     with wandb.init(name="html", **wandb_settings) as _run:
@@ -531,11 +535,11 @@ def _():
 
 
 @app.cell
-def _(objects_button, repo_fs, wandb_settings):
+def _(asset_base_url, objects_button, repo_fs, wandb_settings):
     mo.stop(not objects_button.value)
     finish_active_run()
 
-    with repo_fs.open("examples/data/wolf.obj", "rt") as _object_file:
+    with repo_fs.open(f"{asset_base_url}/wolf.obj", "rt") as _object_file:
         _object = io.StringIO(_object_file.read())
 
     with wandb.init(name="3d_objects", **wandb_settings) as _run:
