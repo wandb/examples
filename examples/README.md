@@ -189,3 +189,15 @@ using scikit-learn and logs the results to W&B.
 cd examples/examples/scikit/scikit-housing
 python train.py
 ```
+
+## 🌍 [terradev](https://github.com/wandb/examples/tree/master/examples/terradev)
+
+### 🖥️ [terradev-wandb-example](https://github.com/wandb/examples/tree/master/examples/terradev)
+
+Uses [Terradev](https://github.com/theoddden/terradev) to find the cheapest multi-cloud GPU for your training workload and logs infrastructure cost and training metrics to W&B.
+
+```
+cd examples/examples/terradev
+pip install -r requirements.txt
+python terradev_wandb_example.py
+```

@@ -1,0 +1,3 @@
+wandb>=0.16.0
+# terradev-cli is only required for live GPU quotes.
+# Install it from PyPI or from https://github.com/theoddden/terradev.
