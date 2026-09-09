@@ -25,8 +25,15 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
   when deciding which instructional cells and W&B API examples to preserve.
 - Ensure the PEP 723 script metadata lists every runtime package the notebook
   imports. The converter may miss dependencies.
+- Move `%pip` and `!pip install` requirements into PEP 723 metadata, then remove
+  the obsolete install command, generated install commentary, and any empty
+  cell it leaves behind. Do not replace package installation with a subprocess.
 - Remove Jupyter-only artifacts such as `%magic` commands, shell escapes, and
   unnecessary `display()` calls.
+- Translate remaining shell escapes by purpose instead of mechanically wrapping
+  every command in `subprocess`. Use `fsspec` when file-like or filesystem
+  access is useful, and reserve `subprocess` for programs that genuinely need a
+  separate process.
 - Make the intended output the final expression of each display cell. Indented
   or conditional expressions will not render as cell output.
 - When cleanup is requested and it improves clarity, replace notebook-global

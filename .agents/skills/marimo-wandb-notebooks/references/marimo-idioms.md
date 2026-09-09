@@ -126,7 +126,9 @@ helpers. Do not repeat the same gate in downstream cells.
   in the light theme and
   `https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg`
   in the dark theme. Render both and switch them with marimo's `body.dark`
-  class; visually verify both themes.
+  class; visually verify both themes. For the verified marimo `mo.callout`
+  pattern, select the theme with `:host-context(body.dark)` so the rule crosses
+  the component boundary.
 
 ## UI
 

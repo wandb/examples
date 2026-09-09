@@ -57,8 +57,10 @@ Also read:
   intent, not a reason to rewrite the designated artifact. Do not edit the live
   notebook or update a branch unless requested. When syncing is requested,
   export or download after the final approved live edit and preserve cell order,
-  boundaries, setup status, identifiers, working integrations, and configuration
-  such as `hide_code` and `disabled` unless the request requires changing them.
+  boundaries, setup status, identifiers, dependency metadata, working
+  integrations, and configuration such as `hide_code` and `disabled` unless the
+  request requires changing them or a demonstrated runtime issue requires a
+  dependency correction.
 - Treat `.logs/` as historical diagnostic evidence.
 - Use a fresh `marimo check` for current static validity.
 - Use `examples/marimo/mnist-registry/mnist_registry.py` as the structural

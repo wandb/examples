@@ -4,6 +4,10 @@ Use these patterns when a marimo example uses the W&B Python SDK.
 
 ## Authentication
 
+- Keep exactly one reader-facing Authentication section. Consolidate signup,
+  API-key, entity, and login guidance and controls there. Remove duplicate
+  standalone Colab-era signup and API-key prompts once their essential guidance
+  is represented in this section; preserve unique tutorial-specific context.
 - Offer a `mo.ui.text(kind="password")` API-key field.
 - Call `wandb.login()` only after the reader explicitly submits the form or
   clicks the run button.
@@ -36,6 +40,26 @@ active across cells, finish any prior active run before starting another one.
   re-submission, clean up any prior active run and make stateful remote updates
   idempotent when practical, such as skipping an alias or Registry link that is
   already present.
+
+### Runs Created By Child Processes
+
+When readers need a dashboard link before a blocking command-line program
+finishes, preassign the W&B run identity before launching the process:
+
+- Resolve concrete project, entity, and run ID values, then derive the run URL
+  from those same values with `wandb.Settings(...).run_url`.
+- Start with `os.environ.copy()` and add `WANDB_PROJECT`, `WANDB_ENTITY`, and
+  `WANDB_RUN_ID`. Pass that mapping as `env` and use `check=True` with
+  `subprocess.run`; never display the environment because it can contain
+  secrets.
+- Keep preparation, process execution, and URL presentation in separate cells.
+  Make the process and URL cells depend on the prepared values, not on each
+  other, so the dashboard link can render while the command is still running.
+- Do not assume authentication enables a framework's W&B integration. Pass its
+  explicit integration option when required—for Hugging Face Trainer commands,
+  use `--report_to wandb`—and verify that the expected run is created.
+- Pass actual values in the argument list. List-form `subprocess.run` does not
+  expand shell variables such as `$WANDB_PROJECT`.
 
 ## Ordering Remote Effects
 
