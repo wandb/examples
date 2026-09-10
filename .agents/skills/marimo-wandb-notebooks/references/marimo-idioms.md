@@ -14,6 +14,9 @@ this repo.
   as `"marimo>=0.9"` and `"wandb>=0.18"`.
 - Use one setup/import cell for shared imports, true constants, and environment
   detection.
+- Keep the setup cell's code visible. It is the reader-facing inventory of
+  shared imports, dependencies, and notebook-wide constants; do not apply
+  `hide_code=True` to it.
 - Keep reactive notebook globals scarce.
 
 ## Separate Teaching, Orchestration, and Helpers
@@ -124,8 +127,8 @@ helpers. Do not repeat the same gate in downstream cells.
   implementation-only cells whose rendered output is the reader-facing
   surface, such as authentication form construction, W&B connection or status
   gates, and boilerplate HTML embeds such as YouTube iframes. Keep teaching
-  code, featured W&B SDK usage, and helper implementations readers are expected
-  to adapt visible.
+  code, featured W&B SDK usage, the setup cell, and helper implementations
+  readers are expected to adapt visible.
 - Prefer native components such as `mo.ui.table`, `mo.callout`, `mo.vstack`,
   and `mo.hstack` over formatting complex UI as markdown.
 - Use `mo.video` for a direct video URL, file, or bytes. For a hosted player

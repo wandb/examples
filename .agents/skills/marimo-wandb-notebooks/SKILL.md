@@ -121,6 +121,9 @@ Before considering a conversion complete:
 - Notebook structure follows
   [`references/marimo-idioms.md`](references/marimo-idioms.md), including the
   separation of teaching code, marimo orchestration, and reusable helpers.
+- The setup cell remains visible while implementation-only authentication,
+  status, and embed cells are hidden where their rendered output is the
+  reader-facing surface.
 - Tutorial quality follows
   [`references/tutorial-notebook-objectives.md`](references/tutorial-notebook-objectives.md).
 - The Markdown outline has exactly one level-one heading for the notebook title;
