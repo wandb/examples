@@ -15,7 +15,7 @@ import marimo
 __generated_with = "0.24.0"
 app = marimo.App(auto_download=["html"])
 
-with app.setup(hide_code=True):
+with app.setup:
     import io
     import warnings
 
@@ -141,7 +141,7 @@ def _():
     return (wandb_login_form,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(wandb_login_form):
     mo.stop(
         wandb_login_form.value is None,

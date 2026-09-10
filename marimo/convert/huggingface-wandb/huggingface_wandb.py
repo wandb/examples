@@ -14,7 +14,7 @@ import marimo
 __generated_with = "0.24.0"
 app = marimo.App(auto_download=["html"])
 
-with app.setup(hide_code=True):
+with app.setup:
     import marimo as mo
 
     import os
