@@ -21,8 +21,16 @@ Use this when creating, reviewing, or polishing W&B example notebooks.
 - Keep the notebook readable from top to bottom.
 - Preserve useful authorial explanations from the source notebook when they
   still fit the marimo version.
-- Start with a clear title and any prerequisites or setup notes the reader
-  needs before running the notebook.
+- Use exactly one Markdown level-one heading (`#`) for the notebook title. Use
+  level-two headings (`##`) for major sections and level-three or deeper
+  headings for their subsections without skipping levels. Correct heading
+  markers even during an otherwise content-preserving conversion, but do not
+  rewrite the heading text or surrounding prose solely to repair the hierarchy.
+- For readability, omit decorative emojis from headings, labels, callout
+  titles, and prose. Remove them during cleanup without otherwise rewriting the
+  surrounding text.
+- Start with any prerequisites or setup notes the reader needs before running
+  the notebook.
 - Interleave pipeline code with markdown sections that explain what the reader
   is about to run and why it matters.
 - Keep code cells purposeful: show a result, teach a core step, or define a
@@ -32,9 +40,13 @@ Use this when creating, reviewing, or polishing W&B example notebooks.
 
 ## Reader Verification
 
-- End with a clear "Verify and next steps" section.
-- Tell the reader exactly what to inspect in the W&B UI, including relevant
-  charts, tabs, panels, Artifacts, Registry collections, or run summary fields.
+- Preserve the source notebook's ending. Add or adapt concise verification and
+  next-step guidance only when readers otherwise lack a clear way to confirm
+  the tutorial result; do not append generic boilerplate during a repair or
+  exact synchronization.
+- When verification guidance is needed, tell the reader exactly what to inspect
+  in the W&B UI, including relevant charts, tabs, panels, Artifacts, Registry
+  collections, or run summary fields.
 - Apply a fresh-eyes test: a reader following the documented prerequisites
-  should be able to complete the tutorial and verify the result from the final
-  section alone.
+  should be able to complete the tutorial and verify the result from the
+  notebook's guidance.

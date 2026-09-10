@@ -51,12 +51,25 @@ Also read:
 - Use the original `.ipynb` for tutorial intent, narrative, and featured W&B
   behavior.
 - Treat the current `.py` as the current conversion state.
+- When the user designates a live marimo or molab notebook, or an artifact
+  exported from it, as authoritative, it overrides the repository `.py` as the
+  current implementation state. The original `.ipynb` remains a reference for
+  intent, not a reason to rewrite the designated artifact. Do not edit the live
+  notebook or update a branch unless requested. When syncing is requested,
+  export or download after the final approved live edit and preserve cell order,
+  boundaries, setup status, identifiers, dependency metadata, working
+  integrations, and configuration such as `hide_code` and `disabled` unless the
+  request requires changing them or a demonstrated runtime issue requires a
+  dependency correction.
 - Treat `.logs/` as historical diagnostic evidence.
 - Use a fresh `marimo check` for current static validity.
 - Use `examples/marimo/mnist-registry/mnist_registry.py` as the structural
   exemplar when the references do not specify a choice, especially its
   separation of marimo orchestration cells from reusable `@app.function`
   helpers. Do not copy tutorial-specific details from the exemplar.
+- Notebook review or repair does not authorize submitting live credentials or
+  remote-write controls, committing, pushing, or changing a pull request.
+  Perform those actions only when the user explicitly requests them.
 
 ## Conversion priorities
 
@@ -99,12 +112,22 @@ Give a concrete fix for each issue. Do not modify files unless asked.
 
 Before considering a conversion complete:
 
-- `uvx marimo check <notebook.py>` passes.
+- `uvx marimo check <notebook.py>` passes after the final notebook edit; do
+  not rely on a saved conversion log or an earlier successful check.
+- A fresh sandboxed local session or molab session opens without cell errors.
+  Every intended widget, form, and embedded player visibly renders, and each
+  orchestration cell reads a documented reactive value. Keep remote-write
+  controls unsubmitted, or use an offline/test backend, during this smoke test.
 - Notebook structure follows
   [`references/marimo-idioms.md`](references/marimo-idioms.md), including the
   separation of teaching code, marimo orchestration, and reusable helpers.
+- The setup cell remains visible while implementation-only authentication,
+  status, and embed cells are hidden where their rendered output is the
+  reader-facing surface.
 - Tutorial quality follows
   [`references/tutorial-notebook-objectives.md`](references/tutorial-notebook-objectives.md).
+- The Markdown outline has exactly one level-one heading for the notebook title;
+  major sections use level two, and nested sections do not skip heading levels.
 - Featured W&B SDK usage follows
   [`references/wandb-patterns.md`](references/wandb-patterns.md).
 - No unintended generated or runtime files were introduced, and the notebook
@@ -115,6 +138,8 @@ Before considering a conversion complete:
   closes prior runs and avoids duplicate stateful updates where practical.
 - Cross-cell consumers of W&B state use explicit result or completion values,
   and producers synchronize server-visible state before downstream reads.
-- A fresh molab session can authenticate without credentials from the local
-  computer, and no credential appears in notebook output, run configuration,
-  logs, or the diff.
+- A fresh molab session presents an authentication path that does not assume
+  credentials from the local computer. Inspect the inputs and gate without
+  submitting real credentials; test live authentication only when explicitly
+  requested or with a designated test backend. No credential appears in
+  notebook output, run configuration, logs, or the diff.

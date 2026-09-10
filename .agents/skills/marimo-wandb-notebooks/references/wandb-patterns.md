@@ -4,6 +4,10 @@ Use these patterns when a marimo example uses the W&B Python SDK.
 
 ## Authentication
 
+- Keep exactly one reader-facing Authentication section. Consolidate signup,
+  API-key, entity, and login guidance and controls there. Remove duplicate
+  standalone Colab-era signup and API-key prompts once their essential guidance
+  is represented in this section; preserve unique tutorial-specific context.
 - Offer a `mo.ui.text(kind="password")` API-key field.
 - Call `wandb.login()` only after the reader explicitly submits the form or
   clicks the run button.
@@ -26,8 +30,23 @@ Use these patterns when a marimo example uses the W&B Python SDK.
       run.log({"loss": 0.1})
   ```
 
-Otherwise, explicitly finish the run with `run.finish()`. If a run must stay
-active across cells, finish any prior active run before starting another one.
+### Naming Run Objects in marimo
+
+marimo requires each notebook-global name to have one defining cell. If a
+notebook creates W&B runs in multiple cells, do not repeat a top-level
+`run = wandb.init(...)` or `with wandb.init() as run:` binding across them.
+
+- Prefer putting each complete run lifecycle in a function or `@app.function`;
+  `run` is then an ordinary local name and can be reused naturally.
+- When a run remains notebook-global, give each instance a unique, descriptive
+  name for its role, such as `training_run`, `evaluation_run`, or
+  `artifact_link_run`, and use that name consistently.
+- `_run` is a valid cell-local fallback for private plumbing, but do not use
+  repeated `_run` bindings as the default in reader-visible teaching code.
+
+When a run cannot use a context manager, explicitly call `.finish()` on the
+corresponding run object. If a run must stay active across cells, finish any
+prior active run before starting another one.
 
 - Prefer methods on the active run, such as `run.log()`, `run.log_artifact()`,
   and `run.summary`, unless the tutorial intentionally teaches another W&B API
@@ -36,6 +55,26 @@ active across cells, finish any prior active run before starting another one.
   re-submission, clean up any prior active run and make stateful remote updates
   idempotent when practical, such as skipping an alias or Registry link that is
   already present.
+
+### Runs Created By Child Processes
+
+When readers need a dashboard link before a blocking command-line program
+finishes, preassign the W&B run identity before launching the process:
+
+- Resolve concrete project, entity, and run ID values, then derive the run URL
+  from those same values with `wandb.Settings(...).run_url`.
+- Start with `os.environ.copy()` and add `WANDB_PROJECT`, `WANDB_ENTITY`, and
+  `WANDB_RUN_ID`. Pass that mapping as `env` and use `check=True` with
+  `subprocess.run`; never display the environment because it can contain
+  secrets.
+- Keep preparation, process execution, and URL presentation in separate cells.
+  Make the process and URL cells depend on the prepared values, not on each
+  other, so the dashboard link can render while the command is still running.
+- Do not assume authentication enables a framework's W&B integration. Pass its
+  explicit integration option when required—for Hugging Face Trainer commands,
+  use `--report_to wandb`—and verify that the expected run is created.
+- Pass actual values in the argument list. List-form `subprocess.run` does not
+  expand shell variables such as `$WANDB_PROJECT`.
 
 ## Ordering Remote Effects
 
@@ -68,6 +107,19 @@ marimo orders cells through name dependencies; it cannot observe mutations to
   function better serves the tutorial.
 - Move non-teaching plumbing into helpers when it improves the teaching
   surface.
+
+## Media From Remote Filesystems
+
+- Preserve the real media format when adapting a remote file. For example,
+  pass MP4 bytes through `io.BytesIO` to `wandb.Video(..., format="mp4")`
+  instead of relabeling the source as a GIF.
+- Decode audio with a library such as `soundfile` and pass the detected sample
+  rate to `wandb.Audio`; do not guess from the tutorial text or source code.
+- For OBJ text read from a remote filesystem, use `io.StringIO` and pass
+  `file_type="obj"` to `wandb.Object3D`. Some file-like objects expose a
+  `.name` that an SDK can mistake for a local path.
+- When logging HTML content rather than a local path, pass the text explicitly
+  with `data_is_not_path=True`.
 
 ## Expected Failures
 

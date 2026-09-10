@@ -25,12 +25,21 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
   when deciding which instructional cells and W&B API examples to preserve.
 - Ensure the PEP 723 script metadata lists every runtime package the notebook
   imports. The converter may miss dependencies.
+- Move `%pip` and `!pip install` requirements into PEP 723 metadata, then remove
+  the obsolete install command, generated install commentary, and any empty
+  cell it leaves behind. Do not replace package installation with a subprocess.
 - Remove Jupyter-only artifacts such as `%magic` commands, shell escapes, and
   unnecessary `display()` calls.
+- Translate remaining shell escapes by purpose instead of mechanically wrapping
+  every command in `subprocess`. Use `fsspec` when file-like or filesystem
+  access is useful, and reserve `subprocess` for programs that genuinely need a
+  separate process.
 - Make the intended output the final expression of each display cell. Indented
   or conditional expressions will not render as cell output.
-- Replace notebook-global scratch variables with local variables inside helper
-  functions when they are only used in one step.
+- When cleanup is requested and it improves clarity, replace notebook-global
+  scratch variables with locals inside helper functions. Do not do this during
+  an exact synchronization or when it would rename or obscure teaching code
+  without resolving a demonstrated graph problem.
 - Prefer explicit markdown cells for prose. Do not leave tutorial text inside
   code comments or string literals in logic cells.
 
@@ -43,6 +52,32 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
 - `multiple-definitions` errors can happen after moving the same import into
   multiple cells. Keep cell-local imports private with an underscore alias
   such as `from torch.utils.data import DataLoader as _DataLoader`.
+
+## Molab and Remote Assets
+
+- Do not assume molab's **Mirror from GitHub** action provides a checkout of the
+  whole repository. A notebook and its dependency metadata can be present
+  while sibling data files are not.
+- Preserve a working asset-loading backend. Do not replace it solely because a
+  different backend might avoid a hypothetical hosted-environment limit.
+- Use `fsspec.filesystem("github", org=..., repo=...)` with repository-relative
+  paths when repository listing or marimo's Remote Storage browser is useful.
+  Anonymous hosted sessions can share GitHub's API quota; respond to a
+  demonstrated rate-limit failure with an optional token from runtime secrets
+  or environment, or use raw HTTPS for the affected known files. Never hardcode
+  a token.
+- A named HTTP filesystem with `raw.githubusercontent.com` URLs avoids GitHub's
+  repository API when only known public files are required. A bare
+  `HTTPFileSystem` can open concrete URLs but has no listable root, so do not
+  select it solely to expose a browsable source in marimo's Remote Storage
+  panel.
+- Declare `fsspec[http]`, not only `fsspec`, for HTTP files, Git-LFS content,
+  and GitHub files larger than 1 MB.
+- Pass file-like objects directly when the consumer supports them. Otherwise,
+  adapt in memory with `io.BytesIO` or `io.StringIO`, or materialize only the
+  specific file an API requires.
+- Clone a repository only when the tutorial needs Git history, repository
+  semantics, or a local directory tree rather than a few read-only assets.
 
 ## Widget Cleanup
 
@@ -61,8 +96,15 @@ marimo notebook from a Jupyter `.ipynb`. The converter writes diagnostics to
 
 ## Final Check
 
-Run:
+After the final notebook edit, run:
 
 ```bash
 uvx marimo check marimo/convert/<example-name>/<example_name>.py
 ```
+
+Then open the notebook in a fresh molab session or a local sandbox. Confirm
+that intended controls and embeds render, change each safe control at least
+once, and inspect cell errors. Static checking cannot detect a nonexistent
+runtime attribute such as `.clicked` or a widget that was constructed but
+never returned for display. Keep remote-write controls unsubmitted, or use an
+offline/test backend, during this smoke test.

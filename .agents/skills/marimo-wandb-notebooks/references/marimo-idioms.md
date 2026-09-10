@@ -14,6 +14,9 @@ this repo.
   as `"marimo>=0.9"` and `"wandb>=0.18"`.
 - Use one setup/import cell for shared imports, true constants, and environment
   detection.
+- Keep the setup cell's code visible. It is the reader-facing inventory of
+  shared imports, dependencies, and notebook-wide constants; do not apply
+  `hide_code=True` to it.
 - Keep reactive notebook globals scarce.
 
 ## Separate Teaching, Orchestration, and Helpers
@@ -33,14 +36,29 @@ Do not add marimo orchestration, generated dependency plumbing, or
 underscore-prefixed scratch variables to teaching code merely to satisfy the
 reactive graph.
 
-Use underscore-prefixed temporaries in orchestration or presentation cells when
-useful. When teaching code is naturally expressed as a function, keep the
-function clean and put its gate or UI wiring in separate cells.
+Preserve original identifiers in teaching code. Do not mechanically prefix a
+unique name with `_` merely because no later cell reads it. First inspect actual
+definitions and references across cells. For reader-facing definitions, resolve
+a real cross-cell redefinition by moving procedural work into a function or
+choosing unique descriptive names. Reserve private names for newly introduced
+implementation-only plumbing, such as file handles, context-manager targets, or
+UI internals. For W&B run objects, follow
+[`Naming Run Objects in marimo`](wandb-patterns.md#naming-run-objects-in-marimo).
+
+When teaching code is naturally expressed as a function, keep the function
+clean and put its gate or UI wiring in separate cells.
 
 ## Reactivity
 
 - Let the dependency graph determine execution. A cell runs when its inputs are
   ready.
+- `mo.stop()`, `if`, `for`, and `with` control runtime execution; they do not
+  create a static scope. Imports, assignment targets, loop targets, and context
+  manager targets anywhere in a cell still define names in marimo's graph. Give
+  each shared name one owning cell. Keep unique teaching names public even when
+  they have no downstream consumer; use `_` for genuinely private plumbing or
+  repeated scratch names that are not reader-facing, or move procedural work
+  into a function.
 - Do not rely on cross-cell mutation for reactivity; marimo does not track
   object mutations or attribute assignments. Prefer creating a new value, or
   mutate an object only in the cell that defines it.
@@ -105,12 +123,34 @@ helpers. Do not repeat the same gate in downstream cells.
 - Use markdown cells for prose and view cells for rendering.
 - Keep view cells focused on presentation; move non-teaching heavy logic into
   named helpers.
+- Preserve deliberate `hide_code` choices. Prefer `hide_code=True` for
+  implementation-only cells whose rendered output is the reader-facing
+  surface, such as authentication form construction, W&B connection or status
+  gates, and boilerplate HTML embeds such as YouTube iframes. Keep teaching
+  code, featured W&B SDK usage, the setup cell, and helper implementations
+  readers are expected to adapt visible.
 - Prefer native components such as `mo.ui.table`, `mo.callout`, `mo.vstack`,
   and `mo.hstack` over formatting complex UI as markdown.
+- Use `mo.video` for a direct video URL, file, or bytes. For a hosted player
+  such as YouTube, use the provider's canonical HTTPS embed URL in a trusted
+  `mo.Html` iframe with a descriptive title and a normal link fallback.
+- For the W&B header pattern used by the media tutorial, use
+  `https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg`
+  in the light theme and
+  `https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg`
+  in the dark theme. Render both and switch them with marimo's `body.dark`
+  class; visually verify both themes. For the verified marimo `mo.callout`
+  pattern, select the theme with `:host-context(body.dark)` so the rule crosses
+  the component boundary.
 
 ## UI
 
-- Show widgets directly and read their `.value` in orchestration cells.
+- Constructing or assigning a widget does not display it. End the definition
+  cell with the widget or a layout containing it; returning it only wires the
+  reactive dependency graph.
+- Show widgets directly and read documented reactive state such as `.value` in
+  orchestration cells. Do not invent callback-style attributes such as
+  `.clicked`; inspect the live object or official API when uncertain.
 - Prefer native `mo.ui` components before reaching for `anywidget`.
 
 ## Error Handling
