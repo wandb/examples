@@ -278,7 +278,7 @@ def _(run_environment, run_glue_path, task_name):
 @app.cell(hide_code=True)
 def _(wandb_run_url):
     mo.md(f"""
-    # 👀 Visualize results in dashboard
+    ## 👀 Visualize results in dashboard
 
     [**Open this training run in W&B ↗**]({wandb_run_url})
 

@@ -202,7 +202,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     metrics_button = mo.ui.run_button(label="Log metrics")
-    mo.vstack([mo.md("## Log metrics"), metrics_button])
+    mo.vstack([mo.md("### Log metrics"), metrics_button])
     return (metrics_button,)
 
 
@@ -236,7 +236,7 @@ def _(apple_prices, metrics_button, wandb_settings):
 @app.cell(hide_code=True)
 def _():
     plots_button = mo.ui.run_button(label="Log a plot")
-    mo.vstack([mo.md("## Log plots"), plots_button])
+    mo.vstack([mo.md("### Log plots"), plots_button])
     return (plots_button,)
 
 
@@ -269,7 +269,7 @@ def _(plots_button, wandb_settings):
 @app.cell(hide_code=True)
 def _():
     histograms_button = mo.ui.run_button(label="Log histograms")
-    mo.vstack([mo.md("## Log histograms"), histograms_button])
+    mo.vstack([mo.md("### Log histograms"), histograms_button])
     return (histograms_button,)
 
 
@@ -294,7 +294,7 @@ def _(histograms_button, wandb_settings):
 @app.cell(hide_code=True)
 def _():
     images_button = mo.ui.run_button(label="Log an image")
-    mo.vstack([mo.md("## Log images"), images_button])
+    mo.vstack([mo.md("### Log images"), images_button])
     return (images_button,)
 
 
@@ -320,7 +320,7 @@ def _(asset_base_url, fs, images_button, wandb_settings):
 @app.cell(hide_code=True)
 def _():
     videos_button = mo.ui.run_button(label="Log a video")
-    mo.vstack([mo.md("## Log videos"), videos_button])
+    mo.vstack([mo.md("### Log videos"), videos_button])
     return (videos_button,)
 
 
@@ -360,7 +360,7 @@ def _():
     generated_audio_button = mo.ui.run_button(label="Log generated audio")
     mo.vstack(
         [
-            mo.md("## Log audio"),
+            mo.md("### Log audio"),
             mo.hstack([audio_file_button, generated_audio_button], justify="start"),
         ]
     )
@@ -430,7 +430,7 @@ def _(generated_audio_button, wandb_settings):
 @app.cell(hide_code=True)
 def _():
     tables_button = mo.ui.run_button(label="Log tables")
-    mo.vstack([mo.md("## Log tables"), tables_button])
+    mo.vstack([mo.md("### Log tables"), tables_button])
     return (tables_button,)
 
 
@@ -473,7 +473,7 @@ def _(tables_button, wandb_settings):
 @app.cell(hide_code=True)
 def _():
     html_button = mo.ui.run_button(label="Log HTML")
-    mo.vstack([mo.md("## Log HTML"), html_button])
+    mo.vstack([mo.md("### Log HTML"), html_button])
     return (html_button,)
 
 
@@ -507,7 +507,7 @@ def _(asset_base_url, fs, html_button, wandb_settings):
 @app.cell(hide_code=True)
 def _():
     objects_button = mo.ui.run_button(label="Log a 3D object")
-    mo.vstack([mo.md("## Log 3D objects"), objects_button])
+    mo.vstack([mo.md("### Log 3D objects"), objects_button])
     return (objects_button,)
 
 
@@ -535,7 +535,7 @@ def _(asset_base_url, fs, objects_button, wandb_settings):
 @app.cell(hide_code=True)
 def _():
     point_clouds_button = mo.ui.run_button(label="Log a point cloud")
-    mo.vstack([mo.md("## Log point clouds"), point_clouds_button])
+    mo.vstack([mo.md("### Log point clouds"), point_clouds_button])
     return (point_clouds_button,)
 
 
