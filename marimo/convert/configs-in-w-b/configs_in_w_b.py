@@ -61,7 +61,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 🔑 Authentication
+    ## Authentication
 
     Enter your [W&B API key](https://wandb.ai/authorize) and, if needed, your team or entity. You can leave the key blank when this environment already has W&B credentials.
     """)

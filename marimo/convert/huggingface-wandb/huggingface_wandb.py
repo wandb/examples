@@ -85,7 +85,7 @@ def _():
     W&B lightweight integrations works with any Python script, and all you need to do is sign up for a free W&B account to start tracking and visualizing your models.
     """),
         kind="neutral",
-        title="🤔 Why should I use W&B?",
+        title="Why should I use W&B?",
     )
     return
 
@@ -93,7 +93,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 🚀 Getting started
+    ## Getting started
 
     In this tutorial, we work with the Hugging Face and Weights & Biases libraries, and the GLUE dataset and training script.
     - [Hugging Face Transformers](https://github.com/huggingface/transformers): Natural language models and datasets
@@ -131,7 +131,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 🔑 Authentication
+    ## Authentication
 
     Enter your [W&B API key](https://wandb.ai/authorize) and, if needed, your team or entity. You can leave the key blank when this environment already has W&B credentials.
     """)
@@ -212,7 +212,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 👟 Train the model
+    ## Train the model
     Next, call the downloaded training script [run_glue.py](https://huggingface.co/transformers/examples.html#glue) and see training automatically get tracked to the Weights & Biases dashboard. This script fine-tunes BERT on the Microsoft Research Paraphrase Corpus— pairs of sentences with human annotations indicating whether they are semantically equivalent.
     """)
     return
@@ -278,11 +278,11 @@ def _(run_environment, run_glue_path, task_name):
 @app.cell(hide_code=True)
 def _(wandb_run_url):
     mo.md(f"""
-    ## 👀 Visualize results in dashboard
+    ## Visualize results in dashboard
 
-    [**Open this training run in W&B ↗**]({wandb_run_url})
+    [**Open this training run in W&B**]({wandb_run_url})
 
-    Click the link above, or go to [wandb.ai](https://app.wandb.ai) to see your results stream in live. The link to see your run in the browser will appear after all the dependencies are loaded — look for the following output: "**wandb**: 🚀 View run at [URL to your unique run]"
+    Click the link above, or go to [wandb.ai](https://app.wandb.ai) to see your results stream in live. The link to see your run in the browser will appear after all the dependencies are loaded — look for the following output: "**wandb**: View run at [URL to your unique run]"
 
     **Visualize Model Performance**
     It's easy to look across dozens of experiments, zoom in on interesting findings, and visualize highly dimensional data.
@@ -299,7 +299,7 @@ def _(wandb_run_url):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ### 📈 Track key information effortlessly by default
+    ### Track key information effortlessly by default
     Weights & Biases saves a new run for each experiment. Here's the information that gets saved by default:
     - **Hyperparameters**: Settings for your model are saved in Config
     - **Model Metrics**: Time series data of metrics streaming in are saved in Log
@@ -312,7 +312,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 🤓 Learn more!
+    ## Learn more!
     - [Documentation](https://docs.wandb.ai/tutorials/huggingface/): docs on the Weights & Biases and Hugging Face integration
     - [Videos](http://wandb.me/youtube): tutorials, interviews with practitioners, and more on our YouTube channel
     - Contact: Message us at contact@wandb.com with questions
