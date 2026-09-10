@@ -21,8 +21,16 @@ Use this when creating, reviewing, or polishing W&B example notebooks.
 - Keep the notebook readable from top to bottom.
 - Preserve useful authorial explanations from the source notebook when they
   still fit the marimo version.
-- Start with a clear title and any prerequisites or setup notes the reader
-  needs before running the notebook.
+- Use exactly one Markdown level-one heading (`#`) for the notebook title. Use
+  level-two headings (`##`) for major sections and level-three or deeper
+  headings for their subsections without skipping levels. Correct heading
+  markers even during an otherwise content-preserving conversion, but do not
+  rewrite the heading text or surrounding prose solely to repair the hierarchy.
+- For readability, omit decorative emojis from headings, labels, callout
+  titles, and prose. Remove them during cleanup without otherwise rewriting the
+  surrounding text.
+- Start with any prerequisites or setup notes the reader needs before running
+  the notebook.
 - Interleave pipeline code with markdown sections that explain what the reader
   is about to run and why it matters.
 - Keep code cells purposeful: show a result, teach a core step, or define a

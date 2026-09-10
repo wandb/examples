@@ -30,8 +30,23 @@ Use these patterns when a marimo example uses the W&B Python SDK.
       run.log({"loss": 0.1})
   ```
 
-Otherwise, explicitly finish the run with `run.finish()`. If a run must stay
-active across cells, finish any prior active run before starting another one.
+### Naming Run Objects in marimo
+
+marimo requires each notebook-global name to have one defining cell. If a
+notebook creates W&B runs in multiple cells, do not repeat a top-level
+`run = wandb.init(...)` or `with wandb.init() as run:` binding across them.
+
+- Prefer putting each complete run lifecycle in a function or `@app.function`;
+  `run` is then an ordinary local name and can be reused naturally.
+- When a run remains notebook-global, give each instance a unique, descriptive
+  name for its role, such as `training_run`, `evaluation_run`, or
+  `artifact_link_run`, and use that name consistently.
+- `_run` is a valid cell-local fallback for private plumbing, but do not use
+  repeated `_run` bindings as the default in reader-visible teaching code.
+
+When a run cannot use a context manager, explicitly call `.finish()` on the
+corresponding run object. If a run must stay active across cells, finish any
+prior active run before starting another one.
 
 - Prefer methods on the active run, such as `run.log()`, `run.log_artifact()`,
   and `run.summary`, unless the tutorial intentionally teaches another W&B API

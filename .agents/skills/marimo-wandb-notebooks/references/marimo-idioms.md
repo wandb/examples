@@ -35,9 +35,12 @@ reactive graph.
 
 Preserve original identifiers in teaching code. Do not mechanically prefix a
 unique name with `_` merely because no later cell reads it. First inspect actual
-definitions and references across cells. Use private names to resolve a real
-cross-cell redefinition or for newly introduced implementation-only plumbing,
-such as file handles, context-manager targets, or UI internals.
+definitions and references across cells. For reader-facing definitions, resolve
+a real cross-cell redefinition by moving procedural work into a function or
+choosing unique descriptive names. Reserve private names for newly introduced
+implementation-only plumbing, such as file handles, context-manager targets, or
+UI internals. For W&B run objects, follow
+[`Naming Run Objects in marimo`](wandb-patterns.md#naming-run-objects-in-marimo).
 
 When teaching code is naturally expressed as a function, keep the function
 clean and put its gate or UI wiring in separate cells.
@@ -51,7 +54,8 @@ clean and put its gate or UI wiring in separate cells.
   manager targets anywhere in a cell still define names in marimo's graph. Give
   each shared name one owning cell. Keep unique teaching names public even when
   they have no downstream consumer; use `_` for genuinely private plumbing or
-  repeated scratch names, or move procedural work into a function.
+  repeated scratch names that are not reader-facing, or move procedural work
+  into a function.
 - Do not rely on cross-cell mutation for reactivity; marimo does not track
   object mutations or attribute assignments. Prefer creating a new value, or
   mutate an object only in the cell that defines it.
@@ -116,6 +120,12 @@ helpers. Do not repeat the same gate in downstream cells.
 - Use markdown cells for prose and view cells for rendering.
 - Keep view cells focused on presentation; move non-teaching heavy logic into
   named helpers.
+- Preserve deliberate `hide_code` choices. Prefer `hide_code=True` for
+  implementation-only cells whose rendered output is the reader-facing
+  surface, such as authentication form construction, W&B connection or status
+  gates, and boilerplate HTML embeds such as YouTube iframes. Keep teaching
+  code, featured W&B SDK usage, and helper implementations readers are expected
+  to adapt visible.
 - Prefer native components such as `mo.ui.table`, `mo.callout`, `mo.vstack`,
   and `mo.hstack` over formatting complex UI as markdown.
 - Use `mo.video` for a direct video URL, file, or bytes. For a hosted player

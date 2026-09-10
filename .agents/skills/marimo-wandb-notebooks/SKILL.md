@@ -123,6 +123,8 @@ Before considering a conversion complete:
   separation of teaching code, marimo orchestration, and reusable helpers.
 - Tutorial quality follows
   [`references/tutorial-notebook-objectives.md`](references/tutorial-notebook-objectives.md).
+- The Markdown outline has exactly one level-one heading for the notebook title;
+  major sections use level two, and nested sections do not skip heading levels.
 - Featured W&B SDK usage follows
   [`references/wandb-patterns.md`](references/wandb-patterns.md).
 - No unintended generated or runtime files were introduced, and the notebook
