@@ -18,8 +18,10 @@ with app.setup:
     import marimo as mo
 
     import os
+    import sys
     import uuid
     import subprocess
+    import torch
     import wandb
     import fsspec
 
@@ -51,8 +53,7 @@ def _():
 
 @app.cell(hide_code=True)
 def _():
-    mo.callout(
-        mo.md(r"""
+    mo.md(r"""
     <style>
     .wandb-by-cw-logo--dark {
       display: none;
@@ -67,8 +68,7 @@ def _():
     }
     </style>
 
-    <img class="wandb-by-cw-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="320" alt="Weights & Biases by CoreWeave" />
-    <img class="wandb-by-cw-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="320" alt="Weights & Biases by CoreWeave" />
+    ## Why should I use W&B?
 
     Use [Weights & Biases](https://wandb.com) for machine learning experiment tracking, dataset versioning, and project collaboration.
 
@@ -83,10 +83,7 @@ def _():
     Think of W&B like GitHub for machine learning models— save machine learning experiments to your private, hosted dashboard. Experiment quickly with the confidence that all the versions of your models are saved for you, no matter where you're running your scripts.
 
     W&B lightweight integrations works with any Python script, and all you need to do is sign up for a free W&B account to start tracking and visualizing your models.
-    """),
-        kind="neutral",
-        title="Why should I use W&B?",
-    )
+    """)
     return
 
 
@@ -218,6 +215,33 @@ def _():
     return
 
 
+@app.cell(hide_code=True)
+def _():
+    gpu_available = torch.cuda.is_available()
+
+    (
+        mo.callout(
+            mo.md(
+                f"GPU ready: **{torch.cuda.get_device_name(0)}**. "
+                "The training script will use it automatically."
+            ),
+            kind="success",
+        )
+        if gpu_available
+        else mo.callout(
+            mo.md(
+                "No GPU is attached to this session. In Molab, click the "
+                "notebook specs button in the header, attach a GPU, then save "
+                "and restart. Reconnect to W&B after the restart. Training is "
+                "paused to prevent an unexpectedly slow CPU run."
+            ),
+            kind="warn",
+            title="GPU not available",
+        )
+    )
+    return (gpu_available,)
+
+
 @app.cell
 def _(wandb_settings):
     task_name = "MRPC"
@@ -243,10 +267,12 @@ def _(wandb_settings):
 
 
 @app.cell
-def _(run_environment, run_glue_path, task_name):
+def _(gpu_available, run_environment, run_glue_path, task_name):
+    mo.stop(not gpu_available)
+
     subprocess.run(
         [
-            "python",
+            sys.executable,
             run_glue_path,
             "--model_name_or_path",
             "bert-base-uncased",
