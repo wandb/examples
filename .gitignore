@@ -1,6 +1,7 @@
 *.swp
 .python-version
 wandb
+!examples/minimal-hydra-example/configs/wandb/
 wandb-debug.log
 __pycache__
 .ipynb_checkpoints
