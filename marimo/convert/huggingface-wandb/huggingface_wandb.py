@@ -3,7 +3,7 @@
 #     "accelerate",
 #     "datasets",
 #     "evaluate",
-#     "fsspec==2026.6.0",
+#     "fsspec[http]==2026.6.0",
 #     "transformers @ git+https://github.com/huggingface/transformers",
 #     "wandb==0.29.0",
 # ]
