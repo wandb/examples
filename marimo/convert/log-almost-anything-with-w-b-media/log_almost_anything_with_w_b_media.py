@@ -221,13 +221,13 @@ def _(apple_prices, metrics_button, wandb_settings):
     mo.stop(not metrics_button.value)
     finish_active_run()
 
-    with wandb.init(name="metrics", **wandb_settings) as _run:
+    with wandb.init(name="metrics", **wandb_settings) as _metrics_run:
         for price in apple_prices["close"]:
-            _run.log({"Stock Price": price})
-        _run_url = _run.url
+            _metrics_run.log({"Stock Price": price})
+        _metrics_run_url = _metrics_run.url
 
     mo.callout(
-        mo.md(f"Metrics logged. [Open the W&B run]({_run_url})."),
+        mo.md(f"Metrics logged. [Open the W&B run]({_metrics_run_url})."),
         kind="success",
     )
     return
@@ -250,15 +250,15 @@ def _(plots_button, wandb_settings):
     ax.plot(_fibonacci)
     ax.set_ylabel("Fibonacci values")
 
-    with wandb.init(name="plots", **wandb_settings) as _run:
-        _run.log({"plot": fig})
-        _run_url = _run.url
+    with wandb.init(name="plots", **wandb_settings) as _plots_run:
+        _plots_run.log({"plot": fig})
+        _plots_run_url = _plots_run.url
 
     mo.vstack(
         [
             fig,
             mo.callout(
-                mo.md(f"Plot logged. [Open the W&B run]({_run_url})."),
+                mo.md(f"Plot logged. [Open the W&B run]({_plots_run_url})."),
                 kind="success",
             ),
         ]
@@ -279,13 +279,13 @@ def _(histograms_button, wandb_settings):
     finish_active_run()
 
     _fibonacci = np.array([0, 1, 1, 2, 3, 5, 8, 13, 21, 34])
-    with wandb.init(name="histograms", **wandb_settings) as _run:
+    with wandb.init(name="histograms", **wandb_settings) as _histograms_run:
         for i in range(1, 10):
-            _run.log({"histograms": wandb.Histogram(_fibonacci / i)})
-        _run_url = _run.url
+            _histograms_run.log({"histograms": wandb.Histogram(_fibonacci / i)})
+        _histograms_run_url = _histograms_run.url
 
     mo.callout(
-        mo.md(f"Histograms logged. [Open the W&B run]({_run_url})."),
+        mo.md(f"Histograms logged. [Open the W&B run]({_histograms_run_url})."),
         kind="success",
     )
     return
@@ -306,12 +306,12 @@ def _(asset_base_url, fs, images_button, wandb_settings):
     with fs.open(f"{asset_base_url}/cafe.jpg", "rb") as _image_file:
         im = plt.imread(_image_file, format="jpg")
 
-    with wandb.init(name="images", **wandb_settings) as _run:
-        _run.log({"img": [wandb.Image(im, caption="Cafe")]})
-        _run_url = _run.url
+    with wandb.init(name="images", **wandb_settings) as _images_run:
+        _images_run.log({"img": [wandb.Image(im, caption="Cafe")]})
+        _images_run_url = _images_run.url
 
     mo.callout(
-        mo.md(f"Image logged. [Open the W&B run]({_run_url})."),
+        mo.md(f"Image logged. [Open the W&B run]({_images_run_url})."),
         kind="success",
     )
     return
@@ -332,12 +332,12 @@ def _(asset_base_url, fs, videos_button, wandb_settings):
     with fs.open(f"{asset_base_url}/openai-gym.mp4", "rb") as _video_file:
         _video = io.BytesIO(_video_file.read())
 
-    with wandb.init(name="videos", **wandb_settings) as _run:
-        _run.log({"video": wandb.Video(_video, format="mp4")})
-        _run_url = _run.url
+    with wandb.init(name="videos", **wandb_settings) as _videos_run:
+        _videos_run.log({"video": wandb.Video(_video, format="mp4")})
+        _videos_run_url = _videos_run.url
 
     mo.callout(
-        mo.md(f"Video logged. [Open the W&B run]({_run_url})."),
+        mo.md(f"Video logged. [Open the W&B run]({_videos_run_url})."),
         kind="success",
     )
     return
@@ -375,8 +375,8 @@ def _(asset_base_url, audio_file_button, fs, wandb_settings):
     with fs.open(f"{asset_base_url}/piano.wav", "rb") as _audio_file:
         _samples, _sample_rate = sf.read(_audio_file, dtype="float32")
 
-    with wandb.init(name="audio_file", **wandb_settings) as _run:
-        _run.log(
+    with wandb.init(name="audio_file", **wandb_settings) as _audio_file_run:
+        _audio_file_run.log(
             {
                 "examples": [
                     wandb.Audio(
@@ -387,10 +387,10 @@ def _(asset_base_url, audio_file_button, fs, wandb_settings):
                 ]
             }
         )
-        _run_url = _run.url
+        _audio_file_run_url = _audio_file_run.url
 
     mo.callout(
-        mo.md(f"Audio file logged. [Open the W&B run]({_run_url})."),
+        mo.md(f"Audio file logged. [Open the W&B run]({_audio_file_run_url})."),
         kind="success",
     )
     return
@@ -406,8 +406,8 @@ def _(generated_audio_button, wandb_settings):
     xs = np.linspace(0, length, num=_sample_rate * length)
     waveform = np.sin(_sample_rate * 2 * np.pi / 40 * xs**2)
 
-    with wandb.init(name="audio_generated", **wandb_settings) as _run:
-        _run.log(
+    with wandb.init(name="audio_generated", **wandb_settings) as _generated_audio_run:
+        _generated_audio_run.log(
             {
                 "examples": [
                     wandb.Audio(
@@ -418,10 +418,10 @@ def _(generated_audio_button, wandb_settings):
                 ]
             }
         )
-        _run_url = _run.url
+        _generated_audio_run_url = _generated_audio_run.url
 
     mo.callout(
-        mo.md(f"Generated audio logged. [Open the W&B run]({_run_url})."),
+        mo.md(f"Generated audio logged. [Open the W&B run]({_generated_audio_run_url})."),
         kind="success",
     )
     return
@@ -439,13 +439,13 @@ def _(tables_button, wandb_settings):
     mo.stop(not tables_button.value)
     finish_active_run()
 
-    with wandb.init(name="tables", **wandb_settings) as _run:
+    with wandb.init(name="tables", **wandb_settings) as _tables_run:
         # Create tabular data, method 1.
         data = [
             ["I love my phone", "1", "1"],
             ["My phone sucks", "0", "-1"],
         ]
-        _run.log(
+        _tables_run.log(
             {
                 "a_table": wandb.Table(
                     data=data,
@@ -460,11 +460,11 @@ def _(tables_button, wandb_settings):
         )
         table.add_data("I love my phone", "1", "1")
         table.add_data("My phone sucks", "0", "-1")
-        _run.log({"another_table": table})
-        _run_url = _run.url
+        _tables_run.log({"another_table": table})
+        _tables_run_url = _tables_run.url
 
     mo.callout(
-        mo.md(f"Tables logged. [Open the W&B run]({_run_url})."),
+        mo.md(f"Tables logged. [Open the W&B run]({_tables_run_url})."),
         kind="success",
     )
     return
@@ -485,8 +485,8 @@ def _(asset_base_url, fs, html_button, wandb_settings):
     with fs.open(f"{asset_base_url}/some_html.html", "rt") as _html_file:
         _html = _html_file.read()
 
-    with wandb.init(name="html", **wandb_settings) as _run:
-        _run.log(
+    with wandb.init(name="html", **wandb_settings) as _html_run:
+        _html_run.log(
             {
                 "custom_file": wandb.Html(_html, data_is_not_path=True),
                 "custom_string": wandb.Html(
@@ -495,10 +495,10 @@ def _(asset_base_url, fs, html_button, wandb_settings):
                 ),
             }
         )
-        _run_url = _run.url
+        _html_run_url = _html_run.url
 
     mo.callout(
-        mo.md(f"HTML logged. [Open the W&B run]({_run_url})."),
+        mo.md(f"HTML logged. [Open the W&B run]({_html_run_url})."),
         kind="success",
     )
     return
@@ -519,14 +519,14 @@ def _(asset_base_url, fs, objects_button, wandb_settings):
     with fs.open(f"{asset_base_url}/wolf.obj", "rt") as _object_file:
         _object = io.StringIO(_object_file.read())
 
-    with wandb.init(name="3d_objects", **wandb_settings) as _run:
-        _run.log(
+    with wandb.init(name="3d_objects", **wandb_settings) as _object_3d_run:
+        _object_3d_run.log(
             {"3d_object": wandb.Object3D(_object, file_type="obj")}
         )
-        _run_url = _run.url
+        _object_3d_run_url = _object_3d_run.url
 
     mo.callout(
-        mo.md(f"3D object logged. [Open the W&B run]({_run_url})."),
+        mo.md(f"3D object logged. [Open the W&B run]({_object_3d_run_url})."),
         kind="success",
     )
     return
@@ -583,12 +583,12 @@ def _(point_clouds_button, wandb_settings):
         "vectors": np.array([]),
     }
 
-    with wandb.init(name="point_clouds", **wandb_settings) as _run:
-        _run.log({"point_scene": wandb.Object3D(_scene)})
-        _run_url = _run.url
+    with wandb.init(name="point_clouds", **wandb_settings) as _point_cloud_run:
+        _point_cloud_run.log({"point_scene": wandb.Object3D(_scene)})
+        _point_cloud_run_url = _point_cloud_run.url
 
     mo.callout(
-        mo.md(f"Point cloud logged. [Open the W&B run]({_run_url})."),
+        mo.md(f"Point cloud logged. [Open the W&B run]({_point_cloud_run_url})."),
         kind="success",
     )
     return
