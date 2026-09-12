@@ -1,0 +1,36 @@
+$ npm run evaluate
+
+> weave-cookbook-ts@0.1.0 evaluate
+> tsx examples/02-evaluate.ts
+
+View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+🍩 https://wandb.ai/<entity>/weave-cookbook/r/call/<call-id>
+Evaluating 1/5 examples (4 running, 0 errors)
+Evaluating 2/5 examples (3 running, 0 errors)
+Evaluating 3/5 examples (2 running, 0 errors)
+Evaluating 4/5 examples (1 running, 0 errors)
+Evaluating 5/5 examples (0 running, 0 errors)
+{
+  "model_success": {
+    "true_count": 5,
+    "true_fraction": 1
+  },
+  "valid_pick": {
+    "valid_pick": {
+      "true_count": 5,
+      "true_fraction": 1
+    }
+  },
+  "fits_constraints": {
+    "fits_constraints": {
+      "true_count": 5,
+      "true_fraction": 1
+    }
+  },
+  "model_latency": {
+    "mean": 5.71
+  }
+}
+
+Counts can dip below 5 when the model adds extra words to a reply.
+Captured 2026-08-02 with weave (npm) 0.16.5 on Node.js 26.4.0.

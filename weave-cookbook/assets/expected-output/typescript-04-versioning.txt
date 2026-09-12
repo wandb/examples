@@ -1,0 +1,11 @@
+$ npm run versioning
+
+> weave-cookbook-ts@0.1.0 versioning
+> tsx examples/04-versioning.ts
+
+View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+published: weave:///<entity>/weave-cookbook/object/game-catalog:<digest>
+published: weave:///<entity>/weave-cookbook/object/game-catalog:<digest>
+latest has 13 games; the first version still has 12.
+
+Captured 2026-08-02 with weave (npm) 0.16.5 on Node.js 26.4.0.
