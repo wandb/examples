@@ -1,31 +1,40 @@
 # /// script
-# dependencies = ["wandb"]
+# requires-python = ">=3.10"
+# dependencies = [
+#     "marimo>=0.24.0",
+#     "numpy>=1.26",
+#     "scikit-learn>=1.5",
+#     "wandb>=0.18",
+#     "xgboost>=2.1",
+# ]
 # ///
 
 import marimo
 
 __generated_with = "0.24.0"
-app = marimo.App()
+app = marimo.App(width="medium", app_title="W&B Sweeps with XGBoost")
 
 
-@app.cell
-def _():
+with app.setup():
+    from urllib.request import urlopen
+
     import marimo as mo
+    from numpy import loadtxt
+    from sklearn.metrics import accuracy_score
+    from sklearn.model_selection import train_test_split
+    import wandb
 
-    return (mo,)
-
-
-@app.cell
-def _():
-    import subprocess
-
-    return (subprocess,)
+    DATASET_URL = (
+        "https://raw.githubusercontent.com/jbrownlee/Datasets/master/"
+        "pima-indians-diabetes.data.csv"
+    )
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    <a href="https://colab.research.google.com/github/wandb/examples/blob/master/colabs/boosting/Using_W&B_Sweeps_with_XGBoost.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/using-w-b-sweeps-with-xgboost/using_w_b_sweeps_with_xgboost.py/server)
+
     <!--- @wandbcode{xgb-sweeps} -->
     """)
     return
@@ -40,7 +49,7 @@ def _(mo):
 
     Use Weights & Biases for machine learning experiment tracking, dataset versioning, and project collaboration.
 
-    <img src="http://wandb.me/mini-diagram" width="650" alt="Weights & Biases" />
+    <img src="https://wandb.me/mini-diagram" width="650" alt="Weights & Biases" />
     """)
     return
 
@@ -85,7 +94,7 @@ def _(mo):
     2. **Initialize the sweep:** with one line of code we initialize the sweep and pass in the dictionary of sweep configurations:
     `sweep_id = wandb.sweep(sweep_config)`
 
-    3. **Run the sweep agent:** also accomplished with one line of code, we call w`andb.agent()` and pass the `sweep_id` along with a function that defines your model architecture and trains it:
+    3. **Run the sweep agent:** also accomplished with one line of code, we call `wandb.agent()` and pass the `sweep_id` along with a function that defines your model architecture and trains it:
     `wandb.agent(sweep_id, function=train)`
 
     And voila! That's all there is to running a hyperparameter sweep!
@@ -101,23 +110,158 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
-    # packages added via marimo's package management: wandb !pip install wandb -qU
+    mo.md(r"""
+    ## Authentication
+
+    To run this tutorial, authenticate with W&B and choose where to create the
+    sweep. Get an API key from [wandb.ai/authorize](https://wandb.ai/authorize),
+    or leave the key blank to use `WANDB_API_KEY` from marimo's Secrets panel,
+    an existing W&B settings file, or a prior `wandb login` in this runtime.
+
+    If you work in a team, enter its entity slug. You can find it in the URL of
+    your team's W&B workspace; leave it blank to use your default entity.
+
+    When running locally on macOS, XGBoost also needs the OpenMP runtime. Install
+    it once with `brew install libomp`. Hosted Linux environments generally
+    provide the required runtime with the XGBoost wheel.
+
+    Submitting the form creates a new Sweep Controller and then starts the
+    requested number of W&B runs. Editing fields without submitting does not
+    create anything in W&B. Editing the `sweep_config` or `train` code below
+    resets the form so you can review and submit those changes explicitly.
+    Submitting again creates and runs a new sweep.
+    """)
     return
 
 
-@app.cell
-def _():
-    import wandb
+@app.cell(hide_code=True)
+def _(sweep_config, train):
+    # Check the native XGBoost runtime before creating a Sweep Controller.
+    # On macOS, the XGBoost wheel requires libomp from Homebrew.
+    try:
+        from xgboost import XGBClassifier as _XGBClassifier  # noqa: F401
+    except (ImportError, OSError, ValueError) as _error:
+        _xgboost_error = str(_error)
+    else:
+        _xgboost_error = None
 
-    return (wandb,)
+    _macos_help = (
+        " On macOS, run `brew install libomp`, then restart this notebook."
+        if "libomp.dylib" in (_xgboost_error or "")
+        else ""
+    )
+    mo.stop(
+        _xgboost_error is not None,
+        mo.callout(
+            mo.md(
+                "**XGBoost could not load its native runtime.**"
+                f"{_macos_help}\n\n"
+                "The sweep has not been created, so fixing the runtime and "
+                "resubmitting will not leave failed runs behind."
+            ),
+            kind="danger",
+        ),
+    )
+
+    _api_key_input = mo.ui.text(
+        value="",
+        kind="password",
+        label="W&B API key (blank uses runtime credentials)",
+    )
+    _entity_input = mo.ui.text(
+        value="",
+        label="W&B entity (blank uses your default)",
+    )
+    _project_input = mo.ui.text(value="XGBoost-sweeps", label="W&B project")
+    _run_count_input = mo.ui.number(
+        start=1,
+        stop=50,
+        value=25,
+        step=1,
+        label="Number of sweep runs",
+    )
+
+    sweep_form = (
+        mo.md(
+            """
+            {api_key}
+
+            {entity}
+
+            {project}
+
+            {run_count}
+            """
+        )
+        .batch(
+            api_key=_api_key_input,
+            entity=_entity_input,
+            project=_project_input,
+            run_count=_run_count_input,
+        )
+        .form(
+            submit_button_label="Create sweep and run agent",
+            bordered=False,
+        )
+    )
+
+    mo.vstack(
+        [
+            mo.md(
+                f"Ready to submit a `{sweep_config['method']}` sweep using "
+                f"the `{train.__name__}` training function."
+            ),
+            sweep_form,
+        ]
+    )
+    return (sweep_form,)
 
 
-@app.cell
-def _(wandb):
-    wandb.login()
-    return
+@app.cell(hide_code=True)
+def _(sweep_form):
+    mo.stop(
+        sweep_form.value is None,
+        mo.md(
+            "Review the sweep configuration below, then submit the form above "
+            "when you are ready to create the Sweep Controller and launch its runs."
+        ),
+    )
+
+    _submitted = sweep_form.value
+    _api_key = _submitted["api_key"].strip()
+    try:
+        _login_ok = wandb.login(
+            key=_api_key or None,
+            relogin=bool(_api_key),
+        )
+        _login_error = None
+    except wandb.errors.Error as _error:
+        _login_ok = False
+        _login_error = str(_error)
+
+    mo.stop(
+        not _login_ok,
+        mo.callout(
+            mo.md(
+                "W&B authentication did not complete. "
+                f"Check the API key and try again.\n\nW&B reported: `{_login_error or 'unknown error'}`"
+            ),
+            kind="danger",
+        ),
+    )
+
+    sweep_request = {
+        "entity": _submitted["entity"].strip() or None,
+        "project": _submitted["project"].strip() or "XGBoost-sweeps",
+        "run_count": int(_submitted["run_count"]),
+    }
+    mo.callout(
+        mo.md("Connected to W&B. The submitted sweep will start now."),
+        kind="success",
+    )
+    return (sweep_request,)
 
 
 @app.cell(hide_code=True)
@@ -144,25 +288,17 @@ def _(mo):
 @app.cell
 def _():
     sweep_config = {
-        "method": "random", # try grid or random
+        "method": "random",  # Try "grid" or "bayes".
         "metric": {
-          "name": "accuracy",
-          "goal": "maximize"   
+            "name": "accuracy",
+            "goal": "maximize",
         },
         "parameters": {
-            "booster": {
-                "values": ["gbtree","gblinear"]
-            },
-            "max_depth": {
-                "values": [3, 6, 9, 12]
-            },
-            "learning_rate": {
-                "values": [0.1, 0.05, 0.2]
-            },
-            "subsample": {
-                "values": [1, 0.5, 0.3]
-            }
-        }
+            "booster": {"values": ["gbtree", "gblinear"]},
+            "max_depth": {"values": [3, 6, 9, 12]},
+            "learning_rate": {"values": [0.1, 0.05, 0.2]},
+            "subsample": {"values": [1, 0.5, 0.3]},
+        },
     }
     return (sweep_config,)
 
@@ -186,8 +322,12 @@ def _(mo):
 
 
 @app.cell
-def _(sweep_config, wandb):
-    sweep_id = wandb.sweep(sweep_config, project="XGBoost-sweeps")
+def _(sweep_config, sweep_request):
+    sweep_id = wandb.sweep(
+        sweep=sweep_config,
+        entity=sweep_request["entity"],
+        project=sweep_request["project"],
+    )
     return (sweep_id,)
 
 
@@ -209,66 +349,66 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    We also need to download the data:
+    We also need the Pima Indians Diabetes dataset. Each sweep run reads this
+    small public CSV directly from its source, so the notebook does not rely on
+    a repository checkout or leave a downloaded data file behind.
     """)
     return
 
 
-@app.cell
-def _(subprocess):
-    #! wget https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv
-    subprocess.call(['wget', 'https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv'])
-    return
-
-
-@app.cell
-def _(wandb):
+@app.function
+def train():
     # XGBoost model for Pima Indians dataset
-    from numpy import loadtxt
     from xgboost import XGBClassifier
-    from sklearn.model_selection import train_test_split
-    from sklearn.metrics import accuracy_score
 
-    # load data
-    def train():
-      config_defaults = {
+    if wandb.run is not None:
+        wandb.finish()
+
+    config_defaults = {
         "booster": "gbtree",
         "max_depth": 3,
         "learning_rate": 0.1,
         "subsample": 1,
         "seed": 117,
         "test_size": 0.33,
-      }
+    }
 
-      wandb.init(config=config_defaults)  # defaults are over-ridden during the sweep
-      config = wandb.config
+    # The sweep agent overrides these defaults with each sampled configuration.
+    with wandb.init(config=config_defaults) as run:
+        config = run.config
 
-      # load data and split into predictors and targets
-      dataset = loadtxt("pima-indians-diabetes.data.csv", delimiter=",")
-      X, Y = dataset[:, :8], dataset[:, 8]
+        # Load data and split it into predictors and targets.
+        with urlopen(DATASET_URL, timeout=30) as dataset_response:
+            dataset = loadtxt(dataset_response, delimiter=",")
+        X, y = dataset[:, :8], dataset[:, 8]
 
-      # split data into train and test sets
-      X_train, X_test, y_train, y_test = train_test_split(X, Y,
-                                                          test_size=config.test_size,
-                                                          random_state=config.seed)
+        # Split data into train and test sets.
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            test_size=config.test_size,
+            random_state=config.seed,
+        )
 
-      # fit model on train
-      model = XGBClassifier(booster=config.booster, max_depth=config.max_depth,
-                            learning_rate=config.learning_rate, subsample=config.subsample)
-      model.fit(X_train, y_train)
+        # Fit the model on the training data.
+        model = XGBClassifier(
+            booster=config.booster,
+            max_depth=config.max_depth,
+            learning_rate=config.learning_rate,
+            subsample=config.subsample,
+        )
+        model.fit(X_train, y_train)
 
-      # make predictions on test
-      y_pred = model.predict(X_test)
-      predictions = [round(value) for value in y_pred]
+        # Make predictions on the test set.
+        y_pred = model.predict(X_test)
+        predictions = [round(value) for value in y_pred]
 
-      # evaluate predictions
-      accuracy = accuracy_score(y_test, predictions)
-      print(f"Accuracy: {accuracy:.0%}")
-      wandb.log({"accuracy": accuracy})
-
-    return (train,)
+        # Evaluate and log the result.
+        accuracy = accuracy_score(y_test, predictions)
+        print(f"Accuracy: {accuracy:.0%}")
+        run.log({"accuracy": accuracy})
 
 
 @app.cell(hide_code=True)
@@ -290,7 +430,7 @@ def _(mo):
 
     and that machine will join the sweep!
 
-    > _Note_: a `random` sweep will by defauly run forever,
+    > _Note_: a `random` sweep will by default run forever,
     trying new parameter combinations until the cows come home --
     or until you [turn the sweep off from the app UI](https://docs.wandb.ai/ref/app/features/sweeps).
     You can prevent this by providing the total `count` of runs you'd like the `agent` to complete.
@@ -299,8 +439,31 @@ def _(mo):
 
 
 @app.cell
-def _(sweep_id, train, wandb):
-    wandb.agent(sweep_id, train, count=25)
+def _(sweep_id, sweep_request):
+    wandb.agent(
+        sweep_id,
+        function=train,
+        count=sweep_request["run_count"],
+    )
+    sweep_complete = {
+        "entity": sweep_request["entity"],
+        "project": sweep_request["project"],
+        "run_count": sweep_request["run_count"],
+        "sweep_id": sweep_id,
+    }
+    return (sweep_complete,)
+
+
+@app.cell(hide_code=True)
+def _(sweep_complete):
+    mo.callout(
+        mo.md(
+            f"**Sweep complete.** Agent `{sweep_complete['sweep_id']}` finished "
+            f"{sweep_complete['run_count']} runs in project "
+            f"`{sweep_complete['project']}`."
+        ),
+        kind="success",
+    )
     return
 
 
@@ -374,9 +537,23 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
     These visualizations can help you save both time and resources running expensive hyperparameter optimizations by honing in on the parameters (and value ranges) that are the most important, and thereby worthy of further exploration.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(sweep_complete):
+    mo.md(f"""
+    ## Verify your sweep
+
+    In W&B, open project `{sweep_complete["project"]}` and select the sweep with
+    ID `{sweep_complete["sweep_id"]}`. Confirm that it contains
+    {sweep_complete["run_count"]} completed runs, then inspect the parallel
+    coordinates and hyperparameter importance panels to see which settings had
+    the strongest relationship with `accuracy`.
     """)
     return
 
