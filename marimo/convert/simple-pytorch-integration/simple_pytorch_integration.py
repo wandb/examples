@@ -30,7 +30,12 @@ with app.setup:
     from tqdm.auto import tqdm
 
     # Device configuration
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda:0")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
 
 
 @app.cell(hide_code=True)
@@ -242,7 +247,7 @@ def _():
     2. we `train` the model accordingly and finally
     3. `test` it to see how training went.
 
-    We'll implement training and testing below; data loading and model definitions are in **Helper functions** near the end.
+    We'll implement these functions below.
     """)
     return
 
@@ -304,6 +309,111 @@ def _():
     you can log the data with `wandb sync`.
     """)
     return
+
+
+@app.function
+def make(config):
+    # Make the data
+    train, test = get_data(train=True), get_data(train=False)
+    train_loader = make_loader(train, batch_size=config.batch_size, shuffle=True)
+    test_loader = make_loader(test, batch_size=config.batch_size, shuffle=False)
+
+    # Make the model
+    model = ConvNet(config.kernels, config.classes).to(device)
+
+    # Make the loss and optimizer
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    return model, train_loader, test_loader, criterion, optimizer
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Define the Data Loading and Model
+
+    Now, we need to specify how the data is loaded and what the model looks like.
+    This part is very important, but it is no different from what it would be without W&B.
+
+    `get_data` uses every fifth MNIST image to keep this tutorial small. `make` combines the data, model, loss, and optimizer. The loaders use the notebook process so the same code works in local and hosted sessions.
+    """)
+    return
+
+
+@app.function
+def get_data(slice=5, train=True):
+    # remove slow mirror from list of MNIST mirrors
+    torchvision.datasets.MNIST.mirrors = [
+        mirror for mirror in torchvision.datasets.MNIST.mirrors
+        if not mirror.startswith("http://yann.lecun.com")
+    ]
+    full_dataset = torchvision.datasets.MNIST(
+        root="data", train=train, transform=transforms.ToTensor(), download=True
+    )
+    #  equiv to slicing with [::slice]
+    sub_dataset = torch.utils.data.Subset(
+        full_dataset, indices=range(0, len(full_dataset), slice)
+    )
+    return sub_dataset
+
+
+@app.function
+def make_loader(dataset, batch_size, shuffle):
+    return torch.utils.data.DataLoader(
+        dataset=dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        pin_memory=device.type == "cuda",
+        num_workers=0,
+    )
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    Defining the model is normally the fun part!
+
+    But nothing changes with `wandb`,
+    so we're gonna stick with a standard ConvNet architecture.
+
+    Don't be afraid to mess around with this and try some experiments --
+    all your results will be logged on [wandb.ai](https://wandb.ai)!
+    """)
+    return
+
+
+@app.class_definition
+# Conventional and convolutional neural network
+
+class ConvNet(nn.Module):
+    def __init__(self, kernels, classes=10):
+        super(ConvNet, self).__init__()
+
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(1, kernels[0], kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+        )
+        self.layer2 = nn.Sequential(
+            nn.Conv2d(kernels[0], kernels[1], kernel_size=5, stride=1, padding=2),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+        )
+        self.fc = nn.Linear(7 * 7 * kernels[-1], classes)
+
+    def forward(self, x):
+        out = self.layer1(x)
+        out = self.layer2(out)
+        out = out.reshape(out.size(0), -1)
+        out = self.fc(out)
+        return out
+
+
+@app.cell
+def _(config):
+    model = ConvNet(config["kernels"], config["classes"])
+    model
+    return (model,)
 
 
 @app.cell(hide_code=True)
@@ -573,8 +683,8 @@ def _(config, training_form, wandb_settings):
 @app.cell
 def _(training_config, training_settings):
     # Build, train and analyze the model with the pipeline
-    model, training_result = model_pipeline(training_config, **training_settings)
-    return (training_result,)
+    trained_model, training_result = model_pipeline(training_config, **training_settings)
+    return trained_model, training_result
 
 
 @app.cell(hide_code=True)
@@ -650,104 +760,6 @@ def _():
     mo.md(r"""
     ## Helper functions
 
-    ### Define the Data Loading and Model
-
-    Now, we need to specify how the data is loaded and what the model looks like.
-    This part is very important, but it is no different from what it would be without W&B.
-
-    `get_data` uses every fifth MNIST image to keep this tutorial small. `make` combines the data, model, loss, and optimizer. The loaders use the notebook process so the same code works in local and hosted sessions.
-    """)
-    return
-
-
-@app.function
-def make(config):
-    # Make the data
-    train, test = get_data(train=True), get_data(train=False)
-    train_loader = make_loader(train, batch_size=config.batch_size, shuffle=True)
-    test_loader = make_loader(test, batch_size=config.batch_size, shuffle=False)
-
-    # Make the model
-    model = ConvNet(config.kernels, config.classes).to(device)
-
-    # Make the loss and optimizer
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
-    return model, train_loader, test_loader, criterion, optimizer
-
-
-@app.function
-def get_data(slice=5, train=True):
-    # remove slow mirror from list of MNIST mirrors
-    torchvision.datasets.MNIST.mirrors = [
-        mirror for mirror in torchvision.datasets.MNIST.mirrors
-        if not mirror.startswith("http://yann.lecun.com")
-    ]
-    full_dataset = torchvision.datasets.MNIST(
-        root="data", train=train, transform=transforms.ToTensor(), download=True
-    )
-    #  equiv to slicing with [::slice]
-    sub_dataset = torch.utils.data.Subset(
-        full_dataset, indices=range(0, len(full_dataset), slice)
-    )
-    return sub_dataset
-
-
-@app.function
-def make_loader(dataset, batch_size, shuffle):
-    return torch.utils.data.DataLoader(
-        dataset=dataset,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        pin_memory=device.type == "cuda",
-        num_workers=0,
-    )
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    Defining the model is normally the fun part!
-
-    But nothing changes with `wandb`,
-    so we're gonna stick with a standard ConvNet architecture.
-
-    Don't be afraid to mess around with this and try some experiments --
-    all your results will be logged on [wandb.ai](https://wandb.ai)!
-    """)
-    return
-
-
-@app.class_definition
-# Conventional and convolutional neural network
-
-class ConvNet(nn.Module):
-    def __init__(self, kernels, classes=10):
-        super(ConvNet, self).__init__()
-
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(1, kernels[0], kernel_size=5, stride=1, padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-        )
-        self.layer2 = nn.Sequential(
-            nn.Conv2d(kernels[0], kernels[1], kernel_size=5, stride=1, padding=2),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-        )
-        self.fc = nn.Linear(7 * 7 * kernels[-1], classes)
-
-    def forward(self, x):
-        out = self.layer1(x)
-        out = self.layer2(out)
-        out = out.reshape(out.size(0), -1)
-        out = self.fc(out)
-        return out
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
     ### Training and reproducibility helpers
 
     The forward pass, backward pass, and optimizer step are standard PyTorch. Resetting numeric seeds for every submitted experiment makes comparisons repeatable on the same device and software stack.
