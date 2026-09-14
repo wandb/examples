@@ -19,6 +19,7 @@ with app.setup:
     import tensorflow_datasets as tfds
     from tensorflow.keras import layers, models
 
+    # Weights and Biases related imports
     import wandb
     from wandb.integration.keras import WandbMetricsLogger
 
@@ -260,15 +261,18 @@ def _(configs, model, trainloader, validloader, wandb_settings):
     if wandb.run is not None:
         wandb.run.finish()
 
+    # Initialize a W&B run
     with wandb.init(**wandb_settings, config=configs) as training_run:
         wandb_run_url = training_run.url
+        # Train your model
         training_history = model.fit(
             trainloader,
             epochs=configs["epochs"],
             validation_data=validloader,
             shuffle=False,  # The tf.data training pipeline already shuffles.
-            callbacks=[WandbMetricsLogger(log_freq=10)],
+            callbacks=[WandbMetricsLogger(log_freq=10)],  # Notice the use of WandbMetricsLogger here
         )
+        # Close the W&B run
     training_result = {
         "url": wandb_run_url,
         "epochs": len(training_history.history["loss"]),
@@ -304,8 +308,14 @@ def _():
 
 @app.function
 def parse_data(example, num_classes):
-    image = tf.cast(example["image"], tf.float32)
-    label = tf.one_hot(example["label"], depth=num_classes)
+    # Get image
+    image = example["image"]
+    # image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+    image = tf.cast(image, tf.float32)
+
+    # Get label
+    label = example["label"]
+    label = tf.one_hot(label, depth=num_classes)
     return image, label
 
 

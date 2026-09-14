@@ -29,6 +29,7 @@ with app.setup:
     import wandb
     from tqdm.auto import tqdm
 
+    # Device configuration
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
@@ -64,17 +65,26 @@ def _():
 
     ### In pseudocode, what we'll do is:
     ```python
+    # import the library
     import wandb
 
+    # capture a dictionary of hyperparameters with config
     config = {"learning_rate": 0.001, "epochs": 100, "batch_size": 128}
+
+    # start a new experiment
     with wandb.init(project="new-sota-model", config=config) as run:
+        # set up model and data
         model, dataloader = get_model(), get_data()
+
+        # optional: track gradients
         run.watch(model)
 
         for batch in dataloader:
             metrics = model.training_step(batch)
+            # log metrics inside your training loop to visualize model performance
             run.log(metrics)
 
+        # optional: save model at the end
         model.to_onnx()
         run.save("model.onnx")
     ```
@@ -243,16 +253,21 @@ def model_pipeline(hyperparameters, project, entity=None, name=None, export_onnx
     if wandb.run is not None:
         wandb.run.finish()
 
-    # One run owns the entire experiment and finishes when this block exits.
+    # tell wandb to get started
     with wandb.init(
         project=project, entity=entity, name=name, config=hyperparameters
     ) as run:
-        # Access hyperparameters through run.config so logging matches execution.
+        # access all HPs through run.config, so logging matches execution!
         config = run.config
+
+        # make the model, data, and optimization problem
         model, train_loader, test_loader, criterion, optimizer = make(config)
         print(model)
 
+        # and use them to train the model
         train(model, train_loader, criterion, optimizer, config, run)
+
+        # and test its final performance
         test_accuracy = test(model, test_loader, run, export_onnx=export_onnx)
         result = {
             "url": run.url,
@@ -335,12 +350,13 @@ def _():
 
 @app.function
 def train(model, loader, criterion, optimizer, config, run):
-    # Track gradients and parameters every ten training steps.
+    # Tell wandb to watch what the model gets up to: gradients, weights, and more!
     run.watch(model, criterion, log="all", log_freq=10)
     model.train()
 
+    # Run training and track with wandb
     total_batches = len(loader) * config.epochs
-    example_ct = 0
+    example_ct = 0  # number of examples seen
     batch_ct = 0
     for epoch in tqdm(range(config.epochs)):
         for images, labels in loader:
@@ -348,7 +364,7 @@ def train(model, loader, criterion, optimizer, config, run):
             example_ct += len(images)
             batch_ct += 1
 
-            # Report every 25th batch and the final batch, including short runs.
+            # Report metrics every 25th batch
             if batch_ct % 25 == 0 or batch_ct == total_batches:
                 train_log(loss, example_ct, epoch, run)
 
@@ -373,6 +389,7 @@ def _():
 
 @app.function
 def train_log(loss, example_ct, epoch, run):
+    # Where the magic happens
     run.log({"epoch": epoch, "loss": loss}, step=example_ct)
     print(f"Loss after {str(example_ct).zfill(5)} examples: {loss:.3f}")
 
@@ -419,7 +436,7 @@ def _():
 def test(model, test_loader, run, export_onnx=True):
     model.eval()
 
-    # Run the model on held-out examples.
+    # Run the model on some test examples
     with torch.no_grad():
         correct, total = 0, 0
         for images, labels in test_loader:
@@ -434,7 +451,7 @@ def test(model, test_loader, run, export_onnx=True):
     run.log({"test_accuracy": test_accuracy})
 
     if export_onnx:
-        # Keep each run's model separate, and save it to that run's Files tab.
+        # Save the model in the exchangeable ONNX format
         model_path = Path(run.dir) / "model.onnx"
         # Use the classic exporter, which needs only the onnx dependency.
         torch.onnx.export(model, images[:1], str(model_path), dynamo=False)
@@ -555,7 +572,7 @@ def _(config, training_form, wandb_settings):
 
 @app.cell
 def _(training_config, training_settings):
-    # Build, train, and analyze the model with the pipeline.
+    # Build, train and analyze the model with the pipeline
     model, training_result = model_pipeline(training_config, **training_settings)
     return (training_result,)
 
@@ -645,13 +662,15 @@ def _():
 
 @app.function
 def make(config):
-    # Make the data.
+    # Make the data
     train, test = get_data(train=True), get_data(train=False)
     train_loader = make_loader(train, batch_size=config.batch_size, shuffle=True)
     test_loader = make_loader(test, batch_size=config.batch_size, shuffle=False)
 
-    # Make the model, loss, and optimizer.
+    # Make the model
     model = ConvNet(config.kernels, config.classes).to(device)
+
+    # Make the loss and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     return model, train_loader, test_loader, criterion, optimizer
@@ -659,10 +678,15 @@ def make(config):
 
 @app.function
 def get_data(slice=5, train=True):
+    # remove slow mirror from list of MNIST mirrors
+    torchvision.datasets.MNIST.mirrors = [
+        mirror for mirror in torchvision.datasets.MNIST.mirrors
+        if not mirror.startswith("http://yann.lecun.com")
+    ]
     full_dataset = torchvision.datasets.MNIST(
         root="data", train=train, transform=transforms.ToTensor(), download=True
     )
-    # Equivalent to slicing with [::slice].
+    #  equiv to slicing with [::slice]
     sub_dataset = torch.utils.data.Subset(
         full_dataset, indices=range(0, len(full_dataset), slice)
     )
@@ -735,19 +759,22 @@ def _():
 def train_batch(images, labels, model, optimizer, criterion):
     images, labels = images.to(device), labels.to(device)
 
-    # Forward pass.
+    # Forward pass ➡
     outputs = model(images)
     loss = criterion(outputs, labels)
 
-    # Backward pass and optimizer step.
+    # Backward pass ⬅
     optimizer.zero_grad()
     loss.backward()
+
+    # Step with optimizer
     optimizer.step()
     return loss.item()
 
 
 @app.function
 def seed_everything(seed):
+    # Ensure deterministic behavior
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)

@@ -36,9 +36,6 @@ with app.setup:
     )
     from transformers.integrations import WandbCallback
 
-    MODEL_NAME = "gpt2"
-    BLOCK_SIZE = 128
-
 
 @app.cell(hide_code=True)
 def _():
@@ -164,7 +161,7 @@ def _(wandb_login_form):
 
 
 @app.cell(hide_code=True)
-def _(training_form, wandb_settings):
+def _(BLOCK_SIZE, MODEL_NAME, training_form, wandb_settings):
     mo.stop(training_form.value is None, mo.md("Submit the training form to prepare the dataset and train."))
     mo.stop(not training_form.value["project"].strip(), mo.callout("Enter a W&B project name.", kind="warn"))
     mo.stop(training_form.value["frequency"] > training_form.value["epochs"], mo.callout("Set the prediction frequency no higher than the number of epochs.", kind="warn"))
@@ -173,6 +170,7 @@ def _(training_form, wandb_settings):
     training_config["run_name"] = training_config["run_name"].strip() or None
     training_config["entity"] = wandb_settings["entity"]
     training_config["model"] = MODEL_NAME
+    training_config["block_size"] = BLOCK_SIZE
     return (training_config,)
 
 
@@ -197,6 +195,7 @@ def _(training_config):
             ("validation", int(training_config["validation_texts"])),
         ]
     })
+    # look at a sample from the train dataset
     datasets["train"][0]
     return (datasets,)
 
@@ -218,6 +217,12 @@ def _():
     We will use the [`gpt2`](https://huggingface.co/gpt2) architecture for this example. You can pick any of the checkpoints listed [here](https://huggingface.co/models?filter=causal-lm) instead.
     """)
     return
+
+
+@app.cell
+def _():
+    MODEL_NAME = "gpt2"
+    return (MODEL_NAME,)
 
 
 @app.cell
@@ -255,10 +260,22 @@ def _():
 
 
 @app.cell
-def _(tokenized_datasets, tokenizer):
-    lm_datasets = tokenized_datasets.map(group_texts, batched=True, batch_size=1000)
+def _():
+    BLOCK_SIZE = 128
+    return (BLOCK_SIZE,)
+
+
+@app.cell
+def _(BLOCK_SIZE, tokenized_datasets, tokenizer):
+    lm_datasets = tokenized_datasets.map(
+        group_texts,
+        fn_kwargs={"block_size": BLOCK_SIZE},
+        batched=True,
+        batch_size=1000,
+    )
     if not len(lm_datasets["train"]) or not len(lm_datasets["validation"]):
-        raise ValueError("Too few tokens for a 128-token block. Increase the text limits and resubmit.")
+        raise ValueError(f"Too few tokens for a {BLOCK_SIZE}-token block. Increase the text limits and resubmit.")
+    # look at a sample from the preprocessed dataset
     tokenizer.decode(lm_datasets["train"][0]["input_ids"])
     return (lm_datasets,)
 
@@ -289,9 +306,28 @@ def _():
 
 @app.class_definition
 class WandbPredictionProgressCallback(WandbCallback):
-    """Log aligned next-token predictions from a fixed validation sample."""
+    """Custom WandbCallback to log model predictions during training.
+
+    This callback logs model predictions and labels to a wandb.Table at each selected evaluation during training.
+    It allows to visualize the model predictions as the training progresses.
+
+    Attributes:
+        trainer (Trainer): The Hugging Face Trainer instance.
+        tokenizer (AutoTokenizer): The tokenizer associated with the model.
+        sample_dataset (Dataset): A subset of the validation dataset for generating predictions.
+        num_samples (int, optional): Number of samples to select from the validation dataset for generating predictions. Defaults to 10.
+    """
 
     def __init__(self, trainer, tokenizer, val_dataset, num_samples=10, freq=1):
+        """Initializes the WandbPredictionProgressCallback instance.
+
+        Args:
+            trainer (Trainer): The Hugging Face Trainer instance.
+            tokenizer (AutoTokenizer): The tokenizer associated with the model.
+            val_dataset (Dataset): The validation dataset.
+            num_samples (int, optional): Number of samples to select from the validation dataset for generating predictions. Defaults to 10.
+            freq (int, optional): Control the frequency of logging. Defaults to 1.
+        """
         super().__init__()
         self.trainer = trainer
         self.tokenizer = tokenizer
@@ -300,13 +336,19 @@ class WandbPredictionProgressCallback(WandbCallback):
 
     def on_evaluate(self, args, state, control, **kwargs):
         super().on_evaluate(args, state, control, **kwargs)
+        # control the frequency of logging by logging the predictions every `freq` epochs
         epoch = round(state.epoch or 0)
         if epoch > 0 and epoch % self.freq == 0:
+            # generate predictions
             predictions = self.trainer.predict(self.sample_dataset)
-            predictions_df = pd.DataFrame(decode_predictions(self.tokenizer, predictions))
+            # decode predictions and labels
+            predictions = decode_predictions(self.tokenizer, predictions)
+            # add predictions to a wandb.Table
+            predictions_df = pd.DataFrame(predictions)
             predictions_df["epoch"] = state.epoch
             if state.is_world_process_zero:
                 records_table = wandb.Table(dataframe=predictions_df)
+                # log the table to wandb
                 wandb.run.log({"sample_predictions": records_table})
 
 
@@ -342,9 +384,9 @@ def train_model(training_config, lm_datasets, tokenizer, callback_class):
                 config={
                     key: value for key, value in training_config.items()
                     if key not in {"project", "entity", "run_name"}
-                } | {"model": MODEL_NAME, "block_size": BLOCK_SIZE},
+                },
             ) as run:
-                model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
+                model = AutoModelForCausalLM.from_pretrained(training_config["model"])
                 training_args = TrainingArguments(
                     output_dir=output_dir,
                     eval_strategy="epoch",
@@ -471,14 +513,18 @@ def tokenize_function(examples, tokenizer):
 
 
 @app.function
-def group_texts(examples):
+def group_texts(examples, block_size):
+    # Concatenate all texts.
     concatenated_examples = {
         key: list(chain.from_iterable(value)) for key, value in examples.items()
     }
     total_length = len(concatenated_examples["input_ids"])
-    total_length = (total_length // BLOCK_SIZE) * BLOCK_SIZE
+    # We drop the small remainder, we could add padding if the model supported it instead of this drop, you can
+    # customize this part to your needs.
+    total_length = (total_length // block_size) * block_size
+    # Split by chunks of max_len.
     result = {
-        key: [tokens[i:i + BLOCK_SIZE] for i in range(0, total_length, BLOCK_SIZE)]
+        key: [tokens[i:i + block_size] for i in range(0, total_length, block_size)]
         for key, tokens in concatenated_examples.items()
     }
     result["labels"] = [tokens.copy() for tokens in result["input_ids"]]
@@ -503,6 +549,11 @@ def decode_predictions(tokenizer, predictions):
         "labels": tokenizer.batch_decode(labels, skip_special_tokens=True),
         "predictions": tokenizer.batch_decode(predicted_ids, skip_special_tokens=True),
     }
+
+
+@app.cell
+def _():
+    return
 
 
 if __name__ == "__main__":

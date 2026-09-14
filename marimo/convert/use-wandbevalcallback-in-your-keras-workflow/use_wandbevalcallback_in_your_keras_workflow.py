@@ -20,6 +20,7 @@ with app.setup:
     import tensorflow_datasets as tfds
     from tensorflow.keras import layers, models
 
+    # Weights and Biases related imports
     import wandb
     from wandb.integration.keras import WandbEvalCallback, WandbMetricsLogger
 
@@ -280,6 +281,7 @@ def _():
                 )
 
         def add_model_predictions(self, epoch, logs=None):
+            # Get predictions
             preds = self._inference()
             table_idxs = self.data_table_ref.get_index()
             for idx in table_idxs:
@@ -319,8 +321,10 @@ def _(WandbClfEvalCallback, configs, model, trainloader, validloader, wandb_sett
     if wandb.run is not None:
         wandb.run.finish()
 
+    # Initialize a W&B run
     with wandb.init(**wandb_settings, config=configs) as training_run:
         wandb_run_url = training_run.url
+        # Train your model
         training_history = model.fit(
             trainloader,
             epochs=configs["epochs"],
@@ -333,9 +337,10 @@ def _(WandbClfEvalCallback, configs, model, trainloader, validloader, wandb_sett
                     data_table_columns=["idx", "image", "ground_truth"],
                     pred_table_columns=["epoch", "idx", "image", "ground_truth", "prediction"],
                     num_samples=100,
-                ),
+                ),  # Notice the use of WandbEvalCallback here
             ],
         )
+        # Close the W&B run
     training_result = {
         "url": wandb_run_url,
         "epochs": len(training_history.history["loss"]),
@@ -372,8 +377,14 @@ def _():
 
 @app.function
 def parse_data(example, num_classes):
-    image = tf.cast(example["image"], tf.float32)
-    label = tf.one_hot(example["label"], depth=num_classes)
+    # Get image
+    image = example["image"]
+    # image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+    image = tf.cast(image, tf.float32)
+
+    # Get label
+    label = example["label"]
+    label = tf.one_hot(label, depth=num_classes)
     return image, label
 
 

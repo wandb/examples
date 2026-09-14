@@ -183,7 +183,7 @@ def _():
             # (b, 1, 28, 28) -> (b, 1*28*28)
             x = x.view(batch_size, -1)
 
-            # Apply two hidden linear + ReLU layers, then the output layer.
+            # let's do 3 x linear + 2 x relu
             x = self.layer_1(x)
             x = F.relu(x)
             x = self.layer_2(x)
@@ -294,11 +294,15 @@ def _():
         def on_validation_batch_end(
             self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0
         ):
-            """Log the first validation batch's predictions after each epoch."""
+            """Called when the validation batch ends."""
+
+            # `outputs` comes from `LightningModule.validation_step`
+            # which corresponds to our model predictions in this case
+
+            # Let's log 20 sample image predictions from first batch
             if trainer.sanity_checking or not trainer.is_global_zero or batch_idx != 0:
                 return
 
-            # `outputs` contains the predictions returned by validation_step.
             n = 20
             x, y = batch
             images = [(img.detach().cpu() * 0.3081 + 0.1307).clamp(0, 1) for img in x[:n]]
@@ -310,10 +314,10 @@ def _():
             ]
             wandb_logger = trainer.logger
 
-            # Option 1: log images with WandbLogger.log_image.
+            # Option 1: log images with `WandbLogger.log_image`
             wandb_logger.log_image(key="sample_images", images=images, caption=captions)
 
-            # Option 2: log predictions as a W&B Table.
+            # Option 2: log predictions as a Table
             columns = ["image", "ground truth", "prediction"]
             data = [
                 [wandb.Image(img), y_i, y_pred]
@@ -378,13 +382,16 @@ def train_model(config, wandb_settings, model_class, prediction_callback_class, 
 
     # A context manager closes this run before a new submission can create one.
     with wandb.init(
-        project=config["project"],
+        project=config["project"],  # group runs in the selected project
         entity=wandb_settings["entity"],
         name=config["run_name"],
         config={"epochs": config["epochs"], "batch_size": config["batch_size"], "seed": 42},
         job_type="train",
     ) as run:
-        wandb_logger = WandbLogger(experiment=run, log_model="all")
+        wandb_logger = WandbLogger(
+            experiment=run,
+            log_model="all",  # log all new checkpoints during training
+        )
         checkpoint_callback = ModelCheckpoint(
             dirpath=str(Path(run.dir) / "checkpoints"),
             monitor="val_accuracy",
@@ -393,11 +400,14 @@ def train_model(config, wandb_settings, model_class, prediction_callback_class, 
         )
         wandb_logger.watch(model, log="all", log_freq=100, log_graph=False)
         trainer = Trainer(
-            logger=wandb_logger,
-            callbacks=[log_predictions_callback, checkpoint_callback],
-            accelerator="auto",
+            logger=wandb_logger,  # W&B integration
+            callbacks=[
+                log_predictions_callback,  # logging of sample predictions
+                checkpoint_callback,  # our model checkpoint callback
+            ],
+            accelerator="auto",  # use GPU when available
             devices=1,
-            max_epochs=config["epochs"],
+            max_epochs=config["epochs"],  # number of epochs
             log_every_n_steps=10,
         )
         trainer.fit(model, training_loader, validation_loader)
