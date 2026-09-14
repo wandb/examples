@@ -245,7 +245,7 @@ def _():
 
     1. we first `make` a model, plus associated data and optimizer, then
     2. we `train` the model accordingly and finally
-    3. `test` it to see how training went.
+    3. `evaluate` it to see how training went.
 
     We'll implement these functions below.
     """)
@@ -273,7 +273,7 @@ def model_pipeline(hyperparameters, project, entity=None, name=None, export_onnx
         train(model, train_loader, criterion, optimizer, config, run)
 
         # and test its final performance
-        test_accuracy = test(model, test_loader, run, export_onnx=export_onnx)
+        test_accuracy = evaluate(model, test_loader, run, export_onnx=export_onnx)
         result = {
             "url": run.url,
             "name": run.name,
@@ -543,7 +543,7 @@ def _():
 
 
 @app.function
-def test(model, test_loader, run, export_onnx=True):
+def evaluate(model, test_loader, run, export_onnx=True):
     model.eval()
 
     # Run the model on some test examples
