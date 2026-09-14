@@ -22,6 +22,9 @@ with app.setup:
     import tempfile
     from itertools import chain
 
+    # This tutorial uses PyTorch; disable Transformers' optional TensorFlow backend.
+    os.environ["USE_TF"] = "0"
+
     import marimo as mo
     import pandas as pd
     import torch
