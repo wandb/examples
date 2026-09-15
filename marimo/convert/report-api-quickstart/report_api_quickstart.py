@@ -5,7 +5,7 @@
 #     "pandas>=2.0",
 #     "pillow>=10.0",
 #     "requests>=2.31",
-#     "wandb>=0.18",
+#     "wandb>=0.19.10",
 #     "wandb-workspaces>=0.1",
 # ]
 # ///
@@ -210,7 +210,11 @@ def log_dummy_data(entity, project):
         displacement1 = random.random() * 2
         displacement2 = random.random() * 4
         with wandb.init(
-            entity=entity, project=project, config=config, name=run_name
+            entity=entity,
+            project=project,
+            config=config,
+            name=run_name,
+            reinit="create_new",
         ) as run:
             for step in range(1000):
                 run.log(
@@ -254,7 +258,11 @@ def log_dummy_data(entity, project):
                 )
 
     with wandb.init(
-        entity=entity, project=project, config=config, name=run_names[i + 1]
+        entity=entity,
+        project=project,
+        config=config,
+        name=run_names[i + 1],
+        reinit="create_new",
     ) as run:
         img = get_image(
             "https://www.akc.org/wp-content/uploads/2017/11/Shiba-Inu-standing-in-profile-outdoors.jpg"
@@ -318,6 +326,7 @@ def log_dummy_lineage(entity, lineage_project):
                 entity=entity,
                 project=lineage_project,
                 job_type=step.job_type,
+                reinit="create_new",
             ) as run:
                 # use
                 uses = step.uses_per_run
