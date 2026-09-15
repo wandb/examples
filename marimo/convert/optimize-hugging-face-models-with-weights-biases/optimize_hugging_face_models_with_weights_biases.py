@@ -1,25 +1,48 @@
 # /// script
-# dependencies = ["accelerate", "datasets", "evaluate", "transformers @ git+https://github.com/huggingface/transformers", "wandb"]
+# requires-python = ">=3.11"
+# dependencies = [
+#     "accelerate>=1.10",
+#     "datasets>=3.0",
+#     "evaluate>=0.4",
+#     "fsspec[http]>=2025.7.0",
+#     "ipython>=9.0",
+#     "marimo>=0.24.0",
+#     "numpy>=1.26",
+#     "protobuf>=5",
+#     "scikit-learn>=1.5",
+#     "scipy>=1.13",
+#     "sentencepiece>=0.2,!=0.1.92",
+#     "torch>=2.6",
+#     "transformers @ git+https://github.com/huggingface/transformers.git",
+#     "wandb>=0.18",
+# ]
 # ///
 
 import marimo
 
-__generated_with = "0.24.0"
-app = marimo.App()
+__generated_with = "0.24.2"
+app = marimo.App(
+    width="medium",
+    app_title="Optimize Hugging Face Models with Weights & Biases",
+)
 
 
 @app.cell
 def _():
-    import marimo as mo
-
-    return (mo,)
-
-
-@app.cell
-def _():
+    import os
     import subprocess
+    import sys
+    import tempfile
+    import uuid
 
-    return (subprocess,)
+    import fsspec
+    import marimo as mo
+    import torch
+    import wandb
+
+    # This is a PyTorch tutorial; skip optional TensorFlow/Keras imports.
+    os.environ["USE_TF"] = "0"
+    return fsspec, mo, os, subprocess, sys, tempfile, torch, uuid, wandb
 
 
 @app.cell(hide_code=True)
@@ -35,7 +58,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Optimize 🤗 Hugging Face models with Weights & Biases
+    # Optimize Hugging Face models with Weights & Biases
     """)
     return
 
@@ -45,12 +68,7 @@ def _(mo):
     mo.md(r"""
     [Hugging Face](https://huggingface.co/) provides tools to quickly train neural networks for NLP (Natural Language Processing) on any task (classification, translation, question answering, etc) and any dataset with PyTorch and TensorFlow 2.0.
 
-    Coupled with [Weights & Biases integration](https://docs.wandb.ai/integrations/huggingface), you can quickly train and monitor models for full traceability and reproducibility without any extra line of code! You just need to install the library, sign in, and your experiments will automatically be logged:
-
-    ```bash
-    pip install wandb
-    wandb login
-    ```
+    Coupled with [Weights & Biases integration](https://docs.wandb.ai/models/integrations/huggingface_transformers), you can quickly train and monitor models for full traceability and reproducibility without any extra line of code! The notebook metadata provides the libraries; use the submitted authentication form below to sign in before starting an experiment.
 
     **Note**: To enable logging to W&B, set `report_to` to `wandb` in your `TrainingArguments` or script.
     """)
@@ -84,67 +102,129 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## 🛠️ Installation and set-up
+    ## Installation and set-up
 
     We need the following 🤗 Hugging Face libraries:
     * [transformers](https://huggingface.co/transformers/) contains an API for training models and many pre-trained models
-    * [tokenizers](https://huggingface.co/docs/tokenizers/python/latest/) is automatically installed by transformers and "tokenize" our data (ie it converts text to sequence of numbers)
+    * [tokenizers](https://huggingface.co/docs/tokenizers) is automatically installed by transformers and "tokenize" our data (ie it converts text to sequence of numbers)
     * [datasets](https://huggingface.co/docs/datasets/) contains a rich source of data and common metrics, perfect for prototyping
 
-    We also install `wandb` to automatically instrument our training.
+    The notebook dependency metadata includes these libraries, the current
+    Transformers development version required by `run_glue.py`, and `wandb`
+    for automatic experiment tracking.
     """)
-    return
-
-
-@app.cell
-def _(subprocess):
-    # packages added via marimo's package management: datasets wandb evaluate accelerate !pip install datasets wandb evaluate accelerate -qU
-    #! wget https://raw.githubusercontent.com/huggingface/transformers/master/examples/pytorch/text-classification/run_glue.py
-    subprocess.call(['wget', 'https://raw.githubusercontent.com/huggingface/transformers/master/examples/pytorch/text-classification/run_glue.py'])
-    return
-
-
-@app.cell
-def _():
-    # the run_glue.py script requires transformers dev
-    # packages added via marimo's package management: git+https://github.com/huggingface/transformers !pip install -q git+https://github.com/huggingface/transformers
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    We finally make sure we're logged into W&B so that our experiments can be associated to our account.
+    ## Authentication
+
+    Enter your [W&B API key](https://wandb.ai/authorize) and, if needed, your
+    team or entity. Leave the key blank to use `WANDB_API_KEY` from molab's
+    Secrets panel or credentials already configured in this runtime. Merely
+    editing the fields does not authenticate, download assets, or create a run.
     """)
-    return
-
-
-@app.cell
-def _():
-    import wandb
-
-    return (wandb,)
-
-
-@app.cell
-def _(wandb):
-    wandb.login()
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
+    _api_key_input = mo.ui.text(
+        value="",
+        kind="password",
+        label="W&B API key (blank uses runtime credentials)",
+        full_width=True,
+    )
+    _entity_input = mo.ui.text(
+        value="",
+        label="W&B entity or team (blank uses your default)",
+        full_width=True,
+    )
+    _project_input = mo.ui.text(
+        value="huggingface-demo",
+        label="W&B project",
+        full_width=True,
+    )
+    wandb_login_form = (
+        mo.md("{api_key}\n\n{entity}\n\n{project}")
+        .batch(
+            api_key=_api_key_input,
+            entity=_entity_input,
+            project=_project_input,
+        )
+        .form(submit_button_label="Connect to W&B", bordered=True)
+    )
+    wandb_login_form
+    return (wandb_login_form,)
+
+
+@app.cell(hide_code=True)
+def _(mo, wandb, wandb_login_form):
+    mo.stop(
+        wandb_login_form.value is None,
+        mo.callout(
+            mo.md("Submit the authentication form to continue."),
+            kind="info",
+        ),
+    )
+
+    _submitted_login = wandb_login_form.value
+    _api_key = _submitted_login["api_key"].strip()
+    _requested_entity = _submitted_login["entity"].strip()
+    _project = _submitted_login["project"].strip() or "huggingface-demo"
+    try:
+        _login_ok = wandb.login(
+            key=_api_key or None,
+            relogin=bool(_api_key),
+        )
+        _resolved_entity = _requested_entity or wandb.Api().default_entity
+        _login_error = None
+    except wandb.errors.Error as _error:
+        _login_ok = False
+        _resolved_entity = None
+        _login_error = str(_error)
+
+    mo.stop(
+        not _login_ok or not _resolved_entity,
+        mo.callout(
+            mo.md(
+                "W&B authentication did not complete. Check the API key and "
+                "entity, then submit again.\n\n"
+                f"W&B reported: `{_login_error or 'No default entity was found.'}`"
+            ),
+            kind="danger",
+        ),
+    )
+
+    wandb_settings = {
+        "entity": _resolved_entity,
+        "project": _project,
+    }
+    mo.callout(
+        mo.md(
+            f"Connected to W&B as entity `{_resolved_entity}`. "
+            f"Runs will use project `{_project}`."
+        ),
+        kind="success",
+    )
+    return (wandb_settings,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
     mo.md(r"""
-    ## 💡 Configuration tips
+    ## Configuration tips
 
     W&B integration with Hugging Face can be configured to add extra functionalities:
 
-    * auto-logging of models as artifacts: just set environment varilable `WANDB_LOG_MODEL` to `true`
+    * auto-logging of final models as artifacts: set the `WANDB_LOG_MODEL` environment variable to `end`
     * log histograms of gradients and parameters: by default gradients are logged, you can also log parameters by setting environment variable `WANDB_WATCH` to `all`
     * set custom run names with `run_name` arg present in scripts or as part of `TrainingArguments`
     * organize runs by project with the `WANDB_PROJECT` environment variable
 
-    For more details refer to [W&B + HF integration documentation](https://docs.wandb.ai/integrations/huggingface).
+    For more details refer to [W&B + HF integration documentation](https://docs.wandb.ai/models/integrations/huggingface_transformers).
     """)
     return
 
@@ -152,35 +232,81 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Let's log every trained model.
+    Let's log each final trained model.
     """)
     return
 
 
 @app.cell
 def _():
-    import os
-    os.environ['WANDB_LOG_MODEL'] = 'true'
-    return
+    WANDB_LOG_MODEL = "end"
+    return (WANDB_LOG_MODEL,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## 🚅 Training a new model the quick way!
+    ## Training a new model the quick way!
 
-    When working on a new problem, you should always check [the summary of task](https://huggingface.co/transformers/task_summary.html) as there will often be a script that can already solve your task. At a minimum they will be a great source of inspiration for your own custom pipeline.
+    When working on a new problem, you should always check [the task guides](https://huggingface.co/docs/transformers/tasks) as there will often be a script that can already solve your task. At a minimum they will be a great source of inspiration for your own custom pipeline.
 
     Let's use the Hugging Face script responsible for training on any GLUE task, such as sequence classification.
     """)
     return
 
 
-@app.cell
-def _(subprocess):
-    #! wget https://raw.githubusercontent.com/huggingface/transformers/master/examples/pytorch/text-classification/run_glue.py
-    subprocess.call(['wget', 'https://raw.githubusercontent.com/huggingface/transformers/master/examples/pytorch/text-classification/run_glue.py'])
-    return
+@app.cell(hide_code=True)
+def _(mo, torch):
+    if torch.cuda.is_available():
+        torch_device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        torch_device = torch.device("mps")
+    else:
+        torch_device = torch.device("cpu")
+
+    _device_notice = None
+    if torch_device.type == "cpu":
+        _device_notice = mo.callout(
+            mo.md(
+                "Training is available on CPU, but the advanced example can take "
+                "substantially longer. Reduce the maximum training steps for a "
+                "quicker walkthrough."
+            ),
+            kind="warn",
+            title="CPU training",
+        )
+    _device_notice
+    return (torch_device,)
+
+
+@app.cell(hide_code=True)
+def _(mo, wandb_settings):
+    _run_name_input = mo.ui.text(
+        value="demo",
+        label="W&B run name",
+        full_width=True,
+    )
+    _max_steps_input = mo.ui.number(
+        start=30,
+        stop=1000,
+        value=300,
+        step=30,
+        label="Maximum training steps",
+    )
+    quick_training_form = (
+        mo.md("{run_name}\n\n{max_steps}")
+        .batch(run_name=_run_name_input, max_steps=_max_steps_input)
+        .form(
+            submit_button_label="Download run_glue.py and train",
+            bordered=True,
+        )
+    )
+    _ready_note = (
+        f"The submitted run will use W&B project `{wandb_settings['project']}` "
+        f"under entity `{wandb_settings['entity']}`."
+    )
+    mo.vstack([mo.md(_ready_note), quick_training_form])
+    return (quick_training_form,)
 
 
 @app.cell(hide_code=True)
@@ -195,10 +321,130 @@ def _(mo):
     return
 
 
+@app.cell(hide_code=True)
+def _(
+    WANDB_LOG_MODEL,
+    mo,
+    os,
+    quick_training_form,
+    uuid,
+    wandb,
+    wandb_settings,
+):
+    mo.stop(
+        quick_training_form.value is None,
+        mo.callout(
+            mo.md(
+                "Review the settings, then submit the form when you are ready "
+                "to download the script and create a W&B run."
+            ),
+            kind="info",
+        ),
+    )
+    _submitted_quick_run = quick_training_form.value
+    _run_name = _submitted_quick_run["run_name"].strip() or "demo"
+    _run_id = uuid.uuid4().hex
+    quick_run_environment = os.environ.copy()
+    quick_run_environment.update(
+        {
+            "WANDB_ENTITY": wandb_settings["entity"],
+            "WANDB_PROJECT": wandb_settings["project"],
+            "WANDB_RUN_ID": _run_id,
+            "WANDB_NAME": _run_name,
+            "WANDB_LOG_MODEL": WANDB_LOG_MODEL,
+        }
+    )
+    quick_run_url = wandb.Settings(
+        entity=wandb_settings["entity"],
+        project=wandb_settings["project"],
+        run_id=_run_id,
+    ).run_url
+    quick_training_request = {
+        "max_steps": int(_submitted_quick_run["max_steps"]),
+        "output_dir": f"/tmp/MRPC-{_run_id}",
+        "run_id": _run_id,
+        "run_name": _run_name,
+    }
+    return quick_run_environment, quick_run_url, quick_training_request
+
+
 @app.cell
-def _(subprocess):
-    #! python run_glue.py --report_to wandb --model_name_or_path bert-base-uncased --task_name MRPC --learning_rate 1e-4 --do_train --do_eval --max_steps 300 --logging_steps 30 --evaluation_strategy steps --output_dir /tmp/MRPC --overwrite_output_dir --run_name demo
-    subprocess.call(['python', 'run_glue.py', '--report_to', 'wandb', '--model_name_or_path', 'bert-base-uncased', '--task_name', 'MRPC', '--learning_rate', '1e-4', '--do_train', '--do_eval', '--max_steps', '300', '--logging_steps', '30', '--evaluation_strategy', 'steps', '--output_dir', '/tmp/MRPC', '--overwrite_output_dir', '--run_name', 'demo'])
+def _(fsspec, quick_training_request):
+    run_glue_url = (
+        "https://raw.githubusercontent.com/huggingface/transformers/"
+        "refs/heads/main/examples/pytorch/text-classification/run_glue.py"
+    )
+    run_glue_path = f"/tmp/run_glue-{quick_training_request['run_id']}.py"
+    with fsspec.open(run_glue_url, "rb") as _source:
+        with open(run_glue_path, "wb") as _destination:
+            _destination.write(_source.read())
+    return (run_glue_path,)
+
+
+@app.cell(hide_code=True)
+def _(mo, quick_run_url):
+    mo.callout(
+        mo.md(
+            f"[Open this training run in W&B]({quick_run_url}) to watch "
+            "metrics and system telemetry appear live."
+        ),
+        kind="info",
+    )
+    quick_run_link_ready = True
+    return (quick_run_link_ready,)
+
+
+@app.cell
+def _(
+    quick_run_environment,
+    quick_run_link_ready,
+    quick_training_request,
+    run_glue_path,
+    subprocess,
+    sys,
+):
+    assert quick_run_link_ready
+    subprocess.run(
+        [
+            sys.executable,
+            run_glue_path,
+            "--report_to",
+            "wandb",
+            "--model_name_or_path",
+            "bert-base-uncased",
+            "--task_name",
+            "MRPC",
+            "--learning_rate",
+            "1e-4",
+            "--do_train",
+            "--do_eval",
+            "--max_steps",
+            str(quick_training_request["max_steps"]),
+            "--logging_steps",
+            "30",
+            "--eval_strategy",
+            "steps",
+            "--output_dir",
+            quick_training_request["output_dir"],
+            "--run_name",
+            quick_training_request["run_name"],
+        ],
+        env=quick_run_environment,
+        check=True,
+    )
+    quick_training_complete = True
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo, quick_run_url):
+    mo.callout(
+        mo.md(
+            "Training finished and the script closed its W&B run. "
+            f"[Inspect the completed run]({quick_run_url})."
+        ),
+        kind="success",
+    )
     return
 
 
@@ -207,10 +453,9 @@ def _(mo):
     mo.md(r"""
     You just trained a model and can now visualize your metrics in your dashboard!
 
-    Just click the [run page](https://docs.wandb.com/ref/app/pages/run-page)
-    link that appears in the `wandb` section output of the cell above,
-    just before training launches
-    and just after ir finishes.
+    Use the live run link above to open the
+    [run page](https://docs.wandb.ai/models/runs/view-logged-runs) while training is
+    in progress or after it finishes.
 
     It should look something like this:
     """)
@@ -230,7 +475,7 @@ def _(mo):
     mo.md(r"""
     In addition, your model files have been saved and versioned, along with associated metadata (evaluation & training metrics).
 
-    Just check the ["Artifacts" tab](https://docs.wandb.com/ref/app/pages/run-page#artifacts-tab) on your run page -- it's the one with the ["stacked pucks" icon](https://stackoverflow.com/questions/2822650/why-is-a-database-always-represented-with-a-cylinder).
+    Just check the ["Artifacts" tab](https://docs.wandb.ai/models/runs/view-logged-runs#artifacts) on your run page -- it's the one with the ["stacked pucks" icon](https://stackoverflow.com/questions/2822650/why-is-a-database-always-represented-with-a-cylinder).
     """)
     return
 
@@ -246,7 +491,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # 🔬 Advanced usage & custom training
+    ## Advanced usage & custom training
 
     Let's create our own logic for a more customized training.
     """)
@@ -256,7 +501,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### ✏️ Preparing a dataset
+    ### Preparing a dataset
 
     The dataset will vary based on the task you work on. Let's work on sequence classification!
 
@@ -276,15 +521,15 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### 🔎 Finding a dataset
+    ### Finding a dataset
 
     If you don't have the right dataset, you can always explore the [Datasets Hub](https://huggingface.co/datasets). The ["topic classification" category](https://huggingface.co/datasets?filter=task_ids:topic-classification) contains many datasets suitable for prototyping this model.
 
-    We select ["Yahoo! Answers Topic Classification"](https://huggingface.co/datasets/yahoo_answers_topics) and visualize it with the [Datasets viewer](https://huggingface.co/datasets/viewer/?dataset=yahoo_answers_topics).
+    We select ["Yahoo! Answers Topic Classification"](https://huggingface.co/datasets/community-datasets/yahoo_answers_topics) and visualize it with the [Datasets viewer](https://huggingface.co/datasets/community-datasets/yahoo_answers_topics/viewer/default/train).
 
     ![image.png](data:image/png;base64,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)
 
-    Each topic number reprersent a unique subject:
+    Each topic number represents a unique subject:
 
     * 0:"Society & Culture"
     * 1:"Science & Mathematics"
@@ -299,18 +544,58 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### 🏷️ Loading a dataset
+    ### Loading a dataset
 
     Any dataset from the Datasets Hub can easily be loaded and is automatically downloaded if not present locally.
     """)
     return
 
 
+@app.cell(hide_code=True)
+def _(mo, wandb_settings):
+    prepare_advanced_button = mo.ui.run_button(
+        label="Download the dataset, tokenizer, and model",
+        kind="success",
+    )
+    _ready_note = (
+        "This downloads the Yahoo! Answers dataset and DistilBERT assets. "
+        "It does not create a W&B run; training has a separate confirmation."
+    )
+    mo.vstack(
+        [
+            mo.md(
+                f"The custom experiment will use W&B project "
+                f"`{wandb_settings['project']}` under entity "
+                f"`{wandb_settings['entity']}`.\n\n{_ready_note}"
+            ),
+            prepare_advanced_button,
+        ]
+    )
+    return (prepare_advanced_button,)
+
+
+@app.cell(hide_code=True)
+def _(mo, prepare_advanced_button):
+    mo.stop(
+        not prepare_advanced_button.value,
+        mo.callout(
+            mo.md(
+                "Click the button above when you are ready to download the "
+                "advanced tutorial assets."
+            ),
+            kind="info",
+        ),
+    )
+    advanced_setup_request = True
+    return (advanced_setup_request,)
+
+
 @app.cell
-def _():
+def _(advanced_setup_request):
+    assert advanced_setup_request
     from datasets import load_dataset
 
-    dataset = load_dataset("yahoo_answers_topics")
+    dataset = load_dataset("community-datasets/yahoo_answers_topics")
     return (dataset,)
 
 
@@ -323,7 +608,8 @@ def _(mo):
 
 
 @app.cell
-def _(dataset):
+def _(advanced_setup_request, dataset):
+    assert advanced_setup_request
     dataset
     return
 
@@ -337,7 +623,8 @@ def _(mo):
 
 
 @app.cell
-def _(dataset):
+def _(advanced_setup_request, dataset):
+    assert advanced_setup_request
     dataset['train'][0]
     return
 
@@ -351,7 +638,8 @@ def _(mo):
 
 
 @app.cell
-def _(dataset):
+def _(advanced_setup_request, dataset):
+    assert advanced_setup_request
     dataset['train'].features['topic'].int2str(4)
     return
 
@@ -365,7 +653,8 @@ def _(mo):
 
 
 @app.cell
-def _(dataset):
+def _(advanced_setup_request, dataset):
+    assert advanced_setup_request
     label_list = dataset['train'].unique('topic')
     label_list.sort()
     label_list
@@ -381,7 +670,8 @@ def _(mo):
 
 
 @app.cell
-def _(label_list):
+def _(advanced_setup_request, label_list):
+    assert advanced_setup_request
     num_labels = len(label_list)
     num_labels
     return (num_labels,)
@@ -396,7 +686,8 @@ def _(mo):
 
 
 @app.cell
-def _(dataset):
+def _(advanced_setup_request, dataset):
+    assert advanced_setup_request
     dataset_1 = dataset.rename_column('topic', 'labels')
     return (dataset_1,)
 
@@ -404,7 +695,7 @@ def _(dataset):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### ⚙️ Tokenizing the dataset
+    ### Tokenizing the dataset
 
     In order to train a neural network, we need to convert our inputs to numbers:
     * the tokenizer divides a sequence of characters into tokens, ie sub-sequences (such as words, characters, sub-words…)
@@ -416,7 +707,8 @@ def _(mo):
 
 
 @app.cell
-def _():
+def _(advanced_setup_request):
+    assert advanced_setup_request
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
     return (tokenizer,)
@@ -431,14 +723,16 @@ def _(mo):
 
 
 @app.cell
-def _(dataset_1):
+def _(advanced_setup_request, dataset_1):
+    assert advanced_setup_request
     sample_input = dataset_1['train'][0]['question_title']
     sample_input
     return (sample_input,)
 
 
 @app.cell
-def _(sample_input, tokenizer):
+def _(advanced_setup_request, sample_input, tokenizer):
+    assert advanced_setup_request
     tokenizer(sample_input)
     return
 
@@ -454,7 +748,8 @@ def _(mo):
 
 
 @app.cell
-def _(dataset_1, tokenizer):
+def _(advanced_setup_request, dataset_1, tokenizer):
+    assert advanced_setup_request
     dataset_2 = dataset_1.map(lambda x: tokenizer(x['question_title'], truncation=True), batched=True)
     return (dataset_2,)
 
@@ -470,7 +765,8 @@ def _(mo):
 
 
 @app.cell
-def _(dataset_2):
+def _(advanced_setup_request, dataset_2):
+    assert advanced_setup_request
     dataset_2['train'][0]
     return
 
@@ -478,7 +774,7 @@ def _(dataset_2):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### ✨ Loading a model
+    ### Loading a model
 
     Plenty of models are available and can be explored on the [Model Hub](https://huggingface.co/models).
 
@@ -488,7 +784,8 @@ def _(mo):
 
 
 @app.cell
-def _(num_labels):
+def _(advanced_setup_request, num_labels):
+    assert advanced_setup_request
     from transformers import AutoModelForSequenceClassification
     model = AutoModelForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=num_labels)
     return (model,)
@@ -505,17 +802,27 @@ def _(mo):
 
 
 @app.cell
-def _(dataset_2, model, tokenizer):
-    import torch
-
+def _(
+    advanced_setup_request,
+    dataset_2,
+    model,
+    tokenizer,
+    torch,
+    torch_device,
+):
+    assert advanced_setup_request
     def get_topic(sentence, tokenize=tokenizer, model=model):
-        inputs = tokenizer(sentence, return_tensors='pt')  # tokenize the input
-        inputs = {name: tensor.cuda() for name, tensor in inputs.items()}
-        model = model.cuda()  # ensure model and inputs are on the same device (GPU)
+        # tokenize the input
+        inputs = tokenize(sentence, return_tensors='pt')
+        # Ensure the model and inputs are on the selected device.
+        inputs = {name: tensor.to(torch_device) for name, tensor in inputs.items()}
+        model = model.to(torch_device)
+        # get prediction - 10 classes "probabilities" (not really true because they still need to be normalized)
         with torch.no_grad():
-            predictions = model(**inputs)[0].cpu().numpy()
-        top_prediction = predictions.argmax().item()  # get prediction - 10 classes "probabilities" (not really true because they still need to be normalized)
-        return dataset_2['train'].features['labels'].int2str(top_prediction)  # get the top prediction class and convert it to its associated label
+            predictions = model(**inputs).logits.cpu().numpy()
+        # get the top prediction class and convert it to its associated label
+        top_prediction = predictions.argmax().item()
+        return dataset_2['train'].features['labels'].int2str(top_prediction)
 
     return (get_topic,)
 
@@ -529,7 +836,8 @@ def _(mo):
 
 
 @app.cell
-def _(get_topic):
+def _(advanced_setup_request, get_topic):
+    assert advanced_setup_request
     get_topic('Why is cheese so much better with wine?')
     return
 
@@ -545,7 +853,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### 🎉 Training the model
+    ### Training the model
 
     We now need to fine-tune the model based on our dataset.
 
@@ -560,21 +868,27 @@ def _(mo):
 def _():
     from transformers import Trainer, TrainingArguments
 
+    ADVANCED_MAX_STEPS = 30000
+    ADVANCED_RUN_NAME = "custom_training"
+    return ADVANCED_MAX_STEPS, ADVANCED_RUN_NAME, Trainer, TrainingArguments
+
+
+@app.cell
+def _(TrainingArguments, advanced_run_request):
     args = TrainingArguments(
         report_to = 'wandb',                     # enable logging to W&B
-        output_dir = 'topic_classification',    # output directory
-        overwrite_output_dir = True,
-        evaluation_strategy = 'steps',          # check evaluation metrics at each epoch
+        output_dir = advanced_run_request['output_dir'],  # temporary output directory
+        eval_strategy = 'steps',                # check evaluation metrics at intervals
         learning_rate = 5e-5,                   # we can customize learning rate
-        max_steps = 30000,
+        max_steps = advanced_run_request['max_steps'],
         logging_steps = 100,                    # we will log every 100 steps
-        eval_steps = 5000,                      # we will perform evaluation every 500 steps
+        eval_steps = 5000,                      # we will perform evaluation every 5,000 steps
         save_steps = 10000,
         load_best_model_at_end = True,
         metric_for_best_model = 'accuracy',
-        run_name = 'custom_training'            # name of the W&B run
+        run_name = advanced_run_request['run_name']  # name of the W&B run
     )
-    return Trainer, args
+    return (args,)
 
 
 @app.cell(hide_code=True)
@@ -590,25 +904,123 @@ def _(mo):
     mo.md(r"""
     We can optionally define metrics to calculate in addition to the loss through the `compute_metrics` function.
 
-    Several [metrics](https://huggingface.co/metrics) are readily available from the datasets library to monitor model performance.
+    Several [metrics](https://huggingface.co/docs/evaluate) are readily available from the Evaluate library to monitor model performance.
     """)
     return
 
 
 @app.cell
-def _():
-    from datasets import load_metric
+def _(advanced_setup_request):
+    assert advanced_setup_request
+    import evaluate
     import numpy as np
 
-    accuracy_metric = load_metric("accuracy")
+    accuracy_metric = evaluate.load("accuracy")
 
     def compute_metrics(eval_pred):
         predictions, labels = eval_pred
         predictions = np.argmax(predictions, axis=1)
-        # metrics from the datasets library have a `compute` method
+        # metrics from the Evaluate library have a `compute` method
         return accuracy_metric.compute(predictions=predictions, references=labels)
 
     return (compute_metrics,)
+
+
+@app.cell(hide_code=True)
+def _(ADVANCED_MAX_STEPS, advanced_setup_request, mo, wandb_settings):
+    assert advanced_setup_request
+    advanced_training_button = mo.ui.run_button(
+        label="Evaluate the baseline and train with W&B",
+        kind="success",
+    )
+    _runtime_note = (
+        "The button below starts baseline evaluation and the full "
+        f"{ADVANCED_MAX_STEPS:,}-step fine-tuning run."
+    )
+    mo.vstack(
+        [
+            mo.callout(
+                mo.md(
+                    f"{_runtime_note}\n\nThis will create a run in "
+                    f"`{wandb_settings['entity']}/{wandb_settings['project']}`."
+                ),
+                kind="warn",
+                title="Long-running example",
+            ),
+            advanced_training_button,
+        ]
+    )
+    return (advanced_training_button,)
+
+
+@app.cell(hide_code=True)
+def _(
+    ADVANCED_MAX_STEPS,
+    ADVANCED_RUN_NAME,
+    WANDB_LOG_MODEL,
+    advanced_training_button,
+    mo,
+    tempfile,
+    uuid,
+    wandb,
+    wandb_settings,
+):
+    mo.stop(
+        not advanced_training_button.value,
+        mo.callout(
+            mo.md(
+                "Click the button above when you are ready to evaluate the "
+                "baseline, create a W&B run, and start fine-tuning."
+            ),
+            kind="info",
+        ),
+    )
+    mo.stop(
+        wandb.run is not None,
+        mo.callout(
+            mo.md(
+                "Another W&B run is active in this Python process. Finish it "
+                "before starting the custom training example."
+            ),
+            kind="warn",
+        ),
+    )
+
+    _advanced_run_id = uuid.uuid4().hex
+    advanced_run_request = {
+        "max_steps": ADVANCED_MAX_STEPS,
+        "output_dir": tempfile.mkdtemp(
+            prefix=f"wandb-hf-{_advanced_run_id[:8]}-"
+        ),
+        "run_id": _advanced_run_id,
+        "run_name": ADVANCED_RUN_NAME,
+    }
+    advanced_run_env = {
+        "WANDB_ENTITY": wandb_settings["entity"],
+        "WANDB_PROJECT": wandb_settings["project"],
+        "WANDB_RUN_ID": _advanced_run_id,
+        "WANDB_NAME": ADVANCED_RUN_NAME,
+        "WANDB_LOG_MODEL": WANDB_LOG_MODEL,
+    }
+    advanced_run_url = wandb.Settings(
+        entity=wandb_settings["entity"],
+        project=wandb_settings["project"],
+        run_id=_advanced_run_id,
+    ).run_url
+    return advanced_run_env, advanced_run_request, advanced_run_url
+
+
+@app.cell(hide_code=True)
+def _(advanced_run_url, mo):
+    mo.callout(
+        mo.md(
+            f"[Open this custom training run in W&B]({advanced_run_url}) "
+            "to watch evaluation and training metrics appear live."
+        ),
+        kind="info",
+    )
+    advanced_run_link_ready = True
+    return (advanced_run_link_ready,)
 
 
 @app.cell(hide_code=True)
@@ -620,36 +1032,66 @@ def _(mo):
 
 
 @app.cell
-def _(Trainer, args, compute_metrics, dataset_2, model, tokenizer):
-    trainer = Trainer(model=model, args=args, train_dataset=dataset_2['train'], eval_dataset=dataset_2['test'], tokenizer=tokenizer, compute_metrics=compute_metrics)  # model to be trained  # training args  # for padding batched data  # for custom metrics
+def _(
+    Trainer,
+    advanced_run_link_ready,
+    args,
+    compute_metrics,
+    dataset_2,
+    model,
+    tokenizer,
+):
+    assert advanced_run_link_ready
+    trainer = Trainer(
+        model=model,                          # model to be trained
+        args=args,                            # training args
+        train_dataset=dataset_2['train'],
+        eval_dataset=dataset_2['test'],
+        processing_class=tokenizer,           # for padding batched data
+        compute_metrics=compute_metrics,      # for custom metrics
+    )
     return (trainer,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    We can verify that we initially have an accuracy of about 10% (random predictions over 10 classes).
+    We first call `evaluate()` to verify that the untrained model has about 10% accuracy (random predictions over 10 classes). We then start fine-tuning by calling `train()`.
+
+    The cell scopes its W&B environment to this run and closes the run in a `finally` block, even if evaluation or training fails.
     """)
     return
 
 
 @app.cell
-def _(trainer):
-    trainer.evaluate()
-    return
+def _(advanced_run_env, advanced_run_link_ready, mo, os, trainer, wandb):
+    assert advanced_run_link_ready
+    if wandb.run is not None:
+        raise RuntimeError(
+            "Another W&B run is active. Finish it before starting this example."
+        )
 
+    _previous_wandb_env = {
+        _key: os.environ.get(_key) for _key in advanced_run_env
+    }
+    try:
+        os.environ.update(advanced_run_env)
+        initial_metrics = trainer.evaluate()
+        mo.output.append(initial_metrics)
+        training_result = trainer.train()
+    finally:
+        try:
+            if wandb.run is not None:
+                wandb.finish()
+        finally:
+            for _key, _previous_value in _previous_wandb_env.items():
+                if _previous_value is None:
+                    os.environ.pop(_key, None)
+                else:
+                    os.environ[_key] = _previous_value
 
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    We start training by simply calling `train()`.
-    """)
-    return
-
-
-@app.cell
-def _(trainer):
-    trainer.train()
+    advanced_training_complete = True
+    (initial_metrics, training_result)
     return
 
 
@@ -677,39 +1119,36 @@ def _(mo):
 
 @app.cell
 def _(get_topic):
-    get_topic('Why is cheese so much better with wine?')
-    return
+    trained_topic_prediction = get_topic('Why is cheese so much better with wine?')
+    trained_topic_prediction
+    return (trained_topic_prediction,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    When we want to close our W&B run, we can call `wandb.finish()` (mainly useful in notebooks, called automatically in scripts).
-    """)
-    return
-
-
-@app.cell
-def _(wandb):
-    wandb.finish()
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    Once you're happy with a model, don't forget to [share it with the word](https://huggingface.co/transformers/model_sharing.html) on the Model Hub!
+    `wandb.finish()` closes a W&B run explicitly. The guarded training cell above calls it automatically before restoring the previous W&B environment.
     """)
     return
 
 
 @app.cell(hide_code=True)
+def _(advanced_run_url, mo, trained_topic_prediction):
+    mo.callout(
+        mo.md(
+            "Custom training finished and the W&B run is closed. "
+            f"The sample's new predicted topic is `{trained_topic_prediction}`. "
+            f"[Inspect the completed run]({advanced_run_url})."
+        ),
+        kind="success",
+    )
+    return
+
+
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## 📚 Resources
-
-    * [Hugging Face and W&B integration documentation](https://docs.wandb.ai/integrations/huggingface) contains a few tips for taking most advantage of W&B
-    * [🤗 Transformers documentation](https://huggingface.co/transformers/) is extremely thorough and full of examples
+    Once you're happy with a model, don't forget to [share it with the world](https://huggingface.co/docs/transformers/model_sharing) on the Model Hub!
     """)
     return
 
@@ -717,9 +1156,20 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## ❓ Questions about W&B
+    ## Resources
 
-    If you have any questions about using W&B to track your model performance and predictions, please reach out to the [slack community](http://bit.ly/wandb-forum).
+    * [Hugging Face and W&B integration documentation](https://docs.wandb.ai/models/integrations/huggingface) contains tips for making the most of W&B
+    * [🤗 Transformers documentation](https://huggingface.co/docs/transformers/) is extremely thorough and full of examples
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Questions about W&B
+
+    If you have any questions about using W&B to track your model performance and predictions, visit the [W&B Community](https://community.wandb.ai/).
     """)
     return
 
