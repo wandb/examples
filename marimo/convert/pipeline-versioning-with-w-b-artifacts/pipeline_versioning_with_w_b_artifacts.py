@@ -107,16 +107,6 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    This marimo notebook declares its Python dependencies in the script metadata
-    at the top of the file. Run it with `uvx marimo edit --sandbox` or install
-    the listed packages into your environment.
-    """)
-    return
-
-
 @app.cell
 def _():
     import os

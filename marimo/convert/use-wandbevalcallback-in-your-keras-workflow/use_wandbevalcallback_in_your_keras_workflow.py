@@ -38,10 +38,7 @@ def _():
     versioning, and project collaboration. See the
     [original Colab tutorial](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/keras/Use_WandbEvalCallback_in_your_Keras_workflow.ipynb).
 
-    ## Setup and installation
-
-    Open this notebook with `uvx marimo edit use_wandbevalcallback_in_your_keras_workflow.py --sandbox` to install
-    its dependencies. A CPU is sufficient; a GPU speeds up training. The first
+    A CPU is sufficient; a GPU speeds up training. The first
     training submission downloads Fashion-MNIST and ImageNet weights.
     """)
     return

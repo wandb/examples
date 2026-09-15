@@ -109,9 +109,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Install, Import, and Log In
-
-    Open this notebook in molab, or run `uvx marimo edit simple_pytorch_integration.py --sandbox` locally. Its script metadata installs the required packages.
+    ## Import and Log In
 
     The example trains a small convolutional network on every fifth MNIST image: 12,000 training examples and 2,000 test examples. A CUDA GPU is optional; CPU training is supported. MNIST downloads into `data/` only after you submit **Train model and log to W&B**. That submission creates one W&B run and, by default, saves its ONNX model.
     """)

@@ -1,6 +1,7 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
+#     "importlib-resources==7.1.0",
 #     "marimo>=0.23.11",
 #     "tensorflow>=2.16,<3",
 #     "tensorflow-datasets>=4.9,<5",
@@ -33,15 +34,40 @@ def _():
 
     This notebook introduces the `WandbMetricsLogger` callback for [experiment tracking](https://docs.wandb.ai/models/integrations/keras). It logs training and validation metrics along with system metrics to Weights & Biases.
 
-    Use Weights & Biases for machine learning experiment tracking, dataset
-    versioning, and project collaboration. See the
+    See the
     [original Colab tutorial](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/keras/Use_WandbMetricLogger_in_your_Keras_workflow.ipynb).
 
-    ## Setup and installation
-
-    Open this notebook with `uvx marimo edit use_wandbmetriclogger_in_your_keras_workflow.py --sandbox` to install
-    its dependencies. A CPU is sufficient; a GPU speeds up training. The first
+    A CPU is sufficient; a GPU speeds up training. The first
     training submission downloads Fashion-MNIST and ImageNet weights.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    <style>
+    .wandb-by-cw-logo--dark {
+      display: none;
+    }
+
+    :host-context(body.dark) .wandb-by-cw-logo--light {
+      display: none;
+    }
+
+    :host-context(body.dark) .wandb-by-cw-logo--dark {
+      display: block;
+    }
+    </style>
+
+    ## Why should I use W&B?
+
+    <img class="wandb-by-cw-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="320" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-by-cw-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="320" alt="Weights & Biases by CoreWeave" />
+
+    Use Weights & Biases for machine learning experiment tracking, dataset versioning, and project collaboration.
+
+    <img src="https://wandb.me/mini-diagram" width="650" alt="Weights & Biases features" />
     """)
     return
 

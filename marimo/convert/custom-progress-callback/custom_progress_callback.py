@@ -75,8 +75,7 @@ def _():
 
     This follows the Hugging Face + W&B tutorial: train a causal language model on
     WikiText-2, then extend `WandbCallback` to compare its token predictions in W&B
-    Tables after each epoch. Dependencies are installed from this notebook's script
-    metadata when you open it with `uvx marimo edit --sandbox` or in molab.
+    Tables after each epoch.
 
     The default GPT-2 model benefits from a GPU. CPU training is supported but slower;
     start with one epoch and fewer training texts. Downloads and training begin only
