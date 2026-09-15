@@ -5,6 +5,18 @@ description: Convert existing Jupyter or Colab .ipynb tutorials in wandb/example
 
 # Convert W&B example notebooks to marimo
 
+## Why we are migrating
+
+**Mission**: Make marimo *the* **standard** computational notebook, supporting
+the entire lifecycle of computational science and development.
+
+These migrations bring established W&B workflows into marimo: learning,
+experimentation, training, debugging, inspecting results, and sharing
+reproducible work. Preserve the tutorials' teaching value while making those
+workflows usable end to end in marimo and molab. A successful migration gives
+readers a notebook they can understand, run, adapt, and build on throughout
+that lifecycle.
+
 ## Determine the starting state
 
 ### `.ipynb`
@@ -42,9 +54,10 @@ Before modifying a notebook, read:
 Also read:
 
 - [`references/convert-cleanup.md`](references/convert-cleanup.md) for
-  generated, pre-converted, or failed conversions.
+  generated, pre-converted, or failed conversions, molab links, and hosted
+  runtime failures.
 - [`references/wandb-patterns.md`](references/wandb-patterns.md) when
-  reviewing or changing W&B SDK usage.
+  reviewing or changing W&B SDK usage, including logged media.
 
 ## Sources of truth
 
@@ -54,9 +67,10 @@ Also read:
 - When the user designates a live marimo or molab notebook, or an artifact
   exported from it, as authoritative, it overrides the repository `.py` as the
   current implementation state. The original `.ipynb` remains a reference for
-  intent, not a reason to rewrite the designated artifact. Do not edit the live
-  notebook or update a branch unless requested. When syncing is requested,
-  export or download after the final approved live edit and preserve cell order,
+  intent, not a reason to rewrite the designated artifact. Work on the artifacts
+  the user requested: a live repair does not imply a repository sync, while a
+  request to fix both requires both. When syncing is requested,
+  export or download after the final live edit and preserve cell order,
   boundaries, setup status, identifiers, dependency metadata, working
   integrations, and configuration such as `hide_code` and `disabled` unless the
   request requires changing them or a demonstrated runtime issue requires a
@@ -84,14 +98,27 @@ not by itself complete the conversion.
 
 ## Repo conventions
 
-- Keep each completed example in `examples/marimo/<example-name>/` with the
-  notebook named `<example_name>.py`.
+- Follow the parent branch's placement convention. In the conversion workflow,
+  keep notebooks in `marimo/convert/<example-name>/<example_name>.py`; do not
+  move them into `examples/marimo/` merely because cleanup is complete. Preserve
+  other existing locations unless the user requests relocation.
+- Do not add per-notebook READMEs, reports, or other repository artifacts unless
+  requested. The notebook itself is the teaching surface.
 - Treat the notebook `.py` as authoritative; never edit its generated `.md`
   export.
 - Do not commit runtime-generated files such as `data/`, `wandb/`,
   `artifacts/`, `__marimo__/`, model weights, or similar outputs.
 - Use `.logs/` only for diagnosis; final notebooks and docs must not depend on
   them.
+- Preserve source comments, docstrings, lesson order, and model demonstrations;
+  do not editorialize teaching code during conversion. Follow
+  [`tutorial-notebook-objectives.md`](references/tutorial-notebook-objectives.md).
+- Keep molab launch badges and useful cross-notebook links, targeting converted
+  files. Remove obsolete Colab self-links and `@wandbcode` HTML markers using
+  [`convert-cleanup.md`](references/convert-cleanup.md#notebook-links-and-html-markers).
+- Treat a request covering all notebooks as a repository-wide marimo scan,
+  not just the current batch. Do not edit the original `.ipynb` sources or
+  generated session files unless they are explicitly in scope.
 
 ## Review-only tasks
 
@@ -110,6 +137,12 @@ Give a concrete fix for each issue. Do not modify files unless asked.
 
 ## Final verification
 
+Scale verification to the change. For a narrow prose, link, or marker cleanup,
+check every changed file, verify link targets, and confirm executable code is
+unchanged; do not retrain models for a documentation-only edit. Distinguish
+pre-existing diagnostics from new regressions. For conversions and runtime
+repairs, validate the affected execution path as well as static validity.
+
 Before considering a conversion complete:
 
 - `uvx marimo check <notebook.py>` passes after the final notebook edit; do
@@ -126,12 +159,18 @@ Before considering a conversion complete:
   reader-facing surface.
 - Tutorial quality follows
   [`references/tutorial-notebook-objectives.md`](references/tutorial-notebook-objectives.md).
+- Compare every notebook in the requested scope with its source, including
+  nested callbacks and small inline comments. Confirm that removed cells were
+  obsolete or empty, not missing teaching steps.
 - The Markdown outline has exactly one level-one heading for the notebook title;
   major sections use level two, and nested sections do not skip heading levels.
 - Featured W&B SDK usage follows
   [`references/wandb-patterns.md`](references/wandb-patterns.md).
 - No unintended generated or runtime files were introduced, and the notebook
   and docs do not depend on `.logs/`.
+- Each converted notebook has one molab badge pointing to itself. Cross-links
+  resolve to the intended converted notebook and the requested published ref;
+  use `main` when explicitly preparing links for after merge.
 - Opening the notebook and changing unsubmitted controls do not create W&B
   objects or other remote side effects.
 - Each submission performs its intended remote writes once; re-submission

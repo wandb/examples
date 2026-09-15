@@ -55,6 +55,9 @@ prior active run before starting another one.
   re-submission, clean up any prior active run and make stateful remote updates
   idempotent when practical, such as skipping an alias or Registry link that is
   already present.
+- Preserve the established authentication, entity, and run-name form patterns
+  across related notebooks. Respect a blank name when it intentionally lets
+  W&B generate one; do not replace it with a fixed name during cleanup.
 
 ### Runs Created By Child Processes
 
@@ -107,6 +110,43 @@ marimo orders cells through name dependencies; it cannot observe mutations to
   function better serves the tutorial.
 - Move non-teaching plumbing into helpers when it improves the teaching
   surface.
+
+## Image Values and Media Verification
+
+Check serialized media, not just whether a logging call succeeds or a file
+exists. A completed training run can still contain unusable images.
+
+- Undo the dataset's normalization for display, then convert explicitly to
+  8-bit pixels in `[0, 255]` before passing image arrays/tensors to `wandb.Image`
+  or `WandbLogger.log_image`. Do not assume the SDK rescales floats in `[0, 1]`;
+  the observed W&B 0.30 behavior casts them to integers and produces nearly
+  black pixels.
+- For MNIST normalized with mean `0.1307` and standard deviation `0.3081`, the
+  display conversion is:
+
+  ```python
+  image = (
+      (image.detach().cpu() * 0.3081 + 0.1307)
+      .clamp(0, 1).mul(255).round().to(torch.uint8)
+  )
+  ```
+
+  Use the actual dataset's normalization, and modify only the display copy,
+  not the tensors used for training.
+- Share the corrected images between image-panel and Table logging, preserving
+  captions, labels, and predictions. Validate both paths with real SDK image
+  serialization and cached examples, without another training run if possible.
+- Inspect RGB/grayscale pixels, excluding alpha when measuring range: an opaque
+  alpha channel of 255 can hide that all color pixels are only 0 or 1. Compare
+  against the source image where practical and visually inspect a saved sample.
+- Explain that a code repair affects future uploads; it does not restore pixel
+  information already lost in existing remote media. Do not overwrite a run's
+  history or launch another run merely to make old images look correct.
+
+When evaluating a saved PyTorch model after its W&B run has finished, remember
+that `wandb.watch` hooks may still refer to the finished run. A fresh instance
+loaded with the same `state_dict` can validate predictions without those hooks;
+do not modify the user's trained object just to run a diagnostic probe.
 
 ## Media From Remote Filesystems
 

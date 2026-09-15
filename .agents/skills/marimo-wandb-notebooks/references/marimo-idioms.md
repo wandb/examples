@@ -12,10 +12,11 @@ this repo.
 - Add PEP 723 metadata with `requires-python` and every runtime package the
   notebook imports, using repository-approved minimum version constraints such
   as `"marimo>=0.9"` and `"wandb>=0.18"`.
-- Use one setup/import cell for shared imports, true constants, and environment
-  detection.
+- Use one setup/import cell for shared imports and environment detection. Keep
+  educational parameters beside the lesson steps that use them rather than
+  collecting them in setup merely because they are constants.
 - Keep the setup cell's code visible. It is the reader-facing inventory of
-  shared imports, dependencies, and notebook-wide constants; do not apply
+  shared imports and runtime setup; do not apply
   `hide_code=True` to it.
 - Keep reactive notebook globals scarce.
 
@@ -47,6 +48,13 @@ UI internals. For W&B run objects, follow
 
 When teaching code is naturally expressed as a function, keep the function
 clean and put its gate or UI wiring in separate cells.
+
+Preserving an identifier has a runtime exception: marimo's pytest integration
+can classify an evaluation helper named `test` as a test and request fixtures
+for its parameters. Use `evaluate` for ordinary model evaluation when this
+collision occurs, update callers and the corresponding prose, and preserve the
+function body and comments. Verify with pytest installed; installing pytest or
+inventing fixtures is not a fix for accidental collection.
 
 ## Reactivity
 
@@ -142,6 +150,27 @@ helpers. Do not repeat the same gate in downstream cells.
   class; visually verify both themes. For the verified marimo `mo.callout`
   pattern, select the theme with `:host-context(body.dark)` so the rule crosses
   the component boundary.
+
+### Model inspection
+
+Preserve an explicit construction/inspection cell near the model definition.
+For a supported PyTorch module, the cell can end with:
+
+```python
+model = MNIST_LitModule(n_layer_1=128, n_layer_2=128)
+model
+```
+
+This lets marimo render its native model viewer. If training creates another
+notebook-global model, give that result a distinct name such as `trained_model`
+instead of deleting the preview to avoid a duplicate definition. Keep downloads
+and training gated; an architecture preview need not start a W&B run.
+
+Check the actual formatter for each framework before replacing `model.summary()`
+with `model`. In the tested marimo 0.24.2 runtime, Keras models rendered only an
+object representation, so retaining `model.summary()` was appropriate. Recheck
+support in the target version; do not add Graphviz/pydot or a custom viewer just
+to imitate native PyTorch display unless that extra work is requested.
 
 ## UI
 
