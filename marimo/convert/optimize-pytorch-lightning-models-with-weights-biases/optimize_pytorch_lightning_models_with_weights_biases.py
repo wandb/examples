@@ -12,7 +12,7 @@
 
 import marimo
 
-__generated_with = "0.24.0"
+__generated_with = "0.24.2"
 app = marimo.App(width="medium", app_title="PyTorch Lightning with W&B")
 
 with app.setup:
@@ -57,11 +57,9 @@ def _():
     * keep track of your code
     * log your system metrics (GPU, CPU, memory, temperature, etc.)
 
-    ## Installation and set-up
+    ## Docs
 
-    Open with `uvx marimo edit optimize_pytorch_lightning_models_with_weights_biases.py --sandbox` to install the declared dependencies. This tutorial uses MNIST and works on CPU or one available GPU. MNIST downloads and training start only after you submit **Train model and log to W&B**.
-
-    See the [Lightning WandbLogger docs](https://lightning.ai/docs/pytorch/stable/extensions/generated/lightning.pytorch.loggers.WandbLogger.html) and [W&B Lightning docs](https://docs.wandb.ai/models/integrations/lightning) for the integration reference.
+    You can find the PyTorch Lightning WandbLogger docs [here](https://lightning.ai/docs/pytorch/stable/extensions/generated/lightning.pytorch.loggers.WandbLogger.html) and the Weights & Biases docs [here](https://docs.wandb.ai/models/integrations/lightning)
     """)
     return
 
@@ -153,88 +151,92 @@ def _():
     return
 
 
+@app.class_definition
+class MNIST_LitModule(pl.LightningModule):
+
+    def __init__(self, n_classes=10, n_layer_1=128, n_layer_2=256, lr=1e-3):
+        '''method used to define our model parameters'''
+        super().__init__()
+
+        # mnist images are (1, 28, 28) (channels, width, height)
+        self.layer_1 = Linear(28 * 28, n_layer_1)
+        self.layer_2 = Linear(n_layer_1, n_layer_2)
+        self.layer_3 = Linear(n_layer_2, n_classes)
+
+        # loss
+        self.loss = CrossEntropyLoss()
+
+        # optimizer parameters
+        self.lr = lr
+
+        # save hyper-parameters to self.hparams (auto-logged by W&B)
+        self.save_hyperparameters()
+
+    def forward(self, x):
+        '''method used for inference input -> output'''
+
+        batch_size = x.size(0)
+
+        # (b, 1, 28, 28) -> (b, 1*28*28)
+        x = x.view(batch_size, -1)
+
+        # let's do 3 x linear + 2 x relu
+        x = self.layer_1(x)
+        x = F.relu(x)
+        x = self.layer_2(x)
+        x = F.relu(x)
+        x = self.layer_3(x)
+
+        return x
+
+    def training_step(self, batch, batch_idx):
+        '''needs to return a loss from a single batch'''
+        _, loss, acc = self._get_preds_loss_accuracy(batch)
+
+        # Log loss and metric
+        self.log('train_loss', loss)
+        self.log('train_accuracy', acc)
+
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        '''used for logging metrics'''
+        preds, loss, acc = self._get_preds_loss_accuracy(batch)
+
+        # Log loss and metric
+        self.log('val_loss', loss)
+        self.log('val_accuracy', acc)
+
+        # Let's return preds to use it in a custom callback
+        return preds
+
+    def test_step(self, batch, batch_idx):
+        '''used for logging metrics'''
+        _, loss, acc = self._get_preds_loss_accuracy(batch)
+
+        # Log loss and metric
+        self.log('test_loss', loss)
+        self.log('test_accuracy', acc)
+
+    def configure_optimizers(self):
+        '''defines model optimizer'''
+        return Adam(self.parameters(), lr=self.lr)
+
+    def _get_preds_loss_accuracy(self, batch):
+        '''convenience function since train/valid/test steps are similar'''
+        x, y = batch
+        logits = self(x)
+        preds = torch.argmax(logits, dim=1)
+        loss = self.loss(logits, y)
+        acc = accuracy(preds, y, task="multiclass", num_classes=self.hparams.n_classes)
+        return preds, loss, acc
+
+
 @app.cell
 def _():
-    class MNIST_LitModule(pl.LightningModule):
-
-        def __init__(self, n_classes=10, n_layer_1=128, n_layer_2=256, lr=1e-3):
-            '''method used to define our model parameters'''
-            super().__init__()
-
-            # mnist images are (1, 28, 28) (channels, width, height)
-            self.layer_1 = Linear(28 * 28, n_layer_1)
-            self.layer_2 = Linear(n_layer_1, n_layer_2)
-            self.layer_3 = Linear(n_layer_2, n_classes)
-
-            # loss
-            self.loss = CrossEntropyLoss()
-
-            # optimizer parameters
-            self.lr = lr
-
-            # save hyper-parameters to self.hparams (auto-logged by W&B)
-            self.save_hyperparameters()
-
-        def forward(self, x):
-            '''method used for inference input -> output'''
-
-            batch_size = x.size(0)
-
-            # (b, 1, 28, 28) -> (b, 1*28*28)
-            x = x.view(batch_size, -1)
-
-            # let's do 3 x linear + 2 x relu
-            x = self.layer_1(x)
-            x = F.relu(x)
-            x = self.layer_2(x)
-            x = F.relu(x)
-            x = self.layer_3(x)
-
-            return x
-
-        def training_step(self, batch, batch_idx):
-            '''needs to return a loss from a single batch'''
-            _, loss, acc = self._get_preds_loss_accuracy(batch)
-
-            # Log loss and metric
-            self.log('train_loss', loss)
-            self.log('train_accuracy', acc)
-
-            return loss
-
-        def validation_step(self, batch, batch_idx):
-            '''used for logging metrics'''
-            preds, loss, acc = self._get_preds_loss_accuracy(batch)
-
-            # Log loss and metric
-            self.log('val_loss', loss)
-            self.log('val_accuracy', acc)
-
-            # Let's return preds to use it in a custom callback
-            return preds
-
-        def test_step(self, batch, batch_idx):
-            '''used for logging metrics'''
-            _, loss, acc = self._get_preds_loss_accuracy(batch)
-
-            # Log loss and metric
-            self.log('test_loss', loss)
-            self.log('test_accuracy', acc)
-
-        def configure_optimizers(self):
-            '''defines model optimizer'''
-            return Adam(self.parameters(), lr=self.lr)
-
-        def _get_preds_loss_accuracy(self, batch):
-            '''convenience function since train/valid/test steps are similar'''
-            x, y = batch
-            logits = self(x)
-            preds = torch.argmax(logits, dim=1)
-            loss = self.loss(logits, y)
-            acc = accuracy(preds, y, task="multiclass", num_classes=self.hparams.n_classes)
-            return preds, loss, acc
-
-    return (MNIST_LitModule,)
+    model = MNIST_LitModule(n_layer_1=128, n_layer_2=128)
+    model
+    return
 
 
 @app.cell(hide_code=True)
@@ -288,44 +290,44 @@ def _():
     return
 
 
-@app.cell
-def _():
-    class LogPredictionsCallback(Callback):
-        def on_validation_batch_end(
-            self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0
-        ):
-            """Called when the validation batch ends."""
+@app.class_definition
+class LogPredictionsCallback(Callback):
+    def on_validation_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0
+    ):
+        """Called when the validation batch ends."""
 
-            # `outputs` comes from `LightningModule.validation_step`
-            # which corresponds to our model predictions in this case
+        # `outputs` comes from `LightningModule.validation_step`
+        # which corresponds to our model predictions in this case
 
-            # Let's log 20 sample image predictions from first batch
-            if trainer.sanity_checking or not trainer.is_global_zero or batch_idx != 0:
-                return
+        # Let's log 20 sample image predictions from first batch
+        if trainer.sanity_checking or not trainer.is_global_zero or batch_idx != 0:
+            return
 
-            n = 20
-            x, y = batch
-            images = [(img.detach().cpu() * 0.3081 + 0.1307).clamp(0, 1) for img in x[:n]]
-            labels = y[:n].detach().cpu().tolist()
-            predictions = outputs[:n].detach().cpu().tolist()
-            captions = [
-                f"Ground Truth: {y_i} - Prediction: {y_pred}"
-                for y_i, y_pred in zip(labels, predictions)
-            ]
-            wandb_logger = trainer.logger
+        n = 20
+        x, y = batch
+        images = [
+            (img.detach().cpu() * 0.3081 + 0.1307).clamp(0, 1).mul(255).round().to(torch.uint8)
+            for img in x[:n]
+        ]
+        labels = y[:n].detach().cpu().tolist()
+        predictions = outputs[:n].detach().cpu().tolist()
+        captions = [
+            f"Ground Truth: {y_i} - Prediction: {y_pred}"
+            for y_i, y_pred in zip(labels, predictions)
+        ]
+        wandb_logger = trainer.logger
 
-            # Option 1: log images with `WandbLogger.log_image`
-            wandb_logger.log_image(key="sample_images", images=images, caption=captions)
+        # Option 1: log images with `WandbLogger.log_image`
+        wandb_logger.log_image(key="sample_images", images=images, caption=captions)
 
-            # Option 2: log predictions as a Table
-            columns = ["image", "ground truth", "prediction"]
-            data = [
-                [wandb.Image(img), y_i, y_pred]
-                for img, y_i, y_pred in zip(images, labels, predictions)
-            ]
-            wandb_logger.log_table(key="sample_table", columns=columns, data=data)
-
-    return (LogPredictionsCallback,)
+        # Option 2: log predictions as a Table
+        columns = ["image", "ground truth", "prediction"]
+        data = [
+            [wandb.Image(img), y_i, y_pred]
+            for img, y_i, y_pred in zip(images, labels, predictions)
+        ]
+        wandb_logger.log_table(key="sample_table", columns=columns, data=data)
 
 
 @app.cell(hide_code=True)
@@ -421,7 +423,7 @@ def train_model(config, wandb_settings, model_class, prediction_callback_class, 
 
 
 @app.cell
-def _(LogPredictionsCallback, MNIST_LitModule, training_config, wandb_settings):
+def _(training_config, wandb_settings):
     training_result = train_model(
         training_config,
         wandb_settings,
