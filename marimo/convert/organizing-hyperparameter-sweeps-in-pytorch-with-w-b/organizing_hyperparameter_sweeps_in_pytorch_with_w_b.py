@@ -18,18 +18,9 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    <a href="https://colab.research.google.com/github/wandb/examples/blob/master/colabs/pytorch/Organizing_Hyperparameter_Sweeps_in_PyTorch_with_W&B.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-    <!--- @wandbcode{sweeps-video} -->
-    """)
-    return
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py/server)
 
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
-
-    <!--- @wandbcode{sweeps-video} -->
 
     <div><img /></div>
 
@@ -464,7 +455,7 @@ def _(F, datasets, device, nn, optim, torch, transforms, wandb):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    For more details on instrumenting W&B with PyTorch, see [this Colab](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/pytorch/Simple_PyTorch_Integration.ipynb).
+    For more details on instrumenting W&B with PyTorch, see [the PyTorch notebook](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py/server).
     """)
     return
 

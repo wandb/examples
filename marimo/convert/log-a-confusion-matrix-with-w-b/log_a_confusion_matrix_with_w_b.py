@@ -52,10 +52,6 @@ def _():
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/log-a-confusion-matrix-with-w-b/log_a_confusion_matrix_with_w_b.py/server)
 
-    [View the original Colab notebook](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-log/Log_a_Confusion_Matrix_with_W&B.ipynb).
-
-    <!--- @wandbcode{confusion_matrix} -->
-
     How to log a [confusion matrix](https://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html) with [Vega](https://vega.github.io/vega/docs/) in [Weights & Biases](https://www.wandb.com).
 
     ## Method: `wandb.plot.confusion_matrix()`

@@ -30,8 +30,6 @@ def _():
     # View & analyze model predictions during training
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/w-b-tables-quickstart/w_b_tables_quickstart.py/server)
-
-    <!--- @wandbcode{tables_quickstart} -->
     """)
     return
 

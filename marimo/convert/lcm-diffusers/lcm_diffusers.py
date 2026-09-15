@@ -34,8 +34,6 @@ def _():
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/lcm-diffusers/lcm_diffusers.py/server)
 
-    <!--- @wandbcode{lcm-diffusers-colab} -->
-
     This notebook demonstrates how to:
 
     - Generate images from text with [Latent Consistency Models](https://huggingface.co/docs/diffusers/api/pipelines/latent_consistency_models) and [Diffusers](https://huggingface.co/docs/diffusers).

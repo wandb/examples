@@ -34,8 +34,6 @@ with app.setup():
 def _(mo):
     mo.md(r"""
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/using-w-b-sweeps-with-xgboost/using_w_b_sweeps_with_xgboost.py/server)
-
-    <!--- @wandbcode{xgb-sweeps} -->
     """)
     return
 
@@ -44,8 +42,6 @@ def _(mo):
 def _(mo):
     mo.md(r"""
     <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
-
-    <!-- @wandbcode{xgb-sweeps} -->
 
     Use Weights & Biases for machine learning experiment tracking, dataset versioning, and project collaboration.
 

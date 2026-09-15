@@ -45,11 +45,11 @@ def _():
     mo.md(r"""
     # Visualize LLM training progress with W&B Tables
 
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/custom-progress-callback/custom_progress_callback.py/server)
+
     In this example we will see how to instrument a custom [callback](https://huggingface.co/docs/transformers/main_classes/callback) for the Hugging Face [Trainer](https://huggingface.co/docs/transformers/main_classes/trainer) to periodically visualize model predictions using Weights & Biases [Tables](https://wandb.ai/site/tables)
 
     <img src="https://i.imgur.com/vnejHGh.png" width="800">
-
-    <!--- @wandbcode{huggingface_wandb} -->
 
     ## Why should I use W&B?
 

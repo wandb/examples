@@ -18,18 +18,9 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    <a href="https://colab.research.google.com/github/wandb/examples/blob/master/colabs/intro/Intro_to_Weights_&_Biases_keras.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-    <!--- @wandbcode{intro-colab-keras} -->
-    """)
-    return
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/intro-to-weights-biases-keras/intro_to_weights_biases_keras.py/server)
 
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     <img src="http://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
-
-    <!--- @wandbcode{intro-colab-keras} -->
     """)
     return
 
@@ -38,6 +29,7 @@ def _(mo):
 def _(mo):
     mo.md(r"""
     # 🏃‍♀️ Quickstart
+
     Use **[Weights & Biases](https://wandb.ai/site?utm_source=keras_intro_colab&utm_medium=code&utm_campaign=keras_intro)** for machine learning experiment tracking, model checkpointing, and collaboration with your team. See the full Weights & Biases Documentation **[here](https://docs.wandb.ai/guides/integrations/keras)**
     """)
     return
@@ -233,9 +225,9 @@ def _(random, wandb):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # What's next 🚀 ?
+    ## What's next 🚀 ?
     The next tutorial you will learn how to do hyperparameter optimization using W&B Sweeps:
-    ## 👉 [Hyperparameters sweeps using PyTorch](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/pytorch/Organizing_Hyperparameter_Sweeps_in_PyTorch_with_W%26B.ipynb)
+    ### 👉 [Hyperparameters sweeps using PyTorch](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py/server)
     """)
     return
 

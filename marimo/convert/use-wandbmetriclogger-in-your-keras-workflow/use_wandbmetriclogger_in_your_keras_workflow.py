@@ -34,9 +34,6 @@ def _():
 
     This notebook introduces the `WandbMetricsLogger` callback for [experiment tracking](https://docs.wandb.ai/models/integrations/keras). It logs training and validation metrics along with system metrics to Weights & Biases.
 
-    See the
-    [original Colab tutorial](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/keras/Use_WandbMetricLogger_in_your_Keras_workflow.ipynb).
-
     A CPU is sufficient; a GPU speeds up training. The first
     training submission downloads Fashion-MNIST and ImageNet weights.
     """)

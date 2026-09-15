@@ -25,18 +25,9 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    <a href="https://colab.research.google.com/github/wandb/examples/blob/master/colabs/huggingface/Optimize_Hugging_Face_models_with_Weights_&_Biases.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-    <!--- @wandbcode{huggingface_optimize_wandb} -->
-    """)
-    return
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/optimize-hugging-face-models-with-weights-biases/optimize_hugging_face_models_with_weights_biases.py/server)
 
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     <img src="https://i.imgur.com/vnejHGh.png" width="800">
-
-    <!--- @wandbcode{huggingface_optimize_wandb} -->
     """)
     return
 

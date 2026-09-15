@@ -35,8 +35,7 @@ def _():
     This notebook introduces `WandbEvalCallback`, an abstract callback you can subclass to visualize datasets and model predictions using W&B Tables. See the [current Keras integration](https://docs.wandb.ai/models/integrations/keras).
 
     Use Weights & Biases for machine learning experiment tracking, dataset
-    versioning, and project collaboration. See the
-    [original Colab tutorial](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/keras/Use_WandbEvalCallback_in_your_Keras_workflow.ipynb).
+    versioning, and project collaboration.
 
     A CPU is sufficient; a GPU speeds up training. The first
     training submission downloads Fashion-MNIST and ImageNet weights.

@@ -37,6 +37,8 @@ def _():
     mo.md(r"""
     # Pytorch Lightning models with Weights & Biases
 
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/optimize-pytorch-lightning-models-with-weights-biases/optimize_pytorch_lightning_models_with_weights_biases.py/server)
+
     Pytorch Lightning is a lightweight wrapper for organizing your PyTorch code and easily adding advanced features such as distributed training, 16-bit precision or gradient accumulation.
 
     Coupled with the [Weights & Biases integration](https://docs.wandb.ai/models/integrations/lightning), you can quickly train and monitor models for full traceability and reproducibility with only 2 extra lines of code:

@@ -14,18 +14,9 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    <a href="https://colab.research.google.com/github/wandb/examples/blob/master/colabs/tensorflow/Hyperparameter_Optimization_in_TensorFlow_using_W&B_Sweeps.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-    <!--- @wandbcode{tf-sweeps} -->
-    """)
-    return
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/hyperparameter-optimization-in-tensorflow-using-w-b-sweeps/hyperparameter_optimization_in_tensorflow_using_w_b_sweeps.py/server)
 
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     <img src="http://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
-
-    <!--- @wandbcode{tf-sweeps} -->
     """)
     return
 

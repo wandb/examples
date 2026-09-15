@@ -18,17 +18,9 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    <a href="https://colab.research.google.com/github/wandb/examples/blob/master/colabs/intro/Report_API_Quickstart.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-    <!--- @wandbcode{python-report-api} -->
-    """)
-    return
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/report-api-quickstart/report_api_quickstart.py/server)
 
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     <img src="http://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
-    <!--- @wandbcode{python-report-api} -->
     """)
     return
 

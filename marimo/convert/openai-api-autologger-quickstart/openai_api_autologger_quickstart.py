@@ -18,17 +18,9 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    <a href="https://colab.research.google.com/github/wandb/examples/blob/master/colabs/openai/OpenAI_API_Autologger_Quickstart.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-    <!--- @wandbcode{openai-autologger-colab} -->
-    """)
-    return
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/openai-api-autologger-quickstart/openai_api_autologger_quickstart.py/server)
 
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     <img src="http://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
-    <!--- @wandbcode{openai-autologger-colab} -->
     """)
     return
 
@@ -37,6 +29,7 @@ def _(mo):
 def _(mo):
     mo.md(r"""
     # 🏃‍♀️ OpenAI API Logger
+
     Use the **[Weights & Biases](https://wandb.ai/site?utm_source=openai_autologger_colab&utm_medium=code&utm_campaign=openai_autologger)** OpenAI API logger to seamlessly log all all inputs and outputs to your OpenAI API. See the full Weights & Biases **[OpenAI Autologger Documentationhere](https://docs.wandb.ai/guides/integrations/openai)** for more
 
     ### Logging with just 1 line of code

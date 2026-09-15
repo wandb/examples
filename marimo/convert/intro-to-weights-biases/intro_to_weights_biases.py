@@ -49,7 +49,6 @@ def _():
 def _():
     mo.md(r"""
     <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
-    <!--- @wandbcode{intro-colab} -->
     """)
     return
 
@@ -687,7 +686,7 @@ def _():
 
     ## Next steps
     The next tutorial you will learn how to do hyperparameter optimization using W&B Sweeps:
-    [Hyperparameters sweeps using PyTorch](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/pytorch/Organizing_Hyperparameter_Sweeps_in_PyTorch_with_W%26B.ipynb)
+    [Hyperparameters sweeps using PyTorch](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py/server)
     """)
     return
 

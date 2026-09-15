@@ -25,15 +25,9 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    <a href="https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-artifacts/WandB_Artifacts_Time_to_live_TTL_Walkthrough.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     # Weights & Biases Artifacts Time-to-live (TTL) Walkthrough
+
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/wandb-artifacts-time-to-live-ttl-walkthrough/wandb_artifacts_time_to_live_ttl_walkthrough.py/server)
     W&B Artifacts now supports setting time-to-live policies on each version of an Artifact. The feature is currently available in W&B SaaS Cloud and will be released to Enterprise customers using W&B Server in version 0.42.0. The following examples show the use TTL policy in a common Artifact logging workflow. We'll cover:
 
     - Setting a TTL policy when creating an Artifact

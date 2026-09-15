@@ -18,18 +18,9 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    <a href="https://colab.research.google.com/github/wandb/examples/blob/master/colabs/tables/AlphaFold_with_W&B_Align,_Fold,_Log.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-    <!--- @wandbcode{alphafold} -->
-    """)
-    return
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/alphafold-with-w-b-align-fold-log/alphafold_with_w_b_align_fold_log.py/server)
 
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     <img src="https://i.imgur.com/4ta7Arm.png" alt="Weights & Biases" />
-
-    <!--- @wandbcode{alphafold} -->
     """)
     return
 
@@ -86,7 +77,7 @@ def _(mo):
 def _():
     #@title Install W&B
 
-    #@markdown Please execute this cell by pressing the _Play_ button 
+    #@markdown Please execute this cell by pressing the _Play_ button
     #@markdown on the left to download and import Weights & Biases.
 
     # packages added via marimo's package management: git+https://github.com/wandb/client.git@molecule_tables !pip install -e git+https://github.com/wandb/client.git@molecule_tables
@@ -115,11 +106,11 @@ app._unparsable_cell(
     r"""
     #@title Install third-party software
 
-    #@markdown Please execute this cell by pressing the _Play_ button 
-    #@markdown on the left to download and import third-party software 
+    #@markdown Please execute this cell by pressing the _Play_ button
+    #@markdown on the left to download and import third-party software
     #@markdown in this Colab notebook. (See the [acknowledgements](https://github.com/deepmind/alphafold/#acknowledgements) in our readme.)
 
-    #@markdown **Note**: This installs the software on the Colab 
+    #@markdown **Note**: This installs the software on the Colab
     #@markdown notebook in the cloud and not on your computer.
 
     from IPython.utils import io
@@ -178,7 +169,7 @@ app._unparsable_cell(
     r"""
     #@title Download AlphaFold
 
-    #@markdown Please execute this cell by pressing the *Play* button on 
+    #@markdown Please execute this cell by pressing the *Play* button on
     #@markdown the left.
 
     GIT_REPO = 'https://github.com/deepmind/alphafold'
@@ -200,7 +191,7 @@ app._unparsable_cell(
           %pushd /opt/conda/lib/python3.7/site-packages/
           %shell patch -p0 < /content/alphafold/docker/openmm.patch
           %popd
-          
+
           %shell mkdir -p /content/alphafold/common
           %shell cp -f /content/stereo_chemical_props.txt /content/alphafold/common
 
@@ -260,7 +251,7 @@ def _():
         {"name" : "fly_thioredoxin", "species" : "drosophila", "desc" : "short, comparable in humans",
          "url" : "https://www.rcsb.org/structure/1XWC", "seq" : "MVYQVKDKADLDGQLTKASGKLVVLDFFATWCGPCKMISPKLVELSTQFADNVVVLKVDVDECEDIAMEYNISSMPTFVFLKNGVKVEEFAGANAKRLEDVIKANI"
         },
-        {"name" : "neurotrophin", "species" : "human", "desc" : "nice symmetry", 
+        {"name" : "neurotrophin", "species" : "human", "desc" : "nice symmetry",
          "url" : "https://www.ebi.ac.uk/pdbe/entry/pdb/1b8k/protein/1", "seq" : "YAEHKSHRGEYSVCDSESLWVTDKSSAIDIRGHQVTVLGEIKTGNSPVKQYFYETRCKEARPVKNGCRGIDDKHWNSQCKTSQTYVRALTSENNKLVGWRWIRIDTSCVCALSRKIGRT"
         }
     ]
@@ -302,9 +293,9 @@ def _(TQDM_BAR_FORMAT, logs, sequence, sys, tqdm):
     #@title Search against genetic databases
     import time
     #@markdown Once this cell has been executed, you will see
-    #@markdown statistics about the multiple sequence alignment 
-    #@markdown (MSA) that will be used by AlphaFold. In particular, 
-    #@markdown you’ll see how well each residue is covered by similar 
+    #@markdown statistics about the multiple sequence alignment
+    #@markdown (MSA) that will be used by AlphaFold. In particular,
+    #@markdown you’ll see how well each residue is covered by similar
     #@markdown sequences in the MSA.
     sys.path.append('/opt/conda/lib/python3.7/site-packages')
     # --- Python imports ---
@@ -474,8 +465,8 @@ def _(
 ):
     #@title Run AlphaFold and download prediction
     model_names = ['model_1', 'model_2', 'model_3', 'model_4', 'model_5', 'model_2_ptm']
-    #@markdown Once this cell has been executed, a zip-archive with 
-    #@markdown the obtained prediction will be automatically downloaded 
+    #@markdown Once this cell has been executed, a zip-archive with
+    #@markdown the obtained prediction will be automatically downloaded
     #@markdown to your computer.
 
     # --- Run the model ---
@@ -710,7 +701,7 @@ def _(mo):
         *   Colab CPU runtime is not supported. Try changing your runtime via _Runtime_ > _Change runtime type_ > _Hardware accelerator_ > _GPU_.
         *   The type of GPU allocated to your Colab varies. See the [Colab FAQ](https://research.google.com/colaboratory/faq.html) for more details.
         *   If you receive “Cannot connect to GPU backend”, you can try again later to see if Colab allocates you a GPU.
-        *   [Colab Pro](https://colab.research.google.com/signup) offers priority access to GPUs.
+        *   Colab Pro offers priority access to GPUs.
     *   Does this tool install anything on my computer?
         *   No, everything happens in the cloud on Google Colab.
         *   At the end of the Colab execution a zip-archive with the obtained prediction will be automatically downloaded to your computer.
@@ -721,7 +712,7 @@ def _(mo):
 
     Take a look at these Colab notebooks provided by the community (please note that these notebooks may vary from our validated AlphaFold system and we cannot guarantee their accuracy):
 
-    *   The [ColabFold AlphaFold2 notebook](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/AlphaFold2.ipynb) by Sergey Ovchinnikov, Milot Mirdita and Martin Steinegger, which uses an API hosted at the Södinglab based on the MMseqs2 server ([Mirdita et al. 2019, Bioinformatics](https://academic.oup.com/bioinformatics/article/35/16/2856/5280135)) for the multiple sequence alignment creation.
+    *   The ColabFold AlphaFold2 notebook by Sergey Ovchinnikov, Milot Mirdita and Martin Steinegger, which uses an API hosted at the Södinglab based on the MMseqs2 server ([Mirdita et al. 2019, Bioinformatics](https://academic.oup.com/bioinformatics/article/35/16/2856/5280135)) for the multiple sequence alignment creation.
     """)
     return
 

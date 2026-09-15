@@ -24,17 +24,9 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    <a href="https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-artifacts/Pipeline_Versioning_with_W&B_Artifacts.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-    <!--- @wandbcode{artifacts-pipeline} -->
-    """)
-    return
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/pipeline-versioning-with-w-b-artifacts/pipeline_versioning_with_w_b_artifacts.py/server)
 
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     <img src="http://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
-    <!--- @wandbcode{artifacts-pipeline} -->
     """)
     return
 
@@ -152,7 +144,7 @@ def _(mo):
 
     This example is based off of this PyTorch
     ["Basic MNIST Example"](https://github.com/pytorch/examples/tree/master/mnist/),
-    but could just as easily have been done in [TensorFlow](http://wandb.me/artifacts-colab), in any other framework,
+    but could just as easily have been done in TensorFlow, in any other framework,
     or in pure Python.
 
     We start with the `Dataset`s:
@@ -702,7 +694,7 @@ def _(input_shape, num_classes):
 def _(mo):
     mo.md(r"""
     Here, we're using W&B to track the run,
-    and so using the [`wandb.config`](https://colab.research.google.com/github/wandb/examples/blob/master/colabs/wandb-config/Configs_in_W%26B.ipynb)
+    and so using the [`wandb.config`](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/configs-in-w-b/configs_in_w_b.py/server)
     object to store all of the hyperparameters.
 
     The `dict`ionary version of that `config` object is a really useful piece of `metadata`, so make sure to include it!
@@ -803,8 +795,8 @@ def _(mo):
 
     This time, let's `train` the `model`.
 
-    For more details, check out our Colab on
-    [instrumenting W&B with PyTorch](http://wandb.me/pytorch-colab).
+    For more details, see the notebook on
+    [instrumenting W&B with PyTorch](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py/server).
     """)
     return
 
