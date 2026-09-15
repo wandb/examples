@@ -1,21 +1,55 @@
+# /// script
+# requires-python = ">=3.11,<3.12"
+# dependencies = [
+#     "ipython>=8.18",
+#     "marimo>=0.24.0",
+#     "matplotlib>=3.5,<3.11",
+#     "numpy==1.23.5",
+#     "opencv-python>=4.6.0,<4.12",
+#     "packaging>=24",
+#     "pandas>=1.5,<3",
+#     "pillow>=9.2,<10",
+#     "protobuf==3.20.1",
+#     "psutil>=5.9",
+#     "pyyaml>=5.3.1",
+#     "requests>=2.32.2",
+#     "scipy>=1.10,<1.13",
+#     "seaborn>=0.11.0",
+#     "setuptools>=70,<81",
+#     "tensorboard>=2.4.1",
+#     "thop>=0.1.1",
+#     "torch==2.5.1",
+#     "torchvision==0.20.1",
+#     "tqdm>=4.66",
+#     "wandb>=0.18,<0.19",
+# ]
+# ///
+
 import marimo
 
 __generated_with = "0.24.0"
-app = marimo.App()
+app = marimo.App(
+    width="medium",
+    app_title="Train and Debug YOLOv5 Models with Weights & Biases",
+)
 
 
 @app.cell
 def _():
-    import marimo as mo
-
-    return (mo,)
-
-
-@app.cell
-def _():
+    import io
+    import os
     import subprocess
+    import sys
+    import tempfile
+    import uuid
+    import zipfile
+    from pathlib import Path
+    from urllib.request import urlopen
 
-    return (subprocess,)
+    import marimo as mo
+    import torch
+    import wandb
+    return Path, io, mo, os, subprocess, sys, tempfile, torch, urlopen, uuid, wandb, zipfile
 
 
 @app.cell(hide_code=True)
@@ -25,7 +59,7 @@ def _(mo):
 
     <img src="https://user-images.githubusercontent.com/26833433/82952157-51b7db00-9f5d-11ea-8f4b-dda1ffecf992.jpg">
 
-    <img src="http://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
+    <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
     """)
     return
 
@@ -41,7 +75,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    In this colab,
+    In this notebook,
     we'll demonstrate how to use the W&B integration with
     version 5 of the "You Only Look Once"
     (aka [YOLOv5](https://github.com/ultralytics/yolov5))
@@ -50,7 +84,7 @@ def _(mo):
     inspect model outputs,
     and restart interrupted runs.
 
-    ### Follow along with a [video tutorial →](https://wandb.me/yolo-video)
+    **Follow along with a [video tutorial →](https://wandb.me/yolo-video)**
     """)
     return
 
@@ -58,7 +92,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Setup
+    ## Setup
     """)
     return
 
@@ -80,27 +114,212 @@ def _(mo):
     [dataset of chessboard images with labeled bounding boxes around the pieces](https://public.roboflow.com/object-detection/chess-full).
     Below, we'll use this dataset to train a model to detect chess pieces in images.
 
-    We also install all the requirements for YOLOv5 and `wandb`.
+    The notebook dependency metadata also provides the YOLOv5 requirements and `wandb`.
+    This walkthrough pins YOLOv5 `v6.2` because that release implements the
+    W&B dataset-Artifact, bounding-box Table, checkpoint, and Artifact-resume
+    behavior demonstrated below. Later YOLOv5 revisions retained some of the
+    command-line flags after temporarily disabling their W&B implementation.
     """)
     return
 
 
-@app.cell
-def _():
-    # magic command not supported in marimo; please file an issue to add support
-    # %%capture
-    # !git clone --depth 1 https://github.com/ultralytics/yolov5.git
-    # !curl -L "https://public.roboflow.com/ds/1BpjFZe9ST?key=KXD7eDvwTa" > roboflow.zip; unzip -o roboflow.zip; rm roboflow.zip
-    # %cd /content/yolov5
-    # !pip install -r requirements.txt
-    # !pip install "wandb==0.12.10"
-    return
+@app.function
+def prepare_yolov5_workspace():
+    """Download YOLOv5 and the chess-piece dataset into a temporary workspace."""
+    expected_revision = "d3ea0df8b9f923685ce5f2555c303b8eddbf83fd"
+    workspace_path = Path(tempfile.mkdtemp(prefix="wandb-yolov5-"))
+    yolov5_path = workspace_path / "yolov5"
+    subprocess.run(
+        [
+            "git",
+            "clone",
+            "--depth",
+            "1",
+            "--branch",
+            "v6.2",
+            "--single-branch",
+            "https://github.com/ultralytics/yolov5.git",
+            str(yolov5_path),
+        ],
+        check=True,
+    )
+    actual_revision = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"],
+        cwd=yolov5_path,
+        text=True,
+    ).strip()
+    if actual_revision != expected_revision:
+        raise RuntimeError(
+            "The YOLOv5 v6.2 tag did not resolve to the reviewed revision."
+        )
+
+    dataset_url = (
+        "https://public.roboflow.com/ds/1BpjFZe9ST?key=KXD7eDvwTa"
+    )
+    with urlopen(dataset_url, timeout=120) as dataset_response:
+        dataset_archive = zipfile.ZipFile(io.BytesIO(dataset_response.read()))
+        for member in dataset_archive.infolist():
+            member_path = (workspace_path / member.filename).resolve()
+            if (
+                workspace_path.resolve() != member_path
+                and workspace_path.resolve() not in member_path.parents
+            ):
+                raise ValueError(f"Unsafe path in dataset archive: {member.filename}")
+        dataset_archive.extractall(workspace_path)
+
+    data_yaml_path = workspace_path / "data.yaml"
+    if not data_yaml_path.exists():
+        raise FileNotFoundError("The downloaded dataset did not contain data.yaml")
+    return yolov5_path, data_yaml_path
+
+
+@app.cell(hide_code=True)
+def _(mo, torch):
+    gpu_available = torch.cuda.is_available()
+    _gpu_message = (
+        mo.callout(
+            mo.md(
+                f"GPU ready: **{torch.cuda.get_device_name(0)}**. "
+                "YOLOv5 training will use it automatically."
+            ),
+            kind="success",
+        )
+        if gpu_available
+        else mo.callout(
+            mo.md(
+                "No CUDA GPU is attached. In molab, use **Configure compute** "
+                "to attach a GPU, then save and restart. Pretrained detection "
+                "can still run on CPU, but training is paused to prevent an "
+                "unexpectedly slow run."
+            ),
+            kind="warn",
+            title="GPU not available",
+        )
+    )
+    _gpu_message
+    return (gpu_available,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Detect
+    ### Authentication
+
+    Enter your [W&B API key](https://wandb.ai/authorize) and, if needed, your
+    team or entity. Leave the key blank to use `WANDB_API_KEY` from molab's
+    Secrets panel or credentials already configured in this runtime. Merely
+    editing these fields does not authenticate or create W&B objects.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    _api_key_input = mo.ui.text(
+        value="",
+        kind="password",
+        label="W&B API key (blank uses runtime credentials)",
+        full_width=True,
+    )
+    _entity_input = mo.ui.text(
+        value="",
+        label="W&B entity or team (blank uses your default)",
+        full_width=True,
+    )
+    wandb_login_form = (
+        mo.md("{api_key}\n\n{entity}")
+        .batch(api_key=_api_key_input, entity=_entity_input)
+        .form(submit_button_label="Connect to W&B", bordered=True)
+    )
+    wandb_login_form
+    return (wandb_login_form,)
+
+
+@app.cell(hide_code=True)
+def _(mo, wandb, wandb_login_form):
+    mo.stop(
+        wandb_login_form.value is None,
+        mo.callout(
+            mo.md("Submit the authentication form to continue."),
+            kind="info",
+        ),
+    )
+
+    _submitted_login = wandb_login_form.value
+    _api_key = _submitted_login["api_key"].strip()
+    _requested_entity = _submitted_login["entity"].strip()
+    try:
+        _login_ok = wandb.login(
+            key=_api_key or None,
+            relogin=bool(_api_key),
+        )
+        _resolved_entity = _requested_entity or wandb.Api().default_entity
+        _login_error = None
+    except wandb.errors.Error as _error:
+        _login_ok = False
+        _resolved_entity = None
+        _login_error = str(_error)
+
+    mo.stop(
+        not _login_ok or not _resolved_entity,
+        mo.callout(
+            mo.md(
+                "W&B authentication did not complete. Check the API key and "
+                "entity, then submit again.\n\n"
+                f"W&B reported: `{_login_error or 'No default entity was found.'}`"
+            ),
+            kind="danger",
+        ),
+    )
+
+    wandb_settings = {"entity": _resolved_entity}
+    mo.callout(
+        mo.md(f"Connected to W&B as entity `{_resolved_entity}`."),
+        kind="success",
+    )
+    return (wandb_settings,)
+
+
+@app.cell(hide_code=True)
+def _(mo, wandb_settings):
+    prepare_assets_button = mo.ui.run_button(
+        label="Download YOLOv5 and the chess dataset",
+        kind="success",
+        tooltip="Downloads public files into a temporary workspace",
+    )
+    mo.vstack(
+        [
+            mo.md(
+                "The download starts only when you click the button. "
+                f"Training runs will use W&B entity `{wandb_settings['entity']}`."
+            ),
+            prepare_assets_button,
+        ]
+    )
+    return (prepare_assets_button,)
+
+
+@app.cell(hide_code=True)
+def _(mo, prepare_assets_button):
+    mo.stop(
+        not prepare_assets_button.value,
+        mo.callout(
+            mo.md("Click the download button above when you are ready."),
+            kind="info",
+        ),
+    )
+    yolov5_path, data_yaml_path = prepare_yolov5_workspace()
+    mo.callout(
+            mo.md("YOLOv5 v6.2 and the chess-piece dataset are ready."),
+        kind="success",
+    )
+    return data_yaml_path, yolov5_path
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Detect
     """)
     return
 
@@ -122,20 +341,69 @@ def _(mo):
     return
 
 
-@app.cell
-def _(subprocess):
-    from IPython.display import Image
+@app.cell(hide_code=True)
+def _(mo, yolov5_path):
+    run_detection_button = mo.ui.run_button(
+        label="Run pretrained YOLOv5 detection",
+        kind="success",
+        tooltip="Downloads pretrained weights and runs inference on the example image",
+    )
+    mo.vstack(
+        [
+            mo.md(
+                f"The command will run from the downloaded toolkit at `{yolov5_path}`."
+            ),
+            run_detection_button,
+        ]
+    )
+    return (run_detection_button,)
 
-    #! python detect.py --weights yolov5s.pt --img 640 --conf 0.25 --source data/images/bus.jpg
-    subprocess.call(['python', 'detect.py', '--weights', 'yolov5s.pt', '--img', '640', '--conf', '0.25', '--source', 'data/images/bus.jpg'])
-    Image(filename='runs/detect/exp/bus.jpg', width=600)
-    return
+
+@app.cell
+def _(mo, run_detection_button, subprocess, sys, yolov5_path):
+    mo.stop(
+        not run_detection_button.value,
+        mo.callout(
+            mo.md("Click the detection button above to run inference."),
+            kind="info",
+        ),
+    )
+
+    detection_output_path = yolov5_path / "runs" / "detect"
+    subprocess.run(
+        [
+            sys.executable,
+            "detect.py",
+            "--weights",
+            "yolov5s.pt",
+            "--img",
+            "640",
+            "--conf",
+            "0.25",
+            "--source",
+            "data/images/bus.jpg",
+            "--project",
+            str(detection_output_path),
+            "--name",
+            "example",
+            "--exist-ok",
+        ],
+        cwd=yolov5_path,
+        check=True,
+    )
+    detected_image_path = detection_output_path / "example" / "bus.jpg"
+    mo.image(
+        str(detected_image_path),
+        width=600,
+        alt_text="YOLOv5 detections on a bus-street example",
+    )
+    return (detected_image_path,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Train
+    ## Train
     """)
     return
 
@@ -150,7 +418,7 @@ def _(mo):
     Instead, we need to train the models to detect chess pieces,
     using YOLOv5's `train.py`.
     We don't have to start our models from scratch though!
-    We can [finetune](https://morioh.com/p/4cd5996c0e64)
+    We can [fine-tune on custom data](https://docs.ultralytics.com/yolov5/tutorials/train-custom-data/)
     the pretrained models on our chess piece dataset.
     This substantially speeds up training.
 
@@ -158,7 +426,7 @@ def _(mo):
     so we'll want to track the inputs and outputs,
     log information about model behavior during training,
     and record system state and metrics.
-    Additionally, we might
+    Additionally, we might want to compare runs or resume after an interruption.
 
     That's where [Weights & Biases](https://wandb.ai/site)
     comes in:
@@ -178,7 +446,7 @@ def _(mo):
     * `--project` sets the W&B project to which we're logging
     (akin to a GitHub repo).
     * `--upload_dataset` tells `wandb`
-    to upload the dataset as [a dataset-visualization Table](https://docs.wandb.ai/guides/datasets-and-predictions).
+    to upload the dataset as [a dataset-visualization Table](https://docs.wandb.ai/models/tables).
     At regular intervals set by `--bbox_interval`,
     the model's outputs on the validation set will also be logged to W&B.
     * `--save-period` sets the number of epochs to wait
@@ -201,10 +469,157 @@ def _(mo):
     return
 
 
+@app.cell(hide_code=True)
+def _(gpu_available, mo, wandb_settings, yolov5_path):
+    _project_input = mo.ui.text(
+        value="yolo-wandb-demo",
+        label="W&B project",
+        full_width=True,
+    )
+    _run_name_input = mo.ui.text(
+        value="chess-demo",
+        label="W&B run name",
+        full_width=True,
+    )
+    _epochs_input = mo.ui.number(
+        start=1,
+        stop=20,
+        value=3,
+        step=1,
+        label="Training epochs",
+    )
+    yolo_training_form = (
+        mo.md("{project}\n\n{run_name}\n\n{epochs}")
+        .batch(
+            project=_project_input,
+            run_name=_run_name_input,
+            epochs=_epochs_input,
+        )
+        .form(
+            submit_button_label="Train YOLOv5 and log to W&B",
+            bordered=True,
+        )
+    )
+    _gpu_note = (
+        f"CUDA is ready, and the files are available at `{yolov5_path}`. "
+        f"The run will be logged under entity `{wandb_settings['entity']}`."
+        if gpu_available
+        else "Attach a CUDA GPU and restart before submitting this form."
+    )
+    mo.vstack([mo.md(_gpu_note), yolo_training_form])
+    return (yolo_training_form,)
+
+
+@app.cell(hide_code=True)
+def _(gpu_available, mo, os, uuid, wandb, wandb_settings, yolo_training_form):
+    mo.stop(
+        yolo_training_form.value is None,
+        mo.callout(
+            mo.md(
+                "Review the training settings, then submit the form when you "
+                "are ready to create a W&B run and upload the dataset."
+            ),
+            kind="info",
+        ),
+    )
+    mo.stop(
+        not gpu_available,
+        mo.callout(
+            mo.md("Attach a CUDA GPU, restart, and submit the form again."),
+            kind="warn",
+        ),
+    )
+
+    _submitted_training = yolo_training_form.value
+    _project = _submitted_training["project"].strip() or "yolo-wandb-demo"
+    _run_name = _submitted_training["run_name"].strip() or "chess-demo"
+    _run_id = uuid.uuid4().hex
+    yolo_run_environment = os.environ.copy()
+    yolo_run_environment.update(
+        {
+            "WANDB_ENTITY": wandb_settings["entity"],
+            "WANDB_PROJECT": _project,
+            "WANDB_RUN_ID": _run_id,
+            "WANDB_NAME": _run_name,
+        }
+    )
+    yolo_run_url = wandb.Settings(
+        entity=wandb_settings["entity"],
+        project=_project,
+        run_id=_run_id,
+    ).run_url
+    yolo_training_request = {
+        "epochs": int(_submitted_training["epochs"]),
+        "project": _project,
+        "run_name": _run_name,
+    }
+    return yolo_run_environment, yolo_run_url, yolo_training_request
+
+
+@app.cell(hide_code=True)
+def _(mo, yolo_run_url):
+    mo.callout(
+        mo.md(
+            f"[Open this training run in W&B]({yolo_run_url}) to watch metrics, "
+            "model outputs, dataset tables, and checkpoints appear live."
+        ),
+        kind="info",
+    )
+    yolo_run_link_ready = True
+    return (yolo_run_link_ready,)
+
+
 @app.cell
-def _(subprocess):
-    #! python train.py --data ../data.yaml --epochs 3 --project yolo-wandb-demo --bbox_interval 1 --save-period 1
-    subprocess.call(['python', 'train.py', '--data', '../data.yaml', '--epochs', '3', '--project', 'yolo-wandb-demo', '--bbox_interval', '1', '--save-period', '1'])
+def _(
+    data_yaml_path,
+    subprocess,
+    sys,
+    yolo_run_environment,
+    yolo_run_link_ready,
+    yolo_training_request,
+    yolov5_path,
+):
+    assert yolo_run_link_ready
+    subprocess.run(
+        [
+            sys.executable,
+            "train.py",
+            "--data",
+            str(data_yaml_path),
+            "--weights",
+            "yolov5s.pt",
+            "--epochs",
+            str(yolo_training_request["epochs"]),
+            "--project",
+            yolo_training_request["project"],
+            "--name",
+            yolo_training_request["run_name"],
+            "--entity",
+            yolo_run_environment["WANDB_ENTITY"],
+            "--upload_dataset",
+            "--bbox_interval",
+            "1",
+            "--save-period",
+            "1",
+            "--exist-ok",
+        ],
+        cwd=yolov5_path,
+        env=yolo_run_environment,
+        check=True,
+    )
+    yolo_training_complete = True
+    return (yolo_training_complete,)
+
+
+@app.cell(hide_code=True)
+def _(mo, yolo_run_url, yolo_training_complete):
+    mo.callout(
+        mo.md(
+            "Training finished and the child process closed its W&B run. "
+            f"[Inspect the completed run]({yolo_run_url})."
+        ),
+        kind="success",
+    )
     return
 
 
@@ -235,7 +650,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Resume Crashed Runs
+    ## Resume Crashed Runs
 
     In addition to making it easier to debug our models,
     the W&B integration can help rescue crash or interrupted runs.
@@ -270,8 +685,19 @@ def _(mo):
 def _(mo):
     mo.md(r"""
     ```python
+    import os
+    import subprocess
+    import sys
+
     crashed_run_path = "entity/project/run-id"  # your path here
-    !python train.py --resume wandb-artifact://{crashed_run_path}
+    resume_environment = os.environ.copy()
+    resume_environment["WANDB_ENTITY"] = wandb_settings["entity"]
+    subprocess.run(
+        [sys.executable, "train.py", "--resume", f"wandb-artifact://{crashed_run_path}"],
+        cwd=yolov5_path,
+        env=resume_environment,
+        check=True,
+    )
     ```
     """)
     return
@@ -280,7 +706,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # End Notes
+    ## End Notes
 
     ### Distributed Data-Parallel Training
 
@@ -292,13 +718,16 @@ def _(mo):
     ### Logging Large Datasets
 
     For very large datasets,
-    the initial dataset upload triggered by `--log_dataset`
+    the initial dataset upload triggered by `--upload_dataset`
     might be prohibitively expensive.
 
-    In that case,
-    check out the
-    [`log_dataset.py` script](https://github.com/ultralytics/yolov5/blob/master/utils/wandb_logging/log_dataset.py)
-    included in YOLOv5.
+    In that case, create and reuse a
+    [W&B Artifact](https://docs.wandb.ai/models/artifacts)
+    outside the training loop instead of asking every run to upload the same
+    data. For newer YOLOv5 revisions, consult the current
+    [YOLOv5 integration guide](https://docs.wandb.ai/models/integrations/yolov5);
+    the advanced Artifact controls in this walkthrough are tied to the pinned
+    `v6.2` integration.
 
     ### `stripped` Models
 
