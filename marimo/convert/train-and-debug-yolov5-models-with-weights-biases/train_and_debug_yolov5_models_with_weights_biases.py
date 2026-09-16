@@ -22,7 +22,7 @@ Run:
 
 import marimo
 
-__generated_with = "0.24.0"
+__generated_with = "0.24.2"
 app = marimo.App(
     width="medium",
     app_title="Train and Debug Ultralytics YOLO Models with Weights & Biases",
@@ -78,7 +78,6 @@ def _(mo):
 
     The notebook uses the maintained [`ultralytics`](https://pypi.org/project/ultralytics/)
     package and its [W&B integration](https://docs.ultralytics.com/integrations/weights-biases/).
-    It does not clone or patch the legacy YOLOv5 repository.
 
     Opening the notebook does not create a W&B run or upload anything. Those
     actions begin only after you submit the training form.
@@ -87,22 +86,14 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, torch):
+def _(torch):
     if torch.cuda.is_available():
         training_device = 0
-        _device_label = torch.cuda.get_device_name(0)
     elif torch.backends.mps.is_available():
         training_device = "mps"
-        _device_label = "Apple Metal Performance Shaders"
     else:
         training_device = "cpu"
-        _device_label = "CPU"
 
-    mo.callout(
-        mo.md(f"This runtime will use **{_device_label}**."),
-        kind="info",
-        title="Runtime",
-    )
     return (training_device,)
 
 
@@ -118,39 +109,42 @@ def _(mo):
     return
 
 
-@app.function
-def download_chess_dataset():
-    """Download and validate the public chess-piece dataset."""
-    workspace_path = Path(tempfile.mkdtemp(prefix="wandb-yolo26-"))
-    dataset_url = "https://public.roboflow.com/ds/1BpjFZe9ST?key=KXD7eDvwTa"
+@app.cell
+def _(Path, io, tempfile, urlopen, yaml, zipfile):
+    def download_chess_dataset():
+        """Download and validate the public chess-piece dataset."""
+        workspace_path = Path(tempfile.mkdtemp(prefix="wandb-yolo26-"))
+        dataset_url = "https://public.roboflow.com/ds/1BpjFZe9ST?key=KXD7eDvwTa"
 
-    with urlopen(dataset_url, timeout=120) as dataset_response:
-        with zipfile.ZipFile(io.BytesIO(dataset_response.read())) as archive:
-            for member in archive.infolist():
-                member_path = (workspace_path / member.filename).resolve()
-                if (
-                    workspace_path.resolve() != member_path
-                    and workspace_path.resolve() not in member_path.parents
-                ):
-                    raise ValueError(
-                        f"Unsafe path in dataset archive: {member.filename}"
-                    )
-            archive.extractall(workspace_path)
+        with urlopen(dataset_url, timeout=120) as dataset_response:
+            with zipfile.ZipFile(io.BytesIO(dataset_response.read())) as archive:
+                for member in archive.infolist():
+                    member_path = (workspace_path / member.filename).resolve()
+                    if (
+                        workspace_path.resolve() != member_path
+                        and workspace_path.resolve() not in member_path.parents
+                    ):
+                        raise ValueError(
+                            f"Unsafe path in dataset archive: {member.filename}"
+                        )
+                archive.extractall(workspace_path)
 
-    data_yaml_path = workspace_path / "data.yaml"
-    if not data_yaml_path.exists():
-        raise FileNotFoundError("The downloaded dataset did not contain data.yaml")
+        data_yaml_path = workspace_path / "data.yaml"
+        if not data_yaml_path.exists():
+            raise FileNotFoundError("The downloaded dataset did not contain data.yaml")
 
-    dataset_config = yaml.safe_load(data_yaml_path.read_text())
-    dataset_config.update(
-        {
-            "path": str(workspace_path),
-            "train": "train/images",
-            "val": "valid/images",
-        }
-    )
-    data_yaml_path.write_text(yaml.safe_dump(dataset_config, sort_keys=False))
-    return workspace_path, data_yaml_path
+        dataset_config = yaml.safe_load(data_yaml_path.read_text())
+        dataset_config.update(
+            {
+                "path": str(workspace_path),
+                "train": "train/images",
+                "val": "valid/images",
+            }
+        )
+        data_yaml_path.write_text(yaml.safe_dump(dataset_config, sort_keys=False))
+        return workspace_path, data_yaml_path
+
+    return (download_chess_dataset,)
 
 
 @app.cell(hide_code=True)
@@ -165,7 +159,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, prepare_data_button):
+def _(download_chess_dataset, mo, prepare_data_button):
     mo.stop(
         not prepare_data_button.value,
         mo.callout(
@@ -231,7 +225,6 @@ def _(YOLO, mo, run_detection_button, training_device, yolo_assets):
             mo.image(
                 _annotated_image,
                 width=600,
-                alt_text="YOLO26 detections on a street image",
             ),
             mo.ui.table(_detection_rows, label="Detections"),
         ]
@@ -329,17 +322,16 @@ def _(mo):
     validation metrics, diagnostic images, performance curves, system metrics,
     and the best checkpoint as a model Artifact.
 
-    Dataset versioning is intentionally explicit below. The legacy YOLOv5
-    `--upload_dataset` flag no longer exists, so this notebook creates a W&B
-    dataset Artifact with `wandb.Artifact` and `run.log_artifact` before
-    training. This keeps the W&B workflow visible and reusable with other
-    training libraries.
+    Dataset versioning is explicit below: the notebook creates a W&B dataset
+    Artifact with `wandb.Artifact` and `run.log_artifact` before training.
+    This keeps the W&B workflow visible and reusable with other training
+    libraries.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _(dataset_root, mo, training_device, wandb_settings):
+def _(dataset_root, mo, wandb_settings):
     _project_input = mo.ui.text(
         value="yolo-wandb-demo",
         label="W&B project",
@@ -372,9 +364,8 @@ def _(dataset_root, mo, training_device, wandb_settings):
     mo.vstack(
         [
             mo.md(
-                f"The dataset is ready at `{dataset_root}`. Training will use "
-                f"`{training_device}` and log under entity "
-                f"`{wandb_settings['entity']}`."
+                f"The dataset is ready at `{dataset_root}`. The run will be "
+                f"logged under entity `{wandb_settings['entity']}`."
             ),
             yolo_training_form,
         ]
@@ -538,8 +529,7 @@ def _(mo):
     YOLO26 checkpoint and compare the runs in W&B. For interrupted training,
     use Ultralytics' current local checkpoint flow (`YOLO("last.pt").train(resume=True)`),
     or download a checkpoint Artifact with `run.use_artifact()` before
-    resuming on another machine. The legacy `wandb-artifact://` YOLOv5 resume
-    URI is not part of the current Ultralytics API.
+    resuming on another machine.
     """)
     return
 
