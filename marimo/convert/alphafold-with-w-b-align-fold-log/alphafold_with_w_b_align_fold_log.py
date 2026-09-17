@@ -2,7 +2,7 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #     "colabfold[alphafold]>=1.6.3,<1.7",
-#     "jax[cuda12]>=0.6.2,<0.12; sys_platform == 'linux'",
+#     "jax[cuda13]>=0.6.2,<0.12; sys_platform == 'linux'",
 #     "marimo>=0.24.0",
 #     "matplotlib>=3.8,<4",
 #     "numpy>=2.0,<3",
@@ -95,9 +95,10 @@ def _(mo):
     dependencies include ColabFold, the AlphaFold2 inference package, and a
     CUDA-enabled JAX build.
 
-    The first prediction downloads the model parameters and can take longer
-    than later runs. ColabFold queries its shared public MSA service for this
-    small demonstration, so submit one sequence at a time from this notebook.
+    The first prediction downloads the model parameters and can spend ten
+    minutes or more compiling; later matching runs reuse the cache. ColabFold
+    queries its shared public MSA service for this small demonstration, so
+    submit one sequence at a time from this notebook.
     Opening the notebook does not query the service, download weights, run a
     prediction, or create W&B objects.
     """)
@@ -453,6 +454,7 @@ def run_colabfold(request):
     compilation_cache = Path("/tmp/colabfold-jax-cache")
     compilation_cache.mkdir(parents=True, exist_ok=True)
     command_environment.setdefault("JAX_COMPILATION_CACHE_DIR", str(compilation_cache))
+    command_environment.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
 
     started_at = time.monotonic()
     subprocess.run(command, env=command_environment, check=True)
