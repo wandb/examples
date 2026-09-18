@@ -80,7 +80,7 @@ def _(mo):
     AlphaFold2 inference.
 
     No Docker image or local genetic database is required. The prediction runs
-    on the notebook GPU; only the submitted sequence is sent to the public
+    inside the notebook; only the submitted sequence is sent to the public
     ColabFold MSA service.
     """)
     return
@@ -91,14 +91,15 @@ def _(mo):
     mo.md(r"""
     ## 0. Runtime
 
-    Open this notebook in a **GPU-backed molab session**. Its Python
-    dependencies include ColabFold, the AlphaFold2 inference package, and a
-    CUDA-enabled JAX build.
+    Open this notebook in molab. Its Python dependencies include ColabFold and
+    the AlphaFold2 inference package.
 
-    The first prediction downloads the model parameters and can spend ten
-    minutes or more compiling; later matching runs reuse the cache. ColabFold
-    queries its shared public MSA service for this small demonstration, so
-    submit one sequence at a time from this notebook.
+    The first prediction downloads the model parameters. To keep this interactive
+    tutorial practical, the notebook uses a bounded MSA depth and automatically
+    selects a compatible inference path for the attached runtime. ColabFold queries
+    its shared public MSA service for this small demonstration, so submit one
+    sequence at a time.
+
     Opening the notebook does not query the service, download weights, run a
     prediction, or create W&B objects.
     """)
@@ -110,34 +111,49 @@ def _(mo, subprocess, sys):
     _linux_available = sys.platform.startswith("linux")
     try:
         _gpu_probe = subprocess.run(
-            ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
+            [
+                "nvidia-smi",
+                "--query-gpu=name,compute_cap",
+                "--format=csv,noheader",
+            ],
             check=True,
             capture_output=True,
             text=True,
         )
-        _gpu_names = [
-            _name.strip() for _name in _gpu_probe.stdout.splitlines() if _name.strip()
+        _gpu_rows = [
+            _row.rsplit(",", maxsplit=1)
+            for _row in _gpu_probe.stdout.splitlines()
+            if _row.strip()
         ]
-    except (FileNotFoundError, subprocess.CalledProcessError):
+        _gpu_names = [_name.strip() for _name, _capability in _gpu_rows]
+        _gpu_compute_caps = [
+            _capability.strip() for _name, _capability in _gpu_rows
+        ]
+    except (FileNotFoundError, subprocess.CalledProcessError, ValueError):
         _gpu_names = []
+        _gpu_compute_caps = []
 
-    colabfold_runtime_ready = bool(_linux_available and _gpu_names)
+    _blackwell_sm120 = any(
+        _capability == "12.0" for _capability in _gpu_compute_caps
+    )
+    colabfold_inference_backend = (
+        "cpu" if _blackwell_sm120 or not _gpu_names else "gpu"
+    )
+    colabfold_runtime_ready = _linux_available
+
     if colabfold_runtime_ready:
         _runtime_message = mo.callout(
-            mo.md(f"Ready to fold on **{', '.join(_gpu_names)}**."),
+            mo.md("Runtime check passed. ColabFold is ready."),
             kind="success",
         )
     else:
         _runtime_message = mo.callout(
-            mo.md(
-                "For a practical prediction, reopen this notebook in a "
-                "GPU-backed molab session."
-            ),
+            mo.md("Open this notebook in a Linux-backed molab runtime."),
             kind="warn",
-            title="GPU session needed",
+            title="Molab runtime needed",
         )
     _runtime_message
-    return (colabfold_runtime_ready,)
+    return colabfold_inference_backend, colabfold_runtime_ready
 
 
 @app.cell(hide_code=True)
@@ -241,8 +257,8 @@ def _(mo):
 
     Choose a sample protein or paste a custom amino-acid sequence. ColabFold
     first creates a multiple-sequence alignment with MMseqs2, then predicts the
-    structure locally with AlphaFold2. A short sequence can still take several
-    minutes because JAX compiles the model on its first run.
+    structure locally with AlphaFold2. The first run also downloads the model
+    parameters.
 
     ### Sample sequences
 
@@ -445,16 +461,25 @@ def run_colabfold(request):
         "plddt",
         "--compile-mode",
         "fast",
+        "--max-msa",
+        "64:128",
         "--overwrite-existing-results",
     ]
     if request["use_templates"]:
         command.append("--templates")
+    if request["inference_backend"] == "gpu":
+        command.extend(["--use-fast-kernels", "--kernel-backend", "auto"])
 
     command_environment = os.environ.copy()
-    compilation_cache = Path("/tmp/colabfold-jax-cache")
+    compilation_cache = Path(
+        f"/tmp/colabfold-jax-cache-{request['inference_backend']}"
+    )
     compilation_cache.mkdir(parents=True, exist_ok=True)
     command_environment.setdefault("JAX_COMPILATION_CACHE_DIR", str(compilation_cache))
     command_environment.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
+    if request["inference_backend"] == "cpu":
+        command_environment["JAX_PLATFORMS"] = "cpu"
+        command_environment["CUDA_VISIBLE_DEVICES"] = ""
 
     started_at = time.monotonic()
     subprocess.run(command, env=command_environment, check=True)
@@ -499,13 +524,19 @@ def run_colabfold(request):
 
 
 @app.cell
-def _(SEQUENCES, colabfold_form, colabfold_runtime_ready, mo):
+def _(
+    SEQUENCES,
+    colabfold_form,
+    colabfold_inference_backend,
+    colabfold_runtime_ready,
+    mo,
+):
     mo.stop(
         colabfold_form.value is None,
         mo.callout(
             mo.md(
                 "Review the inputs, then submit the form when you are ready "
-                "to query the MSA service and start the GPU prediction."
+                "to query the MSA service and start the structure prediction."
             ),
             kind="info",
         ),
@@ -523,7 +554,7 @@ def _(SEQUENCES, colabfold_form, colabfold_runtime_ready, mo):
     mo.stop(
         not colabfold_runtime_ready,
         mo.callout(
-            mo.md("Attach a GPU-backed molab runtime, then submit again."),
+            mo.md("Open this notebook in a Linux-backed molab runtime."),
             kind="warn",
         ),
     )
@@ -548,6 +579,7 @@ def _(SEQUENCES, colabfold_form, colabfold_runtime_ready, mo):
         else {key: _selected_sample[key] for key in ("name", "species", "desc", "url")}
     )
     _fold_request = {
+        "inference_backend": colabfold_inference_backend,
         "metadata": _metadata,
         "model_type": "alphafold2_ptm",
         "msa_mode": _submitted_fold["msa_mode"],
@@ -955,15 +987,18 @@ def _(mo):
     * **Do I need Docker or local databases?** No. ColabFold queries the public
       MMseqs2 MSA service and runs AlphaFold2 inference inside the notebook
       environment.
-    * **Why is the first run slower?** It downloads AlphaFold2 model parameters
-      and compiles the model for the current GPU and input shape.
+    * **Why does the log say that no GPU was detected?** Current molab Blackwell
+      runtimes have an upstream XLA cold-compilation performance issue. For that
+      GPU generation, this notebook intentionally uses the much faster CPU path
+      for the short teaching example. Other supported GPU generations continue to
+      use GPU inference.
+    * **Why is this MSA smaller than a production run?** The notebook caps the MSA
+      at `64:128` sequences so the interactive example finishes promptly. Remove
+      `--max-msa 64:128` for a production-quality experiment and expect a longer
+      runtime.
     * **Can I submit a batch?** This tutorial intentionally submits one serial
       query. The public MSA server is a shared, rate-limited resource. For large
       workloads, follow ColabFold's local-database instructions instead.
-    * **Why did prediction fail despite detecting a GPU?** Restart the molab
-      session once after dependency installation, then try the short
-      `lithostathine` example. The detailed ColabFold log is saved as
-      `log.txt` in the displayed output directory.
     * **Where should I report ColabFold problems?** Use the
       [ColabFold issue tracker](https://github.com/sokrypton/ColabFold/issues).
     """)
