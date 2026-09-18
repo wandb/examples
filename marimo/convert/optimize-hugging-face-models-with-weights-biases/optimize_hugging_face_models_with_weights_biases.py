@@ -256,26 +256,13 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, torch):
+def _(torch):
     if torch.cuda.is_available():
         torch_device = torch.device("cuda")
     elif torch.backends.mps.is_available():
         torch_device = torch.device("mps")
     else:
         torch_device = torch.device("cpu")
-
-    _device_notice = None
-    if torch_device.type == "cpu":
-        _device_notice = mo.callout(
-            mo.md(
-                "Training is available on CPU, but the advanced example can take "
-                "substantially longer. Reduce the maximum training steps for a "
-                "quicker walkthrough."
-            ),
-            kind="warn",
-            title="CPU training",
-        )
-    _device_notice
     return (torch_device,)
 
 
