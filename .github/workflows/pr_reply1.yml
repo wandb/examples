@@ -20,7 +20,7 @@ jobs:
       env:
         CONTEXT_GITHUB: ${{ toJson(github) }}
       run: |
-        pip install -Uq ghapi nb_helpers
+        pip install -Uq "fastcore<2" ghapi nb_helpers
         python .github/scripts/pr_reply1.py
     - uses: actions/upload-artifact@v4
       with:
