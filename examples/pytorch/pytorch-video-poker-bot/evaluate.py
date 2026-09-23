@@ -11,12 +11,12 @@ import wandb
 from jacks_or_better import make_game
 from model import load_checkpoint, play_hands
 
-CHECKPOINT = Path(__file__).resolve().parent / "checkpoints" / "hold-network.pt"
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--checkpoint", type=Path, default=CHECKPOINT)
+    parser.add_argument("--checkpoint", type=Path, required=True, help=".pt saved by train.py")
+    parser.add_argument("--project", required=True, help="W&B project to log to")
+    parser.add_argument("--run-name", required=True, help="name for this W&B run")
     parser.add_argument("--hands", type=int, default=100_000)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
@@ -30,8 +30,8 @@ def main() -> None:
     print(f"checkpoint={args.checkpoint} hands={args.hands:,}", flush=True)
 
     with wandb.init(
-        project="jacks-or-better",
-        name=f"eval-{args.checkpoint.stem}-{args.hands}",
+        project=args.project,
+        name=args.run_name,
         job_type="evaluation",
         config={
             "checkpoint": str(args.checkpoint),

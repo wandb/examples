@@ -21,18 +21,18 @@ from model import (
     validation_metrics,
 )
 
-CHECKPOINT = Path(__file__).resolve().parent / "checkpoints" / "hold-network.pt"
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", type=Path, required=True, help=".npz from generate_dataset.py")
+    parser.add_argument("--checkpoint", type=Path, required=True, help="where to save the trained model (.pt)")
+    parser.add_argument("--project", required=True, help="W&B project to log to")
+    parser.add_argument("--run-name", required=True, help="name for this W&B run")
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=1024)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--hidden-size", type=int, default=256)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--checkpoint", type=Path, default=CHECKPOINT)
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
@@ -60,8 +60,8 @@ def main() -> None:
 
     # One place for init → log → finish (finish runs automatically on exit).
     with wandb.init(
-        project="jacks-or-better",
-        name=f"train-h{args.hidden_size}",
+        project=args.project,
+        name=args.run_name,
         config=config,
     ) as run:
         best_regret = float("inf")

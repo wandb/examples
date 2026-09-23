@@ -1,70 +1,123 @@
-# Jacks or Better video poker bot
+# Train a video poker bot with PyTorch and W&B
 
-Train a small PyTorch network to play **9/6 Jacks or Better**, and log
-training + evaluation to [Weights & Biases](https://wandb.ai).
+This example trains a small PyTorch network to play video poker and tracks
+it with [Weights & Biases](https://wandb.ai). The poker is just a stand-in
+task. The point is to see a complete W&B run:
 
-## Video poker, briefly
+1. **`wandb.init()`** starts a run and records its config (hyperparameters
+   and dataset size).
+2. **`run.log()`** sends metrics every epoch, so you can watch training live.
+3. **`run.log_artifact()`** uploads the trained checkpoint as a versioned
+   model artifact.
+4. **Finish**: `train.py` opens the run with `with wandb.init(...) as run:`,
+   so the run finishes automatically when the block exits. Without the
+   `with` block, you would call `run.finish()` yourself.
 
-You are dealt five cards, choose which to hold (32 possible hold patterns),
-draw replacements for the rest, and get paid from a fixed paytable.
+`evaluate.py` then starts a second run (`job_type="evaluation"`) that plays
+hands with the trained checkpoint and records the final score.
 
-**Jacks or Better** pays for a pair of Jacks or better, two pair, and the
-usual poker hands above that. This example uses the common **9/6** paytable
-(full house pays 9×, flush pays 6×, with a max-coin royal bonus).
+## How video poker works
 
-Optimal play returns about **99.5%** of money wagered. The network here is
-trained to imitate an exact expected-value calculator, so it can get close
-to that strategy chart.
+You are dealt five cards. You choose which of them to hold: none, all five,
+or any mix in between (32 possible combinations). The cards you don't hold
+are replaced with new ones from the deck, and that is your final hand. Its
+reward is looked up in the paytable.
+
+This example plays **9/6 Jacks or Better**, betting 5 credits per hand:
+
+| Final hand | Reward (credits) |
+| --- | --- |
+| Royal flush | 4000 |
+| Straight flush | 250 |
+| Four of a kind | 125 |
+| Full house | 45 |
+| Flush | 30 |
+| Straight | 20 |
+| Three of a kind | 15 |
+| Two pair | 10 |
+| Pair of jacks or better | 5 |
+| Anything else | 0 |
+
+The name "9/6" comes from the full house paying 9 and the flush paying 6 for
+each credit bet. With optimal holds, the rewards average about 99.5% of the
+credits wagered.
+
+The dataset gives each dealt hand the exact expected reward of all 32 hold
+choices. The network learns to predict those values, and at play time it
+makes the hold with the highest prediction.
 
 ## Setup
 
 ```bash
 cd examples/pytorch/pytorch-video-poker-bot
-python3 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 wandb login
 ```
 
-Then generate the training dataset (1M random deals labeled with exact hold
-EVs, deterministic with seed 42). It takes a couple of minutes:
+## Run it
+
+### 1. Generate the dataset
 
 ```bash
-python generate_dataset.py data/hands.npz
+python generate_dataset.py --output data/hands.npz
 ```
 
-## What to run
+This deals 1,000,000 random hands and labels each one. It takes about two
+minutes and writes a ~44 MB file. For a quick test, add `--hands 20000`.
 
-| Command | Purpose |
+### 2. Train
+
+```bash
+python train.py \
+  --dataset data/hands.npz \
+  --checkpoint checkpoints/jacks_or_better_network.pt \
+  --project video-poker \
+  --run-name train-baseline
+```
+
+This takes under a minute on a laptop CPU. After each epoch it saves the
+checkpoint if validation improved, and at the end it uploads the checkpoint
+as a model artifact. Optional flags: `--epochs` (default 20), `--lr`,
+`--batch-size`, `--hidden-size`, `--seed`.
+
+### 3. Evaluate
+
+```bash
+python evaluate.py \
+  --checkpoint checkpoints/jacks_or_better_network.pt \
+  --project video-poker \
+  --run-name eval-baseline
+```
+
+This plays 100,000 hands with the checkpoint (change with `--hands`), which
+takes about 10 seconds, and logs the result as a separate run in the same
+project.
+
+## What you will see in W&B
+
+- **Training run**: config on the Overview tab, and these charts per epoch:
+  - `train_loss` and `val_loss`
+  - `val_optimal_action_pct`: how often the network makes the optimal hold
+  - `val_expected_return_pct`: expected rewards as a percentage of credits
+    wagered
+
+  The checkpoint is under Artifacts.
+- **Evaluation run**: in the run summary, `wagered` (credits bet), `payout`
+  (credits rewarded), `profit` (the difference) and `return_pct` (rewards as
+  a percentage of credits wagered).
+
+## Files
+
+| File | What it does |
 | --- | --- |
-| `python generate_dataset.py PATH` | Build the EV-labeled dataset at `PATH` (run first) |
-| `python train.py --dataset PATH` | Train on that dataset and log to W&B |
-| `python evaluate.py` | Greedy rollout from `checkpoints/hold-network.pt` |
-
-```bash
-python generate_dataset.py data/hands.npz
-python train.py --dataset data/hands.npz
-python evaluate.py --checkpoint checkpoints/hold-network.pt
-```
-
-`train.py` is the W&B demo surface: one `wandb.init` context, `run.log` each
-epoch, then finish on exit. Useful flag: `--epochs`. For a quicker run, build a
-smaller dataset with `python generate_dataset.py data/small.npz --hands 20000`.
-
-## Layout
-
-```
-generate_dataset.py   # build an EV-labeled .npz dataset
-train.py              # fit HoldNetwork, log metrics + artifact
-evaluate.py           # score a checkpoint with greedy play
-game.py               # cards, ranks, paytable class, deal/hold/draw
-jacks_or_better.py    # JoB classifier + paytable (+ evaluate_hand wrapper)
-ev.py                 # exact hold EV calculator (uses JoB classify)
-model.py              # encoding, network, train helpers, play/checkpoint
-data/                 # dataset loaders (+ generated .npz)
-```
-
-## How training works
-
-1. An exact EV calculator labels every hold pattern for each starting hand.
-2. A small MLP (`85 → 256 → 256 → 32`) regresses those targets.
-3. At play time the network picks the highest-scoring hold and draws.
+| `generate_dataset.py` | Builds the labeled training dataset. |
+| `train.py` | Trains the network and logs the run to W&B. |
+| `evaluate.py` | Plays hands with a trained checkpoint and logs the score to W&B. |
+| `model.py` | The network, hand encoding, training and validation steps, and checkpoint save/load. |
+| `game.py` | Cards, deck, dealing and drawing. |
+| `jacks_or_better.py` | Hand rankings and the paytable. |
+| `ev.py` | Calculates the exact expected reward of each hold choice. |
+| `data/dataset.py` | Loads a generated dataset for training. |
+| `data/generate.py` | Deals and labels the hands for `generate_dataset.py`. |

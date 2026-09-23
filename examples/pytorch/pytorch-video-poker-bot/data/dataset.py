@@ -65,7 +65,7 @@ def encode_cards(cards: np.ndarray) -> np.ndarray:
 
 def load_dataset(path: Path) -> HoldDataset:
     if not path.exists():
-        raise FileNotFoundError(f"{path} not found; create it with generate_dataset.py {path}")
+        raise FileNotFoundError(f"{path} not found; create it with generate_dataset.py --output {path}")
     with np.load(path, allow_pickle=False) as payload:
         meta = _read_meta(payload)
         cards = payload["cards"]

@@ -11,7 +11,7 @@ from data.generate import DEFAULT_HANDS, DEFAULT_SEED, generate_dataset
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("output", type=Path, help="where to write the .npz dataset")
+    parser.add_argument("--output", type=Path, required=True, help="where to write the dataset (.npz)")
     parser.add_argument("--hands", type=int, default=DEFAULT_HANDS)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument("--force", action="store_true", help="overwrite existing file")
