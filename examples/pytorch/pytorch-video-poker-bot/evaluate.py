@@ -51,6 +51,7 @@ def play_hands(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--artifact", required=True, help="model artifact from train.py, e.g. my-model:latest")
+    parser.add_argument("--entity", help="W&B team or user to log to (default: your default entity)")
     parser.add_argument("--project", required=True, help="W&B project to log to")
     parser.add_argument("--run-name", required=True, help="name for this W&B run")
     parser.add_argument("--hands", type=int, default=100_000)
@@ -60,6 +61,7 @@ def main() -> None:
         args.seed = random.randrange(2**32)
 
     with wandb.init(
+        entity=args.entity,
         project=args.project,
         name=args.run_name,
         job_type="evaluation",

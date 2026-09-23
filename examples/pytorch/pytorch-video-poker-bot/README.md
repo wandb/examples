@@ -82,6 +82,7 @@ python train.py \
 This takes under a minute on a laptop CPU. After each epoch it saves the
 checkpoint if validation improved, and at the end it uploads the checkpoint
 to W&B as the model artifact `jacks-or-better-network`. Optional flags:
+`--entity` (a W&B team or user; defaults to your default entity),
 `--epochs` (default 20), `--lr`, `--batch-size`, `--hidden-size`, `--seed`.
 
 Without `--seed`, each run picks a random seed. The seed it used is saved
@@ -101,6 +102,7 @@ This downloads the latest version of the model artifact and plays 100,000
 hands with it (change with `--hands`), which takes about 10 seconds. It logs
 to a separate run in the same project. Like training, it deals with a random
 seed unless you pass `--seed`, so each evaluation plays different hands.
+If you trained under a team with `--entity`, pass the same `--entity` here.
 
 ## What you will see in W&B
 

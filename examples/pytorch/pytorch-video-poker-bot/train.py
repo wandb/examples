@@ -20,6 +20,7 @@ def main() -> None:
     parser.add_argument("--dataset", type=Path, required=True, help=".npz from generate_dataset.py")
     parser.add_argument("--checkpoint", type=Path, required=True, help="where to save the trained model (.pt)")
     parser.add_argument("--artifact-name", required=True, help="W&B model artifact to upload the checkpoint as")
+    parser.add_argument("--entity", help="W&B team or user to log to (default: your default entity)")
     parser.add_argument("--project", required=True, help="W&B project to log to")
     parser.add_argument("--run-name", required=True, help="name for this W&B run")
     parser.add_argument("--epochs", type=int, default=20)
@@ -50,7 +51,13 @@ def main() -> None:
     }
 
     # One place for init → log → finish (finish runs automatically on exit).
-    with wandb.init(project=args.project, name=args.run_name, group="train", config=config) as run:
+    with wandb.init(
+        entity=args.entity,
+        project=args.project,
+        name=args.run_name,
+        group="train",
+        config=config,
+    ) as run:
         best_regret = float("inf")
         for epoch in range(1, args.epochs + 1):
             train_loss = train_epoch(
