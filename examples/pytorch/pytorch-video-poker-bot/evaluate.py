@@ -54,13 +54,16 @@ def main() -> None:
     parser.add_argument("--project", required=True, help="W&B project to log to")
     parser.add_argument("--run-name", required=True, help="name for this W&B run")
     parser.add_argument("--hands", type=int, default=100_000)
-    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--seed", type=int, help="default: random; the seed used is logged to W&B")
     args = parser.parse_args()
+    if args.seed is None:
+        args.seed = random.randrange(2**32)
 
     with wandb.init(
         project=args.project,
         name=args.run_name,
         job_type="evaluation",
+        group="eval",
         config={"artifact": args.artifact, "hands": args.hands, "seed": args.seed},
     ) as run:
         # use_artifact records that this run consumed the model, linking it to the training run.

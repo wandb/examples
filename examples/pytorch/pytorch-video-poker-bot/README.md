@@ -4,8 +4,8 @@ This example trains a small PyTorch network to play video poker and tracks
 it with [Weights & Biases](https://wandb.ai). The poker is just a stand-in
 task. The point is to see a complete W&B run:
 
-1. **`wandb.init()`** starts a run and records its config (hyperparameters
-   and dataset size).
+1. **`wandb.init()`** starts a run, puts it in a group (`train` or `eval`),
+   and records its config (hyperparameters and dataset size).
 2. **`run.log()`** sends metrics every epoch, so you can watch training live.
 3. **`run.log_artifact()`** uploads the trained checkpoint as a versioned
    model artifact.
@@ -84,6 +84,10 @@ checkpoint if validation improved, and at the end it uploads the checkpoint
 to W&B as the model artifact `jacks-or-better-network`. Optional flags:
 `--epochs` (default 20), `--lr`, `--batch-size`, `--hidden-size`, `--seed`.
 
+Without `--seed`, each run picks a random seed. The seed it used is saved
+in the run's config in W&B, so you can repeat any run exactly by passing
+that value.
+
 ### 3. Evaluate
 
 ```bash
@@ -95,7 +99,8 @@ python evaluate.py \
 
 This downloads the latest version of the model artifact and plays 100,000
 hands with it (change with `--hands`), which takes about 10 seconds. It logs
-to a separate run in the same project.
+to a separate run in the same project. Like training, it deals with a random
+seed unless you pass `--seed`, so each evaluation plays different hands.
 
 ## What you will see in W&B
 

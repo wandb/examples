@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import random
 from pathlib import Path
 
 import numpy as np
@@ -25,8 +26,10 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=1024)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--hidden-size", type=int, default=256)
-    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--seed", type=int, help="default: random; the seed used is logged to W&B")
     args = parser.parse_args()
+    if args.seed is None:
+        args.seed = random.randrange(2**32)
 
     torch.manual_seed(args.seed)
 
@@ -47,7 +50,7 @@ def main() -> None:
     }
 
     # One place for init → log → finish (finish runs automatically on exit).
-    with wandb.init(project=args.project, name=args.run_name, config=config) as run:
+    with wandb.init(project=args.project, name=args.run_name, group="train", config=config) as run:
         best_regret = float("inf")
         for epoch in range(1, args.epochs + 1):
             train_loss = train_epoch(
