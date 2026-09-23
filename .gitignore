@@ -15,4 +15,6 @@ MNIST/*
 log.txt
 colabs/log.txt
 artifacts
+examples/marimo/*/.conversion/
 examples/jax/jax-llm/proteins-base/
+marimo/Notebook_mentions_Exported_wandb_docs_models_list.csv
