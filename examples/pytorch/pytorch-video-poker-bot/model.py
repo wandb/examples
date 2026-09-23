@@ -1,81 +1,45 @@
-"""Hold network: encode a hand, score the 32 holds, train, save, and play.
+"""The network: encode hands, score the 32 holds, train, validate, save and load.
 
-A checkpoint is the learned weights (plus a small config so we can rebuild
-the network). Everything runs on CPU — the model is tiny.
+Everything runs on CPU; the model is tiny.
 """
 
 from __future__ import annotations
 
-import random
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Sequence
 
 import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
 
-from game import BET, Card, VideoPokerGame, deal, make_deck, shuffle_deck
+from game import CARDS_PER_HAND, NUM_HOLDS, Card, card_to_code
 
-CARDS_PER_HAND = 5
 RANK_FEATURES = 13
 SUIT_FEATURES = 4
 CARD_FEATURES = RANK_FEATURES + SUIT_FEATURES
 INPUT_SIZE = CARDS_PER_HAND * CARD_FEATURES
-NUM_ACTIONS = 1 << CARDS_PER_HAND  # 32 hold patterns
 
 
-@dataclass(frozen=True)
-class EncodedHand:
-    values: np.ndarray
-    canonical_cards: tuple[Card, ...]
-
-    def hold_mask(self, action: int, dealt_hand: Sequence[Card]) -> int:
-        """Map a canonical action index back onto the physical dealt order."""
-        if action < 0 or action >= NUM_ACTIONS:
-            raise ValueError(f"action must be 0-{NUM_ACTIONS - 1}")
-        held = {
-            card
-            for index, card in enumerate(self.canonical_cards)
-            if action & (1 << index)
-        }
-        mask = 0
-        for index, card in enumerate(dealt_hand):
-            if card in held:
-                mask |= 1 << index
-        if len(held) != bin(mask).count("1"):
-            raise ValueError("canonical cards must all be present in dealt hand")
-        return mask
+def encode_cards(cards: np.ndarray) -> np.ndarray:
+    """One-hot encode (N, 5) card codes into (N, INPUT_SIZE) network inputs."""
+    card_codes = np.asarray(cards)
+    if card_codes.ndim != 2 or card_codes.shape[1] != CARDS_PER_HAND:
+        raise ValueError("cards must have shape (N, 5)")
+    ranks = card_codes // 4
+    suits = card_codes % 4
+    rows = np.arange(len(card_codes))[:, None]
+    positions = np.arange(CARDS_PER_HAND)[None, :]
+    encoded = np.zeros((len(card_codes), CARDS_PER_HAND, CARD_FEATURES), dtype=np.float32)
+    encoded[rows, positions, ranks] = 1.0
+    encoded[rows, positions, RANK_FEATURES + suits] = 1.0
+    return encoded.reshape(len(card_codes), INPUT_SIZE)
 
 
-def encode_hand(hand: Sequence[Card]) -> EncodedHand:
-    """Encode a hand invariant to deal order and physical suit names."""
-    if len(hand) != CARDS_PER_HAND:
-        raise ValueError("expected exactly 5 cards")
-    if len(set(hand)) != CARDS_PER_HAND:
-        raise ValueError("hand contains duplicate cards")
-
-    suit_rank_masks = [0] * SUIT_FEATURES
-    for card in hand:
-        suit_rank_masks[card.suit] |= 1 << (card.rank - 2)
-    suit_order = sorted(range(SUIT_FEATURES), key=lambda s: (-suit_rank_masks[s], s))
-    suit_map = [0] * SUIT_FEATURES
-    for canonical_suit, physical_suit in enumerate(suit_order):
-        suit_map[physical_suit] = canonical_suit
-
-    best_cards = tuple(sorted(hand, key=lambda c: (-c.rank, suit_map[c.suit])))
-    values = np.zeros((CARDS_PER_HAND, CARD_FEATURES), dtype=np.float32)
-    for index, card in enumerate(best_cards):
-        values[index, card.rank - 2] = 1.0
-        values[index, RANK_FEATURES + suit_map[card.suit]] = 1.0
-    return EncodedHand(values=values.reshape(INPUT_SIZE), canonical_cards=best_cards)
-
-
-class HoldNetwork(nn.Module):
+class Network(nn.Module):
     """MLP that scores each of the 32 possible hold patterns."""
 
-    def __init__(self, hidden_size: int = 256) -> None:
+    def __init__(self, hidden_size: int) -> None:
         super().__init__()
         self.hidden_size = hidden_size
         self.layers = nn.Sequential(
@@ -83,76 +47,40 @@ class HoldNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size, NUM_ACTIONS),
+            nn.Linear(hidden_size, NUM_HOLDS),
         )
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         return self.layers(inputs)
 
 
-def save_checkpoint(path: Path, *, model: HoldNetwork, config: dict[str, Any]) -> None:
+def save_checkpoint(path: Path, model: Network) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"weights": model.state_dict(), "config": config}, path)
+    torch.save({"hidden_size": model.hidden_size, "weights": model.state_dict()}, path)
 
 
-def load_checkpoint(path: Path) -> tuple[HoldNetwork, dict[str, Any]]:
-    payload = torch.load(path, map_location="cpu", weights_only=False)
-    config = dict(payload.get("config", {}))
-    # Older checkpoints used "model_state"; prefer "weights".
-    state = payload.get("weights") or payload["model_state"]
-    model = HoldNetwork(hidden_size=int(config.get("hidden_size", 256)))
-    model.load_state_dict(state)
+def load_checkpoint(path: Path) -> Network:
+    payload = torch.load(path, map_location="cpu", weights_only=True)
+    model = Network(payload["hidden_size"])
+    model.load_state_dict(payload["weights"])
     model.eval()
-    return model, config
+    return model
 
 
-def choose_hold(model: HoldNetwork, hand: Sequence[Card]) -> int:
-    """Pick the highest-scoring hold pattern for this hand."""
-    encoded = encode_hand(hand)
+def choose_hold(model: Network, hand: Sequence[Card]) -> int:
+    """Pick the highest-scoring hold; returns a hold mask over `hand` as dealt.
+
+    The network sees cards sorted by card code, the same order the dataset uses.
+    """
+    order = sorted(range(CARDS_PER_HAND), key=lambda i: card_to_code(hand[i]))
+    codes = np.array([[card_to_code(hand[i]) for i in order]])
     with torch.no_grad():
-        scores = model(torch.from_numpy(encoded.values).unsqueeze(0))
-        action = int(scores.argmax(dim=1).item())
-    return encoded.hold_mask(action, hand)
-
-
-def play_hands(
-    *,
-    model: HoldNetwork,
-    game: VideoPokerGame,
-    hands: int,
-    seed: int = 42,
-    log_every: int = 10_000,
-) -> dict[str, float]:
-    """Play greedy hands; return return_pct / profit / wagered / payout."""
-    rng = random.Random(seed)
-    wagered = 0
-    payout = 0
-    for hand_num in range(1, hands + 1):
-        deck = make_deck()
-        shuffle_deck(deck, rng=rng)
-        dealt = deal(deck, 5)
-        result = game.play_hand_with_state(deck, dealt, choose_hold(model, dealt))
-        wagered += BET
-        payout += result.payout
-        if hand_num % log_every == 0 or hand_num == hands:
-            print(
-                f"hand {hand_num:,}/{hands:,}  "
-                f"return={(payout / wagered) * 100:.2f}%  "
-                f"profit={payout - wagered:,}",
-                flush=True,
-            )
-    return {
-        "hands": float(hands),
-        "bet": float(BET),
-        "wagered": float(wagered),
-        "payout": float(payout),
-        "profit": float(payout - wagered),
-        "return_pct": (payout / wagered) * 100,
-    }
+        action = int(model(torch.from_numpy(encode_cards(codes))).argmax(dim=1).item())
+    return sum(1 << order[bit] for bit in range(CARDS_PER_HAND) if action & (1 << bit))
 
 
 def train_epoch(
-    model: HoldNetwork,
+    model: Network,
     optimizer: torch.optim.Optimizer,
     *,
     states: np.ndarray,
@@ -182,14 +110,14 @@ def train_epoch(
 
 @torch.no_grad()
 def validation_metrics(
-    model: HoldNetwork,
+    model: Network,
     *,
     states: np.ndarray,
     targets: np.ndarray,
     sample_ids: np.ndarray,
     batch_size: int,
 ) -> dict[str, float]:
-    """Loss, % optimal action, and expected return vs the EV labels."""
+    """Loss, % optimal holds, mean regret, and expected return vs the EV labels."""
     model.eval()
     total_loss = total_regret = total_policy = 0.0
     optimal = n = 0
@@ -213,6 +141,6 @@ def validation_metrics(
     return {
         "loss": total_loss / (n * targets.shape[1]),
         "optimal_action_pct": (optimal / n) * 100,
-        "mean_ev_regret": total_regret / n,
+        "mean_regret": total_regret / n,
         "expected_return_pct": (1.0 + total_policy / n) * 100,
     }

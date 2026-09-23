@@ -13,8 +13,9 @@ task. The point is to see a complete W&B run:
    so the run finishes automatically when the block exits. Without the
    `with` block, you would call `run.finish()` yourself.
 
-`evaluate.py` then starts a second run (`job_type="evaluation"`) that plays
-hands with the trained checkpoint and records the final score.
+`evaluate.py` then starts a second run (`job_type="evaluation"`). It fetches
+the model artifact from W&B with **`run.use_artifact()`**, which links the
+two runs, and logs its score every 100 hands as it plays.
 
 ## How video poker works
 
@@ -73,40 +74,46 @@ minutes and writes a ~44 MB file. For a quick test, add `--hands 20000`.
 python train.py \
   --dataset data/hands.npz \
   --checkpoint checkpoints/jacks_or_better_network.pt \
+  --artifact-name jacks-or-better-network \
   --project video-poker \
   --run-name train-baseline
 ```
 
 This takes under a minute on a laptop CPU. After each epoch it saves the
 checkpoint if validation improved, and at the end it uploads the checkpoint
-as a model artifact. Optional flags: `--epochs` (default 20), `--lr`,
-`--batch-size`, `--hidden-size`, `--seed`.
+to W&B as the model artifact `jacks-or-better-network`. Optional flags:
+`--epochs` (default 20), `--lr`, `--batch-size`, `--hidden-size`, `--seed`.
 
 ### 3. Evaluate
 
 ```bash
 python evaluate.py \
-  --checkpoint checkpoints/jacks_or_better_network.pt \
+  --artifact jacks-or-better-network:latest \
   --project video-poker \
   --run-name eval-baseline
 ```
 
-This plays 100,000 hands with the checkpoint (change with `--hands`), which
-takes about 10 seconds, and logs the result as a separate run in the same
-project.
+This downloads the latest version of the model artifact and plays 100,000
+hands with it (change with `--hands`), which takes about 10 seconds. It logs
+to a separate run in the same project.
 
 ## What you will see in W&B
 
 - **Training run**: config on the Overview tab, and these charts per epoch:
   - `train_loss` and `val_loss`
   - `val_optimal_action_pct`: how often the network makes the optimal hold
+  - `val_mean_regret`: the expected reward per credit bet that the network's
+    holds give up compared with the optimal holds, on average. Lower is
+    better, and the saved checkpoint is the epoch with the lowest value.
   - `val_expected_return_pct`: expected rewards as a percentage of credits
     wagered
-
-  The checkpoint is under Artifacts.
-- **Evaluation run**: in the run summary, `wagered` (credits bet), `payout`
-  (credits rewarded), `profit` (the difference) and `return_pct` (rewards as
-  a percentage of credits wagered).
+- **Evaluation run**: running totals logged every 100 hands, so you can
+  watch the score settle as more hands are played: `wagered` (credits bet),
+  `payout` (credits rewarded), `profit` (the difference) and `return_pct`
+  (rewards as a percentage of credits wagered).
+- **Model artifact**: every training run adds a new version of
+  `jacks-or-better-network`. Its Lineage tab shows which training run
+  produced each version and which evaluation runs used it.
 
 ## Files
 
@@ -114,10 +121,9 @@ project.
 | --- | --- |
 | `generate_dataset.py` | Builds the labeled training dataset. |
 | `train.py` | Trains the network and logs the run to W&B. |
-| `evaluate.py` | Plays hands with a trained checkpoint and logs the score to W&B. |
+| `evaluate.py` | Fetches the trained model from W&B, plays hands with it, and logs the score. |
+| `dataset.py` | Loads a generated dataset for training. |
 | `model.py` | The network, hand encoding, training and validation steps, and checkpoint save/load. |
 | `game.py` | Cards, deck, dealing and drawing. |
 | `jacks_or_better.py` | Hand rankings and the paytable. |
 | `ev.py` | Calculates the exact expected reward of each hold choice. |
-| `data/dataset.py` | Loads a generated dataset for training. |
-| `data/generate.py` | Deals and labels the hands for `generate_dataset.py`. |

@@ -7,3 +7,4 @@ wandb/
 .env
 *.pt
 data/*.npz
+artifacts/

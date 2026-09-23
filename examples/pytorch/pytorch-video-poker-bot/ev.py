@@ -1,7 +1,7 @@
 """Exact expected-value calculator for hold decisions.
 
 Uses Jacks or Better's vectorized classifier to precompute subset tables,
-then answers EV for each of the 32 hold masks with a handful of lookups.
+then answers EV for every hold mask with a handful of lookups.
 """
 
 from __future__ import annotations
@@ -12,13 +12,12 @@ from typing import Sequence
 
 import numpy as np
 
-from game import BET, Card, Paytable, hand_to_codes
+from game import BET, CARDS_PER_HAND, DECK_SIZE, NUM_HOLDS, Card, Paytable, hand_to_codes
 from jacks_or_better import NUM_RANK_CLASSES, RANK_CLASSES, classify
 
-CARDS_PER_HAND = 5
-DECK_SIZE = 52
 TOTAL_HANDS = comb(DECK_SIZE, CARDS_PER_HAND)
-ALL_POSITIONS = 0b11111
+ALL_POSITIONS = NUM_HOLDS - 1  # every card position set
+CARDS_LEFT_IN_DECK = DECK_SIZE - CARDS_PER_HAND
 
 _BINOMIAL = np.array(
     [[comb(n, k) for k in range(CARDS_PER_HAND + 1)] for n in range(DECK_SIZE + 1)],
@@ -92,24 +91,28 @@ def get_tables() -> EVTables:
     return _TABLES
 
 
-def hold_expected_values(hand: Sequence[Card], paytable: Paytable) -> list[float]:
-    """Exact expected profit for each of the 32 hold masks (BET credits)."""
+def rank_payouts(paytable: Paytable) -> np.ndarray:
+    """Reward for each hand rank, in the order `classify` numbers them."""
+    return np.array([paytable.payout_for(rank) for rank in RANK_CLASSES], dtype=np.int64)
+
+
+def hold_expected_values(hand: Sequence[Card], payouts: np.ndarray) -> list[float]:
+    """Exact expected profit (in credits) for every hold mask.
+
+    `payouts` comes from `rank_payouts`; build it once and reuse it.
+    """
     tables = get_tables()
     codes = hand_to_codes(hand)
-    payouts = np.array(
-        [paytable.payout_for_rank(rank) for rank in RANK_CLASSES],
-        dtype=np.int64,
-    )
 
-    subset_payout = [0] * 32
-    for subset in range(32):
+    subset_payout = [0] * NUM_HOLDS
+    for subset in range(NUM_HOLDS):
         sorted_codes = sorted(
-            codes[position] for position in range(5) if subset & (1 << position)
+            codes[position] for position in range(CARDS_PER_HAND) if subset & (1 << position)
         )
         subset_payout[subset] = int(tables.counts_for(sorted_codes) @ payouts)
 
     expected_values: list[float] = []
-    for hold_mask in range(32):
+    for hold_mask in range(NUM_HOLDS):
         discards = ALL_POSITIONS ^ hold_mask
         total = 0
         subset = discards
@@ -119,11 +122,6 @@ def hold_expected_values(hand: Sequence[Card], paytable: Paytable) -> list[float
             if subset == 0:
                 break
             subset = (subset - 1) & discards
-        draws = comb(47, bin(discards).count("1"))
+        draws = comb(CARDS_LEFT_IN_DECK, bin(discards).count("1"))
         expected_values.append(total / draws - BET)
     return expected_values
-
-
-def best_hold_mask(hand: Sequence[Card], paytable: Paytable) -> int:
-    values = hold_expected_values(hand, paytable)
-    return int(max(range(32), key=lambda mask: values[mask]))

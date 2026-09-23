@@ -11,6 +11,7 @@ from typing import Sequence
 import numpy as np
 
 from game import (
+    CARDS_PER_HAND,
     Card,
     EvaluatedHand,
     HandRank,
@@ -19,11 +20,8 @@ from game import (
     hand_to_codes,
 )
 
-GAME_ID = "jacks_or_better_9_6"
-
 # Absolute credits paid at BET=5 (royal includes the max-coin bonus).
 PAYTABLE = Paytable(
-    name="9/6 Jacks or Better",
     payouts={
         HandRank.ROYAL_FLUSH: 4000,
         HandRank.STRAIGHT_FLUSH: 250,
@@ -61,7 +59,7 @@ _ACE_RANK = 12
 def classify(hands: np.ndarray) -> np.ndarray:
     """Rank many hands at once. Each row is five card codes; result is RANK_CLASSES index."""
     codes = np.asarray(hands)
-    if codes.ndim != 2 or codes.shape[1] != 5:
+    if codes.ndim != 2 or codes.shape[1] != CARDS_PER_HAND:
         raise ValueError("expected an (N, 5) array of card codes")
     codes = np.sort(codes, axis=1)
 
@@ -106,7 +104,7 @@ def classify(hands: np.ndarray) -> np.ndarray:
 
 def evaluate_hand(cards: Sequence[Card]) -> EvaluatedHand:
     """Classify one hand; translate the fast ordinal into EvaluatedHand."""
-    if len(cards) != 5:
+    if len(cards) != CARDS_PER_HAND:
         raise ValueError("expected exactly 5 cards")
     ordinal = int(classify(np.asarray([hand_to_codes(cards)], dtype=np.uint8))[0])
     return EvaluatedHand(RANK_CLASSES[ordinal])

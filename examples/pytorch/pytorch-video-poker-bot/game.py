@@ -1,6 +1,6 @@
 """Video poker core: cards, ranks, paytable, and the deal/hold/draw loop.
 
-The bet is always five coins — baked into BET below.
+The bet is always five credits, baked into BET below.
 """
 
 from __future__ import annotations
@@ -10,7 +10,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Callable, Mapping, Sequence
 
-BET = 5  # always max-coin Jacks or Better
+BET = 5  # credits bet per hand
+CARDS_PER_HAND = 5
+DECK_SIZE = 52
+NUM_HOLDS = 1 << CARDS_PER_HAND  # 32 ways to choose which cards to hold
 
 RANKS = tuple(range(2, 15))  # 2..14, Ace high
 SUITS = (0, 1, 2, 3)
@@ -34,30 +37,6 @@ class Card:
         return f"{rank}{SUIT_CHARS[self.suit]}"
 
 
-def parse_card(text: str) -> Card:
-    """Parse strings like 'Ah', 'Td', '7s'."""
-    text = text.strip()
-    if len(text) != 2:
-        raise ValueError(f"invalid card: {text}")
-    rank_char, suit_char = text[0].upper(), text[1].lower()
-    rank_map = {"T": 10, **{v: k for k, v in RANK_CHARS.items()}}
-    if rank_char.isdigit():
-        rank = int(rank_char)
-    else:
-        rank = rank_map.get(rank_char)
-    if rank is None or rank not in RANKS:
-        raise ValueError(f"invalid rank in card: {text}")
-    try:
-        suit = SUIT_CHARS.index(suit_char)
-    except ValueError as exc:
-        raise ValueError(f"invalid suit in card: {text}") from exc
-    return Card(rank=rank, suit=suit)
-
-
-def cards_from_strings(values: Sequence[str]) -> list[Card]:
-    return [parse_card(value) for value in values]
-
-
 def make_deck() -> list[Card]:
     return [Card(rank=rank, suit=suit) for suit in SUITS for rank in RANKS]
 
@@ -65,10 +44,6 @@ def make_deck() -> list[Card]:
 def card_to_code(card: Card) -> int:
     """Pack a card into 0..51 (rank-major)."""
     return (card.rank - 2) * 4 + card.suit
-
-
-def code_to_card(code: int) -> Card:
-    return Card(rank=(code // 4) + 2, suit=code % 4)
 
 
 def hand_to_codes(hand: Sequence[Card]) -> list[int]:
@@ -88,10 +63,10 @@ def deal(deck: list[Card], count: int) -> list[Card]:
 
 
 def apply_hold(hand: Sequence[Card], hold_mask: int, deck: list[Card]) -> list[Card]:
-    if hold_mask < 0 or hold_mask > 31:
-        raise ValueError("hold_mask must be a 5-bit integer (0-31)")
+    if not 0 <= hold_mask < NUM_HOLDS:
+        raise ValueError(f"hold_mask must be 0-{NUM_HOLDS - 1}")
     held = [card for index, card in enumerate(hand) if hold_mask & (1 << index)]
-    draw_count = 5 - len(held)
+    draw_count = CARDS_PER_HAND - len(held)
     return held + (deal(deck, draw_count) if draw_count else [])
 
 
@@ -112,31 +87,15 @@ class HandRank(Enum):
 class EvaluatedHand:
     rank: HandRank
 
-    def __str__(self) -> str:
-        return self.rank.value
-
 
 @dataclass(frozen=True)
 class Paytable:
     """Maps a hand rank to total credits paid (for a fixed BET)."""
 
-    name: str
     payouts: Mapping[HandRank, int] = field(default_factory=dict)
 
-    def payout_for(self, hand: EvaluatedHand) -> int:
-        return self.payouts.get(hand.rank, 0)
-
-    def payout_for_rank(self, rank: HandRank) -> int:
+    def payout_for(self, rank: HandRank) -> int:
         return self.payouts.get(rank, 0)
-
-
-@dataclass(frozen=True)
-class PlayResult:
-    initial_hand: tuple[Card, ...]
-    final_hand: tuple[Card, ...]
-    evaluated: EvaluatedHand
-    payout: int
-    profit: int
 
 
 @dataclass
@@ -144,38 +103,9 @@ class VideoPokerGame:
     paytable: Paytable
     evaluate: Callable[[Sequence[Card]], EvaluatedHand]
 
-    def evaluate_hand(self, cards: Sequence[Card]) -> EvaluatedHand:
-        return self.evaluate(cards)
-
-    def payout_for_hand(self, cards: Sequence[Card]) -> int:
-        return self.paytable.payout_for(self.evaluate_hand(cards))
-
-    def play_hand(
-        self,
-        hold_mask: int,
-        rng: random.Random | None = None,
-    ) -> PlayResult:
-        rng = rng or random
-        deck = make_deck()
-        shuffle_deck(deck, rng=rng)
-        return self.play_hand_with_state(deck, deal(deck, 5), hold_mask)
-
-    def play_hand_with_state(
-        self,
-        deck: list[Card],
-        hand: Sequence[Card],
-        hold_mask: int,
-    ) -> PlayResult:
-        if len(hand) != 5:
+    def play_hand(self, deck: list[Card], hand: Sequence[Card], hold_mask: int) -> int:
+        """Hold, draw from `deck`, and return the reward in credits."""
+        if len(hand) != CARDS_PER_HAND:
             raise ValueError("expected a 5-card hand")
-        initial = tuple(hand)
-        final = tuple(apply_hold(initial, hold_mask, deck))
-        evaluated = self.evaluate_hand(final)
-        payout = self.paytable.payout_for(evaluated)
-        return PlayResult(
-            initial_hand=initial,
-            final_hand=final,
-            evaluated=evaluated,
-            payout=payout,
-            profit=payout - BET,
-        )
+        final = apply_hold(hand, hold_mask, deck)
+        return self.paytable.payout_for(self.evaluate(final).rank)
