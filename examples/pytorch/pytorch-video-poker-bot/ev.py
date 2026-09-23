@@ -1,7 +1,14 @@
-"""Exact expected-value calculator for hold decisions.
+"""Exact expected profit of every hold choice, found by counting, not simulating.
 
-Uses Jacks or Better's vectorized classifier to precompute subset tables,
-then answers EV for every hold mask with a handful of lookups.
+Once per process, `build_tables` ranks all 2,598,960 five-card hands with the
+Jacks or Better classifier. For every group of 0 to 4 cards, it counts how many
+five-card hands containing that group land in each hand rank.
+
+For a dealt hand, `hold_expected_values` looks up those counts for the hand's
+32 subsets of cards. The counts include hands that reuse discarded cards, which
+can't be drawn again, so inclusion-exclusion over the discards removes them.
+Averaging the rewards over every possible draw and subtracting the bet gives
+the expected profit of each hold.
 """
 
 from __future__ import annotations

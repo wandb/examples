@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train the network on exact expected-reward targets and log the run to W&B."""
+"""Train the network to predict each hold's exact expected profit and log the run to W&B."""
 
 from __future__ import annotations
 

@@ -1,7 +1,7 @@
 """9/6 Jacks or Better: ranking, paytable, and game factory.
 
 `classify` is the single source of truth for hand ranks (vectorized).
-`evaluate_hand` is a thin wrapper that returns the richer EvaluatedHand type.
+`evaluate_hand` uses it to rank a single hand.
 """
 
 from __future__ import annotations

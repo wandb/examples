@@ -1,4 +1,6 @@
-"""Video poker core: cards, ranks, paytable, and the deal/hold/draw loop.
+"""Video poker basics: cards, the deck, dealing and drawing, hand ranks, and
+the paytable type. The Jacks or Better rules and rewards are in
+jacks_or_better.py.
 
 The bet is always five credits, baked into BET below.
 """

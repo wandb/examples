@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the training dataset: random deals labeled with the exact expected
-reward of every hold."""
+profit of every hold, per credit bet."""
 
 from __future__ import annotations
 
