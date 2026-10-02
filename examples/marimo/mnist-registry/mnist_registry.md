@@ -16,10 +16,6 @@ header: |-
   """Train an MNIST CNN with PyTorch, track the run with Weights & Biases,
   and link the resulting model artifact to a W&B Registry collection.
 
-  Run:
-
-      uvx marimo edit mnist_registry.py --sandbox
-
   The notebook has three interactive cells: fill in the form, click **Train
   model**, then read the results. Everything between the inputs and the button
   runs as a single step, so one click trains, logs, saves, and registers.
