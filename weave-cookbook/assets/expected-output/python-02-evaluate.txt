@@ -1,0 +1,30 @@
+$ uv run python examples/02_evaluate.py
+weave: Logged in as Weights & Biases user: <your-username>.
+weave: View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+weave: Evaluated 1 of 5 examples
+weave: Evaluated 2 of 5 examples
+weave: Evaluated 3 of 5 examples
+weave: Evaluated 4 of 5 examples
+weave: Evaluated 5 of 5 examples
+weave: Evaluation summary {
+weave:   "valid_pick": {
+weave:     "valid_pick": {
+weave:       "true_count": 5,
+weave:       "true_fraction": 1.0
+weave:     }
+weave:   },
+weave:   "fits_constraints": {
+weave:     "fits_constraints": {
+weave:       "true_count": 5,
+weave:       "true_fraction": 1.0
+weave:     }
+weave:   },
+weave:   "model_latency": {
+weave:     "mean": 0.71
+weave:   }
+weave: }
+{'valid_pick': {'valid_pick': {'true_count': 5, 'true_fraction': 1.0}}, 'fits_constraints': {'fits_constraints': {'true_count': 5, 'true_fraction': 1.0}}, 'model_latency': {'mean': 0.71}}
+weave: 🍩 https://wandb.ai/<entity>/weave-cookbook/r/call/<call-id>
+
+Counts can dip below 5 when the model adds extra words to a reply.
+Captured 2026-08-02 with weave 0.53.4 on Python 3.11.13.

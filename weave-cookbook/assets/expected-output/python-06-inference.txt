@@ -1,0 +1,10 @@
+$ uv run python examples/06_inference.py
+weave: Logged in as Weights & Biases user: <your-username>.
+weave: View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+30 models available through one API key; using meta-llama/Llama-3.1-8B-Instruct
+Game Night is about to begin, folks, in just ten minutes, so get your snacks ready and your competitive spirits warmed up!
+usage: 62 prompt + 27 completion tokens
+weave: 🍩 https://wandb.ai/<entity>/weave-cookbook/r/call/<call-id>
+
+The model count and wording vary; temperature 0.2 keeps replies stable but not identical.
+Captured 2026-08-02 with weave 0.53.4 on Python 3.11.13.

@@ -1,0 +1,9 @@
+$ npm run hello
+
+> weave-cookbook-ts@0.1.0 hello
+> tsx examples/00-hello-trace.ts
+
+View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+Welcome to game night! Bring snacks.
+
+Captured 2026-08-02 with weave (npm) 0.16.5 on Node.js 26.4.0.

@@ -1,0 +1,59 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+.envrc
+.direnv/
+.netrc
+.npmrc
+.pypirc
+credentials*.json
+secrets*.json
+service-account*.json
+!credentials.example.json
+!secrets.example.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Node
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+coverage/
+
+# W&B local artifacts
+wandb/
+weave_logs/
+
+# Logs and temporary files
+*.log
+logs/
+.cache/
+.tmp/
+tmp/
+
+# OS and editor
+.DS_Store
+
+# Local AI tools and model files
+models/
+CLAUDE.md
+.claude/
+.cursor/
+.aider*
+.continue/

@@ -1,0 +1,10 @@
+$ npm run otel
+
+> weave-cookbook-ts@0.1.0 otel
+> tsx examples/08-otel.ts
+
+Play Orchard Sprint: done in 20 minutes.
+
+No weave banner and no trace link: the Weave SDK is not involved. The trace
+appears under Traces in your project (wandb.ai/<entity>/weave-cookbook/weave).
+Captured 2026-08-02 with @opentelemetry/sdk-trace-node 1.30.1 on Node.js 26.4.0.

@@ -1,0 +1,18 @@
+$ uv run python examples/03_llm_judge.py
+weave: Logged in as Weights & Biases user: <your-username>.
+weave: View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+weave: Evaluated 1 of 6 examples
+...
+weave: Evaluated 6 of 6 examples
+weave: Evaluation summary { ... "agrees_with_human": { "true_count": 5, "true_fraction": 0.83 } ... }
+weave: Evaluated 1 of 3 examples
+...
+weave: Evaluated 3 of 3 examples
+weave: Evaluation summary { ... "vibe_match": { "true_count": 2, "true_fraction": 0.67 } ... }
+Judge agrees with the human labels on 83% of calibration rows.
+{'true_count': 2, 'true_fraction': 0.6666666666666666}
+weave: 🍩 https://wandb.ai/<entity>/weave-cookbook/r/call/<call-id>
+weave: 🍩 https://wandb.ai/<entity>/weave-cookbook/r/call/<call-id>
+
+Agreement and scores vary between runs; 5/6 and 2/3 were one captured run.
+Captured 2026-08-02 with weave 0.53.4 on Python 3.11.13.
