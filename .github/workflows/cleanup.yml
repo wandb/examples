@@ -23,7 +23,7 @@ jobs:
           python-version: 3.11
       - name: Install Dependencies
         run: |
-          python -m pip install nb_helpers
+          python -m pip install nb_helpers 'fastcore<1.8'
       - name: Clean up .ipynb files
         run: |
           nb_helpers.fix_nbs ./colabs/
