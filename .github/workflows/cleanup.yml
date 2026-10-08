@@ -1,21 +1,20 @@
-name: Clean Notebooks
+name: Check Notebooks
 on:
-  pull_request_review:
-    types: [submitted]
-  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'colabs/**/*.ipynb'
+      - '.github/workflows/cleanup.yml'
 
 jobs:
   fix:
-    if: github.event.review.state == 'approved'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -23,21 +22,20 @@ jobs:
           python-version: 3.11
       - name: Install Dependencies
         run: |
-          python -m pip install nb_helpers
-      - name: Clean up .ipynb files
-        run: |
-          nb_helpers.fix_nbs ./colabs/
-      - name: Commit and push if changed
+          python -m pip install nb_helpers 'fastcore<1.8'
+      - name: Check changed notebooks
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
         run: |
-          git config --global user.name 'GitHub Action'
-          git config --global user.email 'action@github.com'
-          git add -A
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Auto-clean notebooks"
-            git push origin "HEAD:$HEAD_REF"
+          git diff --no-renames --name-only --diff-filter=AM -z "${BASE_SHA}...${HEAD_SHA}" -- ':(glob)colabs/**/*.ipynb' > "$RUNNER_TEMP/changed-notebooks"
+          mapfile -d '' -t notebooks < "$RUNNER_TEMP/changed-notebooks"
+          if [ "${#notebooks[@]}" -eq 0 ]; then
+            echo "No changed notebooks to check"
+            exit 0
           fi
+          for notebook in "${notebooks[@]}"; do
+            nb_helpers.fix_nbs "$notebook" --branch "$BASE_BRANCH"
+          done
+          git diff --exit-code -- "${notebooks[@]}"
