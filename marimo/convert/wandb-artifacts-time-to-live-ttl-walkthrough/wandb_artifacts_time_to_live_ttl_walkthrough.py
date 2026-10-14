@@ -61,7 +61,7 @@ def _():
 
 @app.cell
 def _():
-    entity = "wandb"
+    entity = "your-entity"
     project = "artifacts-ttl-demo"
     authenticated = wandb.login()
     if not authenticated:
@@ -100,12 +100,12 @@ def _():
     # Validate archive entries before extracting downloaded files.
     with tarfile.open(archive, "r:gz") as tar:
         members = tar.getmembers()
-        for _member in members:
-            destination = (workspace / _member.name).resolve()
+        for member in members:
+            destination = (workspace / member.name).resolve()
             if not destination.is_relative_to(workspace.resolve()):
-                raise ValueError(f"Unsafe archive path: {_member.name}")
-            if not (_member.isfile() or _member.isdir()):
-                raise ValueError(f"Unsupported archive entry: {_member.name}")
+                raise ValueError(f"Unsafe archive path: {member.name}")
+            if not (member.isfile() or member.isdir()):
+                raise ValueError(f"Unsupported archive entry: {member.name}")
         tar.extractall(workspace, members=members)
 
     train_source_dir = workspace / "sample" / "train"
@@ -152,7 +152,7 @@ def _():
 
     The next cell starts a run, creates dataset artifacts with
     `wandb.Artifact()`, adds files with `add_dir()`, and sets a ten-day TTL
-    before calling `run.log_artifact()`.
+    before calling `raw_data_run.log_artifact()`.
 
     We create two versions of `real-raw`, with aliases `extended` and
     `compliant`, so the next example can give them different policies. Different
@@ -168,26 +168,26 @@ def _():
 
 @app.cell
 def _(entity, project, train_source_dir, val_source_dir):
-    with wandb.init(entity=entity, project=project, job_type="raw-data") as _run:
+    with wandb.init(entity=entity, project=project, job_type="raw-data") as raw_data_run:
         extended = wandb.Artifact("real-raw", type="dataset")
         extended.add_dir(str(train_source_dir), name="extended-snapshot")
         extended.ttl = timedelta(days=10)
-        logged_extended = _run.log_artifact(extended, aliases=["extended"])
+        logged_extended = raw_data_run.log_artifact(extended, aliases=["extended"])
         logged_extended.wait()
 
         compliant = wandb.Artifact("real-raw", type="dataset")
         compliant.add_dir(str(train_source_dir), name="compliant-snapshot")
         compliant.ttl = timedelta(days=10)
-        logged_compliant = _run.log_artifact(compliant, aliases=["compliant", "latest"])
+        logged_compliant = raw_data_run.log_artifact(compliant, aliases=["compliant", "latest"])
         logged_compliant.wait()
 
         fake = wandb.Artifact("fake-raw", type="dataset")
         fake.add_dir(str(val_source_dir))
         fake.ttl = timedelta(days=10)
-        logged_fake = _run.log_artifact(fake)
+        logged_fake = raw_data_run.log_artifact(fake)
         logged_fake.wait()
 
-        project_path = f"{_run.entity}/{_run.project}"
+        project_path = f"{raw_data_run.entity}/{raw_data_run.project}"
         raw_alias_paths = {
             "extended": f"{project_path}/real-raw:extended",
             "compliant": f"{project_path}/real-raw:compliant",
@@ -265,8 +265,8 @@ def _():
     The next cell consumes the `compliant` version of `real-raw`, resizes its
     images to 64 by 64 pixels, and logs a new `real-prepro` artifact.
 
-    `run.use_artifact()` records the input relationship, and
-    `run.log_artifact()` records the output. Together they give W&B a lineage
+    `preprocessing_run.use_artifact()` records the input relationship, and
+    `preprocessing_run.log_artifact()` records the output. Together they give W&B a lineage
     graph connecting the source data, preprocessing run, and processed data.
     """)
     return
@@ -277,8 +277,8 @@ def _(compliant_artifact, entity, project, workspace):
     with tempfile.TemporaryDirectory(dir=workspace) as _data_dir:
         output_dir = Path(_data_dir) / "processed"
         output_dir.mkdir()
-        with wandb.init(entity=entity, project=project, job_type="preprocessing") as _run:
-            source = _run.use_artifact(compliant_artifact.qualified_name)
+        with wandb.init(entity=entity, project=project, job_type="preprocessing") as preprocessing_run:
+            source = preprocessing_run.use_artifact(compliant_artifact.qualified_name)
             source_dir = Path(source.download(root=str(Path(_data_dir) / "raw")))
             for _image_path in source_dir.rglob("*.JPEG"):
                 _target = output_dir / _image_path.relative_to(source_dir)
@@ -288,9 +288,9 @@ def _(compliant_artifact, entity, project, workspace):
 
             processed = wandb.Artifact("real-prepro", type="dataset")
             processed.add_dir(str(output_dir))
-            processed_artifact = _run.log_artifact(processed)
+            processed_artifact = preprocessing_run.log_artifact(processed)
             processed_artifact.wait()
-            print(f"View preprocessing run: {_run.url}")
+            print(f"View preprocessing run: {preprocessing_run.url}")
     return (processed_artifact,)
 
 
@@ -317,8 +317,8 @@ def _(compliant_artifact, processed_artifact):
     _api = wandb.Api()
     _source = _api.artifact(compliant_artifact.qualified_name)
     downstream_ttls = {}
-    for consumer in _source.used_by():
-        for _artifact in consumer.logged_artifacts():
+    for consumer_run in _source.used_by():
+        for _artifact in consumer_run.logged_artifacts():
             if _artifact.type == "dataset" and _artifact.qualified_name not in downstream_ttls:
                 _artifact.ttl = timedelta(days=30)
                 _artifact.save()
