@@ -3,10 +3,15 @@ on:
   pull_request_review:
     types: [submitted]
   workflow_dispatch:
+    inputs:
+      commit_changes:
+        description: Commit cleaned notebooks to the selected branch
+        type: boolean
+        default: false
 
 jobs:
   fix:
-    if: github.event.review.state == 'approved'
+    if: github.event_name == 'workflow_dispatch' || github.event.review.state == 'approved'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -15,7 +20,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
           fetch-depth: 0
       - name: Setup Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -23,14 +28,16 @@ jobs:
           python-version: 3.11
       - name: Install Dependencies
         run: |
-          python -m pip install nb_helpers
+          # nb_helpers imports fastcore.script.Param, which was removed in fastcore 2.
+          python -m pip install nb_helpers "fastcore<2"
       - name: Clean up .ipynb files
         run: |
           nb_helpers.fix_nbs ./colabs/
       - name: Commit and push if changed
+        if: github.event_name != 'workflow_dispatch' || inputs.commit_changes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
         run: |
           git config --global user.name 'GitHub Action'
           git config --global user.email 'action@github.com'
