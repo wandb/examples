@@ -6,6 +6,7 @@
 version: 2
 updates:
   - package-ecosystem: "pip" # See documentation for possible values
-    directory: "/" # Location of package manifests
+    directories:
+      - "**/*" # Find package manifests in all subdirectories
     schedule:
       interval: "weekly"
