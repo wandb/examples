@@ -10,9 +10,8 @@
 
 import marimo
 
-__generated_with = "0.24.0"
+__generated_with = "0.25.1"
 app = marimo.App(width="medium", app_title="W&B Artifact TTL Walkthrough")
-
 
 with app.setup:
     import random
@@ -35,39 +34,27 @@ def _():
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/wandb-artifacts-time-to-live-ttl-walkthrough/wandb_artifacts_time_to_live_ttl_walkthrough.py/server)
 
-    W&B Artifacts supports setting time-to-live policies on each version of an Artifact. The following examples show the use of TTL policy in a common Artifact logging workflow. We'll cover:
+    Schedule when artifacts are deleted from Weights & Biases with a W&B Artifact time-to-live (TTL) policy. When you delete an artifact, Weights & Biases marks that artifact as a soft-delete. In other words, the artifact is marked for deletion but files are not immediately deleted from storage.
 
-    - Setting a TTL policy when creating an Artifact
-    - Retroactively setting TTL for a specific Artifact alias
-    - Using the W&B API to set a TTL for all versions of an Artifact
+    This notebook shows how to:
 
-    TTL applies to user-generated Artifacts. Linking an Artifact version to W&B Registry deactivates its TTL policy, so use the examples below on versions whose lifecycle you intend to manage directly.
-    """)
-    return
+    - Set a TTL policy when creating an Artifact
+    - Retroactively set TTL policy for a specific Artifact alias
+    - Using Weights & Biases Python SDK to set a TTL for all versions of an Artifact
 
+    > Linking an Artifact version to Registry deactivates its TTL policy.
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
     ## Setup
     Let's do a few things before we get started. Below we will:
 
-    - Connect to W&B
+    - Authenticate
     - Download and sample a dataset
 
     The notebook dependencies install the required libraries automatically.
-    """)
-    return
 
+    ### Authenticate
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ### Authentication
-
-    Enter your [W&B API key](https://wandb.ai/authorize) and the team entity where you have permission to create runs and Artifacts. You can leave the key blank when this environment already has credentials, such as `WANDB_API_KEY` configured in the marimo Secrets panel. If the entity is blank, W&B uses your default entity.
-
-    Changing these fields does nothing until you click **Connect to W&B**. Connecting authenticates and resolves the target path, but it does not create or modify any W&B object.
+    Run the following cell and provide your [Forge API key](https://wandb.ai/authorize) and the name of your team. Then click **Connect to Weights & Biases**.
     """)
     return
 
@@ -76,18 +63,18 @@ def _():
 def _():
     _api_key_input = mo.ui.text(
         kind="password",
-        label="W&B API key (optional)",
+        label="Weights & Biases API key (optional)",
         placeholder="Paste a key or use configured credentials",
         full_width=True,
     )
     _entity_input = mo.ui.text(
-        label="W&B entity or team (optional)",
+        label="Weights & Biases entity or team (optional)",
         placeholder="Leave blank to use your default entity",
         full_width=True,
     )
     _project_input = mo.ui.text(
         value="artifacts-ttl-demo",
-        label="W&B project",
+        label="Weights & Biases project",
         full_width=True,
     )
     wandb_login_form = (
@@ -97,7 +84,7 @@ def _():
             entity=_entity_input,
             project=_project_input,
         )
-        .form(submit_button_label="Connect to W&B", bordered=True)
+        .form(submit_button_label="Connect to Weights & Biases", bordered=True)
     )
     wandb_login_form
     return (wandb_login_form,)
@@ -108,58 +95,38 @@ def _(wandb_login_form):
     mo.stop(
         wandb_login_form.value is None,
         mo.callout(
-            mo.md("Connect to W&B before running a remote Artifact step."),
+            mo.md("Submit the form above to authenticate before creating a sweep."),
             kind="info",
         ),
     )
 
-    _api_key = wandb_login_form.value["api_key"].strip()
-    _submitted_entity = wandb_login_form.value["entity"].strip()
+    _submitted = wandb_login_form.value
+    _api_key = _submitted["api_key"].strip()
     try:
-        _login_ok = wandb.login(
-            key=_api_key or None,
-            relogin=bool(_api_key),
-        )
-        _login_error = None
-    except wandb.errors.Error as _error:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
         _login_ok = False
-        _login_error = str(_error)
 
     mo.stop(
         not _login_ok,
         mo.callout(
             mo.md(
-                "W&B authentication did not complete. Check the API key and "
-                f"try again.\n\nW&B reported: `{_login_error or 'unknown error'}`"
+                "W&B authentication did not complete. Check the API key or "
+                "molab Secrets configuration and submit again."
             ),
             kind="danger",
         ),
     )
 
-    entity = _submitted_entity or wandb.Api().default_entity
-    mo.stop(
-        not entity,
-        mo.callout(
-            mo.md(
-                "W&B did not return a default entity. Enter a team entity in "
-                "the form above and reconnect."
-            ),
-            kind="danger",
-        ),
-    )
-    project = wandb_login_form.value["project"].strip() or "artifacts-ttl-demo"
-    wandb_settings = {"entity": entity, "project": project}
-    mo.callout(
-        mo.md(f"Connected. Remote steps will target `{entity}/{project}`."),
-        kind="success",
-    )
-    return (wandb_settings,)
+    mo.callout(mo.md("Connected to W&B."), kind="success")
+    return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ### Image Sampling
+    ### Download images
+
     For the purposes of the walkthrough, we will sample from the Imagenette dataset and organize them into training and validation directories in our notebook session. The block below:
 
     - Creates folders for our sampled images if they don't already exist
@@ -171,42 +138,26 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _():
-    prepare_imagenette = mo.ui.run_button(label="Download and sample Imagenette")
-    mo.vstack(
-        [
-            mo.md(
-                "This downloads and extracts Imagenette locally, then keeps a "
-                "random 5% sample. It does not contact W&B."
-            ),
-            prepare_imagenette,
-        ]
-    )
-    return (prepare_imagenette,)
-
-
-@app.cell(hide_code=True)
-def _(prepare_imagenette):
-    mo.stop(
-        not prepare_imagenette.value,
-        mo.callout(
-            mo.md("Click the button above when you are ready to prepare the dataset."),
-            kind="info",
-        ),
-    )
     imagenette_url = "https://s3.amazonaws.com/fast-ai-imageclas/imagenette2-160.tgz"
+
     imagenette_workspace = Path(
         tempfile.mkdtemp(prefix="wandb-ttl-imagenette-")
     )
-    return imagenette_url, imagenette_workspace
 
-
-@app.cell
-def _(imagenette_url, imagenette_workspace):
     imagenette_archive = imagenette_workspace / "imagenette.tgz"
+
     urlretrieve(imagenette_url, imagenette_archive)
     return (imagenette_archive,)
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    The retrieved photos are saved as a `tar` file. The next cell defines a function that lets us access the tar files.
+    """)
+    return
 
 
 @app.function
@@ -234,7 +185,7 @@ def _(imagenette_archive):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    We are going to use Imagenette dataset for this example. [Imagenette](https://github.com/fastai/imagenette) is a subset of 10 easily classified classes from Imagenet (tench, English springer, cassette player, chain saw, church, French horn, garbage truck, gas pump, golf ball, parachute). It was created by Jeremy Howard and is a great dataset to experiment with.
+    We are going to use Imagenette dataset for this example. [Imagenette](https://github.com/fastai/imagenette) is a subset of 10 classified classes from **Imagenet** (`tench`, `English springer`, `cassette player`, `chain saw`, `church`, `French horn`, `garbage truck`, `gas pump`, `golf ball`, and `parachute`).
     """)
     return
 
@@ -255,8 +206,7 @@ def _(dataset_dir):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ### Image Preview
-    Quick block to view some of the images in the sampled dataset.
+    Let's view some of the images in the sampled dataset:
     """)
     return
 
@@ -286,37 +236,16 @@ def _(train_source_dir):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Setting TTL on New Artifacts
+    ## Setting TTL when you create a new artifact
     Below we create two new Artifacts for our real and fake data. Because we have internal retention policies in hypothetical organization we'd like to remove any Artifact that has real data (potentially containing personal data). Below we:
 
-    - Create a W&B Run to track the logging of these raw data Artifacts
+    - Create a Weights & Biases Run to track the logging of these raw data Artifacts
     - Set the ttl attribute on the real raw data
     - Log our two Artifacts
 
     > We will use the train dataset as our real data and the validation dataset as our fake data.
     """)
     return
-
-
-@app.cell(hide_code=True)
-def _(train_source_dir, val_source_dir, wandb_settings):
-    log_raw_artifacts_button = mo.ui.run_button(
-        label="Log TTL demo Artifact versions"
-    )
-    mo.vstack(
-        [
-            mo.md(
-                f"This creates a `raw-data` run in "
-                f"`{wandb_settings['entity']}/{wandb_settings['project']}`, "
-                "logs two distinct `real-raw` versions with a 10-day TTL, "
-                "assigns them the `extended` and `compliant` aliases, and "
-                "logs `fake-raw` without a custom TTL. The files come from "
-                f"`{train_source_dir}` and `{val_source_dir}`."
-            ),
-            log_raw_artifacts_button,
-        ]
-    )
-    return (log_raw_artifacts_button,)
 
 
 @app.function
@@ -370,31 +299,15 @@ def log_raw_artifacts(entity, project, train_source_dir, val_source_dir):
     return run_url, alias_paths
 
 
-@app.cell(hide_code=True)
-def _(
-    log_raw_artifacts_button,
-    train_source_dir,
-    val_source_dir,
-    wandb_settings,
-):
-    mo.stop(
-        not log_raw_artifacts_button.value,
-        mo.callout(
-            mo.md("Click the button above when you are ready to create the Artifact versions."),
-            kind="info",
-        ),
-    )
+@app.cell
+def _(train_source_dir, val_source_dir, wandb_settings):
     raw_artifacts_run_url, raw_alias_paths = log_raw_artifacts(
         wandb_settings["entity"],
         wandb_settings["project"],
         train_source_dir,
         val_source_dir,
     )
-    mo.callout(
-        mo.md(f"Artifacts logged: [open the W&B run]({raw_artifacts_run_url})."),
-        kind="success",
-    )
-    return raw_alias_paths, raw_artifacts_run_url
+    return (raw_alias_paths,)
 
 
 @app.cell(hide_code=True)
@@ -410,27 +323,6 @@ def _():
     The preceding logging step creates two distinct `real-raw` versions and assigns these aliases. Retroactive TTL changes take effect when the code calls `artifact.save()`.
     """)
     return
-
-
-@app.cell(hide_code=True)
-def _(raw_alias_paths, raw_artifacts_run_url, wandb_settings):
-    update_alias_ttls_button = mo.ui.run_button(
-        label="Update TTLs for real-raw:extended and :compliant"
-    )
-    mo.vstack(
-        [
-            mo.md(
-                f"This reads those two aliases from "
-                f"`{wandb_settings['entity']}/{wandb_settings['project']}`. "
-                "It saves only TTL values that need to change. The source "
-                f"Artifact upload completed in [this run]({raw_artifacts_run_url}). "
-                f"The exact inputs are `{raw_alias_paths['extended']}` and "
-                f"`{raw_alias_paths['compliant']}`."
-            ),
-            update_alias_ttls_button,
-        ]
-    )
-    return (update_alias_ttls_button,)
 
 
 @app.function
@@ -471,28 +363,13 @@ def update_alias_ttls(entity, project, alias_paths):
     return changed, run_url
 
 
-@app.cell(hide_code=True)
-def _(raw_alias_paths, update_alias_ttls_button, wandb_settings):
-    mo.stop(
-        not update_alias_ttls_button.value,
-        mo.callout(
-            mo.md("Click the button above when you are ready to update the aliases."),
-            kind="info",
-        ),
-    )
+@app.cell
+def _(raw_alias_paths, wandb_settings):
     updated_aliases, alias_update_run_url = update_alias_ttls(
         wandb_settings["entity"],
         wandb_settings["project"],
         raw_alias_paths,
     )
-    if updated_aliases:
-        _alias_message = (
-            f"Updated `{', '.join(updated_aliases)}`. "
-            f"[Open the W&B run]({alias_update_run_url})."
-        )
-    else:
-        _alias_message = "Both aliases already had the requested TTL values; no run or write was created."
-    mo.callout(mo.md(_alias_message), kind="success")
     return
 
 
@@ -507,24 +384,6 @@ def _():
     - Iterate over each version and remove any existing TTL policy associated with the version
     """)
     return
-
-
-@app.cell(hide_code=True)
-def _(raw_artifacts_run_url, wandb_settings):
-    clear_fake_raw_ttls_button = mo.ui.run_button(
-        label="Clear TTL from every fake-raw version"
-    )
-    mo.vstack(
-        [
-            mo.md(
-                f"This searches `{wandb_settings['entity']}/{wandb_settings['project']}` "
-                "and saves only versions whose TTL is currently set. The "
-                f"source upload completed in [this run]({raw_artifacts_run_url})."
-            ),
-            clear_fake_raw_ttls_button,
-        ]
-    )
-    return (clear_fake_raw_ttls_button,)
 
 
 @app.function
@@ -565,30 +424,11 @@ def clear_fake_raw_ttls(entity, project):
     return unique_versions, versions_to_clear, run_url
 
 
-@app.cell(hide_code=True)
-def _(clear_fake_raw_ttls_button, wandb_settings):
-    mo.stop(
-        not clear_fake_raw_ttls_button.value,
-        mo.callout(
-            mo.md("Click the button above when you are ready to clear the TTL policies."),
-            kind="info",
-        ),
-    )
+@app.cell
+def _(wandb_settings):
     fake_raw_versions, cleared_versions, clear_ttls_run_url = clear_fake_raw_ttls(
         wandb_settings["entity"], wandb_settings["project"]
     )
-    if cleared_versions:
-        _clear_message = (
-            f"Cleared TTL from {len(cleared_versions)} of "
-            f"{len(fake_raw_versions)} discovered versions. "
-            f"[Open the W&B run]({clear_ttls_run_url})."
-        )
-    else:
-        _clear_message = (
-            f"Found {len(fake_raw_versions)} `fake-raw` versions, all already "
-            "without a custom TTL. No run or write was created."
-        )
-    mo.callout(mo.md(_clear_message), kind="success")
     return
 
 
@@ -615,26 +455,6 @@ def _():
     ### Preprocess and log a new Artifact
     """)
     return
-
-
-@app.cell(hide_code=True)
-def _(raw_artifacts_run_url, wandb_settings):
-    preprocess_artifact_button = mo.ui.run_button(
-        label="Preprocess real-raw:latest and log real-prepro"
-    )
-    mo.vstack(
-        [
-            mo.md(
-                f"This downloads `real-raw:latest` from "
-                f"`{wandb_settings['entity']}/{wandb_settings['project']}`, "
-                "resizes its images, and creates a new downstream Artifact "
-                "version. Every click intentionally creates a new version. "
-                f"The source upload completed in [this run]({raw_artifacts_run_url})."
-            ),
-            preprocess_artifact_button,
-        ]
-    )
-    return (preprocess_artifact_button,)
 
 
 @app.function
@@ -678,23 +498,12 @@ def preprocess_and_log_artifact(entity, project):
     return run_url
 
 
-@app.cell(hide_code=True)
-def _(preprocess_artifact_button, wandb_settings):
-    mo.stop(
-        not preprocess_artifact_button.value,
-        mo.callout(
-            mo.md("Click the button above when you are ready to create the downstream Artifact."),
-            kind="info",
-        ),
-    )
+@app.cell
+def _(wandb_settings):
     preprocessing_run_url = preprocess_and_log_artifact(
         wandb_settings["entity"], wandb_settings["project"]
     )
-    mo.callout(
-        mo.md(f"Downstream Artifact logged: [open the W&B run]({preprocessing_run_url})."),
-        kind="success",
-    )
-    return (preprocessing_run_url,)
+    return
 
 
 @app.cell(hide_code=True)
@@ -704,26 +513,6 @@ def _():
     Let's take a look at the original real dataset and traverse downstream runs and Artifacts to set a TTL policy on anything that originated from the real dataset.
     """)
     return
-
-
-@app.cell(hide_code=True)
-def _(preprocessing_run_url, wandb_settings):
-    set_downstream_ttls_button = mo.ui.run_button(
-        label="Assign random TTLs to downstream dataset versions"
-    )
-    mo.vstack(
-        [
-            mo.md(
-                f"This traverses consumers of `real-raw:latest` in "
-                f"`{wandb_settings['entity']}/{wandb_settings['project']}` and "
-                "saves a new random 1–100 day TTL on each downstream dataset "
-                "version. Every click intentionally changes those policies. "
-                f"The preprocessing upload completed in [this run]({preprocessing_run_url})."
-            ),
-            set_downstream_ttls_button,
-        ]
-    )
-    return (set_downstream_ttls_button,)
 
 
 @app.function
@@ -764,26 +553,11 @@ def set_downstream_ttls(entity, project):
     return changed_ttls, run_url
 
 
-@app.cell(hide_code=True)
-def _(set_downstream_ttls_button, wandb_settings):
-    mo.stop(
-        not set_downstream_ttls_button.value,
-        mo.callout(
-            mo.md("Click the button above when you are ready to change downstream TTL policies."),
-            kind="info",
-        ),
-    )
+@app.cell
+def _(wandb_settings):
     downstream_ttls, downstream_ttl_run_url = set_downstream_ttls(
         wandb_settings["entity"], wandb_settings["project"]
     )
-    if downstream_ttls:
-        _downstream_message = (
-            f"Updated {len(downstream_ttls)} downstream dataset versions. "
-            f"[Open the W&B run]({downstream_ttl_run_url})."
-        )
-    else:
-        _downstream_message = "No downstream dataset versions were found, so no run or write was created."
-    mo.callout(mo.md(_downstream_message), kind="success")
     return
 
 
