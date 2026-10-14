@@ -142,7 +142,7 @@ def _():
     the same run records the transformation in Weights & Biases's lineage graph.
     `wait()` ensures the upload finishes before the next stage fetches it.
 
-    For data stored in an existing S3 or GCS bucket, you can instead construct
+    For data stored in an existing Amazon S3 or GCS bucket, you can instead construct
     an Artifact with `artifact.add_reference("s3://bucket/path")`. That records
     an external reference rather than uploading another copy.
     """)
