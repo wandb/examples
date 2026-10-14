@@ -3,7 +3,8 @@ import pprint
 import hydra
 import omegaconf
 import tensorflow as tf
-import wandb.keras
+import wandb
+from wandb.integration.keras import WandbMetricsLogger
 
 
 def get_model(model_cfg):
@@ -27,7 +28,7 @@ def get_model(model_cfg):
     return model
 
 
-@hydra.main(config_path="configs/", config_name="defaults")
+@hydra.main(version_base="1.3", config_path="configs/", config_name="defaults")
 def run_experiment(cfg: omegaconf.DictConfig) -> None:
 
     pprint.pprint(cfg, indent=2)
@@ -46,7 +47,7 @@ def run_experiment(cfg: omegaconf.DictConfig) -> None:
             x_train,
             y_train,
             validation_data=(x_test, y_test),
-            callbacks=[wandb.keras.WandbCallback()],
+            callbacks=[WandbMetricsLogger()],
         )
 
 

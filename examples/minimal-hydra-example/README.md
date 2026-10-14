@@ -1,26 +1,19 @@
 ### Minimal W&B + Hydra example
 
-Before we begin, don't forget to login to your [wandb](wandb.ai) account
+Before we begin, don't forget to login to your [wandb](https://wandb.ai) account
 
 ```bash
 $ wandb login
 ```
 
-Note: Running this code creates a project called `example-hydra` in your default wandb entity. To change the entity where the project should be hosted, pass `wandb.setup.entity=<entity_name>` along with all the commands shown below. For example:
+Note: Running this code creates a project called `example-hydra` in your default wandb entity. To change the entity where the project should be hosted, pass `wandb.setup.entity=<entity_name>` to any of the `python3 main.py` commands shown below. For example:
 ```bash
 $ python3 main.py ... wandb.setup.entity=<entity_name>
 ```
 
-In case of W&B sweeps, add `wandb.setup.entity=<entity_name>` to the last line of `command:` section of [`wandb_sweep.yaml`](wandb_sweep.yaml).
-
-Example:
-```
-...
-command:
-  - ${env}
-  - ${interpreter}
-  - ${args_no_hyphens}
-  - wandb.setup.entity=<entity_name>
+In case of W&B sweeps, `wandb.setup.entity` and `wandb.setup.project` are ignored: every sweep run is logged to the entity and project of the sweep. [`wandb_sweep.yaml`](wandb_sweep.yaml) sets `project: example-hydra`, so sweep runs land in the same project as above (unless you pass `--project` or set `WANDB_PROJECT` when you create the sweep). To host the sweep in a different entity, pass `--entity` (or set `WANDB_ENTITY`) when you create the sweep:
+```bash
+$ wandb sweep --entity <entity_name> wandb_sweep.yaml
 ```
 
 
@@ -30,7 +23,7 @@ command:
 $ python3 main.py
 ```
 - Running in debugging mode:
-```
+```bash
 $ python3 main.py logging=debug
 ```
 
@@ -39,9 +32,14 @@ $ python3 main.py logging=debug
 $ python3 main.py -m experiment=expt001,expt002
 ```
 
-- Hydra multirun with Ray launcher:
+- Hydra multirun with the [Ray launcher plugin](https://hydra.cc/docs/plugins/ray_launcher/). The plugin is not included in `requirements.txt`, so install it first:
 ```bash
-$ python3 main.py -m experiment="glob(*)" launcher=hydra/ray +hydra=with_ray
+$ pip install hydra-ray-launcher
+$ python3 main.py -m experiment="glob(*)" hydra/launcher=ray +hydra=with_ray
+```
+  [`configs/hydra/with_ray.yaml`](configs/hydra/with_ray.yaml) requests 2 GPUs and 16 CPUs for each job, and Ray does not start a job until a node with those resources is free. On a machine with fewer resources, lower the request:
+```bash
+$ python3 main.py -m experiment="glob(*)" hydra/launcher=ray +hydra=with_ray hydra.launcher.ray.remote.num_gpus=0 hydra.launcher.ray.remote.num_cpus=4
 ```
 
 - Running [W&B Sweeps](https://wandb.com/sweeps)
