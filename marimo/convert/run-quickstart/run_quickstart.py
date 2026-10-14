@@ -8,217 +8,162 @@
 
 import marimo
 
-__generated_with = "0.23.16"
-app = marimo.App()
+__generated_with = "0.25.1"
+app = marimo.App(width="medium", app_title="W&B Run Quickstart")
 
-with app.setup(hide_code=True):
+with app.setup:
+    import random
+
     import marimo as mo
     import wandb
-    import random
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # W&B Quickstart
+    # Weights & Biases Run Quickstart
 
-    Use W&B to track, visualize, and manage machine learning experiments of any size.
+    A Weights & Biases run represents one experiment. It records your configuration, metrics,
+    and results so you can inspect an experiment or compare it with other runs.
 
-    ## Create a machine learning training experiment
+    This lesson simulates training to focus on three Weights & Biases operations:
+    `wandb.init()` starts a run, `training_run.log()` records metrics, and
+    `wandb.Api()` retrieves the results.
 
-    The following example simulates a simple training experiment and logs metrics to W&B.
+    ## 1. Authenticate and Choose a Project
 
-    First, define the W&B project name and a `config` dictionary. The config stores the input values for the experiment, such as the number of epochs and the learning rate. In this notebook, the form below collects the information for the `config`.
+    The next cell calls `wandb.login()` and sets the project for the experiment.
+    Set `entity` to your team name, or leave it as `None` for your default entity.
 
-    Next, initialize a W&B run with [`wandb.init()`](https://docs.wandb.ai/models/ref/python/functions/init). The run records the config, metrics, and other information from the training script.
+    Configure `WANDB_API_KEY` in your environment or the molab Secrets panel.
+    Get a key from [Weights & Biases](https://wandb.ai/authorize). In a terminal-backed session,
+    `wandb.login()` can also prompt for a key.
 
-    Inside the training loop, the script simulates an accuracy and loss value for each epoch. It then logs those values to W&B with `run.log()`. After the script runs, you can view the logged metrics in the W&B App.
-
-    ### Authentication
-
-    To save your experiment in W&B, you need to authenticate.
-
-    Authenticate with W&B one of two ways: run **`wandb login`** in
-    your shell before starting marimo, or paste your key into the
-    **W&B API key** field in the form below. Get your key from
-    [wandb.ai/authorize](https://wandb.ai/authorize).
+    Running the code cells creates a Weights & Biases run and uploads its simulated metrics.
     """)
     return
 
 
+@app.cell
+def _():
+    entity = "your-entity"
+    project = "my-awesome-project"
+    if not wandb.login():
+        raise RuntimeError("Configure Weights & Biases credentials before running the lesson.")
+    return entity, project
+
+
 @app.cell(hide_code=True)
 def _():
-    epochs = mo.ui.slider(
-        start=1,
-        stop=20,
-        step=1,
-        value=10,
-        label="Epochs",
-        show_value=True,
-    )
+    mo.md(r"""
+    ## 2. Define the Experiment Configuration
 
-    lr = mo.ui.slider(
-        start=0.001,
-        stop=0.1,
-        step=0.001,
-        value=0.01,
-        label="Learning rate",
-        show_value=True,
-    )
-    api_key = mo.ui.text(
-        value="",
-        kind="password",
-        label="W&B API key (blank uses your shell login)",
-    )
-    project = mo.ui.text(value="my-awesome-project", label="W&B project")
-    entity = mo.ui.text(
-        value="",
-        label="W&B entity \u2014 a team you belong to (blank uses your default)",
-    )
+    The next cell defines a configuration dictionary. Passing it to
+    `wandb.init(config=config)` records these settings with the run so you can
+    compare experiments by hyperparameter.
 
-    # Batch every control into one form so training only kicks off on submit.
-    # `form.value` is None until the user clicks Train model, then becomes a dict
-    # keyed by the names below - the training cell gates on that.
-    form = (
-        mo.md(
-            """
-            **Training**
-
-            {epochs}
-
-            {lr}
-
-            **W&B run.**
-
-            {api_key}
-
-            {project}
-
-            {entity}
-            """
-        )
-        .batch(
-            epochs=epochs,
-            lr=lr,
-            api_key=api_key,
-            project=project,
-            entity=entity,
-        )
-        .form(submit_button_label="Start run", bordered=False)
-    )
-
-    form
-    return (form,)
+    We simulate ten epochs with a fixed random seed. The learning rate is
+    recorded to demonstrate configuration tracking; it does not affect our
+    synthetic metrics. In real training, you would use it to configure an
+    optimizer.
+    """)
+    return
 
 
 @app.cell
-def _(form):
-    run_path = None
-
-    mo.stop(
-        form.value is None,
-        mo.md(
-            "Configure the run and click Start run to simulate training and log "
-            "accuracy and loss to W&B."
-        ),
-    )
-
-    # Get the data from the form
-    cfg = form.value
-
-    # Dictionary with hyperparameters
+def _():
     config = {
-        "epochs": cfg["epochs"],
-        "lr": cfg["lr"],
+        "epochs": 10,
+        "lr": 0.01,
+        "seed": 42,
     }
+    return (config,)
 
-    # Authenticate and start the run. Finish any prior run first (marimo keeps the
-    # kernel alive across re-submits). A key pasted into the form wins; otherwise
-    # fall back to ambient login (shell `wandb login`, WANDB_API_KEY, or netrc).
-    # The key is never written to the run config.
-    if wandb.run is not None:
-        wandb.finish()
-    if cfg["api_key"]:
-        wandb.login(key=cfg["api_key"])
 
-    with wandb.init(project=cfg["project"], entity=cfg["entity"] or None, config=config) as run:
-        offset = random.random() / 5
-        print(f"lr: {config['lr']}")
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## 3. Start a Run and Log Metrics
 
-        # Simulate a training run
-        for epoch in range(1, config['epochs'] + 1):
-            acc = 1 - 2**-config['epochs'] - random.random() / config['epochs'] - offset
-            loss = 2**-config['epochs'] + random.random() / config['epochs'] + offset
-            print(f"epoch={epoch}, accuracy={acc}, loss={loss}")
-            run.log(
-                {
-                    "epoch": epoch,
-                    "accuracy": acc,
-                    "loss": loss
-                }
-            )
+    The next cell starts `training_run` with `wandb.init()`. Inside the loop,
+    `training_run.log()` records a dictionary containing the epoch, accuracy,
+    and loss. In your own training code, replace the simulated values with
+    measured metrics.
 
-        run_path = f"{run.entity}/{run.project}/{run.id}"
+    The context manager finishes the run and completes logging when the block
+    exits. We keep its URL for the dashboard and its
+    `entity/project/run_id` path for the API query that follows.
+    """)
+    return
+
+
+@app.cell
+def _(config, entity, project):
+    rng = random.Random(config["seed"])
+    offset = rng.random() / 5
+
+    with wandb.init(project=project, entity=entity, config=config) as training_run:
+        for epoch in range(1, config["epochs"] + 1):
+            accuracy = 1 - 2 ** -epoch - rng.random() / config["epochs"] - offset
+            loss = 2 ** -epoch + rng.random() / config["epochs"] + offset
+            training_run.log({
+                "epoch": epoch,
+                "accuracy": accuracy,
+                "loss": loss,
+            })
+            print(f"Epoch {epoch}: accuracy={accuracy:.4f}, loss={loss:.4f}")
+
+        # For demo: Store run path to retrieve run info (see following cell)
+        run_path = f"{training_run.entity}/{training_run.project}/{training_run.id}"
     return (run_path,)
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Get the logged run results from W&B
+    ## 4. Retrieve the Logged Results
+
+    The next cell uses `wandb.Api().run(run_path)` to fetch the completed
+    experiment. `logged_run.config` contains its settings, and
+    `logged_run.summary` includes the latest logged metric values.
+
+    `scan_history()` iterates over every recorded row containing the requested
+    keys. We collect those rows in a list so we can inspect the complete epoch
+    history, rather than a sampled subset.
     """)
     return
 
 
 @app.cell
 def _(run_path):
-    history = []
-    remote_run = None
+    api = wandb.Api()
+    logged_run = api.run(run_path)
+    history = list(logged_run.scan_history(keys=["epoch", "accuracy", "loss"]))
 
-    mo.stop(
-        run_path is None,
-        mo.md("Run an experiment above to load its logged results from W&B."),
-    )
-
-    _api = wandb.Api()
-    remote_run = _api.run(run_path)
-
-    history = [
-        {
-            "epoch": row["epoch"],
-            "accuracy": round(row["accuracy"], 4),
-            "loss": round(row["loss"], 4),
-        }
-        for row in remote_run.scan_history(
-            keys=["epoch", "accuracy", "loss"]
-        )
-    ]
-    return history, remote_run
+    print(f"Configuration: {dict(logged_run.config)}")
+    print(f"Final accuracy: {logged_run.summary['accuracy']:.2%}")
+    print(f"Final loss: {logged_run.summary['loss']:.4f}")
+    history
+    return
 
 
-@app.cell
-def _(history, remote_run):
-    mo.stop(
-        not history,
-        mo.md("The run finished, but no metric history is available yet."),
-    )
+@app.cell(hide_code=True)
+def _():
+    mo.md(f"""
+    ## 5. Explore the Run in Weights & Biases
 
-    final = history[-1]
+    Open the Weights & Biases run to view the accuracy and loss charts. Its
+    configuration contains the settings from this notebook, and its summary
+    shows the most recently logged metric values.
 
-    mo.vstack(
-        [
-            mo.callout(
-                mo.md(
-                    f"**Run complete:** "
-                    f"[{remote_run.name}]({remote_run.url})\n\n"
-                    f"Final accuracy: **{final['accuracy']:.2%}**  \n"
-                    f"Final loss: **{final['loss']:.4f}**"
-                ),
-                kind="success",
-            ),
-            mo.ui.table(history, selection=None),
-        ]
-    )
+    Change the seed or epoch count and rerun the experiment. Weights & Biases creates a new
+    run that you can compare with the previous one in your project. In a real
+    training workflow, changing the learning rate would let you compare how that
+    hyperparameter affects measured performance.
+
+    See the [Weights & Biases quickstart](https://docs.wandb.ai/models/quickstart)
+    for more examples.
+    """)
     return
 
 
