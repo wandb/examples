@@ -11,28 +11,21 @@
 # ]
 # ///
 
-"""Predict a protein structure with ColabFold and log it to W&B.
-
-Run:
-
-    uvx marimo edit alphafold_with_w_b_align_fold_log.py --sandbox
-"""
+"""Predict a protein structure with ColabFold and log it to W&B."""
 
 import marimo
 
-__generated_with = "0.24.0"
+__generated_with = "0.25.1"
 app = marimo.App(width="medium", app_title="ColabFold with W&B")
 
-
-@app.cell
-def _():
+with app.setup:
     import json
     import os
     import re
     import subprocess
     import sys
+    import tempfile
     import time
-    import uuid
     from pathlib import Path
 
     import marimo as mo
@@ -41,231 +34,115 @@ def _():
     import py3Dmol
     import wandb
 
-    return (
-        Path,
-        json,
-        mo,
-        np,
-        os,
-        plt,
-        py3Dmol,
-        re,
-        subprocess,
-        sys,
-        time,
-        uuid,
-        wandb,
-    )
-
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
+    # ColabFold with W&B: Align, Fold, Log
+
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/alphafold-with-w-b-align-fold-log/alphafold_with_w_b_align_fold_log.py/server)
 
     <img src="https://i.imgur.com/4ta7Arm.png" alt="Weights & Biases" />
 
-    # ColabFold with W&B: Align, Fold, Log
+    This lesson uses [ColabFold](https://github.com/sokrypton/ColabFold) to
+    align a protein sequence and predict its structure with AlphaFold2. We then
+    log the experiment configuration, confidence metrics, plots, and a 3D
+    molecule to W&B. A prediction table keeps the sequence and results together
+    for comparison across runs.
 
-    This notebook predicts a protein structure with
-    [ColabFold](https://github.com/sokrypton/ColabFold), then logs the sequence,
-    alignment summary, confidence plots, timings, and predicted molecule to
-    Weights & Biases.
+    > This notebook was modified from the original produced by DeepMind to add additional W&B logging features.
 
-    It preserves the **align → fold → log** lesson from
-    [DeepMind's original AlphaFold Colab](https://github.com/google-deepmind/alphafold/blob/main/notebooks/AlphaFold.ipynb)
-    and the W&B adaptation described in
-    [this Report](https://wandb.me/alphafold-short-report). ColabFold replaces
-    the retired Colab setup with an MMseqs2 alignment service and local
-    AlphaFold2 inference.
+    See the [AlphaFold-ed Proteins in W&B Tables report](https://forge.coreweave.com/wandb/wandb/examples/reports/AlphaFold-ed-Proteins-in-W-B-Tables--Vmlldzo4ODc0MDc) and view an example protein below.
 
-    No Docker image or local genetic database is required. The prediction runs
-    inside the notebook; only the submitted sequence is sent to the public
-    ColabFold MSA service.
+    ## 1. Prepare the Runtime
+
+    Use a Linux-backed molab runtime, or open the notebook with its declared
+    dependencies on Linux:
+
+    ```bash
+    uvx marimo edit --sandbox alphafold_with_w_b_align_fold_log.py
+    ```
+
+    The next cell checks the runtime and chooses GPU or CPU inference. It
+    retains the CPU fallback for compute capability 12.0 devices used by this
+    example. You can inspect the selected backend before predicting.
+
+    The prediction cell queries the public ColabFold MSA service and downloads
+    model parameters on first use. Submit one sequence at a time and follow
+    [ColabFold's shared-service guidance](https://github.com/sokrypton/ColabFold).
+    No local sequence database or Docker image is required for this workflow.
     """)
     return
 
 
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## 0. Runtime
-
-    Open this notebook in molab. Its Python dependencies include ColabFold and
-    the AlphaFold2 inference package.
-
-    The first prediction downloads the model parameters. To keep this interactive
-    tutorial practical, the notebook uses a bounded MSA depth and automatically
-    selects a compatible inference path for the attached runtime. ColabFold queries
-    its shared public MSA service for this small demonstration, so submit one
-    sequence at a time.
-
-    Opening the notebook does not query the service, download weights, run a
-    prediction, or create W&B objects.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo, subprocess, sys):
-    _linux_available = sys.platform.startswith("linux")
+@app.cell
+def _():
+    runtime_ready = sys.platform.startswith("linux")
     try:
-        _gpu_probe = subprocess.run(
-            [
-                "nvidia-smi",
-                "--query-gpu=name,compute_cap",
-                "--format=csv,noheader",
-            ],
+        gpu_probe = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,compute_cap", "--format=csv,noheader"],
             check=True,
             capture_output=True,
             text=True,
         )
-        _gpu_rows = [
-            _row.rsplit(",", maxsplit=1)
-            for _row in _gpu_probe.stdout.splitlines()
-            if _row.strip()
-        ]
-        _gpu_names = [_name.strip() for _name, _capability in _gpu_rows]
-        _gpu_compute_caps = [
-            _capability.strip() for _name, _capability in _gpu_rows
-        ]
+        gpu_rows = [row.rsplit(",", maxsplit=1) for row in gpu_probe.stdout.splitlines() if row.strip()]
+        gpu_names = [name.strip() for name, capability in gpu_rows]
+        compute_capabilities = [capability.strip() for name, capability in gpu_rows]
     except (FileNotFoundError, subprocess.CalledProcessError, ValueError):
-        _gpu_names = []
-        _gpu_compute_caps = []
+        gpu_names = []
+        compute_capabilities = []
 
-    _blackwell_sm120 = any(
-        _capability == "12.0" for _capability in _gpu_compute_caps
-    )
-    colabfold_inference_backend = (
-        "cpu" if _blackwell_sm120 or not _gpu_names else "gpu"
-    )
-    colabfold_runtime_ready = _linux_available
-
-    if colabfold_runtime_ready:
-        _runtime_message = mo.callout(
-            mo.md("Runtime check passed. ColabFold is ready."),
-            kind="success",
-        )
-    else:
-        _runtime_message = mo.callout(
-            mo.md("Open this notebook in a Linux-backed molab runtime."),
-            kind="warn",
-            title="Molab runtime needed",
-        )
-    _runtime_message
-    return colabfold_inference_backend, colabfold_runtime_ready
+    inference_backend = "cpu" if not gpu_names or "12.0" in compute_capabilities else "gpu"
+    print(f"Platform: {sys.platform}; inference backend: {inference_backend}")
+    if not runtime_ready:
+        print("Structure prediction requires a Linux-backed runtime for this notebook.")
+    return inference_backend, runtime_ready
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    ## Authentication
+    ## 2. Authenticate with W&B
 
-    Enter your [W&B API key](https://wandb.ai/authorize), or leave it blank to
-    use `WANDB_API_KEY` from the molab Secrets panel or credentials already
-    stored in this runtime. A fresh molab session does not inherit credentials
-    from your local computer.
+    The next cell calls `wandb.login()` and sets the destination for results.
+    Set `entity` to your team name, or leave it as `None` for your default
+    entity.
 
-    The entity is the team name in a W&B project URL:
-    `wandb.ai/<entity>/<project>`. Leave it blank to use your default entity.
-    Merely editing these fields does not authenticate or create a run.
+    Configure `WANDB_API_KEY` in your environment or molab Secrets. Get your
+    key from [W&B](https://wandb.ai/authorize). In a terminal-backed session,
+    `wandb.login()` can also prompt for a key. A fresh molab session does not
+    inherit your local credentials.
     """)
     return
 
 
-@app.cell(hide_code=True)
-def _(mo):
-    wandb_login_form = (
-        mo.md("{api_key}\n\n{entity}\n\n{project}")
-        .batch(
-            api_key=mo.ui.text(
-                kind="password",
-                label="W&B API key (optional)",
-                placeholder="Paste a key or use configured credentials",
-                full_width=True,
-            ),
-            entity=mo.ui.text(
-                label="W&B entity or team (optional)",
-                placeholder="Leave blank to use your default entity",
-                full_width=True,
-            ),
-            project=mo.ui.text(
-                value="alphafold",
-                label="W&B project",
-                full_width=True,
-            ),
-        )
-        .form(submit_button_label="Connect to W&B", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
+@app.cell
+def _():
+    entity = "your-entity"
+    project = "alphafold"
+    authenticated = wandb.login()
+    if not authenticated:
+        raise RuntimeError("Configure W&B credentials before running the lesson.")
+    return authenticated, entity, project
 
 
 @app.cell(hide_code=True)
-def _(mo, wandb, wandb_login_form):
-    mo.stop(
-        wandb_login_form.value is None,
-        mo.callout(
-            mo.md("Submit the authentication form before logging a prediction."),
-            kind="info",
-        ),
-    )
-
-    _submitted_login = wandb_login_form.value
-    _api_key = _submitted_login["api_key"].strip()
-    _requested_entity = _submitted_login["entity"].strip()
-    _project = _submitted_login["project"].strip() or "alphafold"
-    try:
-        _login_ok = wandb.login(
-            key=_api_key or None,
-            relogin=bool(_api_key),
-        )
-        _resolved_entity = _requested_entity or wandb.Api().default_entity
-        _login_error = None
-    except (wandb.errors.Error, ValueError) as _error:
-        _login_ok = False
-        _resolved_entity = None
-        _login_error = str(_error)
-
-    mo.stop(
-        not _login_ok or not _resolved_entity,
-        mo.callout(
-            mo.md(
-                "W&B authentication did not complete. Check the API key and "
-                "entity, then submit again.\n\n"
-                f"W&B reported: `{_login_error or 'No default entity was found.'}`"
-            ),
-            kind="danger",
-        ),
-    )
-
-    wandb_settings = {"entity": _resolved_entity, "project": _project}
-    mo.callout(
-        mo.md(
-            f"Connected to W&B. Results will target "
-            f"`{_resolved_entity}/{_project}` only after you submit the log form."
-        ),
-        kind="success",
-    )
-    return (wandb_settings,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    ## 1. Enter a sequence and make a prediction
+    ## 3. Choose a Protein and Prediction Settings
 
-    Choose a sample protein or paste a custom amino-acid sequence. ColabFold
-    first creates a multiple-sequence alignment with MMseqs2, then predicts the
-    structure locally with AlphaFold2. The first run also downloads the model
-    parameters.
+    The next cell lists five sample sequences with reference links. The two
+    helper functions that follow validate an amino-acid sequence and make a
+    file-safe identifier. We accept the 20 standard amino-acid codes and limit
+    sequence length to 16–2,000 residues.
 
-    ### Sample sequences
+    In the settings cell, choose a sample from `SEQUENCES`, or replace
+    `raw_sequence` with your own sequence. A custom sequence receives its own
+    metadata rather than inheriting the sample's species and reference.
 
-    You can also find protein sequences in
-    [RCSB PDB](https://www.rcsb.org/),
-    [UniProt](https://www.uniprot.org/), or
-    [EMBL-EBI](https://www.ebi.ac.uk/).
+    For this short demo, we use one model, three recycles, no structural
+    templates, and an MSA cap of `64:128`. These settings bound computation;
+    they are not a substitute for a thorough structure-prediction study.
     """)
     return
 
@@ -312,22 +189,6 @@ def _():
     return (SEQUENCES,)
 
 
-@app.cell(hide_code=True)
-def _(SEQUENCES, mo):
-    _sample_rows = [
-        {
-            "name": _sample["name"],
-            "species": _sample["species"],
-            "description": _sample["desc"],
-            "residues": len(_sample["seq"]),
-            "reference": _sample["url"],
-        }
-        for _sample in SEQUENCES
-    ]
-    mo.ui.table(_sample_rows)
-    return
-
-
 @app.function
 def normalize_sequence(raw_sequence):
     min_sequence_length = 16
@@ -360,124 +221,107 @@ def safe_sequence_name(name):
     return normalized or "custom-sequence"
 
 
+@app.cell
+def _(SEQUENCES):
+    sample = SEQUENCES[0]
+    raw_sequence = sample["seq"]
+    sequence = normalize_sequence(raw_sequence)
+    metadata = (
+        {key: sample[key] for key in ("name", "species", "desc", "url")}
+        if sequence == normalize_sequence(sample["seq"])
+        else {"name": "custom-sequence", "species": "", "desc": "user-provided sequence", "url": ""}
+    )
+    sequence_id = safe_sequence_name(metadata["name"])
+    model_type = "alphafold2_ptm"
+    msa_mode = "mmseqs2_uniref_env"
+    num_models = 1
+    num_recycles = 3
+    use_templates = False
+    output_root = Path("/tmp/colabfold-runs")
+    print(f"Protein: {sequence_id}; residues: {len(sequence)}")
+    return (
+        metadata,
+        model_type,
+        msa_mode,
+        num_models,
+        num_recycles,
+        output_root,
+        sequence,
+        sequence_id,
+        use_templates,
+    )
+
+
 @app.cell(hide_code=True)
-def _(SEQUENCES, mo):
-    colabfold_form = (
-        mo.md(
-            "{sample_name}\n\n{custom_sequence}\n\n{msa_mode}\n\n"
-            "{num_models}\n\n{num_recycles}\n\n{use_templates}\n\n"
-            "{output_dir}\n\n{accept_server}"
-        )
-        .batch(
-            sample_name=mo.ui.dropdown(
-                options=[_sample["name"] for _sample in SEQUENCES],
-                value="lithostathine",
-                label="Sample protein",
-                full_width=True,
-            ),
-            custom_sequence=mo.ui.text_area(
-                value="",
-                label="Custom sequence (optional; overrides the sample)",
-                placeholder="Paste amino-acid letters only",
-                full_width=True,
-            ),
-            msa_mode=mo.ui.dropdown(
-                options=["mmseqs2_uniref_env", "mmseqs2_uniref"],
-                value="mmseqs2_uniref_env",
-                label="MSA database selection",
-                full_width=True,
-            ),
-            num_models=mo.ui.dropdown(
-                options=["1", "3", "5"],
-                value="1",
-                label="Number of AlphaFold2 models",
-                full_width=True,
-            ),
-            num_recycles=mo.ui.dropdown(
-                options=["3", "6", "12"],
-                value="3",
-                label="Prediction recycles",
-                full_width=True,
-            ),
-            use_templates=mo.ui.checkbox(
-                value=False,
-                label="Search for structural templates",
-            ),
-            output_dir=mo.ui.text(
-                value="/tmp/colabfold-runs",
-                label="Output root",
-                full_width=True,
-            ),
-            accept_server=mo.ui.checkbox(
-                value=False,
-                label=(
-                    "I will submit this single query to the shared ColabFold "
-                    "MSA service and follow its fair-use guidance"
-                ),
-            ),
-        )
-        .form(
-            submit_button_label="Run alignment and structure prediction",
-            bordered=True,
-        )
-    )
-    colabfold_form
-    return (colabfold_form,)
+def _():
+    mo.md(r"""
+    ## 4. Align and Fold
+
+    The following cells provide a start button and run ColabFold's batch command
+    using this notebook's Python environment. The command reads a FASTA file, obtains an
+    alignment through MMseqs2, and runs AlphaFold2 inference locally. Each
+    execution writes to a fresh output directory.
+
+    Click **Align and fold** to start this computation and submit the sequence
+    to the shared MSA service. The command's logs show alignment and inference
+    progress. When it finishes, we collect the top-ranked PDB structure, score
+    JSON, alignment file, and total elapsed time for the W&B logging step.
+    """)
+    return
 
 
-@app.function
-def run_colabfold(request):
-    base_output_dir = Path(request["output_dir"]).expanduser().resolve()
-    run_id = uuid.uuid4().hex[:10]
-    run_root = base_output_dir / f"{request['sequence_id']}-{run_id}"
-    prediction_dir = run_root / "prediction"
-    prediction_dir.mkdir(parents=True, exist_ok=False)
+@app.cell
+def _(
+    authenticated,
+    inference_backend,
+    metadata,
+    model_type,
+    msa_mode,
+    num_models,
+    num_recycles,
+    output_root,
+    runtime_ready,
+    sequence,
+    sequence_id,
+    use_templates,
+):
+    if not runtime_ready:
+        raise RuntimeError("Run structure prediction in a Linux-backed runtime.")
+    if not authenticated:
+        raise RuntimeError("Log in to W&B first.")
 
-    fasta_path = run_root / f"{request['sequence_id']}.fasta"
-    fasta_path.write_text(
-        f">{request['sequence_id']}\n{request['sequence']}\n",
-        encoding="utf-8",
-    )
+    output_root.mkdir(parents=True, exist_ok=True)
+    prediction_root = Path(tempfile.mkdtemp(prefix=f"{sequence_id}-", dir=output_root))
+    prediction_dir = prediction_root / "prediction"
+    prediction_dir.mkdir()
+    fasta_path = prediction_root / f"{sequence_id}.fasta"
+    fasta_path.write_text(f">{sequence_id}\n{sequence}\n", encoding="utf-8")
 
     command = [
-        sys.executable,
-        "-m",
-        "colabfold.batch",
-        str(fasta_path),
-        str(prediction_dir),
-        "--model-type",
-        "alphafold2_ptm",
-        "--msa-mode",
-        request["msa_mode"],
-        "--num-models",
-        str(request["num_models"]),
-        "--num-recycle",
-        str(request["num_recycles"]),
-        "--num-seeds",
-        "1",
-        "--num-relax",
-        "0",
-        "--rank",
-        "plddt",
-        "--compile-mode",
-        "fast",
-        "--max-msa",
-        "64:128",
+        sys.executable, "-m", "colabfold.batch",
+        str(fasta_path), str(prediction_dir),
+        "--model-type", model_type,
+        "--msa-mode", msa_mode,
+        "--num-models", str(num_models),
+        "--num-recycle", str(num_recycles),
+        "--num-seeds", "1",
+        "--num-relax", "0",
+        "--rank", "plddt",
+        "--compile-mode", "fast",
+        "--max-msa", "64:128",
         "--overwrite-existing-results",
     ]
-    if request["use_templates"]:
+    if use_templates:
         command.append("--templates")
-    if request["inference_backend"] == "gpu":
+    if inference_backend == "gpu":
         command.extend(["--use-fast-kernels", "--kernel-backend", "auto"])
 
     command_environment = os.environ.copy()
-    compilation_cache = Path(
-        f"/tmp/colabfold-jax-cache-{request['inference_backend']}"
-    )
+    compilation_cache = Path(f"/tmp/colabfold-jax-cache-{inference_backend}")
     compilation_cache.mkdir(parents=True, exist_ok=True)
     command_environment.setdefault("JAX_COMPILATION_CACHE_DIR", str(compilation_cache))
     command_environment.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
-    if request["inference_backend"] == "cpu":
+    if inference_backend == "cpu":
         command_environment["JAX_PLATFORMS"] = "cpu"
         command_environment["CUDA_VISIBLE_DEVICES"] = ""
 
@@ -485,124 +329,55 @@ def run_colabfold(request):
     subprocess.run(command, env=command_environment, check=True)
     wall_time_seconds = time.monotonic() - started_at
 
-    relaxed_candidates = sorted(
-        prediction_dir.glob(f"{request['sequence_id']}_relaxed_rank_001_*.pdb")
+    structure_candidates = sorted(prediction_dir.glob(f"{sequence_id}_relaxed_rank_001_*.pdb"))
+    structure_candidates = structure_candidates or sorted(
+        prediction_dir.glob(f"{sequence_id}_unrelaxed_rank_001_*.pdb")
     )
-    unrelaxed_candidates = sorted(
-        prediction_dir.glob(f"{request['sequence_id']}_unrelaxed_rank_001_*.pdb")
-    )
-    structure_candidates = relaxed_candidates or unrelaxed_candidates
-    if not structure_candidates:
-        raise FileNotFoundError(
-            f"ColabFold finished without a top-ranked PDB file in {prediction_dir}."
-        )
+    score_candidates = sorted(prediction_dir.glob(f"{sequence_id}_scores_rank_001_*.json"))
+    alignment_path = prediction_dir / f"{sequence_id}.a3m"
+    if not structure_candidates or not score_candidates or not alignment_path.is_file():
+        raise FileNotFoundError(f"Missing structure, scores, or alignment in {prediction_dir}.")
 
-    score_candidates = sorted(
-        prediction_dir.glob(f"{request['sequence_id']}_scores_rank_001_*.json")
-    )
-    if not score_candidates:
-        raise FileNotFoundError(
-            "ColabFold finished without a top-ranked score JSON file in "
-            f"{prediction_dir}."
-        )
-
-    alignment_path = prediction_dir / f"{request['sequence_id']}.a3m"
-    if not alignment_path.is_file():
-        raise FileNotFoundError(
-            f"ColabFold finished without the expected MSA file: {alignment_path}."
-        )
-
-    return {
-        **request,
-        "alignment_path": str(alignment_path),
+    fold_result = {
+        "sequence": sequence,
+        "sequence_id": sequence_id,
+        "metadata": metadata,
+        "model_type": model_type,
+        "msa_mode": msa_mode,
+        "num_models": num_models,
+        "num_recycles": num_recycles,
+        "use_templates": use_templates,
+        "inference_backend": inference_backend,
         "fasta_path": str(fasta_path),
         "prediction_dir": str(prediction_dir),
         "pred_output_path": str(structure_candidates[0]),
         "score_path": str(score_candidates[0]),
+        "alignment_path": str(alignment_path),
         "wall_time_seconds": wall_time_seconds,
     }
-
-
-@app.cell
-def _(
-    SEQUENCES,
-    colabfold_form,
-    colabfold_inference_backend,
-    colabfold_runtime_ready,
-    mo,
-):
-    mo.stop(
-        colabfold_form.value is None,
-        mo.callout(
-            mo.md(
-                "Review the inputs, then submit the form when you are ready "
-                "to query the MSA service and start the structure prediction."
-            ),
-            kind="info",
-        ),
-    )
-    mo.stop(
-        not colabfold_form.value["accept_server"],
-        mo.callout(
-            mo.md(
-                "Confirm the shared MSA service guidance in the form before "
-                "submitting the sequence."
-            ),
-            kind="warn",
-        ),
-    )
-    mo.stop(
-        not colabfold_runtime_ready,
-        mo.callout(
-            mo.md("Open this notebook in a Linux-backed molab runtime."),
-            kind="warn",
-        ),
-    )
-
-    _submitted_fold = colabfold_form.value
-    _selected_sample = next(
-        _sample
-        for _sample in SEQUENCES
-        if _sample["name"] == _submitted_fold["sample_name"]
-    )
-    _custom_sequence = _submitted_fold["custom_sequence"].strip()
-    _sequence = normalize_sequence(_custom_sequence or _selected_sample["seq"])
-    _sequence_name = "custom-sequence" if _custom_sequence else _selected_sample["name"]
-    _metadata = (
-        {
-            "name": "custom-sequence",
-            "species": "",
-            "desc": "user-provided amino-acid sequence",
-            "url": "",
-        }
-        if _custom_sequence
-        else {key: _selected_sample[key] for key in ("name", "species", "desc", "url")}
-    )
-    _fold_request = {
-        "inference_backend": colabfold_inference_backend,
-        "metadata": _metadata,
-        "model_type": "alphafold2_ptm",
-        "msa_mode": _submitted_fold["msa_mode"],
-        "num_models": int(_submitted_fold["num_models"]),
-        "num_recycles": int(_submitted_fold["num_recycles"]),
-        "output_dir": _submitted_fold["output_dir"].strip() or "/tmp/colabfold-runs",
-        "sequence": _sequence,
-        "sequence_id": safe_sequence_name(_sequence_name),
-        "use_templates": _submitted_fold["use_templates"],
-    }
-    fold_result = run_colabfold(_fold_request)
+    print(f"Prediction complete in {wall_time_seconds:.1f} seconds: {prediction_dir}")
     return (fold_result,)
 
 
 @app.cell(hide_code=True)
-def _(fold_result, mo):
-    mo.callout(
-        mo.md(
-            "ColabFold finished. The complete output is at "
-            f"`{fold_result['prediction_dir']}`."
-        ),
-        kind="success",
-    )
+def _():
+    mo.md(r"""
+    ## 5. Inspect Alignment and Confidence
+
+    The following helpers read the A3M alignment and prediction scores, then
+    save plots of alignment coverage, per-residue pLDDT, and predicted aligned
+    error (PAE), when available. Lowercase A3M insertion characters are removed
+    before calculating coverage.
+
+    pLDDT measures local confidence on a 0–100 scale; PAE describes uncertainty
+    in relative residue placement. High local confidence alone does not establish
+    biological function or correct domain placement. See the
+    [AlphaFold FAQ](https://alphafold.ebi.ac.uk/faq) for interpretation.
+
+    The cells after the helpers display the structure and plots. We use the same
+    files when logging W&B media, so local inspection and the experiment record
+    show the same results.
+    """)
     return
 
 
@@ -714,132 +489,76 @@ def inspect_prediction(fold_result):
 @app.cell
 def _(fold_result):
     prediction_summary = inspect_prediction(fold_result)
+    print(f"Mean pLDDT: {prediction_summary['mean_plddt']:.1f}")
+    print(f"Unique MSA sequences: {prediction_summary['msa_sequences']:,}")
+    if prediction_summary["ptm"] is not None:
+        print(f"pTM: {prediction_summary['ptm']:.2f}")
     return (prediction_summary,)
 
 
 @app.cell
-def _(Path, prediction_summary, py3Dmol):
-    _pdb_text = Path(prediction_summary["pred_output_path"]).read_text(encoding="utf-8")
+def _(prediction_summary):
+    pdb_text = Path(prediction_summary["pred_output_path"]).read_text(encoding="utf-8")
     structure_view = py3Dmol.view(width=800, height=600)
-    structure_view.addModel(_pdb_text, "pdb")
-    structure_view.setStyle(
-        {
-            "cartoon": {
-                "colorscheme": {
-                    "prop": "b",
-                    "gradient": "roygb",
-                    "min": 0,
-                    "max": 100,
-                }
-            }
+    structure_view.addModel(pdb_text, "pdb")
+    structure_view.setStyle({
+        "cartoon": {
+            "colorscheme": {"prop": "b", "gradient": "roygb", "min": 0, "max": 100}
         }
-    )
+    })
     structure_view.zoomTo()
     structure_view
     return
 
 
-@app.cell(hide_code=True)
-def _(mo, prediction_summary):
-    _result_plots = [
+@app.cell
+def _(prediction_summary):
+    result_plots = [
         mo.image(prediction_summary["msa_plot_path"]),
         mo.image(prediction_summary["confidence_plot_path"]),
     ]
     if prediction_summary["pae_plot_path"]:
-        _result_plots.append(mo.image(prediction_summary["pae_plot_path"]))
-    mo.vstack(
-        [
-            mo.md(
-                "**pLDDT confidence bands:** very low (0–50), low (50–70), "
-                "confident (70–90), very high (90–100)."
-            ),
-            mo.hstack(_result_plots, widths="equal", wrap=True),
-        ]
-    )
+        result_plots.append(mo.image(prediction_summary["pae_plot_path"]))
+    mo.vstack(result_plots)
     return
 
 
 @app.cell(hide_code=True)
-def _(Path, mo, prediction_summary):
-    _pdb_path = Path(prediction_summary["pred_output_path"])
-    _ptm_text = (
-        f"  \npTM: **{prediction_summary['ptm']:.2f}**"
-        if prediction_summary["ptm"] is not None
-        else ""
-    )
-    mo.vstack(
-        [
-            mo.callout(
-                mo.md(
-                    f"Mean top-ranked pLDDT: **{prediction_summary['mean_plddt']:.1f}**"
-                    f"{_ptm_text}  \n"
-                    f"MSA sequences: **{prediction_summary['msa_sequences']:,}**  \n"
-                    f"Output directory: `{prediction_summary['prediction_dir']}`"
-                ),
-                kind="info",
-            ),
-            mo.download(
-                data=_pdb_path.read_bytes(),
-                filename=_pdb_path.name,
-                label="Download the top-ranked PDB",
-            ),
-        ]
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    ### Interpreting the prediction
+    ## 6. Log the Prediction to W&B
 
-    pLDDT describes local confidence; a high value does not by itself establish
-    confidence in relative domain placement or biological function. Predicted
-    aligned error describes confidence in the relative positions of residue
-    pairs. See the
-    [AlphaFold methods paper](https://www.nature.com/articles/s41586-021-03819-2)
-    and the [AlphaFold FAQ](https://alphafold.ebi.ac.uk/faq) for guidance.
+    The next cell creates `prediction_run` with `wandb.init()`. Its configuration
+    records the sequence, source metadata, model settings, and inference backend.
+
+    We use three W&B media types:
+
+    - `wandb.Molecule()` uploads the PDB structure for interactive 3D viewing.
+    - `wandb.Image()` logs the alignment and confidence plots.
+    - `wandb.Table()` keeps the sequence, molecule, and plots together in one row.
+
+    `prediction_run.log()` records the media alongside numeric metrics:
+    mean pLDDT, unique MSA sequence count, total runtime, and pTM when present.
+    The context manager finishes the run after logging.
     """)
     return
 
 
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## 2. Log to W&B: Upload the sequence, 3D structure, and results
-
-    The original tutorial logs sequence metadata, alignment statistics,
-    pipeline timing, the MSA plot, confidence plots, and the predicted molecule.
-    The Table below keeps those fields together so runs are easy to compare.
-
-    Submitting the form creates one W&B run and performs one `run.log` call.
-    Opening the notebook or changing an unsubmitted run name does nothing
-    remotely.
-    """)
-    return
-
-
-@app.function
-def time_units(duration):
-    hours, remainder = divmod(duration, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    return f"{int(hours):02}:{int(minutes):02}:{seconds:05.2f}"
-
-
-@app.function
-def log_prediction(settings, prediction_summary, run_name):
-    metadata = prediction_summary["metadata"]
+@app.cell
+def _(entity, prediction_summary, project):
     run_config = {
         "sequence": prediction_summary["sequence"],
         "sequence_length": len(prediction_summary["sequence"]),
-        "species": metadata["species"],
-        "description": metadata["desc"],
-        "reference_url": metadata["url"],
+        "species": prediction_summary["metadata"]["species"],
+        "description": prediction_summary["metadata"]["desc"],
+        "reference_url": prediction_summary["metadata"]["url"],
         "model_type": prediction_summary["model_type"],
         "msa_mode": prediction_summary["msa_mode"],
         "num_models": prediction_summary["num_models"],
         "num_recycles": prediction_summary["num_recycles"],
         "use_templates": prediction_summary["use_templates"],
+        "inference_backend": prediction_summary["inference_backend"],
+        "max_msa": "64:128",
     }
     numeric_metrics = {
         "mean_plddt": prediction_summary["mean_plddt"],
@@ -850,13 +569,12 @@ def log_prediction(settings, prediction_summary, run_name):
         numeric_metrics["ptm"] = prediction_summary["ptm"]
 
     with wandb.init(
-        entity=settings["entity"],
-        project=settings["project"],
-        name=run_name or None,
+        entity=entity,
+        project=project,
+        name=f"colabfold-{prediction_summary['sequence_id']}",
         config=run_config,
         job_type="protein-structure-prediction",
-        reinit="create_new",
-    ) as run:
+    ) as prediction_run:
         molecule = wandb.Molecule(prediction_summary["pred_output_path"])
         msa_plot = wandb.Image(prediction_summary["msa_plot_path"])
         confidence_plot = wandb.Image(prediction_summary["confidence_plot_path"])
@@ -865,20 +583,13 @@ def log_prediction(settings, prediction_summary, run_name):
             if prediction_summary["pae_plot_path"]
             else None
         )
-        prediction_table = wandb.Table(
-            columns=[
-                "tag",
-                "species",
-                "sequence",
-                "molecule",
-                "MSA coverage",
-                "confidence",
-                "predicted aligned error",
-            ]
-        )
+        prediction_table = wandb.Table(columns=[
+            "tag", "species", "sequence", "molecule", "MSA coverage",
+            "confidence", "predicted aligned error",
+        ])
         prediction_table.add_data(
-            metadata["name"],
-            metadata["species"],
+            prediction_summary["metadata"]["name"],
+            prediction_summary["metadata"]["species"],
             prediction_summary["sequence"],
             molecule,
             msa_plot,
@@ -887,7 +598,6 @@ def log_prediction(settings, prediction_summary, run_name):
         )
         log_payload = {
             **numeric_metrics,
-            "wall_time": time_units(prediction_summary["wall_time_seconds"]),
             "view_3D": molecule,
             "msa_coverage": msa_plot,
             "plddt_confidence": confidence_plot,
@@ -895,134 +605,46 @@ def log_prediction(settings, prediction_summary, run_name):
         }
         if pae_plot is not None:
             log_payload["predicted_aligned_error"] = pae_plot
-        run.log(log_payload)
-        run_url = run.url
+        prediction_run.log(log_payload)
+        run_url = prediction_run.url
 
-    return {
-        "run_url": run_url,
-        "run_path": f"{settings['entity']}/{settings['project']}",
-    }
+    print(f"View the W&B run: {run_url}")
+    return (run_url,)
 
 
 @app.cell(hide_code=True)
-def _(mo, prediction_summary, wandb_settings):
-    _log_context = mo.md(
-        f"Prediction: `{prediction_summary['metadata']['name']}`  \n"
-        f"W&B target: `{wandb_settings['entity']}/{wandb_settings['project']}`"
-    )
-    prediction_log_form = (
-        mo.md("{run_name}")
-        .batch(
-            run_name=mo.ui.text(
-                value=f"colabfold-{prediction_summary['sequence_id']}",
-                label="W&B run name (optional)",
-                full_width=True,
-            )
-        )
-        .form(submit_button_label="Log prediction to W&B", bordered=True)
-    )
-    mo.vstack([_log_context, prediction_log_form])
-    return (prediction_log_form,)
+def _(run_url):
+    mo.md(f"""
+    ## 7. Compare Predictions
 
+    [Open the W&B run]({run_url}) to inspect its configuration, metrics,
+    confidence plots, and 3D molecule. The `predicted_molecules` table connects
+    the sequence to its structure and plots.
 
-@app.cell(hide_code=True)
-def _(mo, prediction_log_form):
-    mo.stop(
-        prediction_log_form.value is None,
-        mo.callout(
-            mo.md(
-                "Submit the form above when you are ready to create one W&B "
-                "run and upload the prediction."
-            ),
-            kind="info",
-        ),
-    )
-    prediction_log_request = {"run_name": prediction_log_form.value["run_name"].strip()}
-    return (prediction_log_request,)
+    Try another sample or increase the number of models. Click **Align and fold**
+    again to produce a new prediction and W&B run, then compare confidence and
+    runtime in your project. The wall time includes alignment, model setup, and
+    inference; first-run downloads can make it substantially longer.
 
-
-@app.cell
-def _(prediction_log_request, prediction_summary, wandb_settings):
-    logged_prediction = log_prediction(
-        wandb_settings,
-        prediction_summary,
-        prediction_log_request["run_name"],
-    )
-    return (logged_prediction,)
-
-
-@app.cell(hide_code=True)
-def _(logged_prediction, mo):
-    mo.callout(
-        mo.md(
-            "Prediction logged. Open the "
-            f"[W&B run]({logged_prediction['run_url']}) and inspect the "
-            "workspace charts, run configuration, 3D molecule, and "
-            "`predicted_molecules` Table."
-        ),
-        kind="success",
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## Verify and next steps
-
-    In the W&B run, verify that:
-
-    - `mean_plddt`, `ptm`, `msa_sequences`, and `wall_time_seconds` appear in
-      the run history and summary;
-    - the 3D molecule, MSA coverage, pLDDT, and predicted-aligned-error panels
-      render correctly; and
-    - `predicted_molecules` contains the sequence, structure, and plots in one
-      comparable row.
-
-    Try another short sample, or increase the number of models and compare its
-    confidence and runtime with the first prediction.
-
-    ## FAQ and troubleshooting
-
-    * **Do I need Docker or local databases?** No. ColabFold queries the public
-      MMseqs2 MSA service and runs AlphaFold2 inference inside the notebook
-      environment.
-    * **Why does the log say that no GPU was detected?** Current molab Blackwell
-      runtimes have an upstream XLA cold-compilation performance issue. For that
-      GPU generation, this notebook intentionally uses the much faster CPU path
-      for the short teaching example. Other supported GPU generations continue to
-      use GPU inference.
-    * **Why is this MSA smaller than a production run?** The notebook caps the MSA
-      at `64:128` sequences so the interactive example finishes promptly. Remove
-      `--max-msa 64:128` for a production-quality experiment and expect a longer
-      runtime.
-    * **Can I submit a batch?** This tutorial intentionally submits one serial
-      query. The public MSA server is a shared, rate-limited resource. For large
-      workloads, follow ColabFold's local-database instructions instead.
-    * **Where should I report ColabFold problems?** Use the
-      [ColabFold issue tracker](https://github.com/sokrypton/ColabFold/issues).
+    The public MSA service is intended for small, serial queries. For larger
+    workloads, follow ColabFold's local-database instructions.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    ## License and disclaimer
+    ## References
 
-    ColabFold is community-supported software and is not an officially
-    supported Google product. Its code is MIT licensed, while the AlphaFold
-    implementation, model parameters, dependencies, and remote services have
-    their own licenses and terms. Review the current
+    Protein-structure predictions require scientific review and are not for
+    clinical use. ColabFold, AlphaFold, model parameters, and the MSA service
+    have their own licenses and terms; consult the
     [ColabFold documentation](https://github.com/sokrypton/ColabFold) and
-    [AlphaFold license information](https://github.com/google-deepmind/alphafold#license-and-disclaimer)
-    before publishing or distributing results.
+    [AlphaFold license information](https://github.com/google-deepmind/alphafold#license-and-disclaimer).
 
-    Protein-structure predictions are for theoretical modeling, not clinical
-    use. Predictions have varying confidence and require scientific review.
-
-    Publications based on these results should cite both the
-    [ColabFold paper](https://doi.org/10.1038/s41592-022-01488-1) and the
+    Publications should cite the
+    [ColabFold paper](https://doi.org/10.1038/s41592-022-01488-1) and
     [AlphaFold paper](https://doi.org/10.1038/s41586-021-03819-2).
     """)
     return
