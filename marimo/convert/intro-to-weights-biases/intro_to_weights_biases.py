@@ -10,12 +10,10 @@
 
 import marimo
 
-__generated_with = "0.24.0"
+__generated_with = "0.25.1"
 app = marimo.App(width="medium", app_title="Intro to Weights & Biases")
 
-
 with app.setup:
-    import math
     import random
     import tempfile
     from pathlib import Path
@@ -28,11 +26,9 @@ with app.setup:
     import wandb
 
     MNIST.mirrors = [
-        mirror
-        for mirror in MNIST.mirrors
+        mirror for mirror in MNIST.mirrors
         if "http://yann.lecun.com/" not in mirror
     ]
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 
 @app.cell(hide_code=True)
@@ -41,652 +37,386 @@ def _():
     # Intro to Weights & Biases
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/intro-to-weights-biases/intro_to_weights_biases.py/server)
-    """)
-    return
 
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
     <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
+
+    A Weights & Biases run records one experiment's configuration, metrics, and outputs.
+    This lesson starts with simulated metrics, then tracks real PyTorch training,
+    prediction tables, and model checkpoints. An optional final example shows
+    how to send a Weights & Biases alert.
+
+    ## 1. Authenticate
+
+    Open the notebook with its declared dependencies:
+
+    ```bash
+    uvx marimo edit --sandbox intro_to_weights_biases.py
+    ```
+
+    The next cell calls `wandb.login()` and selects the projects used by the
+    two examples. Set `entity` to your team name, or use `None` for your
+    default entity.
+
+    Configure `WANDB_API_KEY` in your environment or molab Secrets. Get a key
+    from [Weights & Biases](https://wandb.ai/authorize), or
+    [create an account](https://wandb.ai/signup). Terminal-backed sessions can
+    also prompt for a key.
+
+    Running the code cells creates experiment runs, downloads MNIST, and uploads
+    metrics and checkpoints. The optional alert requires a separate click.
     """)
     return
+
+
+@app.cell
+def _():
+    entity = None
+    simulation_project = "basic-intro"
+    training_project = "pytorch-intro"
+    if not wandb.login():
+        raise RuntimeError("Configure Weights & Biases credentials before running the lesson.")
+    return entity, simulation_project, training_project
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Use [W&B](https://wandb.ai/site?utm_source=intro_colab&utm_medium=code&utm_campaign=intro) for machine learning experiment tracking, model checkpointing, collaboration with your team and more. See the full W&B Documentation [here](https://docs.wandb.ai/).
+    ## 2. Track Simulated Experiments
 
-    In this notebook, you will create and track a machine learning experiment using a simple PyTorch model. By the end of the notebook, you will have an interactive project dashboard that you can share and customize with other members of your team. [View an example dashboard here](https://wandb.ai/wandb/wandb_example).
+    The next cell creates five `simulation_run` objects in sequence. Each call
+    to `wandb.init()` starts a separate experiment and records its configuration.
+    `simulation_run.log()` sends one accuracy and loss measurement per epoch.
+
+    The fixed seeds make the examples reproducible while giving each run a
+    different curve. These values are synthetic: no model or dataset is used.
+    Each context manager finishes its run before the next experiment begins.
     """)
     return
 
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Authentication
-
-    The notebook's dependencies install the W&B SDK automatically. Enter your [W&B API key](https://wandb.ai/authorize) and, if needed, your team entity. You can leave the key blank when this environment already has credentials, such as `WANDB_API_KEY` configured in the marimo Secrets panel. If you are new to W&B, [create a free account](https://wandb.ai/signup).
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    _api_key_input = mo.ui.text(
-        kind="password",
-        label="W&B API key (optional)",
-        placeholder="Paste a key or use configured credentials",
-        full_width=True,
-    )
-    _entity_input = mo.ui.text(
-        label="W&B entity or team (optional)",
-        placeholder="Leave blank to use your default entity",
-        full_width=True,
-    )
-    wandb_login_form = (
-        mo.md("{api_key}\n\n{entity}")
-        .batch(api_key=_api_key_input, entity=_entity_input)
-        .form(submit_button_label="Connect to W&B", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
-
-
-@app.cell(hide_code=True)
-def _(wandb_login_form):
-    mo.stop(
-        wandb_login_form.value is None,
-        mo.callout(
-            mo.md("Connect to W&B before creating runs."),
-            kind="info",
-        ),
-    )
-
-    _api_key = wandb_login_form.value["api_key"].strip()
-    _entity = wandb_login_form.value["entity"].strip()
-    try:
-        _login_ok = wandb.login(
-            key=_api_key or None,
-            relogin=bool(_api_key),
-        )
-        _login_error = None
-    except wandb.errors.Error as _error:
-        _login_ok = False
-        _login_error = str(_error)
-
-    mo.stop(
-        not _login_ok,
-        mo.callout(
-            mo.md(
-                "W&B authentication did not complete. Check the API key and "
-                f"try again.\n\nW&B reported: `{_login_error or 'unknown error'}`"
-            ),
-            kind="danger",
-        ),
-    )
-
-    wandb_settings = {"entity": _entity or None}
-    mo.callout(mo.md("Connected to W&B."), kind="success")
-    return (wandb_settings,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Simulate and track a machine learning experiment with W&B
-
-    Create, track, and visualize a machine learning experiment. To do this:
-
-    1. Initialize a [W&B run](https://docs.wandb.ai/guides/runs) and pass in the hyperparameters you want to track.
-    2. Within your training loop, log metrics such as the accuracy and loss.
-    """)
-    return
-
-
-@app.function
-def run_simulated_experiments(wandb_settings):
-    """Create five runs with synthetic accuracy and loss metrics."""
-    if wandb.run is not None:
-        wandb.finish()
-
-    # Launch 5 simulated experiments
-    total_runs = 5
-    run_urls = []
-    for run_index in range(total_runs):
-        # 1. Start a new run to track this script
+@app.cell
+def _(entity, simulation_project):
+    simulation_run_urls = []
+    for experiment_index in range(5):
+        simulation_config = {"epochs": 10, "seed": experiment_index, "dataset": "synthetic"}
+        simulation_rng = random.Random(simulation_config["seed"])
+        offset = simulation_rng.random() / 5
         with wandb.init(
-            # Set the project where this run will be logged
-            project="basic-intro",
-            entity=wandb_settings["entity"],
-            # Pass a run name (otherwise it is randomly assigned)
-            name=f"experiment_{run_index}",
-            # Track hyperparameters and run metadata
-            config={
-                "learning_rate": 0.02,
-                "architecture": "CNN",
-                "dataset": "CIFAR-100",
-                "epochs": 10,
-            },
-        ) as basic_run:
-            # This simple block simulates a training loop logging metrics
-            epochs = 10
-            offset = random.random() / 5
-            for epoch in range(2, epochs):
-                accuracy = 1 - 2 ** (-epoch) - random.random() / epoch - offset
-                loss = 2 ** (-epoch) + random.random() / epoch + offset
-
-                # 2. Log metrics from your script to W&B
-                basic_run.log({"acc": accuracy, "loss": loss})
-            run_urls.append(basic_run.url)
-        # Exiting the context manager marks the run as finished
-
-    return run_urls
-
-
-@app.cell(hide_code=True)
-def _(run_simulated_experiments, wandb_settings):
-    simulate_runs_button = mo.ui.run_button(
-        label="Create five simulated W&B runs"
-    )
-    _entity_note = (
-        f" for entity `{wandb_settings['entity']}`"
-        if wandb_settings["entity"]
-        else " using your default entity"
-    )
-    mo.vstack(
-        [
-            mo.md(
-                f"Clicking the button runs `{run_simulated_experiments.__name__}` "
-                "to create five runs in the `basic-intro` project and log "
-                f"synthetic accuracy and loss metrics{_entity_note}."
-            ),
-            simulate_runs_button,
-        ]
-    )
-    return (simulate_runs_button,)
-
-
-@app.cell(hide_code=True)
-def _(simulate_runs_button, wandb_settings):
-    mo.stop(
-        not simulate_runs_button.value,
-        mo.callout(
-            mo.md("Click the button above when you are ready to create the runs."),
-            kind="info",
-        ),
-    )
-
-    _simulated_run_urls = run_simulated_experiments(wandb_settings)
-    _run_links = "\n".join(
-        f"- [Experiment {index}]({url})"
-        for index, url in enumerate(_simulated_run_urls, start=1)
-    )
-    mo.callout(
-        mo.md(f"Created five runs:\n\n{_run_links}"),
-        kind="success",
-    )
+            project=simulation_project,
+            entity=entity,
+            name=f"simulation-{experiment_index + 1}",
+            config=simulation_config,
+        ) as simulation_run:
+            for simulation_epoch in range(1, simulation_config["epochs"] + 1):
+                simulated_accuracy = 1 - 2 ** -simulation_epoch - simulation_rng.random() / 10 - offset
+                simulated_loss = 2 ** -simulation_epoch + simulation_rng.random() / 10 + offset
+                simulation_run.log({
+                    "epoch": simulation_epoch,
+                    "acc": simulated_accuracy,
+                    "loss": simulated_loss,
+                })
+            simulation_run_urls.append(simulation_run.url)
     return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    View how your machine learning peformed in your W&B project. Copy and paste the URL link that is printed from the previous cell. The URL will redirect you to a W&B project that contains a dashboard showing graphs the show how
+    ## 3. Compare runs in your project
 
-    The following image shows what a dashboard can look like:
+    Open any run returned as stdout in the previous cell. [Compare accuracy and loss across experiments](https://docs.coreweave.com/products/wandb/runs/compare-runs). Each run has its own configuration and metric history.
+
+    Next, we apply the same logging pattern to a real MNIST classifier.
+
+    ## 4. Set the PyTorch Experiment Configuration
+
+    The next cell chooses CUDA when available, otherwise CPU, and defines common
+    training settings. We train three fresh models with dropout values 0.1, 0.3,
+    and 0.5 so you can compare them in Weights & Biases.
+
+    To keep the lesson short, we use every fifth MNIST example: 12,000 training
+    images and 2,000 held-out images. We use the held-out subset for validation
+    throughout this example; it is not an independent final test.
     """)
     return
+
+
+@app.cell
+def _():
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    training_config = {
+        "epochs": 5,
+        "batch_size": 128,
+        "lr": 1e-3,
+        "seed": 42,
+        "sample_stride": 5,
+        "architecture": "MLP",
+        "dataset": "MNIST",
+    }
+    dropout_values = [0.1, 0.3, 0.5]
+    return device, dropout_values, training_config
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ![](https://i.imgur.com/Pell4Oo.png)
+    ## 5. Define the Data, Model, and Evaluation Helpers
+
+    The following helpers contain ordinary PyTorch code. They load sampled
+    MNIST batches, build an MLP, and evaluate loss and accuracy.
+
+    Validation also returns the first batch's images, predictions, labels, and
+    class probabilities for a Weights & Biases prediction table. Its order stays fixed across
+    runs. We use `num_workers=0` for compatibility with notebook runtimes.
+
+    Defining these helpers does not download data or train a model.
     """)
     return
 
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    Now that we know how to integrate W&B into a pseudo machine learning training loop, let's track a machine learning experiment using a basic PyTorch neural network. The following code will also upload model checkpoints to W&B that you can then share with other teams in in your organization.
-
-    ## Track a machine learning experiment using PyTorch
-
-    The following code cell defines and trains a simple MNIST classifier. During training, you will see W&B prints out URLs. Click on the project page link to see your results stream in live to a W&B project.
-
-    W&B runs automatically log [metrics](https://docs.wandb.ai/ref/app/pages/run-page#charts-tab),
-    [system information](https://docs.wandb.ai/ref/app/pages/run-page#system-tab),
-    [hyperparameters](https://docs.wandb.ai/ref/app/pages/run-page#overview-tab),
-    [terminal output](https://docs.wandb.ai/ref/app/pages/run-page#logs-tab) and
-    you'll see an [interactive table](https://docs.wandb.ai/guides/data-vis)
-    with model inputs and outputs.
-
-    ### Set up PyTorch Dataloader
-    The following cell defines some useful functions that we will need to train our machine learning model. The functions themselves are not unique to W&B so we'll not cover them in detail here. See the PyTorch documentation for more information on how to define [forward and backward training loop](https://pytorch.org/tutorials/beginner/nn_tutorial.html), how to use [PyTorch DataLoaders](https://pytorch.org/tutorials/beginner/basics/data_tutorial.html) to load data in for training, and how define PyTorch models using the [`torch.nn.Sequential` Class](https://pytorch.org/docs/stable/generated/torch.nn.Sequential.html).
-    """)
-    return
-
-
-@app.function
-def get_dataloader(is_train, batch_size, sample_stride=5):
-    """Get a sampled MNIST training or validation DataLoader."""
-    dataset = MNIST(
-        root=Path(tempfile.gettempdir()) / "wandb-intro-mnist",
-        train=is_train,
-        transform=T.ToTensor(),
-        download=True,
-    )
-    sampled_dataset = torch.utils.data.Subset(
-        dataset,
-        indices=range(0, len(dataset), sample_stride),
-    )
-    return torch.utils.data.DataLoader(
-        dataset=sampled_dataset,
-        batch_size=batch_size,
-        shuffle=is_train,
-        pin_memory=device.startswith("cuda"),
-        num_workers=2,
-    )
-
-
-@app.function
-def get_model(dropout):
-    """Build the small multilayer perceptron used in this tutorial."""
-    return nn.Sequential(
-        nn.Flatten(),
-        nn.Linear(28 * 28, 256),
-        nn.BatchNorm1d(256),
-        nn.ReLU(),
-        nn.Dropout(dropout),
-        nn.Linear(256, 10),
-    ).to(device)
-
-
-@app.function
-def validate_model(
-    training_run,
-    model,
-    valid_dl,
-    loss_func,
-    log_images=False,
-    batch_idx=0,
-):
-    """Evaluate the model and optionally log one prediction table."""
-    model.eval()
-    validation_loss = 0.0
-    correct = 0
-    with torch.inference_mode():
-        for index, (images, labels) in enumerate(valid_dl):
-            images, labels = images.to(device), labels.to(device)
-
-            # Forward pass
-            outputs = model(images)
-            validation_loss += loss_func(outputs, labels).item() * labels.size(0)
-
-            # Compute accuracy and accumulate
-            predicted = outputs.argmax(dim=1)
-            correct += (predicted == labels).sum().item()
-
-            # Log one batch of images to the dashboard, always same batch_idx.
-            if index == batch_idx and log_images:
-                log_image_table(
-                    training_run,
-                    images,
-                    predicted,
-                    labels,
-                    outputs.softmax(dim=1),
-                )
-
-    return (
-        validation_loss / len(valid_dl.dataset),
-        correct / len(valid_dl.dataset),
-    )
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ### Create a table to compare the predicted values versus the true value
-
-    The following cell is unique to W&B, so let's go over it.
-
-    In the cell we define a function called `log_image_table`. Though technically, optional, this function creates a W&B Table object. We will use the table object to create a table that shows what the model predicted for each image.
-
-    More specifically, each row will conists of the image fed to the model, along with predicted value and the actual value (label).
-    """)
-    return
-
-
-@app.function
-def log_image_table(training_run, images, predicted, labels, probabilities):
-    """Log a W&B Table with images, predictions, labels, and class scores."""
-    # Create a W&B Table to log images, labels, and predictions
-    table = wandb.Table(
-        columns=["image", "pred", "target"]
-        + [f"score_{index}" for index in range(10)]
-    )
-    for image, prediction, target, probability in zip(
-        images.to("cpu"),
-        predicted.to("cpu"),
-        labels.to("cpu"),
-        probabilities.to("cpu"),
-    ):
-        table.add_data(
-            wandb.Image(image[0].numpy() * 255),
-            int(prediction),
-            int(target),
-            *probability.numpy(),
+@app.cell
+def get_dataloader(device):
+    def get_dataloader(is_train, batch_size, sample_stride):
+        dataset = MNIST(
+            root=Path(tempfile.gettempdir()) / "wandb-intro-mnist",
+            train=is_train,
+            transform=T.ToTensor(),
+            download=True,
         )
-    training_run.log({"predictions_table": table}, commit=False)
+        sampled_dataset = torch.utils.data.Subset(
+            dataset, indices=range(0, len(dataset), sample_stride),
+        )
+        return torch.utils.data.DataLoader(
+            sampled_dataset,
+            batch_size=batch_size,
+            shuffle=is_train,
+            pin_memory=device.startswith("cuda"),
+            num_workers=0,
+        )
+
+    return (get_dataloader,)
+
+
+@app.cell
+def get_model(device):
+    def get_model(dropout):
+        return nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(28 * 28, 256),
+            nn.BatchNorm1d(256),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(256, 10),
+        ).to(device)
+
+    return (get_model,)
+
+
+@app.cell
+def evaluate_model(device):
+    def evaluate_model(model, validation_loader, loss_function):
+        model.eval()
+        loss_sum = 0.0
+        correct = 0
+        prediction_batch = None
+        with torch.inference_mode():
+            for batch_index, (images, labels) in enumerate(validation_loader):
+                images, labels = images.to(device), labels.to(device)
+                outputs = model(images)
+                predictions = outputs.argmax(dim=1)
+                loss_sum += loss_function(outputs, labels).item() * len(labels)
+                correct += (predictions == labels).sum().item()
+                if batch_index == 0:
+                    prediction_batch = (
+                        images.cpu(), predictions.cpu(), labels.cpu(),
+                        outputs.softmax(dim=1).cpu(),
+                    )
+        return (
+            loss_sum / len(validation_loader.dataset),
+            correct / len(validation_loader.dataset),
+            prediction_batch,
+        )
+
+    return (evaluate_model,)
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ### Train your model and upload checkpoints
+    ## 6. Build a Prediction Table
 
-    The following code trains and saves model checkpoints to your project. Use model checkpoints like you normally would to assess how the model performed during training.
+    The next helper creates a `wandb.Table` with one row per image. Each row
+    contains a viewable `wandb.Image`, the predicted digit, the true label,
+    and ten class probabilities.
 
-    W&B also makes it easy to share your saved models and model checkpoints with other members of your team or organization. To learn how to share your model and model checkpoints with members outside of your team, see [W&B Registry](https://docs.wandb.ai/guides/registry).
+    This function builds the table; the training cell logs it to the active run
+    after the final validation pass. In Weights & Biases, filter rows where `pred != target`
+    to inspect mistakes.
     """)
     return
 
 
 @app.function
-def train_mnist_experiments(wandb_settings):
-    """Train three MNIST models and log metrics and checkpoints to W&B."""
-    if wandb.run is not None:
-        wandb.finish()
+def make_prediction_table(images, predictions, labels, probabilities):
+    prediction_table = wandb.Table(
+        columns=["image", "pred", "target"] + [f"score_{digit}" for digit in range(10)]
+    )
+    for image, prediction, label, scores in zip(images, predictions, labels, probabilities):
+        prediction_table.add_data(
+            wandb.Image(image[0].numpy() * 255),
+            prediction.item(),
+            label.item(),
+            *scores.tolist(),
+        )
+    return prediction_table
 
-    run_urls = []
-    # Launch 3 experiments, trying different dropout rates
-    for _experiment_index in range(3):
-        with tempfile.TemporaryDirectory() as checkpoint_directory:
-            # Initialize a W&B run. The context manager closes it after training.
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## 7. Train, Log Metrics, and Save Checkpoints
+
+    The next cell runs one experiment per dropout value. `training_run.config`
+    records the settings, and every run starts with a fresh model and optimizer.
+
+    `training_run.log()` records training loss by batch, validation metrics by
+    epoch, and a prediction table after the final epoch. The scalar summary
+    `final_validation_accuracy` makes the final result easy to compare across runs.
+
+    At each epoch, `torch.save(model.state_dict(), ...)` saves model weights.
+    `training_run.log_model()` uploads that checkpoint as a model Artifact with
+    an epoch alias. The model architecture and dropout are recorded in the run
+    configuration; recreate that architecture before loading its weights.
+
+    Checkpoints are kept in a temporary directory until the run finishes logging.
+    """)
+    return
+
+
+@app.cell
+def _(
+    device,
+    dropout_values,
+    entity,
+    evaluate_model,
+    get_dataloader,
+    get_model,
+    training_config,
+    training_project,
+):
+    for dropout in dropout_values:
+        torch.manual_seed(training_config["seed"])
+        with tempfile.TemporaryDirectory(prefix="wandb-mnist-checkpoints-") as checkpoint_directory:
             with wandb.init(
-                project="pytorch-intro",
-                entity=wandb_settings["entity"],
-                config={
-                    "epochs": 5,
-                    "batch_size": 128,
-                    "lr": 1e-3,
-                    "dropout": random.uniform(0.01, 0.80),
-                },
+                project=training_project,
+                entity=entity,
+                config={**training_config, "dropout": dropout},
             ) as training_run:
-                # Copy your config
-                config = training_run.config
-
-                # Get the data
-                train_dl = get_dataloader(
-                    is_train=True,
-                    batch_size=config.batch_size,
-                )
-                valid_dl = get_dataloader(
-                    is_train=False,
-                    batch_size=2 * config.batch_size,
-                )
-                n_steps_per_epoch = math.ceil(
-                    len(train_dl.dataset) / config.batch_size
-                )
-
-                # A simple MLP model
-                model = get_model(config.dropout)
-
-                # Make the loss and optimizer
-                loss_func = nn.CrossEntropyLoss()
-                optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
-
-                # Training
+                run_config = training_run.config
+                train_loader = get_dataloader(True, run_config.batch_size, run_config.sample_stride)
+                validation_loader = get_dataloader(False, 2 * run_config.batch_size, run_config.sample_stride)
+                model = get_model(run_config.dropout)
+                loss_function = nn.CrossEntropyLoss()
+                optimizer = torch.optim.Adam(model.parameters(), lr=run_config.lr)
                 example_count = 0
 
-                for epoch in range(config.epochs):
+                for epoch in range(run_config.epochs):
                     model.train()
-                    for step, (images, labels) in enumerate(train_dl):
+                    for step, (images, labels) in enumerate(train_loader):
                         images, labels = images.to(device), labels.to(device)
                         outputs = model(images)
-                        train_loss = loss_func(outputs, labels)
+                        train_loss = loss_function(outputs, labels)
                         optimizer.zero_grad()
                         train_loss.backward()
                         optimizer.step()
-
                         example_count += len(images)
-                        train_metrics = {
+                        training_run.log({
                             "train/train_loss": train_loss.item(),
-                            "train/epoch": (
-                                step + 1 + n_steps_per_epoch * epoch
-                            )
-                            / n_steps_per_epoch,
+                            "train/epoch": epoch + (step + 1) / len(train_loader),
                             "train/example_ct": example_count,
-                        }
-                        if step + 1 < n_steps_per_epoch:
-                            # Log train metrics to W&B
-                            training_run.log(train_metrics)
+                        })
 
-                    validation_loss, accuracy = validate_model(
-                        training_run,
-                        model,
-                        valid_dl,
-                        loss_func,
-                        log_images=epoch == config.epochs - 1,
+                    validation_loss, validation_accuracy, prediction_batch = evaluate_model(
+                        model, validation_loader, loss_function,
                     )
-
-                    # Log train and validation metrics to W&B
                     validation_metrics = {
+                        "epoch": epoch + 1,
                         "val/val_loss": validation_loss,
-                        "val/val_accuracy": accuracy,
+                        "val/val_accuracy": validation_accuracy,
                     }
-                    training_run.log({**train_metrics, **validation_metrics})
+                    if epoch == run_config.epochs - 1:
+                        validation_metrics["predictions_table"] = make_prediction_table(*prediction_batch)
+                    training_run.log(validation_metrics)
 
-                    # Save the model checkpoint to W&B
-                    checkpoint_path = Path(checkpoint_directory) / "my_model.pt"
-                    torch.save(model, checkpoint_path)
+                    checkpoint_path = Path(checkpoint_directory) / "model_weights.pt"
+                    torch.save(model.state_dict(), checkpoint_path)
                     training_run.log_model(
                         str(checkpoint_path),
-                        "my_mnist_model",
-                        aliases=[
-                            f"epoch-{epoch + 1}_dropout-{round(config.dropout, 4)}"
-                        ],
+                        name=f"mnist-{training_run.id}",
+                        aliases=[f"epoch-{epoch + 1}"],
                     )
                     print(
-                        f"Epoch: {epoch + 1}, "
-                        f"Train Loss: {train_loss.item():.3f}, "
-                        f"Valid Loss: {validation_loss:.3f}, "
-                        f"Accuracy: {accuracy:.2f}"
+                        f"Dropout {dropout}, epoch {epoch + 1}: "
+                        f"validation loss {validation_loss:.3f}, accuracy {validation_accuracy:.2%}"
                     )
 
-                # If you had a test set, this is where you could log it as a
-                # Summary metric. This tutorial records validation accuracy.
-                training_run.summary["final_validation_accuracy"] = accuracy
-                run_urls.append(training_run.url)
-
-    return run_urls
-
-
-@app.cell(hide_code=True)
-def _(train_mnist_experiments, wandb_settings):
-    train_models_button = mo.ui.run_button(
-        label="Download MNIST, train three models, and log to W&B"
-    )
-    _entity_note = (
-        f" for entity `{wandb_settings['entity']}`"
-        if wandb_settings["entity"]
-        else " using your default entity"
-    )
-    mo.vstack(
-        [
-            mo.md(
-                f"This runs `{train_mnist_experiments.__name__}` to download "
-                "MNIST, train three five-epoch models, and upload metrics, "
-                f"prediction tables, and model checkpoints{_entity_note}."
-            ),
-            train_models_button,
-        ]
-    )
-    return (train_models_button,)
-
-
-@app.cell(hide_code=True)
-def _(train_models_button, wandb_settings):
-    mo.stop(
-        not train_models_button.value,
-        mo.callout(
-            mo.md("Click the button above when you are ready to train."),
-            kind="info",
-        ),
-    )
-
-    _training_run_urls = train_mnist_experiments(wandb_settings)
-    _training_links = "\n".join(
-        f"- [Training run {index}]({url})"
-        for index, url in enumerate(_training_run_urls, start=1)
-    )
-    mo.callout(
-        mo.md(f"Training finished:\n\n{_training_links}"),
-        kind="success",
-    )
+                training_run.summary["final_validation_accuracy"] = validation_accuracy
     return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    You have now trained your first model using W&B. Click on one of the links above to see your metrics and see your saved model checkpoints in the Artifacts tab in the W&B App UI
+    ## 8. Inspect Metrics, Predictions, and Models
+
+    Compare dropout settings against validation loss and accuracy in your project.
+    Open a run's `predictions_table` to inspect images and class scores.
+    In **Artifacts**, find its saved model weights and epoch aliases.
+
+    Each run also records terminal output and available system metrics, which
+    can help explain differences in runtime.
+
+    ## 9. Optional: Send an Alert
+
+    The next two cells demonstrate `alert_run.alert()`. Enable notifications
+    in your [Weights & Biases user settings](https://wandb.ai/settings), then click
+    **Send example alert** to create a separate run and test the notification.
+
+    We log three synthetic accuracy values. The final value crosses a threshold
+    of 0.3 and triggers an alert. This is independent of the MNIST results and
+    can send a real email or Slack notification through your Weights & Biases settings.
     """)
     return
 
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## (Optional) Set up a W&B Alert
-
-    Create a [W&B Alerts](https://docs.wandb.ai/guides/track/alert) to send alerts to your Slack or email from your Python code.
-
-    There are 2 steps to follow the first time you'd like to send a Slack or email alert, triggered from your code:
-
-    1) Turn on Alerts in your W&B [User Settings](https://wandb.ai/settings)
-    2) Add `wandb.alert()` to your code. For example:
-
-    ```python
-    wandb.alert(
-        title="Low accuracy",
-        text=f"Accuracy is below the acceptable threshold"
-    )
-    ```
-
-    The following cell shows a minimal example below to see how to use `wandb.alert`
-    """)
-    return
-
-
-@app.function
-def create_low_accuracy_alert(wandb_settings):
-    """Log synthetic accuracy values and alert when one is too low."""
-    if wandb.run is not None:
-        wandb.finish()
-
-    # Start a W&B run. The context manager marks it finished on exit.
-    with wandb.init(
-        project="pytorch-intro",
-        entity=wandb_settings["entity"],
-    ) as alert_run:
-        # Simulate a model training loop
+@app.cell
+def _(entity, training_project):
+    with wandb.init(project=training_project, entity=entity, job_type="alert-demo") as alert_run:
         accuracy_threshold = 0.3
-        for training_step in range(1000):
-            # Generate a random number for accuracy
-            accuracy = round(random.random() + random.random(), 3)
-            print(f"Accuracy is: {accuracy}, threshold: {accuracy_threshold}")
-
-            # Log accuracy to W&B
-            alert_run.log({"Accuracy": accuracy})
-
-            # If accuracy is below the threshold, fire a W&B Alert and stop.
-            if accuracy <= accuracy_threshold:
-                # Send the W&B Alert
+        for alert_step, alert_accuracy in enumerate([0.8, 0.65, 0.25]):
+            alert_run.log({"step": alert_step, "accuracy": alert_accuracy})
+            if alert_accuracy < accuracy_threshold:
                 alert_run.alert(
-                    title="Low Accuracy",
-                    text=(
-                        f"Accuracy {accuracy} at step {training_step} is below "
-                        f"the acceptable threshold, {accuracy_threshold}"
-                    ),
+                    title="Low accuracy",
+                    text=f"Demo accuracy {alert_accuracy} is below {accuracy_threshold} at step {alert_step}.",
                 )
-                print("Alert triggered")
-                return alert_run.url, training_step, accuracy
-
-        return alert_run.url, None, None
-
-
-@app.cell(hide_code=True)
-def _(create_low_accuracy_alert, wandb_settings):
-    send_alert_button = mo.ui.run_button(
-        label="Create a run and send a low-accuracy alert"
-    )
-    _entity_note = (
-        f" for entity `{wandb_settings['entity']}`"
-        if wandb_settings["entity"]
-        else " using your default entity"
-    )
-    mo.vstack(
-        [
-            mo.callout(
-                mo.md(
-                    f"This runs `{create_low_accuracy_alert.__name__}` to create "
-                    f"a run in `pytorch-intro`{_entity_note}. If W&B Alerts are "
-                    "enabled, it may also send a real Slack or email notification."
-                ),
-                kind="warn",
-            ),
-            send_alert_button,
-        ]
-    )
-    return (send_alert_button,)
-
-
-@app.cell(hide_code=True)
-def _(send_alert_button, wandb_settings):
-    mo.stop(
-        not send_alert_button.value,
-        mo.callout(
-            mo.md("Click the button above when you are ready to test an alert."),
-            kind="info",
-        ),
-    )
-
-    _alert_run_url, _alert_step, _alert_accuracy = create_low_accuracy_alert(
-        wandb_settings
-    )
-    if _alert_step is None:
-        _alert_result = mo.callout(
-            mo.md(
-                "The simulation completed without crossing the threshold. "
-                f"[Open the run in W&B]({_alert_run_url})."
-            ),
-            kind="warn",
-        )
-    else:
-        _alert_result = mo.callout(
-            mo.md(
-                f"Alert triggered at step {_alert_step} with accuracy "
-                f"{_alert_accuracy:.3f}. [Open the run in W&B]({_alert_run_url})."
-            ),
-            kind="success",
-        )
-    _alert_result
+                print(f"Alert triggered: {alert_run.url}")
+                break
     return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    You can find the full docs for [W&B Alerts here](https://docs.wandb.ai/guides/track/alert).
+    ## Next Steps
 
-    ## Next steps
-    The next tutorial you will learn how to do hyperparameter optimization using W&B Sweeps:
-    [Hyperparameters sweeps using PyTorch](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py/server)
+    You have used the same run/log pattern for simulated metrics and real
+    training, then added Tables, checkpoint Artifacts, and an optional alert.
+
+    Next, automate hyperparameter comparisons with
+    [Weights & Biases Sweeps using PyTorch](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py/server).
+    See the [Weights & Biases Alerts guide](https://docs.wandb.ai/guides/track/alert)
+    for notification settings.
     """)
     return
 
