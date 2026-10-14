@@ -11,12 +11,12 @@
 # ]
 # ///
 
-"""Predict a protein structure with ColabFold and log it to W&B."""
+"""Predict a protein structure with ColabFold and log it to Weights & Biases."""
 
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="ColabFold with W&B")
+app = marimo.App(width="medium", app_title="ColabFold with Weights & Biases")
 
 with app.setup:
     import json
@@ -38,7 +38,7 @@ with app.setup:
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # ColabFold with W&B: Align, Fold, Log
+    # ColabFold with Weights & Biases: Align, Fold, Log
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/alphafold-with-w-b-align-fold-log/alphafold_with_w_b_align_fold_log.py/server)
 
@@ -47,12 +47,12 @@ def _():
     This lesson uses [ColabFold](https://github.com/sokrypton/ColabFold) to
     align a protein sequence and predict its structure with AlphaFold2. We then
     log the experiment configuration, confidence metrics, plots, and a 3D
-    molecule to W&B. A prediction table keeps the sequence and results together
+    molecule to Weights & Biases. A prediction table keeps the sequence and results together
     for comparison across runs.
 
-    > This notebook was modified from the original produced by DeepMind to add additional W&B logging features.
+    > This notebook was modified from the original produced by DeepMind to add additional Weights & Biases logging features.
 
-    See the [AlphaFold-ed Proteins in W&B Tables report](https://forge.coreweave.com/wandb/wandb/examples/reports/AlphaFold-ed-Proteins-in-W-B-Tables--Vmlldzo4ODc0MDc) and view an example protein below.
+    See the [AlphaFold-ed Proteins in Weights & Biases Tables report](https://forge.coreweave.com/wandb/wandb/examples/reports/AlphaFold-ed-Proteins-in-W-B-Tables--Vmlldzo4ODc0MDc) and view an example protein below.
 
     ## 1. Prepare the Runtime
 
@@ -102,14 +102,14 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 2. Authenticate with W&B
+    ## 2. Authenticate with Weights & Biases
 
     The next cell calls `wandb.login()` and sets the destination for results.
     Set `entity` to your team name, or leave it as `None` for your default
     entity.
 
     Configure `WANDB_API_KEY` in your environment or molab Secrets. Get your
-    key from [W&B](https://wandb.ai/authorize). In a terminal-backed session,
+    key from [Weights & Biases](https://wandb.ai/authorize). In a terminal-backed session,
     `wandb.login()` can also prompt for a key. A fresh molab session does not
     inherit your local credentials.
     """)
@@ -122,7 +122,7 @@ def _():
     project = "alphafold"
     authenticated = wandb.login()
     if not authenticated:
-        raise RuntimeError("Configure W&B credentials before running the lesson.")
+        raise RuntimeError("Configure Weights & Biases credentials before running the lesson.")
     return authenticated, entity, project
 
 
@@ -265,7 +265,7 @@ def _():
     Click **Align and fold** to start this computation and submit the sequence
     to the shared MSA service. The command's logs show alignment and inference
     progress. When it finishes, we collect the top-ranked PDB structure, score
-    JSON, alignment file, and total elapsed time for the W&B logging step.
+    JSON, alignment file, and total elapsed time for the Weights & Biases logging step.
     """)
     return
 
@@ -288,7 +288,7 @@ def _(
     if not runtime_ready:
         raise RuntimeError("Run structure prediction in a Linux-backed runtime.")
     if not authenticated:
-        raise RuntimeError("Log in to W&B first.")
+        raise RuntimeError("Log in to Weights & Biases first.")
 
     output_root.mkdir(parents=True, exist_ok=True)
     prediction_root = Path(tempfile.mkdtemp(prefix=f"{sequence_id}-", dir=output_root))
@@ -375,7 +375,7 @@ def _():
     [AlphaFold FAQ](https://alphafold.ebi.ac.uk/faq) for interpretation.
 
     The cells after the helpers display the structure and plots. We use the same
-    files when logging W&B media, so local inspection and the experiment record
+    files when logging Weights & Biases media, so local inspection and the experiment record
     show the same results.
     """)
     return
@@ -526,12 +526,12 @@ def _(prediction_summary):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 6. Log the Prediction to W&B
+    ## 6. Log the Prediction to Weights & Biases
 
     The next cell creates `prediction_run` with `wandb.init()`. Its configuration
     records the sequence, source metadata, model settings, and inference backend.
 
-    We use three W&B media types:
+    We use three Weights & Biases media types:
 
     - `wandb.Molecule()` uploads the PDB structure for interactive 3D viewing.
     - `wandb.Image()` logs the alignment and confidence plots.
@@ -606,10 +606,8 @@ def _(entity, prediction_summary, project):
         if pae_plot is not None:
             log_payload["predicted_aligned_error"] = pae_plot
         prediction_run.log(log_payload)
-        run_url = prediction_run.url
 
-    print(f"View the W&B run: {run_url}")
-    return (run_url,)
+    return 
 
 
 @app.cell(hide_code=True)
@@ -617,12 +615,12 @@ def _(run_url):
     mo.md(f"""
     ## 7. Compare Predictions
 
-    [Open the W&B run]({run_url}) to inspect its configuration, metrics,
+    Open the Weights & Biases run to inspect its configuration, metrics,
     confidence plots, and 3D molecule. The `predicted_molecules` table connects
     the sequence to its structure and plots.
 
     Try another sample or increase the number of models. Click **Align and fold**
-    again to produce a new prediction and W&B run, then compare confidence and
+    again to produce a new prediction and Weights & Biases run, then compare confidence and
     runtime in your project. The wall time includes alignment, model setup, and
     inference; first-run downloads can make it substantially longer.
 
