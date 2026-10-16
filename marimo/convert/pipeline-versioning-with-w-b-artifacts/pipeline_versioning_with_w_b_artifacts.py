@@ -10,7 +10,7 @@
 
 import marimo
 
-__generated_with = "0.24.2"
+__generated_with = "0.25.1"
 app = marimo.App(
     width="medium",
     app_title="Pipeline Versioning with W&B Artifacts",
@@ -20,16 +20,16 @@ app = marimo.App(
 @app.cell
 def _():
     import os
-    import random
     import tempfile
 
     import marimo as mo
     import torch
+    import torch.nn.functional as F
     import torchvision
     import wandb
     from torch.utils.data import TensorDataset
 
-    return TensorDataset, mo, os, random, tempfile, torch, torchvision, wandb
+    return F, TensorDataset, mo, os, tempfile, torch, torchvision, wandb
 
 
 @app.cell(hide_code=True)
@@ -38,6 +38,21 @@ def _(mo):
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/pipeline-versioning-with-w-b-artifacts/pipeline_versioning_with_w_b_artifacts.py/server)
 
     <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
+
+    # Pipeline Versioning with Weights & Biases Artifacts
+
+    Track an MNIST pipeline from raw data to an evaluated model. This Weights & Biases
+    lesson is based on the PyTorch [Basic MNIST Example](https://github.com/pytorch/examples/tree/master/mnist/).
+    Watch the [original video tutorial](https://youtu.be/Hd94gatGMic).
+
+    An **Artifact** is a versioned collection of files, such as a dataset or model.
+    A run records one step of a pipeline: `log_artifact()` declares an output, and
+    `use_artifact()` declares an input. Together these relationships form a directed
+    acyclic graph showing which data and model versions produced a result.
+
+    We'll create five runs: load data, preprocess data, initialize a model, train,
+    and evaluate. The initialized model is saved separately so later experiments
+    can start from the same weights.
     """)
     return
 
@@ -45,1110 +60,500 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Artifacts
+    ## 0. Configure the pipeline
 
-    In this notebook, we'll show you how to use W&B Artifacts (🏺)
-    to track your ML experiment pipelines (🧪).
-    Our sophisticated mathematical models predict the following result:
+    Set your Weights & Biases project and optional team below. Configure `WANDB_API_KEY` in your
+    environment or molab Secrets, or use cached credentials. In a terminal-backed
+    session, `wandb.login()` can also prompt for your key.
 
-    $$
-    {\Huge
-    🧪 + 🏺 = 😃}
-    $$
-    """)
-    return
+    Running the pipeline downloads MNIST, trains a small CNN for five epochs, and
+    uploads datasets, checkpoints, metrics, and example images. It requires online
+    Weights & Biases access: later stages download Artifacts uploaded by earlier stages.
+    Use `uvx marimo edit --sandbox pipeline_versioning_with_w_b_artifacts.py`
+    to apply the notebook's dependency metadata.
 
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## Follow along with the video tutorial
-
-    Watch the tutorial below, or [open it on YouTube](https://youtu.be/Hd94gatGMic).
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.Html(r"""
-    <iframe
-      width="100%"
-      height="450"
-      src="https://www.youtube.com/embed/Hd94gatGMic?rel=0"
-      title="Pipeline Versioning with W&B Artifacts"
-      frameborder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      referrerpolicy="strict-origin-when-cross-origin"
-      allowfullscreen>
-    </iframe>
-    <p><a href="https://youtu.be/Hd94gatGMic" target="_blank" rel="noopener noreferrer">Open the video on YouTube</a></p>
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## What are Artifacts and Why Should I Care?
-
-    An "artifact", like a Greek [amphora 🏺](https://en.wikipedia.org/wiki/Amphora),
-    is a produced object -- the output of a process.
-    In ML, the most important artifacts are _datasets_ and _models_.
-
-    And, like the [Cross of Coronado](https://indianajones.fandom.com/wiki/Cross_of_Coronado), these important artifacts belong in a museum!
-    That is, they should be cataloged and organized
-    so that you, your team, and the ML community at large can learn from them.
-    After all, those who don't track training are doomed to repeat it.
-
-    Using our Artifacts API, you can log `Artifact`s as outputs of W&B `Run`s or use `Artifact`s as input to `Run`s, as in this diagram,
-    where a training run takes in a dataset and produces a model.
-
-     ![](https://gblobscdn.gitbook.com/assets%2F-Lqya5RvLedGEWPhtkjU%2F-M94QAXA-oJmE6q07_iT%2F-M94QJCXLeePzH1p_fW1%2Fsimple%20artifact%20diagram%202.png?alt=media&token=94bc438a-bd3b-414d-a4e4-aa4f6f359f21)
-
-    Since one run can use another's output as an input, Artifacts and Runs together form a directed graph -- actually, a bipartite [DAG](https://en.wikipedia.org/wiki/Directed_acyclic_graph)! -- with nodes for `Artifact`s and `Run`s
-    and arrows connecting `Run`s to the `Artifact`s they consume or produce.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## 0. Setup
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    The notebook metadata declares W&B, PyTorch, and torchvision. The visible
-    import cell above is the complete shared runtime setup.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ### Authentication
-
-    Submit the form before running the pipeline. Leave the API key blank to
-    use `WANDB_API_KEY` from molab's Secrets panel or credentials already
-    configured in this runtime. Editing an unsubmitted field does not log in,
-    download MNIST, or create a W&B run.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    _wandb_entity = mo.ui.text(
-        value="",
-        label="W&B entity -- a team you belong to (blank uses your default)",
-        full_width=True,
-    )
-    _wandb_project = mo.ui.text(
-        value="artifacts-example",
-        label="W&B project",
-        full_width=True,
-    )
-    _wandb_api_key = mo.ui.text(
-        value="",
-        kind="password",
-        label="W&B API key (blank uses runtime credentials)",
-        full_width=True,
-    )
-    wandb_login_form = (
-        mo.md("{api_key}\n\n{entity}\n\n{project}")
-        .batch(
-            api_key=_wandb_api_key,
-            entity=_wandb_entity,
-            project=_wandb_project,
-        )
-        .form(submit_button_label="Connect to W&B", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
-
-
-@app.cell(hide_code=True)
-def _(mo, wandb, wandb_login_form):
-    mo.stop(
-        wandb_login_form.value is None,
-        mo.callout(
-            mo.md("Submit the authentication form to continue."),
-            kind="info",
-        ),
-    )
-    _login_values = wandb_login_form.value
-    _api_key = _login_values["api_key"].strip()
-    try:
-        _login_ok = wandb.login(
-            key=_api_key or None,
-            relogin=bool(_api_key),
-        )
-    except (wandb.errors.Error, ValueError):
-        _login_ok = False
-    mo.stop(
-        not _login_ok,
-        mo.callout(
-            mo.md(
-                "W&B authentication did not complete. Check the API key or "
-                "configure `WANDB_API_KEY` in molab's Secrets panel, then submit again."
-            ),
-            kind="danger",
-        ),
-    )
-    wandb_session = {
-        "entity": _login_values["entity"].strip() or None,
-        "project": _login_values["project"].strip() or "artifacts-example",
-    }
-    mo.callout(
-        mo.md(
-            f"Connected. Pipeline runs will be written to "
-            f"**{wandb_session['project']}** only after you click a step button."
-        ),
-        kind="success",
-    )
-    return (wandb_session,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## 1. Log a Dataset
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    First, let's define some Artifacts.
-
-    This example is based off of this PyTorch
-    ["Basic MNIST Example"](https://github.com/pytorch/examples/tree/master/mnist/),
-    but could just as easily have been done in TensorFlow, in any other framework,
-    or in pure Python.
-
-    We start with the `Dataset`s:
-    - a `train`ing set, for choosing the parameters,
-    - a `validation` set, for choosing the hyperparameters,
-    - a `test`ing set, for evaluating the final model
-
-    The first cell below defines these three datasets.
+    The next cell sets the random seed and selects CUDA, Apple MPS, or CPU. Seeding
+    helps repeat experiments; results can still differ across devices.
     """)
     return
 
 
 @app.cell
-def _(random, torch, torchvision):
-    # Ensure deterministic behavior
-    torch.backends.cudnn.deterministic = True
-    random.seed(0)
-    torch.manual_seed(0)
-    torch.cuda.manual_seed_all(0)
+def _(torch, wandb):
+    project = "artifacts-example"
+    entity = None  # Set this to your Weights & Biases team if needed.
+    if not wandb.login():
+        raise RuntimeError("Configure Weights & Biases credentials before running the pipeline.")
 
-    # Device configuration
+    torch.manual_seed(0)
+    torch.backends.cudnn.deterministic = True
     if torch.cuda.is_available():
         device = torch.device("cuda:0")
     elif torch.backends.mps.is_available():
         device = torch.device("mps")
     else:
         device = torch.device("cpu")
+    return device, entity, project
 
-    # Data parameters
-    num_classes = 10
-    input_shape = (1, 28, 28)
 
-    # drop slow mirror from list of MNIST mirrors
-    torchvision.datasets.MNIST.mirrors = [mirror for mirror in torchvision.datasets.MNIST.mirrors
-                                          if not mirror.startswith("http://yann.lecun.com")]
-    return device, input_shape, num_classes
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## 1. Log the raw dataset
+
+    First define the data-loading logic. MNIST provides 60,000 training images and
+    10,000 test images. We reserve the last 10,000 training images for validation,
+    leaving the official test set for final evaluation. Each split contains image
+    and label tensors.
+    """)
+    return
 
 
 @app.cell
 def _(TensorDataset, torchvision):
-    def load(data_root, train_size=50_000):
-        """
-        # Load the data
-        """
-
-        # the data, split between train and test sets
-        train = torchvision.datasets.MNIST(data_root, train=True, download=True)
-        test = torchvision.datasets.MNIST(data_root, train=False, download=True)
-        (x_train, y_train), (x_test, y_test) = (
-            (train.data, train.targets),
-            (test.data, test.targets),
+    def load_mnist(data_root, train_size=50_000):
+        # Skip the slow original mirror, keeping the fallback mirrors.
+        torchvision.datasets.MNIST.mirrors = [
+            mirror for mirror in torchvision.datasets.MNIST.mirrors
+            if not mirror.startswith("http://yann.lecun.com")
+        ]
+        train_data = torchvision.datasets.MNIST(data_root, train=True, download=True)
+        test_data = torchvision.datasets.MNIST(data_root, train=False, download=True)
+        return (
+            TensorDataset(train_data.data[:train_size], train_data.targets[:train_size]),
+            TensorDataset(train_data.data[train_size:], train_data.targets[train_size:]),
+            TensorDataset(test_data.data, test_data.targets),
         )
 
-        # split off a validation set for hyperparameter tuning
-        x_train, x_val = x_train[:train_size], x_train[train_size:]
-        y_train, y_val = y_train[:train_size], y_train[train_size:]
-
-        training_set = TensorDataset(x_train, y_train)
-        validation_set = TensorDataset(x_val, y_val)
-        test_set = TensorDataset(x_test, y_test)
-
-        datasets = [training_set, validation_set, test_set]
-
-        return datasets
-
-    return (load,)
+    return (load_mnist,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    This sets up a pattern we'll see repeated in this example:
-    the code to log the data as an Artifact is wrapped around the code for
-    producing that data.
-    In this case, the code for `load`ing the data is
-    separated out from the code for `load_and_log`ging the data.
+    Now create `loading_run` and an Artifact named `mnist-raw` with type `dataset`.
+    Names identify collections of versions; types group related Artifacts. A run's
+    `job_type` labels its role in the pipeline. Keeping related runs in one project
+    makes their lineage easier to explore.
 
-    This is good practice!
-    """)
-    return
+    `new_file()` both creates a file inside the Artifact and attaches it. We save
+    one `.pt` file per split and record the source and split sizes as JSON metadata.
+    After `log_artifact()`, `wait()` ensures the upload has completed before the
+    next stage fetches it. We pass its fully qualified, versioned name downstream,
+    rather than the mutable `latest` alias.
 
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    In order to log these datasets as Artifacts,
-    we just need to
-    1. create a `Run` with `wandb.init`,
-    2. create an `Artifact` for the dataset, and
-    3. save and log the associated `file`s with `run.log_artifact`.
-
-    Check out the example code below, then click **Log raw dataset** to run
-    this pipeline step.
+    Each stage uses a temporary directory for downloaded data and Weights & Biases runtime
+    files. The context managers finish the run before cleaning up the directory;
+    Weights & Biases's separate Artifact cache can persist across stages.
     """)
     return
 
 
 @app.cell
-def _(load, tempfile, torch, wandb):
-    def load_and_log(session):
-        workspace_context = tempfile.TemporaryDirectory(
-            prefix="wandb-artifacts-load-"
-        )
-        workspace = workspace_context.name
-        # 🚀 start a run, with a type to label it and a project it can call home
+def _(entity, load_mnist, project, tempfile, torch, wandb):
+    with tempfile.TemporaryDirectory(prefix="wandb-mnist-load-") as loading_workspace:
         with wandb.init(
-            project=session["project"],
-            entity=session["entity"],
-            job_type="load-data",
-            reinit="create_new",
-            dir=workspace,
-        ) as run:
-            datasets = load(workspace)  # separate code for loading the datasets
-            names = ["training", "validation", "test"]
-
-            # 🏺 create our Artifact
+            project=project, entity=entity, job_type="load-data",
+            name="mnist-load-data", dir=loading_workspace,
+        ) as loading_run:
+            raw_datasets = load_mnist(loading_workspace)
             raw_data = wandb.Artifact(
                 "mnist-raw", type="dataset",
-                description="Raw MNIST dataset, split into train/val/test",
+                description="Raw MNIST dataset, split into train/validation/test",
                 metadata={
                     "source": "torchvision.datasets.MNIST",
-                    "sizes": [len(dataset) for dataset in datasets],
+                    "sizes": [len(dataset) for dataset in raw_datasets],
                 },
             )
+            for _split, _dataset in zip(["training", "validation", "test"], raw_datasets):
+                with raw_data.new_file(_split + ".pt", mode="wb") as _file:
+                    torch.save(_dataset.tensors, _file)
 
-            for name, data in zip(names, datasets):
-                # 🐣 Store a new file in the artifact, and write something into its contents.
-                with raw_data.new_file(name + ".pt", mode="wb") as file:
-                    x, y = data.tensors
-                    torch.save((x, y), file)
-
-            # ✍️ Save the artifact to W&B.
-            logged_artifact = run.log_artifact(raw_data).wait()
-            result = {
-                "artifact_path": logged_artifact.qualified_name,
-                "run_url": run.url,
-            }
-
-        workspace_context.cleanup()
-        return result
-
-    return (load_and_log,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    log_raw_data = mo.ui.run_button(label="Log raw dataset")
-    log_raw_data
-    return (log_raw_data,)
-
-
-@app.cell
-def _(load_and_log, log_raw_data, mo, wandb_session):
-    mo.stop(
-        not log_raw_data.value,
-        mo.md("Click **Log raw dataset** to create the first W&B Artifact."),
-    )
-    raw_data_result = load_and_log(wandb_session)
-    mo.callout(
-        mo.md(
-            "Raw MNIST Artifact logged. "
-            f"[Open the W&B run]({raw_data_result['run_url']})."
-        ),
-        kind="success",
-    )
-    return (raw_data_result,)
+            uploaded_raw_data = loading_run.log_artifact(raw_data)
+            uploaded_raw_data.wait()
+            raw_artifact_path = uploaded_raw_data.qualified_name
+    print(f"Raw dataset: {raw_artifact_path}")
+    return (raw_artifact_path,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### `wandb.init`
-    """)
-    return
+    ## 2. Consume the raw Artifact and log preprocessed data
 
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    When we make the `Run` that's going to produce the `Artifact`s,
-    we need to state which `project` it belongs to.
-
-    Depending on your workflow,
-    a project might be as big as `car-that-drives-itself`
-    or as small as `iterative-architecture-experiment-117`.
-
-    > **Rule of 👍**: if you can, keep all of the `Run`s that share `Artifact`s
-    inside a single project. This keeps things simple,
-    but don't worry -- `Artifact`s are portable across projects!
-
-    To help keep track of all the different kinds of jobs you might run,
-    it's useful to provide a `job_type` when making `Runs`.
-    This keeps the graph of your Artifacts nice and tidy.
-
-    > **Rule of 👍**: the `job_type` should be descriptive and correspond to a single step of your pipeline. Here, we separate out `load`ing data from `preprocess`ing data.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ### `wandb.Artifact`
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    To log something as an `Artifact`, we have to first make an `Artifact` object.
-
-    Every `Artifact` has a `name` -- that's what the first argument sets.
-
-    > **Rule of 👍**: the `name` should be descriptive, but easy to remember and type --
-    we like to use names that are hyphen-separated and correspond to variable names in the code.
-
-    It also has a `type`. Just like `job_type`s for `Run`s,
-    this is used for organizing the graph of `Run`s and `Artifact`s.
-
-    > **Rule of 👍**: the `type` should be simple:
-    more like `dataset` or `model`
-    than `mnist-data-YYYYMMDD`.
-
-    You can also attach a `description` and some `metadata`, as a dictionary.
-    The `metadata` just needs to be serializable to JSON.
-
-    > **Rule of 👍**: the `metadata` should be as descriptive as possible.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ### `artifact.new_file` and `run.log_artifact`
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    Once we've made an `Artifact` object, we need to add files to it.
-
-    You read that right: _files_ with an _s_.
-    `Artifact`s are structured like directories,
-    with files and sub-directories.
-
-    > **Rule of 👍**: whenever it makes sense to do so, split the contents
-    of an `Artifact` up into multiple files. This will help if it comes time to scale!
-
-    We use the `new_file` method
-    to simultaneously write the file and attach it to the `Artifact`.
-    Below, we'll use the `add_file` method,
-    which separates those two steps.
-
-    Once we've added all of our files, we need to `log_artifact` to [wandb.ai](https://wandb.ai).
-
-    You'll notice some URLs appeared in the output,
-    including one for the Run page.
-    That's where you can view the results of the `Run`,
-    including any `Artifact`s that got logged.
-
-    We'll see some examples that make better use of the other components of the Run page below.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## 2. Use a Logged Dataset Artifact
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    `Artifact`s in W&B, unlike artifacts in museums,
-    are designed to be _used_, not just stored.
-
-    Let's see what that looks like.
-
-    The cell below defines a pipeline step that takes in a raw dataset
-    and uses it to produce a `preprocess`ed dataset:
-    `normalize`d and shaped correctly.
-
-    Notice again that we split out the meat of the code, `preprocess`,
-    from the code that interfaces with `wandb`.
-    """)
-    return
-
-
-@app.cell
-def _(TensorDataset, torch):
-    def preprocess(dataset, normalize=True, expand_dims=True):
-        """
-        ## Prepare the data
-        """
-        x, y = dataset.tensors
-
-        if normalize:
-            # Scale images to the [0, 1] range
-            x = x.type(torch.float32) / 255
-
-        if expand_dims:
-            # Make sure images have shape (1, 28, 28)
-            x = torch.unsqueeze(x, 1)
-
-        return TensorDataset(x, y)
-
-    return (preprocess,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    Now for the code that instruments this `preprocess` step with `wandb.Artifact` logging.
-
-    Note that the example below both `use`s an `Artifact`,
-    which is new,
-    and `log`s it,
-    which is the same as the last step.
-    `Artifact`s are both the inputs and the outputs of `Run`s!
-
-    We use a new `job_type`, `preprocess-data`,
-    to make it clear that this is a different kind of job from the previous one.
+    The next helpers handle tensor files and preprocessing. `read_dataset()` loads
+    only tensors using `weights_only=True`. `preprocess()` converts pixel values to
+    floating point in `[0, 1]` and adds a channel dimension, changing image shapes
+    from `(28, 28)` to `(1, 28, 28)` for the CNN.
     """)
     return
 
 
 @app.cell
 def _(TensorDataset, os, torch):
-    def read(data_dir, split):
-        filename = split + ".pt"
-        x, y = torch.load(
-            os.path.join(data_dir, filename),
-            weights_only=True,
+    def read_dataset(data_dir, split):
+        images, labels = torch.load(
+            os.path.join(data_dir, split + ".pt"), weights_only=True,
         )
+        return TensorDataset(images, labels)
 
-        return TensorDataset(x, y)
+    def preprocess(dataset, normalize=True, expand_dims=True):
+        images, labels = dataset.tensors
+        if normalize:
+            images = images.to(torch.float32) / 255
+        if expand_dims:
+            images = images.unsqueeze(1)
+        return TensorDataset(images, labels)
 
-    return (read,)
-
-
-@app.cell
-def _(os, preprocess, read, tempfile, torch, wandb):
-    def preprocess_and_log(raw_artifact_path, session, steps):
-        workspace_context = tempfile.TemporaryDirectory(
-            prefix="wandb-artifacts-preprocess-"
-        )
-        workspace = workspace_context.name
-        with wandb.init(
-            project=session["project"],
-            entity=session["entity"],
-            job_type="preprocess-data",
-            reinit="create_new",
-            dir=workspace,
-        ) as run:
-            processed_data = wandb.Artifact(
-                "mnist-preprocess",
-                type="dataset",
-                description="Preprocessed MNIST dataset",
-                metadata=steps,
-            )
-
-            # ✔️ declare which artifact we'll be using
-            raw_data_artifact = run.use_artifact(raw_artifact_path, type="dataset")
-
-            # 📥 if need be, download the artifact
-            raw_dataset = raw_data_artifact.download(
-                root=os.path.join(workspace, "raw-data")
-            )
-
-            for split in ["training", "validation", "test"]:
-                raw_split = read(raw_dataset, split)
-                processed_dataset = preprocess(raw_split, **steps)
-
-                with processed_data.new_file(split + ".pt", mode="wb") as file:
-                    x, y = processed_dataset.tensors
-                    torch.save((x, y), file)
-
-            logged_artifact = run.log_artifact(processed_data).wait()
-            result = {
-                "artifact_path": logged_artifact.qualified_name,
-                "run_url": run.url,
-            }
-
-        workspace_context.cleanup()
-        return result
-
-    return (preprocess_and_log,)
+    return preprocess, read_dataset
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    One thing to notice here is that the `steps` of the preprocessing
-    are saved with the `preprocessed_data` as `metadata`.
+    `preprocessing_run.use_artifact()` records the raw dataset as this run's input.
+    `download()` materializes its files under the supplied directory, reusing Weights & Biases's
+    content-addressed cache when possible. Download time depends on the cache and
+    network.
 
-    If you're trying to make your experiments reproducible,
-    capturing lots of metadata is a good idea!
+    We save the transformed splits in `mnist-preprocess` and record the preprocessing
+    options in its metadata. These settings are also the CNN's input contract:
+    keep normalization and channel expansion enabled for the model below.
 
-    Also, even though our dataset is a "`large artifact`",
-    the `download` step is done in much less than a second.
-
-    Expand the markdown cell below for details.
+    Artifact references look like `entity/project/mnist-raw:v0`. You can also request
+    `mnist-raw:latest` or a custom alias such as `best`, but aliases can move to a new
+    version. This pipeline uses the exact version produced by the preceding cell.
     """)
     return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    preprocess_data = mo.ui.run_button(label="Preprocess dataset")
-    preprocess_data
-    return (preprocess_data,)
-
-
-@app.cell
-def _(mo, preprocess_and_log, preprocess_data, raw_data_result, wandb_session):
-    mo.stop(
-        not preprocess_data.value,
-        mo.md("Click **Preprocess dataset** after logging the raw dataset."),
-    )
-    steps = {"normalize": True,
-             "expand_dims": True}
-
-    preprocess_result = preprocess_and_log(
-        raw_data_result["artifact_path"],
-        wandb_session,
-        steps,
-    )
-    mo.callout(
-        mo.md(
-            "Preprocessed MNIST Artifact logged. "
-            f"[Open the W&B run]({preprocess_result['run_url']})."
-        ),
-        kind="success",
-    )
-    return (preprocess_result,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ### `run.use_artifact`
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    These steps are simpler. The consumer just needs to know the `name` of the `Artifact`, plus a bit more.
-
-    That "bit more" is the `alias` of the particular version of the `Artifact` you want.
-
-    By default, the last version to be uploaded is tagged `latest`.
-    Otherwise, you can pick older versions with `v0`/`v1`, etc.,
-    or you can provide your own aliases, like `best` or `jit-script`.
-    Just like [Docker Hub](https://hub.docker.com/) tags,
-    aliases are separated from names with `:`,
-    so the `Artifact` we want is `mnist-raw:latest`.
-
-    > **Rule of 👍**: Keep aliases short and sweet.
-    Use custom `alias`es like `latest` or `best` when you want an `Artifact`
-    that satisfies some property
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ### `artifact.download`
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    Now, you may be worrying about the `download` call.
-    If we download another copy, won't that double the burden on memory?
-
-    Don't worry friend. Before we actually download anything,
-    we check to see if the right version is available locally.
-    This uses the same technology that underlies [torrenting](https://en.wikipedia.org/wiki/Torrent_file) and [version control with `git`](https://blog.thoughtram.io/git/2014/11/18/the-anatomy-of-a-git-commit.html): hashing.
-
-    `artifact.download()` materializes a version under the `root` you provide
-    and reuses W&B's content-addressed cache when possible. This notebook passes
-    an isolated temporary root to every pipeline stage, then removes it after
-    the run and Artifact upload finish. That keeps downloaded tensors and W&B
-    runtime files out of the repository.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    In your own workflow, pass a persistent `root=` to `artifact.download()` if
-    you want to inspect the materialized files after the stage completes.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ### The Artifacts page on [wandb.ai](https://wandb.ai)
-
-    Now that we've logged and used an `Artifact`,
-    let's check out the Artifacts tab on the Run page.
-
-    Navigate to the Run page URL from the `wandb` output
-    and select the "Artifacts" tab from the left sidebar
-    (it's the one with the database icon,
-    which looks like three hockey pucks stacked on top of one another).
-
-    Click a row in either the "Input Artifacts" table
-    or in the "Output Artifacts" table,
-    then check out the tabs ("Overview", "Metadata")
-    to see everything logged about the `Artifact`.
-
-    We particularly like the "Graph View".
-    By default, it shows a graph
-    with the `type`s of `Artifact`s
-    and the `job_type`s of `Run` as the two types of nodes,
-    with arrows to represent consumption and production.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## 3. Log a Model
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    That's enough to see how the API for `Artifact`s works,
-    but let's follow this example through to the end of the pipeline
-    so we can see how `Artifact`s can improve your ML workflow.
-
-    This first cell here builds a DNN `model` in PyTorch -- a really simple ConvNet.
-
-    We'll start by just initializing the `model`, not training it.
-    That way, we can repeat the training while keeping everything else constant.
-    """)
-    return
-
-
-@app.cell
-def _(input_shape, num_classes):
-    from math import floor
-
-    import torch.nn as nn
-
-    class ConvNet(nn.Module):
-        def __init__(self, hidden_layer_sizes=[32, 64],
-                      kernel_sizes=[3],
-                      activation="ReLU",
-                      pool_sizes=[2],
-                      dropout=0.5,
-                      num_classes=num_classes,
-                      input_shape=input_shape):
-  
-            super(ConvNet, self).__init__()
-
-            self.layer1 = nn.Sequential(
-                  nn.Conv2d(in_channels=input_shape[0], out_channels=hidden_layer_sizes[0], kernel_size=kernel_sizes[0]),
-                  getattr(nn, activation)(),
-                  nn.MaxPool2d(kernel_size=pool_sizes[0])
-            )
-            self.layer2 = nn.Sequential(
-                  nn.Conv2d(in_channels=hidden_layer_sizes[0], out_channels=hidden_layer_sizes[-1], kernel_size=kernel_sizes[-1]),
-                  getattr(nn, activation)(),
-                  nn.MaxPool2d(kernel_size=pool_sizes[-1])
-            )
-            self.layer3 = nn.Sequential(
-                  nn.Flatten(),
-                  nn.Dropout(dropout)
-            )
-
-            fc_input_dims = floor((input_shape[1] - kernel_sizes[0] + 1) / pool_sizes[0]) # layer 1 output size
-            fc_input_dims = floor((fc_input_dims - kernel_sizes[-1] + 1) / pool_sizes[-1]) # layer 2 output size
-            fc_input_dims = fc_input_dims*fc_input_dims*hidden_layer_sizes[-1] # layer 3 output size
-
-            self.fc = nn.Linear(fc_input_dims, num_classes)
-
-        def forward(self, x):
-            x = self.layer1(x)
-            x = self.layer2(x)
-            x = self.layer3(x)
-            x = self.fc(x)
-            return x
-
-    return (ConvNet,)
-
-
-@app.cell
-def _(ConvNet):
-    model_preview = ConvNet()
-    model_preview
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    Here, we're using W&B to track the run,
-    and so using the [`wandb.config`](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/configs-in-w-b/configs_in_w_b.py/server)
-    object to store all of the hyperparameters.
-
-    The `dict`ionary version of that `config` object is a really useful piece of `metadata`, so make sure to include it!
-    """)
-    return
-
-
-@app.cell
-def _(ConvNet, os, tempfile, torch, wandb):
-    def build_model_and_log(config, session):
-        workspace_context = tempfile.TemporaryDirectory(
-            prefix="wandb-artifacts-initialize-"
-        )
-        workspace = workspace_context.name
-        with wandb.init(
-            project=session["project"],
-            entity=session["entity"],
-            job_type="initialize",
-            config=config,
-            reinit="create_new",
-            dir=workspace,
-        ) as run:
-            run_config = run.config
-
-            model = ConvNet(**run_config)
-
-            model_artifact = wandb.Artifact(
-                "convnet",
-                type="model",
-                description="Simple AlexNet style CNN",
-                metadata=dict(run_config),
-            )
-
-            checkpoint_path = os.path.join(workspace, "initialized_model.pth")
-            torch.save(model.state_dict(), checkpoint_path)
-            # ➕ another way to add a file to an Artifact
-            model_artifact.add_file(checkpoint_path, name="initialized_model.pth")
-
-            logged_artifact = run.log_artifact(model_artifact).wait()
-            result = {
-                "artifact_path": logged_artifact.qualified_name,
-                "run_url": run.url,
-            }
-
-        workspace_context.cleanup()
-        return result
-
-    return (build_model_and_log,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    initialize_model = mo.ui.run_button(label="Initialize model")
-    initialize_model
-    return (initialize_model,)
 
 
 @app.cell
 def _(
-    build_model_and_log,
-    initialize_model,
-    mo,
-    preprocess_result,
-    wandb_session,
+    entity,
+    os,
+    preprocess,
+    project,
+    raw_artifact_path,
+    read_dataset,
+    tempfile,
+    torch,
+    wandb,
 ):
-    mo.stop(
-        not initialize_model.value,
-        mo.md("Click **Initialize model** after preprocessing the dataset."),
-    )
-    model_config = {"hidden_layer_sizes": [32, 64],
-                    "kernel_sizes": [3],
-                    "activation": "ReLU",
-                    "pool_sizes": [2],
-                    "dropout": 0.5,
-                    "num_classes": 10}
+    preprocessing_steps = {"normalize": True, "expand_dims": True}
+    with tempfile.TemporaryDirectory(prefix="wandb-mnist-preprocess-") as preprocessing_workspace:
+        with wandb.init(
+            project=project, entity=entity, job_type="preprocess-data",
+            name="mnist-preprocess-data", dir=preprocessing_workspace,
+        ) as preprocessing_run:
+            raw_input = preprocessing_run.use_artifact(raw_artifact_path, type="dataset")
+            raw_directory = raw_input.download(root=os.path.join(preprocessing_workspace, "raw"))
+            processed_data = wandb.Artifact(
+                "mnist-preprocess", type="dataset",
+                description="Normalized MNIST images with a channel dimension",
+                metadata=preprocessing_steps,
+            )
+            for _split in ["training", "validation", "test"]:
+                _dataset = preprocess(read_dataset(raw_directory, _split), **preprocessing_steps)
+                with processed_data.new_file(_split + ".pt", mode="wb") as _file:
+                    torch.save(_dataset.tensors, _file)
 
-    _ = preprocess_result
-    initialized_model_result = build_model_and_log(
-        model_config,
-        wandb_session,
-    )
-    mo.callout(
-        mo.md(
-            "Initialized model Artifact logged. "
-            f"[Open the W&B run]({initialized_model_result['run_url']})."
-        ),
-        kind="success",
-    )
-    return (initialized_model_result,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ### `artifact.add_file`
-    """)
-    return
+            uploaded_processed_data = preprocessing_run.log_artifact(processed_data)
+            uploaded_processed_data.wait()
+            processed_artifact_path = uploaded_processed_data.qualified_name
+    print(f"Preprocessed dataset: {processed_artifact_path}")
+    return (processed_artifact_path,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Instead of simultaneously writing a `new_file` and adding it to the `Artifact`,
-    as in the dataset logging examples,
-    we can also write files in one step
-    (here, `torch.save`)
-    and then `add` them to the `Artifact` in another.
+    ## 3. Log an initialized model
 
-    > **Rule of 👍**: use `new_file` when you can, to prevent duplication.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## 4. Use a Logged Model Artifact
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    Just like we could call `use_artifact` on a `dataset`,
-    we can call it on our `initialized_model`
-    to use it in another `Run`.
-
-    This time, let's `train` the `model`.
-
-    For more details, see the notebook on
-    [instrumenting W&B with PyTorch](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py/server).
+    This small ConvNet has two convolution/pooling blocks, dropout, and a linear
+    classifier. Its constructor calculates the flattened feature size from the
+    input shape and layer settings. Saving the architecture settings alongside the
+    weights lets another run reconstruct the model.
     """)
     return
 
 
 @app.cell
 def _():
-    import torch.nn.functional as F
+    from math import floor
 
-    return (F,)
+    import torch.nn as nn
 
+    class ConvNet(nn.Module):
+        def __init__(
+            self, hidden_layer_sizes=(32, 64), kernel_sizes=(3,),
+            activation="ReLU", pool_sizes=(2,), dropout=0.5,
+            num_classes=10, input_shape=(1, 28, 28),
+        ):
+            super().__init__()
+            self.layer1 = nn.Sequential(
+                nn.Conv2d(input_shape[0], hidden_layer_sizes[0], kernel_sizes[0]),
+                getattr(nn, activation)(),
+                nn.MaxPool2d(pool_sizes[0]),
+            )
+            self.layer2 = nn.Sequential(
+                nn.Conv2d(hidden_layer_sizes[0], hidden_layer_sizes[-1], kernel_sizes[-1]),
+                getattr(nn, activation)(),
+                nn.MaxPool2d(pool_sizes[-1]),
+            )
+            self.layer3 = nn.Sequential(nn.Flatten(), nn.Dropout(dropout))
+            feature_width = floor((input_shape[1] - kernel_sizes[0] + 1) / pool_sizes[0])
+            feature_width = floor((feature_width - kernel_sizes[-1] + 1) / pool_sizes[-1])
+            self.fc = nn.Linear(feature_width * feature_width * hidden_layer_sizes[-1], num_classes)
 
-@app.cell
-def _(F, device, evaluate_loader, torch):
-    def train(model, train_loader, valid_loader, config, run):
-        optimizer = getattr(torch.optim, config.optimizer)(model.parameters())
-        example_ct = 0
-        for epoch in range(config.epochs):
-            # Evaluation switches the model to eval mode, so restore training mode
-            # before every epoch (important for the Dropout layer).
-            model.train()
-            for batch_idx, (data, target) in enumerate(train_loader):
-                data, target = data.to(device), target.to(device)
-                optimizer.zero_grad()
-                output = model(data)
-                loss = F.cross_entropy(output, target)
-                loss.backward()
-                optimizer.step()
+        def forward(self, x):
+            x = self.layer1(x)
+            x = self.layer2(x)
+            x = self.layer3(x)
+            return self.fc(x)
 
-                example_ct += len(data)
-
-                if batch_idx % config.batch_log_interval == 0:
-                    print(
-                        "Train Epoch: {} [{}/{} ({:.0%})]\tLoss: {:.6f}".format(
-                            epoch,
-                            batch_idx * len(data),
-                            len(train_loader.dataset),
-                            batch_idx / len(train_loader),
-                            loss.item(),
-                        )
-                    )
-
-                    train_log(run, loss, example_ct, epoch)
-
-            # evaluate the model on the validation set at each epoch
-            loss, accuracy = evaluate_loader(model, valid_loader)
-            validation_log(run, loss, accuracy, example_ct, epoch)
-
-    return (train,)
-
-
-@app.cell
-def _(F, device, torch):
-    def evaluate_loader(model, test_loader):
-        model.eval()
-        test_loss = 0
-        correct = 0
-        with torch.no_grad():
-            for data, target in test_loader:
-                data, target = data.to(device), target.to(device)
-                output = model(data)
-                test_loss += F.cross_entropy(output, target, reduction="sum")
-                pred = output.argmax(dim=1, keepdim=True)
-                correct += pred.eq(target.view_as(pred)).sum()
-
-        test_loss /= len(test_loader.dataset)
-        accuracy = 100.0 * correct / len(test_loader.dataset)
-
-        return test_loss, accuracy
-
-    return (evaluate_loader,)
-
-
-@app.function
-def train_log(run, loss, example_ct, epoch):
-    loss = loss.detach().item()
-
-    # where the magic happens
-    run.log({"epoch": epoch, "train/loss": loss}, step=example_ct)
-    print(f"Loss after " + str(example_ct).zfill(5) + f" examples: {loss:.3f}")
-
-
-@app.function
-def validation_log(run, loss, accuracy, example_ct, epoch):
-    loss = float(loss)
-    accuracy = float(accuracy)
-
-    # where the magic happens
-    run.log(
-        {
-            "epoch": epoch,
-            "validation/loss": loss,
-            "validation/accuracy": accuracy,
-        },
-        step=example_ct,
-    )
-    print(
-        f"Loss/accuracy after "
-        + str(example_ct).zfill(5)
-        + f" examples: {loss:.3f}/{accuracy:.3f}"
-    )
+    return (ConvNet,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    We'll run two separate `Artifact`-producing `Run`s this time.
+    Choose the model settings below. `wandb.init(config=...)` records them with
+    `initialization_run`; we copy that configuration into the model Artifact's
+    metadata for later reconstruction.
 
-    Once the first finishes `train`ing the `model`,
-    the `second` will consume the `trained-model` `Artifact`
-    by `evaluate`ing its performance on the `test_dataset`.
-
-    Also, we'll pull out the 32 examples on which the network gets the most confused --
-    on which the `categorical_crossentropy` is highest.
-
-    This is a good way to diagnose issues with your dataset and your model!
+    Here we demonstrate `add_file()`: save the checkpoint with `torch.save()` first,
+    then attach it to `convnet`. In contrast, `new_file()` above writes directly into
+    the Artifact. The initialized model is independent of the dataset preprocessing
+    stage; the training stage will consume both outputs.
     """)
     return
 
 
 @app.cell
-def _(evaluate_loader, get_hardest_k_examples):
-    def evaluate(model, test_loader):
-        """
-        ## Evaluate the trained model
-        """
+def _():
+    model_config = {
+        "hidden_layer_sizes": [32, 64],
+        "kernel_sizes": [3],
+        "activation": "ReLU",
+        "pool_sizes": [2],
+        "dropout": 0.5,
+        "num_classes": 10,
+    }
+    return (model_config,)
 
-        loss, accuracy = evaluate_loader(model, test_loader)
-        highest_losses, hardest_examples, true_labels, predictions = (
-            get_hardest_k_examples(model, test_loader.dataset)
-        )
 
-        return loss, accuracy, highest_losses, hardest_examples, true_labels, predictions
+@app.cell
+def _(ConvNet, entity, model_config, os, project, tempfile, torch, wandb):
+    with tempfile.TemporaryDirectory(prefix="wandb-mnist-initialize-") as initialization_workspace:
+        with wandb.init(
+            project=project, entity=entity, job_type="initialize",
+            name="mnist-initialize-model", config=model_config, dir=initialization_workspace,
+        ) as initialization_run:
+            initial_model = ConvNet(**initialization_run.config)
+            initialized_model_artifact = wandb.Artifact(
+                "convnet", type="model", description="Initialized MNIST ConvNet",
+                metadata=dict(initialization_run.config),
+            )
+            initialized_checkpoint = os.path.join(initialization_workspace, "initialized_model.pth")
+            torch.save(initial_model.state_dict(), initialized_checkpoint)
+            initialized_model_artifact.add_file(initialized_checkpoint, name="initialized_model.pth")
 
-    return (evaluate,)
+            uploaded_initial_model = initialization_run.log_artifact(initialized_model_artifact)
+            uploaded_initial_model.wait()
+            initialized_artifact_path = uploaded_initial_model.qualified_name
+    print(f"Initialized model: {initialized_artifact_path}")
+    return (initialized_artifact_path,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## 4. Train using dataset and model Artifacts
+
+    Before training, define an evaluation helper that computes mean cross-entropy
+    loss and accuracy across a loader without tracking gradients. Training will use
+    it on validation data after each epoch; final evaluation will use the same
+    logic on the held-out test set.
+    """)
+    return
+
+
+@app.cell
+def _(F, device, torch):
+    def evaluate_loader(model, loader):
+        model.eval()
+        total_loss = 0.0
+        correct = 0
+        with torch.no_grad():
+            for images, labels in loader:
+                images, labels = images.to(device), labels.to(device)
+                logits = model(images)
+                total_loss += F.cross_entropy(logits, labels, reduction="sum").item()
+                correct += (logits.argmax(dim=1) == labels).sum().item()
+        return total_loss / len(loader.dataset), 100.0 * correct / len(loader.dataset)
+
+    return (evaluate_loader,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    The training cell declares **two Artifact inputs**: the preprocessed dataset and
+    the initialized model. It loads weights and reconstructs the architecture from
+    model metadata, then trains using the editable settings below.
+
+    `training_run.log()` records training loss and validation loss/accuracy, with the
+    epoch and number of examples seen. Weights & Biases advances its default step on each log
+    call. `model.train()` at the start of each epoch restores dropout after validation
+    switches the model to evaluation mode.
+
+    Finally, save a new `trained-model` Artifact. Its metadata records the architecture
+    and training settings, while the run's input edges identify the exact dataset
+    and initialization used. The upload must finish before the report run fetches it.
+    For more training details, see the
+    [PyTorch integration lesson](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py/server).
+    """)
+    return
+
+
+@app.cell
+def _():
+    train_config = {
+        "batch_size": 128,
+        "epochs": 5,
+        "batch_log_interval": 25,
+        "optimizer": "Adam",
+    }
+    return (train_config,)
+
+
+@app.cell
+def _(
+    ConvNet,
+    F,
+    device,
+    entity,
+    evaluate_loader,
+    initialized_artifact_path,
+    os,
+    processed_artifact_path,
+    project,
+    read_dataset,
+    tempfile,
+    torch,
+    train_config,
+    wandb,
+):
+    with tempfile.TemporaryDirectory(prefix="wandb-mnist-train-") as training_workspace:
+        with wandb.init(
+            project=project, entity=entity, job_type="train",
+            name="mnist-train-convnet", config=train_config, dir=training_workspace,
+        ) as training_run:
+            training_data_artifact = training_run.use_artifact(processed_artifact_path, type="dataset")
+            training_data_directory = training_data_artifact.download(
+                root=os.path.join(training_workspace, "data")
+            )
+            training_dataset = read_dataset(training_data_directory, "training")
+            validation_dataset = read_dataset(training_data_directory, "validation")
+            train_loader = torch.utils.data.DataLoader(
+                training_dataset, batch_size=training_run.config.batch_size,
+            )
+            validation_loader = torch.utils.data.DataLoader(
+                validation_dataset, batch_size=training_run.config.batch_size,
+            )
+
+            initialization_input = training_run.use_artifact(initialized_artifact_path, type="model")
+            initialization_directory = initialization_input.download(
+                root=os.path.join(training_workspace, "initialized-model")
+            )
+            training_model_config = dict(initialization_input.metadata)
+            training_run.config.update(training_model_config)
+            training_model = ConvNet(**training_model_config).to(device)
+            training_model.load_state_dict(torch.load(
+                os.path.join(initialization_directory, "initialized_model.pth"),
+                map_location=device, weights_only=True,
+            ))
+
+            optimizer = getattr(torch.optim, training_run.config.optimizer)(training_model.parameters())
+            example_count = 0
+            for epoch in range(training_run.config.epochs):
+                training_model.train()
+                for batch_index, (batch_images, batch_labels) in enumerate(train_loader):
+                    batch_images, batch_labels = batch_images.to(device), batch_labels.to(device)
+                    optimizer.zero_grad()
+                    training_loss = F.cross_entropy(training_model(batch_images), batch_labels)
+                    training_loss.backward()
+                    optimizer.step()
+                    example_count += len(batch_images)
+                    if batch_index % training_run.config.batch_log_interval == 0:
+                        training_run.log({
+                            "epoch": epoch, "examples": example_count,
+                            "train/loss": training_loss.item(),
+                        })
+
+                validation_loss, validation_accuracy = evaluate_loader(training_model, validation_loader)
+                training_run.log({
+                    "epoch": epoch, "examples": example_count,
+                    "validation/loss": validation_loss,
+                    "validation/accuracy": validation_accuracy,
+                })
+                print(f"Epoch {epoch + 1}: validation accuracy {validation_accuracy:.2f}%")
+
+            trained_model_artifact = wandb.Artifact(
+                "trained-model", type="model", description="Trained MNIST ConvNet",
+                metadata={
+                    "model_config": training_model_config,
+                    "training_config": train_config,
+                },
+            )
+            trained_checkpoint = os.path.join(training_workspace, "trained_model.pth")
+            torch.save(training_model.state_dict(), trained_checkpoint)
+            trained_model_artifact.add_file(trained_checkpoint, name="trained_model.pth")
+            uploaded_trained_model = training_run.log_artifact(trained_model_artifact)
+            uploaded_trained_model.wait()
+            trained_artifact_path = uploaded_trained_model.qualified_name
+    print(f"Trained model: {trained_artifact_path}")
+    return (trained_artifact_path,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## 5. Evaluate the trained model and inspect hard examples
+
+    The final run consumes `trained-model` and the same preprocessed dataset version.
+    It evaluates only the test split, keeping test results separate from training and
+    hyperparameter selection.
+
+    The next helper ranks individual test images by cross-entropy loss and returns
+    the 32 highest-loss examples (or all examples for a smaller test set). This helps
+    diagnose confident mistakes or ambiguous images.
+    """)
+    return
 
 
 @app.cell
 def _(F, device, torch):
     def get_hardest_k_examples(model, testing_set, k=32):
         model.eval()
-
         loader = torch.utils.data.DataLoader(testing_set, 1, shuffle=False)
-
-        # get the losses and predictions for each item in the dataset
         losses = []
         predictions = []
         with torch.no_grad():
-            for data, target in loader:
-                data, target = data.to(device), target.to(device)
-                output = model(data)
-                loss = F.cross_entropy(output, target)
-                pred = output.argmax(dim=1, keepdim=True)
-
-                losses.append(loss.detach().cpu())
-                predictions.append(pred.detach().cpu().squeeze(1))
-
+            for images, labels in loader:
+                images, labels = images.to(device), labels.to(device)
+                logits = model(images)
+                losses.append(F.cross_entropy(logits, labels).detach().cpu())
+                predictions.append(logits.argmax(dim=1).detach().cpu())
         losses = torch.stack(losses)
         predictions = torch.cat(predictions)
-        argsort_loss = torch.argsort(losses)
-        hardest_indices = argsort_loss[-k:]
-
-        highest_k_losses = losses[hardest_indices]
-        hardest_k_examples = testing_set.tensors[0][hardest_indices]
-        true_labels = testing_set.tensors[1][hardest_indices]
-        predicted_labels = predictions[hardest_indices]
-
-        return highest_k_losses, hardest_k_examples, true_labels, predicted_labels
+        hardest_indices = torch.argsort(losses)[-k:]
+        return (
+            losses[hardest_indices],
+            testing_set.tensors[0][hardest_indices],
+            testing_set.tensors[1][hardest_indices],
+            predictions[hardest_indices],
+        )
 
     return (get_hardest_k_examples,)
 
@@ -1156,263 +561,99 @@ def _(F, device, torch):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    These logging functions don't add any new `Artifact` features,
-    so we won't comment on them:
-    we're just `use`ing, `download`ing,
-    and `log`ging `Artifact`s.
+    `evaluation_run.summary.update()` stores the final test loss and accuracy.
+    `evaluation_run.log()` records high-loss images with their predicted label, true
+    label, and loss in the captions. These Media panels complement aggregate metrics
+    with concrete examples of the model's behavior.
+
+    The trained Artifact stores architecture and training settings separately in
+    its metadata. We use `model_config` to reconstruct the CNN; the training
+    settings remain available for inspection.
     """)
     return
-
-
-@app.cell
-def _(ConvNet, device, os, read, tempfile, torch, train, wandb):
-    def train_and_log(
-        config,
-        initialized_model_path,
-        processed_data_path,
-        session,
-    ):
-        workspace_context = tempfile.TemporaryDirectory(
-            prefix="wandb-artifacts-train-"
-        )
-        workspace = workspace_context.name
-        with wandb.init(
-            project=session["project"],
-            entity=session["entity"],
-            job_type="train",
-            config=config,
-            reinit="create_new",
-            dir=workspace,
-        ) as run:
-            run_config = run.config
-
-            data = run.use_artifact(processed_data_path, type="dataset")
-            data_dir = data.download(root=os.path.join(workspace, "data"))
-
-            training_dataset = read(data_dir, "training")
-            validation_dataset = read(data_dir, "validation")
-
-            train_loader = torch.utils.data.DataLoader(
-                training_dataset,
-                batch_size=run_config.batch_size,
-            )
-            validation_loader = torch.utils.data.DataLoader(
-                validation_dataset,
-                batch_size=run_config.batch_size,
-            )
-
-            model_artifact = run.use_artifact(
-                initialized_model_path,
-                type="model",
-            )
-            model_dir = model_artifact.download(
-                root=os.path.join(workspace, "initialized-model")
-            )
-            model_path = os.path.join(model_dir, "initialized_model.pth")
-            model_config = model_artifact.metadata
-            run_config.update(model_config)
-
-            model = ConvNet(**model_config)
-            model.load_state_dict(
-                torch.load(model_path, map_location=device, weights_only=True)
-            )
-            model = model.to(device)
-
-            train(model, train_loader, validation_loader, run_config, run)
-
-            trained_model_artifact = wandb.Artifact(
-                "trained-model",
-                type="model",
-                description="Trained NN model",
-                metadata=dict(model_config),
-            )
-
-            trained_model_path = os.path.join(workspace, "trained_model.pth")
-            torch.save(model.state_dict(), trained_model_path)
-            trained_model_artifact.add_file(
-                trained_model_path,
-                name="trained_model.pth",
-            )
-            logged_model = run.log_artifact(trained_model_artifact).wait()
-            result = {
-                "artifact_path": logged_model.qualified_name,
-                "run_url": run.url,
-            }
-
-        workspace_context.cleanup()
-        return result
-
-    return (train_and_log,)
-
-
-@app.cell
-def _(ConvNet, device, evaluate, os, read, tempfile, torch, wandb):
-    def evaluate_and_log(
-        processed_data_path,
-        session,
-        trained_model_path,
-        config=None,
-    ):
-        workspace_context = tempfile.TemporaryDirectory(
-            prefix="wandb-artifacts-evaluate-"
-        )
-        workspace = workspace_context.name
-        with wandb.init(
-            project=session["project"],
-            entity=session["entity"],
-            job_type="report",
-            config=config,
-            reinit="create_new",
-            dir=workspace,
-        ) as run:
-            data = run.use_artifact(processed_data_path, type="dataset")
-            data_dir = data.download(root=os.path.join(workspace, "data"))
-            testing_set = read(data_dir, "test")
-
-            test_loader = torch.utils.data.DataLoader(
-                testing_set,
-                batch_size=128,
-                shuffle=False,
-            )
-
-            model_artifact = run.use_artifact(trained_model_path, type="model")
-            model_dir = model_artifact.download(
-                root=os.path.join(workspace, "trained-model")
-            )
-            model_path = os.path.join(model_dir, "trained_model.pth")
-            model_config = model_artifact.metadata
-
-            model = ConvNet(**model_config)
-            model.load_state_dict(
-                torch.load(model_path, map_location=device, weights_only=True)
-            )
-            model = model.to(device)
-
-            loss, accuracy, highest_losses, hardest_examples, true_labels, preds = (
-                evaluate(model, test_loader)
-            )
-
-            run.summary.update(
-                {"loss": float(loss), "accuracy": float(accuracy)}
-            )
-
-            run.log(
-                {
-                    "high-loss-examples": [
-                        wandb.Image(
-                            hard_example.detach()
-                            .cpu()
-                            .clamp(0, 1)
-                            .mul(255)
-                            .round()
-                            .to(torch.uint8),
-                            caption=str(int(pred)) + "," + str(int(label)),
-                        )
-                        for hard_example, pred, label in zip(
-                            hardest_examples,
-                            preds,
-                            true_labels,
-                        )
-                    ]
-                }
-            )
-            result = {
-                "accuracy": float(accuracy),
-                "loss": float(loss),
-                "run_url": run.url,
-            }
-
-        workspace_context.cleanup()
-        return result
-
-    return (evaluate_and_log,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    train_and_evaluate = mo.ui.run_button(label="Train and evaluate")
-    train_and_evaluate
-    return (train_and_evaluate,)
 
 
 @app.cell
 def _(
-    evaluate_and_log,
-    initialized_model_result,
-    mo,
-    preprocess_result,
-    train_and_evaluate,
-    train_and_log,
-    wandb_session,
+    ConvNet,
+    device,
+    entity,
+    evaluate_loader,
+    get_hardest_k_examples,
+    os,
+    processed_artifact_path,
+    project,
+    read_dataset,
+    tempfile,
+    torch,
+    trained_artifact_path,
+    wandb,
 ):
-    mo.stop(
-        not train_and_evaluate.value,
-        mo.md("Click **Train and evaluate** after initializing the model."),
-    )
-    train_config = {"batch_size": 128,
-                    "epochs": 5,
-                    "batch_log_interval": 25,
-                    "optimizer": "Adam"}
+    with tempfile.TemporaryDirectory(prefix="wandb-mnist-evaluate-") as evaluation_workspace:
+        with wandb.init(
+            project=project, entity=entity, job_type="report",
+            name="mnist-evaluate-convnet", dir=evaluation_workspace,
+        ) as evaluation_run:
+            evaluation_data_artifact = evaluation_run.use_artifact(processed_artifact_path, type="dataset")
+            evaluation_directory = evaluation_data_artifact.download(
+                root=os.path.join(evaluation_workspace, "data")
+            )
+            testing_set = read_dataset(evaluation_directory, "test")
+            test_loader = torch.utils.data.DataLoader(testing_set, batch_size=128, shuffle=False)
 
-    trained_model_result = train_and_log(
-        train_config,
-        initialized_model_result["artifact_path"],
-        preprocess_result["artifact_path"],
-        wandb_session,
-    )
-    evaluation_result = evaluate_and_log(
-        preprocess_result["artifact_path"],
-        wandb_session,
-        trained_model_result["artifact_path"],
-    )
-    mo.callout(
-        mo.md(
-            "Training and evaluation complete. "
-            f"Validation artifacts: [training run]({trained_model_result['run_url']}); "
-            f"[evaluation run]({evaluation_result['run_url']}). "
-            f"Test accuracy: **{evaluation_result['accuracy']:.2f}%**."
-        ),
-        kind="success",
-    )
+            evaluation_model_artifact = evaluation_run.use_artifact(trained_artifact_path, type="model")
+            evaluation_model_directory = evaluation_model_artifact.download(
+                root=os.path.join(evaluation_workspace, "trained-model")
+            )
+            evaluation_model_config = evaluation_model_artifact.metadata["model_config"]
+            evaluation_model = ConvNet(**evaluation_model_config).to(device)
+            evaluation_model.load_state_dict(torch.load(
+                os.path.join(evaluation_model_directory, "trained_model.pth"),
+                map_location=device, weights_only=True,
+            ))
+            test_loss, test_accuracy = evaluate_loader(evaluation_model, test_loader)
+            highest_losses, hardest_images, true_labels, predicted_labels = get_hardest_k_examples(
+                evaluation_model, testing_set
+            )
+            evaluation_run.summary.update({"loss": test_loss, "accuracy": test_accuracy})
+            evaluation_run.log({
+                "high-loss-examples": [
+                    wandb.Image(
+                        image.cpu().clamp(0, 1).mul(255).round().to(torch.uint8),
+                        caption=f"predicted={int(prediction)}, true={int(label)}, loss={float(loss):.3f}",
+                    )
+                    for image, prediction, label, loss in zip(
+                        hardest_images, predicted_labels, true_labels, highest_losses,
+                    )
+                ]
+            })
+    print(f"Test loss: {test_loss:.4f}; test accuracy: {test_accuracy:.2f}%")
+    print(f"Evaluation run: {evaluation_run.url}")
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    You may have noticed a button labeled "Explode". Don't click that, as it will set off a small bomb underneath your humble author's desk in the W&B HQ!
+    ## Inspect the pipeline in Weights & Biases
 
-    Just kidding. It "explodes" the graph in a much gentler way:
-    `Artifact`s and `Run`s become separated at the level of a single instance,
-    rather than a `type`:
-    the nodes are not `dataset` and `load-data`, but `dataset:mnist-raw:v1` and `load-data:sunny-smoke-1`, and so on.
+    Open the run links printed by Weights & Biases and inspect:
 
-    This provides total insight into your pipeline,
-    with logged metrics, metadata, and more
-    all at your fingertips --
-    you're only limited by what you choose to log with us.
-    """)
-    return
+    - **Artifacts:** `mnist-raw`, `mnist-preprocess`, `convnet`, and `trained-model`.
+    - **Lineage graph:** loading produces raw data; preprocessing consumes it and
+      produces processed data; training consumes processed data and the initialized
+      model, then produces the trained model; evaluation consumes processed data
+      and the trained model.
+    - **Metadata:** dataset sizes, preprocessing settings, and model configuration.
+    - **Training charts:** `train/loss`, `validation/loss`, and `validation/accuracy`.
+    - **Evaluation:** final `loss` and `accuracy`, plus the `high-loss-examples` panel.
 
+    The graph can group nodes by Artifact `type` and run `job_type`, or show individual
+    runs and Artifact versions. This lets you trace a result back to its exact inputs.
 
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## Verify and next steps
-
-    In the W&B project, open the runs created by this notebook and inspect:
-
-    - the **Artifacts** tab for `mnist-raw`, `mnist-preprocess`, `convnet`, and
-      `trained-model`;
-    - the Artifact graph to confirm each run consumes the previous step's
-      output and produces the next Artifact;
-    - the training run charts for `train/loss`, `validation/loss`, and
-      `validation/accuracy`;
-    - the report run summary for `loss` and `accuracy`, plus the
-      `high-loss-examples` media panel.
-
-    Re-run the model initialization or training steps with different
-    hyperparameters to create new Artifact versions and compare them in W&B.
+    Edit the model or training settings and rerun the affected stages to create and
+    compare versions. Weights & Biases deduplicates unchanged file contents. For a controlled
+    training comparison, keep the initialized model and dataset versions fixed.
     """)
     return
 
