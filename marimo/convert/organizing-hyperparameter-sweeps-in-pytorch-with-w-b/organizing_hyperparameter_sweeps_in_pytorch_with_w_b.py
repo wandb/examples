@@ -11,7 +11,7 @@
 
 import marimo
 
-__generated_with = "0.24.2"
+__generated_with = "0.25.1"
 app = marimo.App(
     width="medium",
     app_title="PyTorch hyperparameter sweeps with W&B",
@@ -44,13 +44,11 @@ with app.setup:
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # Organizing Hyperparameter Sweeps in PyTorch with W&B
+    # Organizing Hyperparameter Sweeps in PyTorch with Weights & Biases
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py/server)
 
     <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
-
-    <img src="https://wandb.me/mini-diagram" width="650" alt="Weights & Biases" />
     """)
     return
 
@@ -60,9 +58,9 @@ def _():
     mo.md(r"""
     Finding a machine learning model that meets your desired metric (such as model accuracy) is normally a redundant task that can take multiple iterations. To make matters worse, it might be unclear which hyperparameter combinations to use for a given training run.
 
-    Use W&B Sweeps to create an organized and efficient way to automatically search through combinations of hyperparameter values such as the learning rate, batch size, number of hidden layers, optimizer type and more to find values that optimize your model based on your desired metric.
+    Use Weights & Biases Sweeps to create an organized and efficient way to automatically search through combinations of hyperparameter values such as the learning rate, batch size, number of hidden layers, optimizer type and more to find values that optimize your model based on your desired metric.
 
-    In this tutorial you will create a hyperparameter search with W&B PyTorch integration. Follow along with a [video tutorial](https://wandb.me/sweeps-video)!
+    In this tutorial you will create a hyperparameter search with Weights & Biases PyTorch integration. Follow along with a [video tutorial](https://wandb.me/sweeps-video).
 
     ![](https://i.imgur.com/WVKkMWw.png)
 
@@ -84,101 +82,29 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Authentication
+    ## Authenticate and choose a project
 
-    The setup cell imports W&B, PyTorch, and torchvision from the packages
-    declared at the top of this notebook.
+    Set `WANDB_API_KEY` in your environment or molab Secrets, or use credentials
+    already stored in this runtime. In a terminal-backed session, `wandb.login()`
+    can also prompt for your [API key](https://wandb.ai/authorize). A fresh molab
+    session does not inherit credentials from your computer.
 
-    Enter your [W&B API key](https://wandb.ai/authorize), or leave it blank to
-    use `WANDB_API_KEY` from the molab Secrets panel or credentials already
-    stored in this runtime. A fresh molab session does not inherit credentials
-    from your computer.
+    Edit the project and team entity below.
 
-    The entity is the team name in `wandb.ai/<entity>/<project>`. Leave it
-    blank to use your default entity. Nothing is sent to W&B until you submit
-    the form.
+    Running the sweep and agent cells creates a remote Weights & Biases sweep and up to five
+    training runs on this machine. Each trial downloads MNIST if needed and
+    trains on every fifth training image (12,000 examples).
     """)
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _():
-    wandb_login_form = (
-        mo.md("{api_key}\n\n{entity}\n\n{project}")
-        .batch(
-            api_key=mo.ui.text(
-                kind="password",
-                label="W&B API key (optional)",
-                placeholder="Paste a key or use configured credentials",
-                full_width=True,
-            ),
-            entity=mo.ui.text(
-                label="W&B entity or team (optional)",
-                placeholder="Leave blank to use your default entity",
-                full_width=True,
-            ),
-            project=mo.ui.text(
-                value="pytorch-sweeps-demo",
-                label="W&B project",
-                full_width=True,
-            ),
-        )
-        .form(submit_button_label="Connect to W&B", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
-
-
-@app.cell(hide_code=True)
-def _(wandb_login_form):
-    mo.stop(
-        wandb_login_form.value is None,
-        mo.callout(
-            mo.md("Submit the form above before creating a sweep."),
-            kind="info",
-        ),
-    )
-
-    _submitted = wandb_login_form.value
-    _api_key = _submitted["api_key"].strip()
-    _project = _submitted["project"].strip()
-    mo.stop(
-        not _project,
-        mo.callout(mo.md("Enter a W&B project name and submit again."), kind="danger"),
-    )
-
-    try:
-        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
-    except (wandb.errors.Error, ValueError):
-        _login_ok = False
-    mo.stop(
-        not _login_ok,
-        mo.callout(
-            mo.md(
-                "W&B authentication did not complete. Check the API key or "
-                "molab Secrets configuration and submit again."
-            ),
-            kind="danger",
-        ),
-    )
-
-    _entity = _submitted["entity"].strip() or wandb.Api().default_entity
-    mo.stop(
-        not _entity,
-        mo.callout(
-            mo.md(
-                "W&B did not return a default entity. Enter a team entity and "
-                "submit the authentication form again."
-            ),
-            kind="danger",
-        ),
-    )
-    wandb_connection = {"entity": _entity, "project": _project}
-    mo.callout(
-        mo.md(f"Connected to W&B as `{_entity}` for project `{_project}`."),
-        kind="success",
-    )
-    return (wandb_connection,)
+    project = "pytorch-sweeps-demo"
+    entity = None  # Set this to your Weights & Biases team if needed.
+    if not wandb.login():
+        raise RuntimeError("Configure Weights & Biases credentials before starting the sweep.")
+    return entity, project
 
 
 @app.cell(hide_code=True)
@@ -186,174 +112,51 @@ def _():
     mo.md(r"""
     ## Step 1: Define a sweep
 
-    A W&B Sweep combines a strategy for trying numerous hyperparameter values with the code that evaluates them.
-    Before you start a sweep, you must define your sweep strategy with a _sweep configuration_.
+    The next cell defines the complete search space in one nested dictionary.
+    Weights & Biases supports `grid`, `random`, and `bayes` search; here `random` samples a new
+    combination for each trial. The objective is to minimize the metric named
+    `loss`, which the training function will log once per epoch. Random search
+    does not require an objective, but recording one makes the goal explicit.
 
-    :::info
-    The sweep configuration you create for a sweep must be in a nested dictionary if you start a sweep in a Jupyter Notebook.
+    Under `parameters`, use:
 
-    If you run a sweep within the command line, you must specify your sweep config with a [YAML file](https://docs.wandb.ai/models/sweeps/define-sweep-configuration).
-    :::
-    """)
-    return
+    - `values` for equally likely choices: optimizer, hidden-layer size, and dropout.
+    - `value` for a fixed setting: one epoch per trial.
+    - `distribution` for a sampled range: a uniform learning rate between 0 and
+      0.1, and a logarithmically sampled batch size between 32 and 256, rounded
+      to a multiple of 8 by `q`.
 
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ### Pick a search method
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    First, specify a hyperparameter search method within your configuration dictionary. [There are three hyperparameter search strategies to choose from: grid, random, and Bayesian search](https://docs.wandb.ai/models/sweeps/sweep-config-keys#method).
-
-    For this tutorial, you will use a random search. Within your notebook, create a dictionary and specify `random` for the `method` key.
+    Other distributions have their own settings, such as `mu` and `sigma` for a
+    normal distribution. Finite `values` are also useful for narrowing continuous
+    parameters to a few candidate settings. See the
+    [sweep configuration reference](https://docs.wandb.ai/models/sweeps/sweep-config-keys)
+    for the full set of options. The command-line equivalent uses a YAML file.
     """)
     return
 
 
 @app.cell
 def _():
-    search_method = {
-        'method': 'random'
-        }
-    return (search_method,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    Specify a metric that you want to optimize for. You do not need to specify the metric and goal for sweeps that use random search method. However, it is good practice to keep track of your sweep goals because you can refer to it at a later time.
-    """)
-    return
-
-
-@app.cell
-def _():
-    metric = {
-        'name': 'loss',
-        'goal': 'minimize'   
-        }
-    return (metric,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ### Specify hyperparameters to search through
-
-    Now that you have a search method specified in your sweep configuration, specify the hyperparameters you want to search over.
-
-    To do this, specify one or more hyperparameter names to the `parameter` key and specify one or more hyperparameter values for the `value` key.
-
-    The values you search through for a given hyperparameter depend on the type of hyperparameter you are investigating.
-
-    For example, if you choose a machine learning optimizer, you must specify one or more finite optimizer names such as Adam or stochastic gradient descent.
-    """)
-    return
-
-
-@app.cell
-def _():
-    categorical_parameters = {
-        'optimizer': {
-            'values': ['adam', 'sgd']
-            },
-        'fc_layer_size': {
-            'values': [128, 256, 512]
-            },
-        'dropout': {
-              'values': [0.3, 0.4, 0.5]
-            },
-        }
-    return (categorical_parameters,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    Sometimes you want to track a hyperparameter, but not vary its value. In this case, add the hyperparameter to your sweep configuration and specify the exact value that you want to use. For example, in the following code cell, `epochs` is set to 1.
-    """)
-    return
-
-
-@app.cell
-def _():
-    fixed_parameters = {
-        'epochs': {
-            'value': 1}
-        }
-    return (fixed_parameters,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    For a `random` search,
-    all the `values` of a parameter are equally likely to be chosen on a given run.
-
-    Alternatively,
-    you can specify a named `distribution`,
-    plus its parameters, like the mean `mu`
-    and standard deviation `sigma` of a `normal` distribution.
-    """)
-    return
-
-
-@app.cell
-def _():
-    distribution_parameters = {
-        'learning_rate': {
-            # a flat distribution between 0 and 0.1
-            'distribution': 'uniform',
-            'min': 0,
-            'max': 0.1
-          },
-        'batch_size': {
-            # integers between 32 and 256
-            # with evenly-distributed logarithms 
-            'distribution': 'q_log_uniform_values',
-            'q': 8,
-            'min': 32,
-            'max': 256,
-          }
-        }
-    return (distribution_parameters,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    When we're finished, `sweep_config` is a nested dictionary
-    that specifies exactly which `parameters` we're interested in trying
-    and the `method` we're going to use to try them.
-
-    Let's see how the sweep configuration looks like:
-    """)
-    return
-
-
-@app.cell
-def _(
-    categorical_parameters,
-    distribution_parameters,
-    fixed_parameters,
-    metric,
-    search_method,
-):
-    parameters_dict = {
-        **categorical_parameters,
-        **fixed_parameters,
-        **distribution_parameters,
-    }
     sweep_config = {
-        **search_method,
-        'metric': metric,
-        'parameters': parameters_dict,
+        "method": "random",
+        "metric": {"name": "loss", "goal": "minimize"},
+        "parameters": {
+            "optimizer": {"values": ["adam", "sgd"]},
+            "fc_layer_size": {"values": [128, 256, 512]},
+            "dropout": {"values": [0.3, 0.4, 0.5]},
+            "epochs": {"value": 1},
+            "learning_rate": {
+                "distribution": "uniform",
+                "min": 0,
+                "max": 0.1,
+            },
+            "batch_size": {
+                "distribution": "q_log_uniform_values",
+                "q": 8,
+                "min": 32,
+                "max": 256,
+            },
+        },
     }
     pprint.pprint(sweep_config)
     return (sweep_config,)
@@ -362,320 +165,170 @@ def _(
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    For a full list of configuration options, see [Sweep configuration options](https://docs.wandb.ai/models/sweeps/sweep-config-keys).
+    ## Step 2: Initialize the sweep
 
-    :::tip
-    For hyperparameters that have potentially infinite options,
-    it usually makes sense to try out
-    a few select `values`. For example, the preceding sweep configuration has a list of finite values specified for the `layer_size` and `dropout` parameter keys.
-    :::
+    `wandb.sweep()` registers the configuration with a Weights & Biases-managed controller
+    and returns `sweep_id`. The controller chooses hyperparameters; an agent on
+    this machine will request those values and execute the training function.
+    Rerunning this cell creates a new sweep. Weights & Biases prints its dashboard link.
+
+    In a terminal, register the same configuration with `wandb sweep config.yaml`.
+    See the [Sweeps guide](https://docs.wandb.ai/models/sweeps/) for details.
     """)
     return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Step 2: Initialize the Sweep
-
-    Once you've defined the search strategy, it's time to set up something to implement it.
-
-    W&B uses a Sweep Controller to manage sweeps on the cloud or locally across one or more machines. For this tutorial, you will use a sweep controller managed by W&B.
-
-    While sweep controllers manage sweeps, the component that actually executes a sweep is known as a _sweep agent_.
-
-    /// attention
-
-    By default, sweep controllers components are initiated on W&B's servers and sweep agents, the component that creates sweeps, are activated on your local machine.
-    ///
-
-    Within your notebook, you can activate a sweep controller with the
-    `wandb.sweep` method. Pass the sweep configuration dictionary to the
-    `sweep` argument. Creating the controller is a remote write, so the button
-    below is the explicit consent boundary.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(wandb_connection):
-    create_sweep_button = mo.ui.run_button(label="Create W&B sweep")
-    mo.vstack(
-        [
-            mo.md(
-                f"Create the controller in `{wandb_connection['entity']}/"
-                f"{wandb_connection['project']}`."
-            ),
-            create_sweep_button,
-        ]
-    )
-    return (create_sweep_button,)
 
 
 @app.cell
-def _(create_sweep_button, sweep_config, wandb_connection):
-    mo.stop(
-        not create_sweep_button.value,
-        mo.callout(
-            mo.md("Click **Create W&B sweep** when you are ready."),
-            kind="info",
-        ),
-    )
-    sweep_id = wandb.sweep(
-        sweep=sweep_config,
-        entity=wandb_connection["entity"],
-        project=wandb_connection["project"],
-    )
-    sweep_result = {
-        "id": sweep_id,
-        "entity": wandb_connection["entity"],
-        "project": wandb_connection["project"],
-        "url": (
-            f"https://wandb.ai/{wandb_connection['entity']}/"
-            f"{wandb_connection['project']}/sweeps/{sweep_id}"
-        ),
-    }
-    return (sweep_result,)
-
-
-@app.cell(hide_code=True)
-def _(sweep_result):
-    mo.callout(
-        mo.md(
-            f"Created sweep `{sweep_result['id']}`. "
-            f"[Open the live Sweep dashboard]({sweep_result['url']})."
-        ),
-        kind="success",
-    )
-    return
+def _(entity, project, sweep_config):
+    sweep_id = wandb.sweep(sweep=sweep_config, entity=entity, project=project)
+    return (sweep_id,)
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    The `wandb.sweep` function returns a `sweep_id` that you will use at a later step to activate your sweep.
-    """)
-    return
+    ## Step 3: Define the PyTorch training code
 
+    The following helpers handle the repeated work in each trial:
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    /// attention
-    On the command line, this function is replaced with
-    ```python
-    wandb sweep config.yaml
-    ```
-    ///
+    - `build_dataset` normalizes MNIST images and takes every fifth training
+      example to keep trials short.
+    - `build_network` creates a fully connected classifier with a configurable
+      hidden-layer size and dropout, then moves it to the available device.
+    - `build_optimizer` selects Adam or SGD with the sampled learning rate.
+    - `train_epoch` performs forward and backward passes and logs `batch loss`.
+      It weights each batch loss by its number of examples so the epoch's mean
+      stays comparable when the sweep changes batch size.
 
-    For more information on how to create W&B Sweeps in a terminal, see the [W&B Sweeps guide](https://docs.wandb.ai/models/sweeps/).
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Step 3:  Define your machine learning code
-
-    Before you execute the sweep,
-    define the training procedure that uses the hyperparameter values you want to try. The key to integrating W&B Sweeps into your training code is to ensure that, for each training experiment, that your training logic can access the hyperparameter values you defined in your sweep configuration.
-
-    In the following code example, the helper functions `build_dataset`, `build_network`, `build_optimizer`, and `train_epoch` access the sweep hyperparameter configuration dictionary.
-
-    Run the following machine learning training code in your notebook. The functions define a basic fully-connected neural network in PyTorch.
-    """)
-    return
-
-
-@app.function
-def train(config=None):
-    # Initialize a new wandb run
-    with wandb.init(config=config) as run:
-        # If called by wandb.agent, as below,
-        # this config will be set by Sweep Controller
-        config = run.config
-
-        loader = build_dataset(config.batch_size)
-        network = build_network(config.fc_layer_size, config.dropout)
-        optimizer = build_optimizer(network, config.optimizer, config.learning_rate)
-
-        for epoch in range(config.epochs):
-            avg_loss = train_epoch(run, network, loader, optimizer)
-            run.log({"loss": avg_loss, "epoch": epoch})
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    Within the `train` function, you will notice the following W&B Python SDK methods:
-    * [`wandb.init()`](https://docs.wandb.ai/models/ref/python/functions/init) – Initialize a new W&B run. Each run is a single execution of the training function.
-    * [`run.config`](https://docs.wandb.ai/models/track/config) – Access the sweep configuration with the hyperparameters you want to experiment with.
-    * [`run.log()`](https://docs.wandb.ai/models/track/log) – Log the training loss for each epoch.
-
-    The following cell defines four functions:
-    `build_dataset`, `build_network`, `build_optimizer`, and `train_epoch`.
-    These functions are a standard part of a basic PyTorch pipeline,
-    and their implementation is unaffected by the use of W&B.
+    This lesson optimizes mean training loss. For model selection in your own
+    project, log a held-out validation metric and use it as the sweep objective.
     """)
     return
 
 
 @app.function
 def build_dataset(batch_size):
-    transform = transforms.Compose(
-        [transforms.ToTensor(),
-         transforms.Normalize((0.1307,), (0.3081,))])
-    # download MNIST training dataset
-    dataset = datasets.MNIST(data_root, train=True, download=True,
-                             transform=transform)
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,)),
+    ])
+    dataset = datasets.MNIST(
+        data_root, train=True, download=True, transform=transform
+    )
     sub_dataset = torch.utils.data.Subset(
-        dataset, indices=range(0, len(dataset), 5))
-    loader = torch.utils.data.DataLoader(sub_dataset, batch_size=batch_size)
-
-    return loader
+        dataset, indices=range(0, len(dataset), 5)
+    )
+    return torch.utils.data.DataLoader(sub_dataset, batch_size=batch_size)
 
 
 @app.function
 def build_network(fc_layer_size, dropout):
-    network = nn.Sequential(  # fully-connected, single hidden layer
+    network = nn.Sequential(
         nn.Flatten(),
-        nn.Linear(784, fc_layer_size), nn.ReLU(),
+        nn.Linear(784, fc_layer_size),
+        nn.ReLU(),
         nn.Dropout(dropout),
         nn.Linear(fc_layer_size, 10),
-        nn.LogSoftmax(dim=1))
-
+        nn.LogSoftmax(dim=1),
+    )
     return network.to(device)
 
 
 @app.function
 def build_optimizer(network, optimizer, learning_rate):
     if optimizer == "sgd":
-        optimizer = optim.SGD(network.parameters(),
-                              lr=learning_rate, momentum=0.9)
-    elif optimizer == "adam":
-        optimizer = optim.Adam(network.parameters(),
-                               lr=learning_rate)
-    return optimizer
+        return optim.SGD(network.parameters(), lr=learning_rate, momentum=0.9)
+    if optimizer == "adam":
+        return optim.Adam(network.parameters(), lr=learning_rate)
+    raise ValueError(f"Unknown optimizer: {optimizer}")
 
 
 @app.function
-def train_epoch(run, network, loader, optimizer):
-    cumu_loss = 0
-    for _, (data, target) in enumerate(loader):
+def train_epoch(sweep_run, network, loader, optimizer):
+    network.train()
+    total_loss = 0.0
+    total_examples = 0
+    for data, target in loader:
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
-
-        # ➡ Forward pass
         loss = F.nll_loss(network(data), target)
-        cumu_loss += loss.item()
-
-        # ⬅ Backward pass + weight update
         loss.backward()
         optimizer.step()
 
-        run.log({"batch loss": loss.item()})
+        batch_loss = loss.item()
+        total_loss += batch_loss * data.size(0)
+        total_examples += data.size(0)
+        sweep_run.log({"batch loss": batch_loss})
 
-    return cumu_loss / len(loader)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    For more details on instrumenting W&B with PyTorch, see [the PyTorch notebook](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py/server).
-    """)
-    return
+    return total_loss / total_examples
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Step 4: Activate sweep agents
-    Now that you have your sweep configuration defined and a training script that can utilize those hyperparameter in an interactive way, you are ready to activate a sweep agent. Sweep agents are responsible for running an experiment with a set of hyperparameter values that you defined in your sweep configuration.
+    ### Connect one trial to Weights & Biases
 
-    Create sweep agents with the `wandb.agent` method. Provide the following:
-    1. The sweep the agent is a part of (`sweep_id`)
-    2. The function the sweep is supposed to run. In this example, the sweep will use the `train` function.
-    3. (optionally) How many configs to ask the sweep controller for (`count`)
+    An agent needs a zero-argument function to call for each trial. `train()`
+    starts `sweep_run` with `wandb.init()` and reads the controller's sampled
+    hyperparameters from `sweep_run.config`. It builds fresh data, model, and
+    optimizer objects, then logs the epoch's mean loss under the exact `loss`
+    key named in `sweep_config`.
 
-    /// tip
-    You can start multiple sweep agents with the same `sweep_id`
-    on different compute resources. The sweep controller ensures that they work together
-    according to the sweep configuration you defined.
-    ///
-
-    The form below activates a sweep agent that runs the training function
-    (`train`) up to 5 times. Submitting it downloads MNIST and creates the
-    requested W&B runs; opening the notebook does neither.
+    The run name identifies its optimizer and hidden-layer size, with the run ID
+    to distinguish trials. Exiting the context manager finishes each run before
+    the agent starts the next one.
     """)
     return
 
 
-@app.cell(hide_code=True)
-def _(sweep_result):
-    sweep_agent_form = (
-        mo.md(
-            f"Run an agent for sweep `{sweep_result['id']}`.\n\n{{count}}"
+@app.function
+def train():
+    with wandb.init(job_type="sweep-trial") as sweep_run:
+        config = sweep_run.config
+        sweep_run.name = (
+            f"mnist-{config.optimizer}-h{config.fc_layer_size}-{sweep_run.id}"
         )
-        .batch(
-            count=mo.ui.number(
-                start=1,
-                stop=5,
-                step=1,
-                value=5,
-                label="Maximum sweep trials",
-            )
-        )
-        .form(submit_button_label="Start sweep agent and training", bordered=True)
-    )
-    sweep_agent_form
-    return (sweep_agent_form,)
+        loader = build_dataset(config.batch_size)
+        network = build_network(config.fc_layer_size, config.dropout)
+        optimizer = build_optimizer(network, config.optimizer, config.learning_rate)
+
+        for epoch in range(config.epochs):
+            avg_loss = train_epoch(sweep_run, network, loader, optimizer)
+            sweep_run.log({"loss": avg_loss, "epoch": epoch})
 
 
 @app.cell(hide_code=True)
-def _(sweep_agent_form, sweep_result):
-    mo.stop(
-        sweep_agent_form.value is None,
-        mo.callout(
-            mo.md(
-                "Submit the form above to download MNIST and start the requested "
-                "number of W&B training runs."
-            ),
-            kind="info",
-        ),
-    )
-    agent_request = {
-        "count": int(sweep_agent_form.value["count"]),
-        "sweep": sweep_result.copy(),
-    }
-    return (agent_request,)
+def _():
+    mo.md(r"""
+    ## Step 4: Run a sweep agent
+
+    Set `trial_count` below, then run the agent cell. `wandb.agent()` asks the
+    controller for hyperparameters and calls `train()` up to that many times.
+    Lower the count for a quicker experiment. Rerunning the agent cell adds
+    trials to the existing sweep.
+
+    You can run additional agents with the same `sweep_id` on other machines.
+    The controller coordinates their trials using the sweep configuration.
+    Because this sweep uses random search, each requested configuration is
+    sampled from the search space above.
+    """)
+    return
 
 
 @app.cell
-def _(agent_request):
-    _sweep = agent_request["sweep"]
+def _():
+    trial_count = 5
+    return (trial_count,)
+
+
+@app.cell
+def _(entity, project, sweep_id, trial_count):
     wandb.agent(
-        _sweep["id"],
+        sweep_id,
         function=train,
-        entity=_sweep["entity"],
-        project=_sweep["project"],
-        count=agent_request["count"],
-    )
-    agent_result = {
-        "count": agent_request["count"],
-        "url": _sweep["url"],
-    }
-    return (agent_result,)
-
-
-@app.cell(hide_code=True)
-def _(agent_result):
-    mo.callout(
-        mo.md(
-            f"Completed up to {agent_result['count']} trials. "
-            f"[Inspect the sweep results]({agent_result['url']})."
-        ),
-        kind="success",
+        entity=entity,
+        project=project,
+        count=trial_count,
     )
     return
 
@@ -683,19 +336,13 @@ def _(agent_result):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    /// attention
-    Since the `random` search method was specified in the sweep configuration, the sweep controller provides randomly-generated hyperparameter values.
-    ///
+    ## Verify and visualize sweep results
 
-    For more information on how to create W&B Sweeps in a terminal, see the [W&B Sweeps guide](https://docs.wandb.ai/models/sweeps/).
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Visualize Sweep Results
+    Open the sweep dashboard link printed by Weights & Biases. Confirm that completed runs
+    contain the sampled configuration, a `batch loss` chart, and an epoch-level
+    `loss` chart. Sort runs by `loss` to find the lowest training loss. Five
+    trials demonstrate the workflow; larger searches provide more evidence for
+    the comparison plots below.
     """)
     return
 
@@ -728,7 +375,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Learn more about W&B Sweeps
+    ## Learn more about Weights & Biases Sweeps
 
     We created a simple training script and [a few flavors of sweep configs](https://github.com/wandb/examples/tree/main/examples/keras/keras-cnn-fashion) for you to play with. We highly encourage you to give these a try.
 
