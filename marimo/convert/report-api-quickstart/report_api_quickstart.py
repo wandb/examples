@@ -4,7 +4,6 @@
 #     "marimo>=0.24",
 #     "pandas>=2.0",
 #     "pillow>=10.0",
-#     "requests>=2.31",
 #     "wandb>=0.19.10",
 #     "wandb-workspaces>=0.1",
 # ]
@@ -12,19 +11,16 @@
 
 import marimo
 
-__generated_with = "0.24.2"
+__generated_with = "0.25.1"
 app = marimo.App(width="medium", app_title="W&B Report API Quickstart")
 
 with app.setup:
     import math
     import random
-    import string
-    from io import BytesIO
     from itertools import product
 
     import marimo as mo
     import pandas as pd
-    import requests
     import wandb
     import wandb_workspaces.reports.v2 as wr
     from PIL import Image
@@ -33,980 +29,590 @@ with app.setup:
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # W&B Report API
+    # Weights & Biases Report API Quickstart
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/report-api-quickstart/report_api_quickstart.py/server)
 
     <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
 
-    Programmatically create, manage, and customize Reports by defining configurations, panel layouts, and runsets with the wandb-workspaces W&B library. Load and modify Reports with URLs, filter and group runs using expressions, and customize run appearances using Report templates.
+    Use Workspaces and Reports API ([wandb-workspaces](https://github.com/wandb/wandb-workspaces)) to create and
+    customize Weights & Biases Reports. A report combines narrative **blocks** with **panel grids**:
+    runsets select experiment data, and panels visualize that data.
 
-    [wandb-workspaces](https://github.com/wandb/wandb-workspaces) is a Python library for programmatically creating and customizing W&B Workspaces and Reports.
+    This tutorial covers how to create, save, and load a report. Along the way you will learn how to add common UI elements such as text, media, and panels to your report.
 
-    In this tutorial you will see how to use wandb-workspaces to create and customize W&B Reports.
+    ## 1. Prerequisites
+
+    Replace `your-entity` with your Weights & Biases team or username. Set `WANDB_API_KEY` in your
+    environment or molab Secrets, or use cached credentials. The action cells call
+    `wandb.login()` when they need Weights & Biases access.
     """)
     return
+
+
+@app.cell
+def _():
+    entity = "wandb"
+    project = "report-api-quickstart"
+    return entity, project
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Authentication
+    ## 2. Create data for the panels
 
-    The notebook dependencies install the W&B SDK and `wandb-workspaces` automatically. Enter your [W&B API key](https://wandb.ai/authorize) and, if needed, a team entity. You can leave the key blank when this environment already has credentials, such as `WANDB_API_KEY` configured in the marimo Secrets panel. If you are new to W&B, [create a free account](https://wandb.ai/signup).
+    Before we create a report, let's log a psuedo training loop and some images so have content to add to our report.
 
-    Connecting only authenticates and resolves your entity. It does not create runs or Reports. `wandb-workspaces` is currently in Public Preview, and Report objects are uploaded only when the tutorial explicitly calls `report.save()` after you click a creation button.
+    The following cell defines some run names and colors that we will use. The specifics are not important.
     """)
     return
 
 
+@app.cell
+def _():
+    demo_run_colors = {}
+
+    demo_rng = random.Random(0)
+    demo_run_names = [
+        "adventurous-aardvark-1", "bountiful-badger-2",
+        "clairvoyant-chipmunk-3", "dastardly-duck-4", "eloquent-elephant-5",
+    ]
+    demo_colors = ["#e84118", "#fbc531", "#4cd137", "#00a8ff", "#9c88ff"]
+    return demo_colors, demo_rng, demo_run_colors, demo_run_names
+
+
 @app.cell(hide_code=True)
 def _():
-    _api_key_input = mo.ui.text(
-        kind="password",
-        label="W&B API key (optional)",
-        placeholder="Paste a key or use configured credentials",
-        full_width=True,
-    )
-    _entity_input = mo.ui.text(
-        label="W&B entity or team (optional)",
-        placeholder="Leave blank to use your default entity",
-        full_width=True,
-    )
-    _project_input = mo.ui.text(
-        value="report-api-quickstart",
-        label="Report project",
-        full_width=True,
-    )
-    _lineage_project_input = mo.ui.text(
-        value="lineage-example",
-        label="Artifact lineage project",
-        full_width=True,
-    )
-    wandb_login_form = (
-        mo.md(
-            "{api_key}\n\n{entity}\n\n{project}\n\n{lineage_project}"
-        )
-        .batch(
-            api_key=_api_key_input,
-            entity=_entity_input,
-            project=_project_input,
-            lineage_project=_lineage_project_input,
-        )
-        .form(submit_button_label="Connect to W&B", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
+    mo.md(r"""
+    The next cell initializes three different loops:
+    - Training loop
+    - Log an image
+    - Log an artifact (for lineage)
+    """)
+    return
 
 
-@app.cell(hide_code=True)
-def _(wandb_login_form):
-    mo.stop(
-        wandb_login_form.value is None,
-        mo.callout(
-            mo.md("Connect to W&B before using the Report API examples."),
-            kind="info",
-        ),
-    )
-
-    _api_key = wandb_login_form.value["api_key"].strip()
-    _submitted_entity = wandb_login_form.value["entity"].strip()
-    try:
-        _login_ok = wandb.login(
-            key=_api_key or None,
-            relogin=bool(_api_key),
-        )
-        _login_error = None
-    except wandb.errors.Error as _error:
-        _login_ok = False
-        _login_error = str(_error)
-
-    mo.stop(
-        not _login_ok,
-        mo.callout(
-            mo.md(
-                "W&B authentication did not complete. Check the API key and "
-                f"try again.\n\nW&B reported: `{_login_error or 'unknown error'}`"
-            ),
-            kind="danger",
-        ),
-    )
-
-    ENTITY = _submitted_entity or wandb.Api().default_entity
-    mo.stop(
-        not ENTITY,
-        mo.callout(
-            mo.md(
-                "W&B did not return a default entity. Enter a team entity in "
-                "the form above and reconnect."
-            ),
-            kind="danger",
-        ),
-    )
-    PROJECT = wandb_login_form.value["project"].strip() or "report-api-quickstart"
-    LINEAGE_PROJECT = (
-        wandb_login_form.value["lineage_project"].strip() or "lineage-example"
-    )
-    mo.callout(
-        mo.md(
-            f"Connected to W&B as `{ENTITY}`. Report examples will use "
-            f"`{PROJECT}` and lineage examples will use `{LINEAGE_PROJECT}`."
-        ),
-        kind="success",
-    )
-    return ENTITY, LINEAGE_PROJECT, PROJECT
-
-
-@app.function
-def get_image(url):
-    response = requests.get(url, timeout=30)
-    response.raise_for_status()
-    return Image.open(BytesIO(response.content))
-
-
-@app.function
-def log_dummy_data(entity, project):
-    run_names = [
-        "adventurous-aardvark-1",
-        "bountiful-badger-2",
-        "clairvoyant-chipmunk-3",
-        "dastardly-duck-4",
-        "eloquent-elephant-5",
-        "flippant-flamingo-6",
-        "giddy-giraffe-7",
-        "haughty-hippo-8",
-        "ignorant-iguana-9",
-        "jolly-jackal-10",
-        "kind-koala-11",
-        "laughing-lemur-12",
-        "manic-mandrill-13",
-        "neighbourly-narwhal-14",
-        "oblivious-octopus-15",
-        "philistine-platypus-16",
-        "quant-quail-17",
-        "rowdy-rhino-18",
-        "solid-snake-19",
-        "timid-tarantula-20",
-        "understanding-unicorn-21",
-        "voracious-vulture-22",
-        "wu-tang-23",
-        "xenic-xerneas-24",
-        "yielding-yveltal-25",
-        "zooming-zygarde-26",
-    ]
-
-    opts = ["adam", "sgd"]
-    encoders = ["resnet18", "resnet50"]
-    learning_rates = [0.01]
-    for (i, run_name), (opt, encoder, lr) in zip(
-        enumerate(run_names), product(opts, encoders, learning_rates)
-    ):
-        config = {
-            "optimizer": opt,
-            "encoder": encoder,
-            "learning_rate": lr,
-            "momentum": 0.1 * random.random(),
-        }
-        displacement1 = random.random() * 2
-        displacement2 = random.random() * 4
+@app.cell
+def _(demo_colors, demo_rng, demo_run_colors, demo_run_names, entity, project):
+    # Log psuedo training metrics such as accuracy and loss
+    for demo_index, (optimizer_name, encoder_name) in enumerate(product(
+        ["adam", "sgd"], ["resnet18", "resnet50"],
+    )):
         with wandb.init(
-            entity=entity,
-            project=project,
-            config=config,
-            name=run_name,
-            reinit="create_new",
-        ) as run:
-            for step in range(1000):
-                run.log(
-                    {
-                        "acc": 0.1
-                        + 0.4
-                        * (
-                            math.log(1 + step + random.random())
-                            + random.random() * run.config.learning_rate
-                            + random.random()
-                            + displacement1
-                            + random.random() * run.config.momentum
-                        ),
-                        "val_acc": 0.1
-                        + 0.4
-                        * (
-                            math.log(1 + step + random.random())
-                            + random.random() * run.config.learning_rate
-                            - random.random()
-                            + displacement1
-                        ),
-                        "loss": 0.1
-                        + 0.08
-                        * (
-                            3.5
-                            - math.log(1 + step + random.random())
-                            + random.random() * run.config.momentum
-                            + random.random()
-                            + displacement2
-                        ),
-                        "val_loss": 0.1
-                        + 0.04
-                        * (
-                            4.5
-                            - math.log(1 + step + random.random())
-                            + random.random() * run.config.learning_rate
-                            - random.random()
-                            + displacement2
-                        ),
-                    }
-                )
+            entity=entity, project=project, name=demo_run_names[demo_index],
+            config={"optimizer": optimizer_name, "encoder": encoder_name,
+                    "learning_rate": 0.01, "momentum": demo_rng.random() / 10},
+        ) as metrics_run:
+            for step in range(100):
+                progress = 1 - math.exp(-step / 30)
+                noise = demo_rng.uniform(-0.02, 0.02)
+                metrics_run.log({
+                    "acc": 0.2 + 0.75 * progress + noise,
+                    "val_acc": 0.2 + 0.7 * progress + noise,
+                    "loss": 1.5 * (1 - progress) + 0.1,
+                    "val_loss": 1.7 * (1 - progress) + 0.15,
+                })
+            demo_run_colors[metrics_run.id] = demo_colors[demo_index]
 
+
+    # Create a color gradient image
+    demo_image = Image.new("RGB", (64, 64))
+
+    demo_image.putdata([(4 * x, 4 * y, 128) for y in range(64) for x in range(64)])
+    table_image = wandb.Image(demo_image, caption="Synthetic color gradient")
+
+    demo_dataframe = pd.DataFrame({
+        "int": [1, 2, 3, 4], "float": [1.2, 2.3, 3.4, 4.5],
+        "str": ["a", "b", "c", "d"], "img": [table_image] * 4,
+    })
+
+    # Log color gradient image
     with wandb.init(
-        entity=entity,
-        project=project,
-        config=config,
-        name=run_names[i + 1],
-        reinit="create_new",
-    ) as run:
-        img = get_image(
-            "https://www.akc.org/wp-content/uploads/2017/11/Shiba-Inu-standing-in-profile-outdoors.jpg"
-        )
-        image = wandb.Image(img)
-        df = pd.DataFrame(
-            {
-                "int": [1, 2, 3, 4],
-                "float": [1.2, 2.3, 3.4, 4.5],
-                "str": ["a", "b", "c", "d"],
-                "img": [image] * 4,
-            }
-        )
-        run.log({"img": image, "my-table": df})
+        entity=entity, project=project, name=demo_run_names[-1], job_type="media",
+    ) as media_run:
+        media_run.log({"img": table_image, "my-table": wandb.Table(dataframe=demo_dataframe)})
+        demo_run_colors[media_run.id] = demo_colors[-1]
 
-
-@app.class_definition
-class Step:
-    def __init__(self, j, r, u, o, at=None):
-        self.job_type = j
-        self.runs = r
-        self.uses_per_run = u
-        self.outputs_per_run = o
-        self.artifact_type = at if at is not None else "model"
-        self.artifacts = []
-
-
-@app.function
-def create_artifact(name: str, type: str, content: str):
-    art = wandb.Artifact(name, type)
-    with art.new_file("test-name", mode="w") as f:
-        f.write(content)
-
-    img = get_image(
-        "https://www.akc.org/wp-content/uploads/2017/11/Shiba-Inu-standing-in-profile-outdoors.jpg"
-    )
-    image = wandb.Image(img)
-    df = pd.DataFrame(
-        {
-            "int": [1, 2, 3, 4],
-            "float": [1.2, 2.3, 3.4, 4.5],
-            "str": ["a", "b", "c", "d"],
-            "img": [image] * 4,
-        }
-    )
-    art.add(wandb.Table(dataframe=df), "dataframe")
-    return art
-
-
-@app.function
-def log_dummy_lineage(entity, lineage_project):
     pipeline = [
-        Step("dataset-generator", 1, 0, 3, "dataset"),
-        Step("trainer", 4, (1, 2), 3),
-        Step("evaluator", 2, 1, 3),
-        Step("ensemble", 1, 1, 1),
+        ("dataset-generator", 1, 0, 3, "dataset"),
+        ("trainer", 4, (1, 2), 3, "model"),
+        ("evaluator", 2, 1, 3, "model"),
+        ("ensemble", 1, 1, 1, "model"),
     ]
-    for i, step in enumerate(pipeline):
-        for _ in range(step.runs):
+    previous_artifacts = []
+
+    # Log artifact
+    for job_type, run_count, uses_per_run, output_count, artifact_type in pipeline:
+        stage_artifacts = []
+        for lineage_index in range(run_count):
             with wandb.init(
-                entity=entity,
-                project=lineage_project,
-                job_type=step.job_type,
-                reinit="create_new",
-            ) as run:
-                # use
-                uses = step.uses_per_run
-                if type(uses) == tuple:
-                    uses = random.choice(list(uses))
+                entity=entity, project=project, job_type=job_type,
+                name=f"report-demo-{job_type}-{lineage_index + 1}",
+            ) as lineage_run:
+                input_count = demo_rng.choice(uses_per_run) if isinstance(uses_per_run, tuple) else uses_per_run
+                for input_artifact in demo_rng.sample(previous_artifacts, input_count):
+                    lineage_run.use_artifact(input_artifact)
+                for output_index in range(output_count):
+                    lineage_artifact = wandb.Artifact(f"{artifact_type}-{output_index}", type=artifact_type)
+                    with lineage_artifact.new_file("stage.txt", mode="w") as stage_file:
+                        stage_file.write(f"{job_type}/{lineage_index}/{output_index}/{demo_rng.random()}")
+                    lineage_artifact.add(wandb.Table(dataframe=demo_dataframe), "dataframe")
+                    uploaded_artifact = lineage_run.log_artifact(lineage_artifact)
+                    uploaded_artifact.wait()
+                    stage_artifacts.append(uploaded_artifact)
+        previous_artifacts = stage_artifacts
 
-                if i > 0:
-                    prev_step = pipeline[i - 1]
-                    input_artifacts = random.sample(prev_step.artifacts, uses)
-                    for a in input_artifacts:
-                        run.use_artifact(a)
-                # log output artifacts
-                for j in range(step.outputs_per_run):
-                    # name = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
-                    name = f"{step.artifact_type}-{j}"
-                    content = "".join(
-                        random.choices(string.ascii_lowercase + string.digits, k=12)
-                    )
-                    art = create_artifact(name, step.artifact_type, content)
-                    run.log_artifact(art)
-                    art.wait()
-
-                    # save in pipeline
-                    step.artifacts.append(art)
-
-
-@app.cell(hide_code=True)
-def _(ENTITY, LINEAGE_PROJECT, PROJECT):
-    _log_dummy_runs = mo.ui.checkbox(
-        value=True,
-        label="Log demo runs and Artifact lineage",
-    )
-    demo_data_form = (
-        mo.md("{log_dummy_runs}")
-        .batch(log_dummy_runs=_log_dummy_runs)
-        .form(
-            submit_button_label="Create 13 runs + Artifacts / skip unchecked",
-            bordered=True,
-        )
-    )
-    mo.vstack(
-        [
-            mo.md(
-                "The original tutorial can create five metric/media runs in "
-                f"`{ENTITY}/{PROJECT}` and eight lineage runs plus Artifacts in "
-                f"`{ENTITY}/{LINEAGE_PROJECT}`. Keep the box checked to create "
-                "that remote demo data, or clear it to skip the optional setup. "
-                "Changing the checkbox does nothing until you submit the form."
-            ),
-            demo_data_form,
-        ]
-    )
-    return (demo_data_form,)
-
-
-@app.cell(hide_code=True)
-def _(ENTITY, LINEAGE_PROJECT, PROJECT, demo_data_form):
-    mo.stop(
-        demo_data_form.value is None,
-        mo.callout(
-            mo.md("Submit the demo-data choice above to continue."),
-            kind="info",
-        ),
-    )
-    LOG_DUMMY_RUNS = bool(demo_data_form.value["log_dummy_runs"])
-    if LOG_DUMMY_RUNS:
-        log_dummy_data(ENTITY, PROJECT)
-        log_dummy_lineage(ENTITY, LINEAGE_PROJECT)
-        _demo_status = "Created the optional metric/media runs and Artifact lineage."
-    else:
-        _demo_status = "Skipped the optional demo runs and Artifact lineage."
-    mo.callout(mo.md(_demo_status), kind="success")
+    print("Created demo metrics, media, tables, and Artifact lineage.")
     return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Quickstart! <a id='quickstart'></a>
-    """)
-    return
+    Now that you have logged some runs, lets create a report.
 
+    ## 3. Build a Report
 
-@app.cell(hide_code=True)
-def _(PROJECT):
-    create_quickstart_report = mo.ui.run_button(
-        label="Create and update the Quickstart Report"
-    )
-    mo.vstack(
-        [
-            mo.md(
-                f"This action creates one Report in `{PROJECT}`, then saves "
-                "each of the changes shown in the next four code cells. A new "
-                "button click intentionally performs the sequence again."
-            ),
-            create_quickstart_report,
-        ]
-    )
-    return (create_quickstart_report,)
+    ### Text and image blocks
 
-
-@app.cell(hide_code=True)
-def _(ENTITY, PROJECT, create_quickstart_report):
-    mo.stop(
-        not create_quickstart_report.value,
-        mo.callout(
-            mo.md("Click the button above when you are ready to create the Report."),
-            kind="info",
-        ),
-    )
-    quickstart_target = {"entity": ENTITY, "project": PROJECT}
-    return (quickstart_target,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ### Create, save, and load reports
-    - NOTE: Reports are not saved automatically to reduce clutter.  Explicitly save the report by calling `report.save()`
+    Define content with `TableOfContents`, headings, paragraphs, and images. These
+    are Report objects, separate from marimo's display elements. The image below is
+    from the original Weights & Biases tutorial. Nothing is uploaded while building these lists.
     """)
     return
 
 
 @app.cell
-def _(quickstart_target):
-    report = wr.Report(
-        entity=quickstart_target["entity"],
-        project=quickstart_target["project"],
-        title="Quickstart Report",
-        description="That was easy!",
-    )                                 # Create
-    report.save()                     # Save
-    wr.Report.from_url(report.url)    # Load
-    return (report,)
-
-
-@app.cell(hide_code=True)
 def _():
-    mo.md(r"""
-    ### Add content via blocks
-    - Use blocks to add content like text, images, code, and more
-    - See `wr.blocks` for all available blocks
-    """)
-    return
-
-
-@app.cell
-def _(report):
-    report.blocks = [
+    text_blocks = [
         wr.TableOfContents(),
         wr.H1("Text and images example"),
-        wr.P("Lorem ipsum dolor sit amet. Aut laborum perspiciatis sit odit omnis aut aliquam voluptatibus ut rerum molestiae sed assumenda nulla ut minus illo sit sunt explicabo? Sed quia architecto est voluptatem magni sit molestiae dolores. Non animi repellendus ea enim internos et iste itaque quo labore mollitia aut omnis totam."),
+        wr.P("Use a Report to explain an experiment, show results, and share conclusions with your team."),
         wr.Image("https://api.wandb.ai/files/telidavies/images/projects/831572/8ad61fd1.png", caption="Craiyon generated images"),
-        wr.P("Et voluptatem galisum quo facilis sequi quo suscipit sunt sed iste iure! Est voluptas adipisci et doloribus commodi ab tempore numquam qui tempora adipisci. Eum sapiente cupiditate ut natus aliquid sit dolor consequatur?"),
+        wr.P("Panel grids connect this narrative to the underlying experiment data."),
     ]
-    report.save()
-    report_with_content = report
-    return (report_with_content,)
+    return (text_blocks,)
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ### Add charts and more via Panel Grid
-    - `PanelGrid` is a special type of block that holds `runsets` and `panels`
-      - `runsets` organize data logged to W&B
-      - `panels` visualize runset data.  For a full set of panels, see `wr.panels`
+    ### Panel grids and run colors
+
+    A `PanelGrid` combines runsets and panels. The first runset selects all runs in
+    the project; the second searches for `elephant`, matching the demo media run.
+    Panels show validation accuracy, accuracy bars, images, and differing run settings.
+
+    `custom_run_colors` maps **run IDs** to colors. The optional demo step records
+    those IDs as it creates runs. For existing data, edit the mapping with IDs from
+    your own project. The `WeaveBlockArtifact` below embeds Artifact lineage from
+    the second project; its API name refers to a Report block, not LLM tracing.
     """)
     return
 
 
 @app.cell
-def _(ENTITY, PROJECT, report_with_content):
-    pg = wr.PanelGrid(
+def _(demo_run_colors, entity, project):
+    panel_grid = wr.PanelGrid(
         runsets=[
-            wr.Runset(ENTITY, PROJECT, "First Run Set"),
-            wr.Runset(ENTITY, PROJECT, "Elephants Only!", query="elephant"),
+            wr.Runset(entity, project, "All runs"),
+            wr.Runset(entity, project, "Elephants only", query="elephant"),
         ],
         panels=[
             wr.LinePlot(x="Step", y=["val_acc"], smoothing_factor=0.8),
             wr.BarPlot(metrics=["acc"]),
             wr.MediaBrowser(media_keys=["img"], num_columns=1),
-            wr.RunComparer(diff_only="split", layout={"w": 24, "h": 9}),
+            wr.RunComparer(diff_only="split", layout=wr.Layout(w=24, h=9)),
         ],
     )
-
-    report_with_content.blocks = report_with_content.blocks[:1] + [wr.H1("Panel Grid Example"), pg] + report_with_content.blocks[1:]
-    report_with_content.save()
-    report_with_panel_grid = report_with_content
-    return pg, report_with_panel_grid
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ### Add data lineage with Artifact blocks
-    - There are equivalent weave panels as well
-    """)
-    return
-
-
-@app.cell
-def _(ENTITY, LINEAGE_PROJECT, report_with_panel_grid):
+    panel_grid.custom_run_colors = dict(demo_run_colors)
     artifact_lineage = wr.WeaveBlockArtifact(
-        entity=ENTITY,
-        project=LINEAGE_PROJECT,
-        artifact="model-1",
-        tab="lineage",
+        entity=entity, project=project, artifact="model-1", tab="lineage",
     )
-
-    report_with_panel_grid.blocks = report_with_panel_grid.blocks[:1] + [wr.H1("Artifact lineage example"), artifact_lineage] + report_with_panel_grid.blocks[1:]
-    report_with_panel_grid.save()
-    report_with_lineage = report_with_panel_grid
-    return (report_with_lineage,)
+    return artifact_lineage, panel_grid
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ### Customize run colors
-    - Pass in a `dict[run_name, color]`
+    ### Assemble, save, load, and update
+
+    `Report(...)` creates a local draft. Assign its block list to define the order of
+    content. The publishing cell calls `save()`, reloads the saved object with
+    `Report.from_url()`, changes its description, then saves the update to the same
+    Report. Later clicks update that saved draft unless you rebuild the draft cell.
+
+    Inspect and edit the content first, then click **Publish the Quickstart Report**.
+    This is the first step that publishes a Report to Weights & Biases.
     """)
     return
 
 
 @app.cell
-def _(pg, report_with_lineage):
-    pg.custom_run_colors = {
-        "adventurous-aardvark-1": "#e84118",
-        "bountiful-badger-2":     "#fbc531",
-        "clairvoyant-chipmunk-3": "#4cd137",
-        "dastardly-duck-4":       "#00a8ff",
-        "eloquent-elephant-5":    "#9c88ff",
-    }
-    report_with_lineage.save()
-    quickstart_report = report_with_lineage
-    quickstart_report_complete = quickstart_report.url
-    return quickstart_report, quickstart_report_complete
-
-
-@app.cell(hide_code=True)
-def _(quickstart_report_complete):
-    mo.callout(
-        mo.md(f"Quickstart complete: [open the saved Report]({quickstart_report_complete})."),
-        kind="success",
+def _(artifact_lineage, entity, panel_grid, project, text_blocks):
+    quickstart_report = wr.Report(
+        entity=entity, project=project, title="Quickstart Report",
+        description="A Report built with the Weights & Biases Report API",
     )
-    return
+    quickstart_report.blocks = [
+        text_blocks[0], wr.H1("Panel grid example"), panel_grid,
+        wr.H1("Artifact lineage example"), artifact_lineage, *text_blocks[1:],
+    ]
+
+    quickstart_report.save()
+    loaded_report = wr.Report.from_url(quickstart_report.url)
+    loaded_report.description = "Created, loaded, and updated with the Weights & Biases Report API"
+    loaded_report.save()
+    return (quickstart_report,)
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## FAQ <a id='faq'></a>
-    """)
-    return
+    ## 4. FAQ examples: build more local drafts
 
+    ### Resize panels
 
-@app.cell(hide_code=True)
-def _(PROJECT, quickstart_report_complete):
-    create_faq_reports = mo.ui.run_button(label="Create the FAQ example Reports")
-    mo.vstack(
-        [
-            mo.md(
-                f"This action clones the [Quickstart Report]({quickstart_report_complete}) and creates seven more "
-                f"Reports in `{PROJECT}` for the examples below. Each click "
-                "intentionally creates a fresh set of eight Reports."
-            ),
-            create_faq_reports,
-        ]
-    )
-    return (create_faq_reports,)
+    Report width can be `readable`, `fixed`, or `fluid`. The publishing example below
+    will clone the main Report and set its width to `fluid`.
 
-
-@app.cell(hide_code=True)
-def _(create_faq_reports, quickstart_report):
-    mo.stop(
-        not create_faq_reports.value,
-        mo.callout(
-            mo.md("Click the button above when you are ready to create the FAQ Reports."),
-            kind="info",
-        ),
-    )
-    faq_source_report = quickstart_report
-    return (faq_source_report,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ### My report is too wide/narrow
-    - Change the report's width to the right size for you.
+    Panel layout controls position (`x`, `y`) and dimensions (`w`, `h`) in grid units.
+    The following parallel coordinates plot uses the full 24-unit panel-grid width.
+    Configuration fields use a `c::` prefix; the demo runs log `encoder` and `optimizer`.
     """)
     return
 
 
 @app.cell
-def _(faq_source_report):
-    report2 = faq_source_report.save(clone=True)
-    report2.width = "fluid"
-    report2.save()
-    faq_report_urls = [report2.url]
-    return (faq_report_urls,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ### How do I resize panels?
-    - Pass a `dict[dim, int]` to `panel.layout`
-    - `dim` is a dimension, which can be `x`, `y` (the coordiantes of the top left corner) `w`, `h` (the size of the panel)
-    - You can pass any or all dimensions at once
-    - The space between two dots in a panel grid is 2.
-    """)
-    return
-
-
-@app.cell
-def _(ENTITY, PROJECT, faq_report_urls):
+def _(entity, project):
     resize_report = wr.Report(
-        entity=ENTITY,
-        project=PROJECT,
-        title="Resizing panels",
-        description="Look at this wide parallel coordinates plot!",
-        blocks=[
-            wr.PanelGrid(
-                panels=[
-                    wr.ParallelCoordinatesPlot(
-                        columns=[
-                            wr.ParallelCoordinatesPlotColumn(metric="Step"),
-                            wr.ParallelCoordinatesPlotColumn(metric="c::model"),
-                            wr.ParallelCoordinatesPlotColumn(metric="c::optimizer"),
-                            wr.ParallelCoordinatesPlotColumn(metric="Step"),
-                            wr.ParallelCoordinatesPlotColumn(metric="val_acc"),
-                            wr.ParallelCoordinatesPlotColumn(metric="val_loss"),
-                        ],
-                        layout=wr.Layout(w=24, h=9)  # Adjusting the layout for the plot size
-                    ),
-                ]
-            )
-        ],
-    )
-    resize_report.save()
-    faq_report_urls_after_resize = [*faq_report_urls, resize_report.url]
-    return (faq_report_urls_after_resize,)
+            entity=entity,
+            project=project,
+            title="Resizing panels",
+            description="Look at this wide parallel coordinates plot!",
+            blocks=[
+                wr.PanelGrid(
+                    panels=[
+                        wr.ParallelCoordinatesPlot(
+                            columns=[
+                                wr.ParallelCoordinatesPlotColumn(metric="Step"),
+                                wr.ParallelCoordinatesPlotColumn(metric="c::encoder"),
+                                wr.ParallelCoordinatesPlotColumn(metric="c::optimizer"),
+                                wr.ParallelCoordinatesPlotColumn(metric="Step"),
+                                wr.ParallelCoordinatesPlotColumn(metric="val_acc"),
+                                wr.ParallelCoordinatesPlotColumn(metric="val_loss"),
+                            ],
+                            layout=wr.Layout(w=24, h=9)  # Adjusting the layout for the plot size
+                        ),
+                    ]
+                )
+            ],
+        )
+    return (resize_report,)
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ### What blocks are available?
-    - See `wr.blocks` for a list of blocks.
-    - In an IDE or notebook, you can also do `wr.blocks.<tab>` to get autocomplete.
+    ### Block gallery
+
+    `wr.blocks` exposes the available block classes. This draft demonstrates headings,
+    formatted text, inline code and LaTeX, code blocks, tables, Artifact views, images,
+    lists, quotes, callouts, separators, and video. The Artifact table view references
+    `model-1:v0` to select an exact version.
     """)
     return
 
 
 @app.cell
-def _(ENTITY, LINEAGE_PROJECT, PROJECT, faq_report_urls_after_resize):
+def _(entity, project):
     block_gallery_report = wr.Report(
-        entity=ENTITY,
-        project=PROJECT,
-        title="W&B Block Gallery",
-        description="Check out all of the blocks available in W&B",
-        blocks=[
-            wr.H1(text="Heading 1"),
-            wr.P(text="Normal paragraph"),
-            wr.H2(text="Heading 2"),
-            wr.P(
-                text=[
-                    "here is some text, followed by",
-                    wr.InlineCode(text="select * from code in line"),
-                    "and then latex",
-                    wr.InlineLatex(text="e=mc^2"),
-                ]
-            ),
-            wr.H3(text="Heading 3"),
-            wr.CodeBlock(
-                code="this:\n- is\n- a\ncool:\n- yaml\n- file",
-                language="yaml",
-            ),
-            wr.WeaveBlockSummaryTable(entity=ENTITY, project=PROJECT, table_name="my-table"),
-            wr.WeaveBlockArtifact(entity=ENTITY, project=LINEAGE_PROJECT, artifact="model-1", tab="lineage"),
-            wr.WeaveBlockArtifactVersionedFile(entity=ENTITY, project=LINEAGE_PROJECT, artifact="model-1", version="v0", file="dataframe.table.json"),
-            wr.MarkdownBlock(text="Markdown cell with *italics* and **bold** and $e=mc^2$"),
-            wr.LatexBlock(text="\\gamma^2+\\theta^2=\\omega^2\n\\\\ a^2 + b^2 = c^2"),
-            wr.Image(url="https://api.wandb.ai/files/megatruong/images/projects/918598/350382db.gif", caption="It's a me, Pikachu"),
-            wr.UnorderedList(items=["Bullet 1", "Bullet 2"]),
-            wr.OrderedList(items=["Ordered 1", "Ordered 2"]),
-            wr.CheckedList(items=[wr.CheckedListItem(text="Unchecked", checked=False), wr.CheckedListItem(text="Checked", checked=True)]),
-            wr.BlockQuote(text="Block Quote 1\nBlock Quote 2\nBlock Quote 3"),
-            wr.CalloutBlock(text="Callout 1\nCallout 2\nCallout 3"),
-            wr.HorizontalRule(),
-            wr.Video(url="https://www.youtube.com/embed/6riDJMI-Y8U"),
-        ],
-    )
-    block_gallery_report.save()
-    faq_report_urls_after_blocks = [
-        *faq_report_urls_after_resize,
-        block_gallery_report.url,
-    ]
-    return (faq_report_urls_after_blocks,)
+            entity=entity,
+            project=project,
+            title="Weights & Biases Block Gallery",
+            description="Check out all of the blocks available in Weights & Biases",
+            blocks=[
+                wr.H1(text="Heading 1"),
+                wr.P(text="Normal paragraph"),
+                wr.H2(text="Heading 2"),
+                wr.P(
+                    text=[
+                        "here is some text, followed by",
+                        wr.InlineCode(text="select * from code in line"),
+                        "and then latex",
+                        wr.InlineLatex(text="e=mc^2"),
+                    ]
+                ),
+                wr.H3(text="Heading 3"),
+                wr.CodeBlock(
+                    code="this:\n- is\n- a\ncool:\n- yaml\n- file",
+                    language="yaml",
+                ),
+                wr.WeaveBlockSummaryTable(entity=entity, project=project, table_name="my-table"),
+                wr.WeaveBlockArtifact(entity=entity, project=project, artifact="model-1", tab="lineage"),
+                wr.WeaveBlockArtifactVersionedFile(entity=entity, project=project, artifact="model-1", version="v0", file="dataframe.table.json"),
+                wr.MarkdownBlock(text="Markdown cell with *italics* and **bold** and $e=mc^2$"),
+                wr.LatexBlock(text="\\gamma^2+\\theta^2=\\omega^2\n\\\\ a^2 + b^2 = c^2"),
+                wr.Image(url="https://api.wandb.ai/files/megatruong/images/projects/918598/350382db.gif", caption="It's a me, Pikachu"),
+                wr.UnorderedList(items=["Bullet 1", "Bullet 2"]),
+                wr.OrderedList(items=["Ordered 1", "Ordered 2"]),
+                wr.CheckedList(items=[wr.CheckedListItem(text="Unchecked", checked=False), wr.CheckedListItem(text="Checked", checked=True)]),
+                wr.BlockQuote(text="Block Quote 1\nBlock Quote 2\nBlock Quote 3"),
+                wr.CalloutBlock(text="Callout 1\nCallout 2\nCallout 3"),
+                wr.HorizontalRule(),
+                wr.Video(url="https://www.youtube.com/embed/6riDJMI-Y8U"),
+            ],
+        )
+    return (block_gallery_report,)
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ### What panels are available?
-    - See `wr.panels` for a list of panels
-    - In an IDE or notebook, you can also do `wr.panels.<tab>` to get autocomplete.
-    - Panels have a lot of settings.  Inspect the panel to see what you can do!
+    ### Panel gallery
+
+    `wr.panels` exposes chart and comparison panel classes. This gallery includes
+    line, scatter, bar, scalar, parallel coordinates, parameter importance, media,
+    code/run comparison, and custom charts. It also demonstrates grouping, smoothing,
+    axis settings, and legends. Adjust these settings for the metrics in your project.
+
+    Embedded summary tables and Artifact views belong directly in `report.blocks`,
+    while charts belong inside `PanelGrid.panels`.
     """)
     return
 
 
 @app.cell
-def _(ENTITY, LINEAGE_PROJECT, PROJECT, faq_report_urls_after_blocks):
+def _(entity, project):
     panel_gallery_report = wr.Report(
-        entity=ENTITY,
-        project=PROJECT,
-        title="W&B Panel Gallery",
-        description="Check out all of the panels available in W&B",
-        width="fluid",
-        blocks=[
-            wr.PanelGrid(
-                runsets=[wr.Runset(project=LINEAGE_PROJECT), wr.Runset()],
-                panels=[
-                    wr.MediaBrowser(media_keys=["img"]),
-                    wr.MarkdownPanel(markdown="Hello *italic* **bold** $e=mc^2$ `something`"),
+            entity=entity,
+            project=project,
+            title="Weights & Biases Panel Gallery",
+            description="Check out all of the panels available in Weights & Biases",
+            width="fluid",
+            blocks=[
+                wr.PanelGrid(
+                    runsets=[wr.Runset(entity, project, "Metrics and media"), wr.Runset(entity, project, "Artifacts")],
+                    panels=[
+                        wr.MediaBrowser(media_keys=["img"]),
+                        wr.MarkdownPanel(markdown="Hello *italic* **bold** $e=mc^2$ `something`"),
 
-                    # LinePlot with various settings enabled
-                    wr.LinePlot(
-                        title="Validation Accuracy over Time",
-                        x="Step",
-                        y=["val_acc"],
-                        range_x=(0, 1000),
-                        range_y=(1, 4),
-                        log_x=True,
-                        log_y=False,
-                        title_x="Training steps",
-                        title_y="Validation Accuracy",
-                        ignore_outliers=True,
-                        groupby="encoder",
-                        groupby_aggfunc="mean",
-                        groupby_rangefunc="minmax",
-                        smoothing_factor=0.5,
-                        smoothing_type="gaussian",
-                        smoothing_show_original=True,
-                        max_runs_to_show=10,
-                        font_size="large",
-                        legend_position="west",
-                    ),
-                    wr.ScatterPlot(title="Validation Accuracy vs. Validation Loss", x="val_acc", y="val_loss", log_x=False, log_y=False, running_ymin=True, running_ymean=True, running_ymax=True, font_size="small", regression=True),
-                    wr.BarPlot(title="Validation Loss by Encoder", metrics=["val_loss"], orientation="h", range_x=(0, 0.11), title_x="Validation Loss", groupby="encoder", groupby_aggfunc="median", groupby_rangefunc="stddev", max_runs_to_show=20, max_bars_to_show=3, font_size="auto"),
-                    wr.ScalarChart(title="Maximum Number of Steps", metric="Step", groupby_aggfunc="max", groupby_rangefunc="stderr", font_size="large"),
-                    wr.CodeComparer(diff="split"),
-                    wr.ParallelCoordinatesPlot(columns=[wr.ParallelCoordinatesPlotColumn("Step"), wr.ParallelCoordinatesPlotColumn("c::model"), wr.ParallelCoordinatesPlotColumn("c::optimizer"), wr.ParallelCoordinatesPlotColumn("val_acc"), wr.ParallelCoordinatesPlotColumn("val_loss")]),
-                    wr.ParameterImportancePlot(with_respect_to="val_loss"),
-                    wr.RunComparer(diff_only=True),
-                    wr.CustomChart(query={"summary": ["val_loss", "val_acc"]}, chart_name="wandb/scatter/v0", chart_fields={"x": "val_loss", "y": "val_acc"}),
-                ],
-            ),
-            # Add WeaveBlock types directly to the blocks list
-            wr.WeaveBlockSummaryTable(entity="your_entity", project="your_project", table_name="my-table"),
-            wr.WeaveBlockArtifact(entity="your_entity", project="your_project", artifact="model-1", tab="lineage"),
-            wr.WeaveBlockArtifactVersionedFile(entity="your_entity", project="your_project", artifact="model-1", version="v0", file="dataframe.table.json"),
+                        # LinePlot with various settings enabled
+                        wr.LinePlot(
+                            title="Validation Accuracy over Time",
+                            x="Step",
+                            y=["val_acc"],
+                            range_x=(1, 100),
+                            range_y=(0, 1),
+                            log_x=True,
+                            log_y=False,
+                            title_x="Training steps",
+                            title_y="Validation Accuracy",
+                            ignore_outliers=True,
+                            groupby="encoder",
+                            groupby_aggfunc="mean",
+                            groupby_rangefunc="minmax",
+                            smoothing_factor=0.5,
+                            smoothing_type="gaussian",
+                            smoothing_show_original=True,
+                            max_runs_to_show=10,
+                            font_size="large",
+                            legend_position="west",
+                        ),
+                        wr.ScatterPlot(title="Validation Accuracy vs. Validation Loss", x="val_acc", y="val_loss", log_x=False, log_y=False, running_ymin=True, running_ymean=True, running_ymax=True, font_size="small", regression=True),
+                        wr.BarPlot(title="Validation Loss by Encoder", metrics=["val_loss"], orientation="h", range_x=(0, 2), title_x="Validation Loss", groupby="encoder", groupby_aggfunc="median", groupby_rangefunc="stddev", max_runs_to_show=20, max_bars_to_show=3, font_size="auto"),
+                        wr.ScalarChart(title="Maximum Number of Steps", metric="Step", groupby_aggfunc="max", groupby_rangefunc="stderr", font_size="large"),
+                        wr.CodeComparer(diff="split"),
+                        wr.ParallelCoordinatesPlot(columns=[wr.ParallelCoordinatesPlotColumn("Step"), wr.ParallelCoordinatesPlotColumn("c::encoder"), wr.ParallelCoordinatesPlotColumn("c::optimizer"), wr.ParallelCoordinatesPlotColumn("val_acc"), wr.ParallelCoordinatesPlotColumn("val_loss")]),
+                        wr.ParameterImportancePlot(with_respect_to="val_loss"),
+                        wr.RunComparer(diff_only=True),
+                        wr.CustomChart(query={"summary": ["val_loss", "val_acc"]}, chart_name="wandb/scatter/v0", chart_fields={"x": "val_loss", "y": "val_acc"}),
+                    ],
+                ),
+                # Add WeaveBlock types directly to the blocks list
+                wr.WeaveBlockSummaryTable(entity=entity, project=project, table_name="my-table"),
+                wr.WeaveBlockArtifact(entity=entity, project=project, artifact="model-1", tab="lineage"),
+                wr.WeaveBlockArtifactVersionedFile(entity=entity, project=project, artifact="model-1", version="v0", file="dataframe.table.json"),
+            ],
+        )
+    return (panel_gallery_report,)
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ### Related Reports, grouped colors, and combined blocks
+
+    These two drafts use the original tutorial's public CleanRL runs in
+    `openrlbenchmark/cleanrl`. They show reinforcement-learning metrics and videos;
+    viewing them requires access to that project. `RunsetGroup` assigns colors to
+    specific configuration groups, using each configuration field as the key and
+    its observed setting as the value.
+
+    You can combine two Reports by concatenating their block lists. Publishing later
+    also creates a Report with `wr.Link` objects pointing to these two saved Reports;
+    `MarkdownBlock` supports ordinary Markdown links as well.
+    """)
+    return
+
+
+@app.cell
+def _(entity, project):
+    related_report_one = wr.Report(
+            entity=entity,
+            project=project,
+            title="Report 1",
+            description="Great content coming from Report 1",
+            blocks=[
+                wr.H1(text="Heading from Report 1"),
+                wr.P(text="Compare the public CleanRL experiments using the panels below."),
+                wr.PanelGrid(
+                    panels=[
+                        wr.LinePlot(title="Episodic Return", x="global_step", y=["charts/episodic_return"], smoothing_factor=0.85, groupby_aggfunc="mean", groupby_rangefunc="minmax", layout=wr.Layout(x=0, y=0, w=12, h=8)),
+                        wr.MediaBrowser(media_keys=["videos"], num_columns=4, layout=wr.Layout(w=12, h=8)),
+                    ],
+                    runsets=[wr.Runset(entity="openrlbenchmark", project="cleanrl", query="bigfish", groupby=["exp_name"])],
+                    custom_run_colors={
+                        wr.RunsetGroup(runset_name="Run set", keys=(wr.RunsetGroupKey(key=wr.Config("exp_name"), value="ppg_procgen"),)): "#2980b9",
+                        wr.RunsetGroup(runset_name="Run set", keys=(wr.RunsetGroupKey(key=wr.Config("exp_name"), value="ppo_procgen"),)): "#e74c3c",
+                    },
+                ),
+            ],
+        )
+
+    related_report_two = wr.Report(
+            entity=entity,
+            project=project,
+            title="Report 2",
+            description="Great content coming from Report 2",
+            blocks=[
+                wr.H1(text="Heading from Report 2"),
+                wr.P(text="Compare the public CleanRL experiments using the panels below."),
+                wr.PanelGrid(
+                    panels=[
+                        wr.LinePlot(title="SPS", x="global_step", y=["charts/SPS"]),
+                        wr.LinePlot(title="Episodic Length", x="global_step", y=["charts/episodic_length"]),
+                        wr.LinePlot(title="Episodic Return", x="global_step", y=["charts/episodic_return"]),
+                    ],
+                    runsets=[
+                        wr.Runset(entity="openrlbenchmark", project="cleanrl", name="DQN", groupby=["exp_name"]),
+                        wr.Runset(entity="openrlbenchmark", project="cleanrl", name="SAC-discrete 0.8", groupby=["exp_name"]),
+                        wr.Runset(entity="openrlbenchmark", project="cleanrl", name="SAC-discrete 0.88", groupby=["exp_name"]),
+                    ],
+                    custom_run_colors={
+                        wr.RunsetGroup(runset_name="DQN", keys=(wr.RunsetGroupKey(key=wr.Config("exp_name"), value="dqn_atari"),)): "#e84118",
+                        wr.RunsetGroup(runset_name="SAC-discrete 0.8", keys=(wr.RunsetGroupKey(key=wr.Config("exp_name"), value="sac_atari"),)): "#fbc531",
+                        wr.RunsetGroup(runset_name="SAC-discrete 0.88", keys=(wr.RunsetGroupKey(key=wr.Config("exp_name"), value="sac_atari"),)): "#00a8ff",
+                    },
+                ),
+            ],
+        )
+    return related_report_one, related_report_two
+
+
+@app.cell
+def _(entity, project, related_report_one, related_report_two):
+    combined_report = wr.Report(
+        entity=entity, project=project, title="Combined blocks report",
+        description="Blocks from both related Reports",
+        blocks=[*related_report_one.blocks, *related_report_two.blocks],
+    )
+    return (combined_report,)
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ### Publish the FAQ examples
+
+    The next action loads the saved Quickstart Report into a fresh object, changes
+    its width, and calls `save(clone=True)` to create a separate copy. Loading a fresh
+    object matters: `save(clone=True)` changes the saved object's ID in the current
+    library, so cloning the original draft directly would change its save target.
+
+    It then saves the six drafts above and creates a links Report after both related
+    Report URLs exist. On the first click this creates eight FAQ Reports. Later
+    clicks update the six saved drafts and create another width clone and links
+    Report. Save the Quickstart Report first.
+    """)
+    return
+
+
+@app.cell
+def _(
+    block_gallery_report,
+    combined_report,
+    entity,
+    panel_gallery_report,
+    project,
+    quickstart_report,
+    related_report_one,
+    related_report_two,
+    resize_report,
+):
+    wide_report = wr.Report.from_url(quickstart_report.url)
+    wide_report.width = "fluid"
+    wide_report.save(clone=True)
+
+    for faq_draft in [
+        resize_report, block_gallery_report, panel_gallery_report,
+        related_report_one, related_report_two, combined_report,
+    ]:
+        faq_draft.save()
+
+    links_report = wr.Report(
+        entity=entity, project=project, title="Report with links",
+        description="Link related Reports with rich text or Markdown",
+        blocks=[
+            wr.H1(["Results from ", wr.Link("Report 1", url=related_report_one.url)]),
+            wr.P(["Compare these results with ", wr.Link("Report 2", url=related_report_two.url)]),
+            wr.MarkdownBlock(f"Also visit [Report 1]({related_report_one.url}) and [Report 2]({related_report_two.url})."),
         ],
     )
-    panel_gallery_report.save()
-    faq_report_urls_after_panels = [
-        *faq_report_urls_after_blocks,
-        panel_gallery_report.url,
-    ]
-    return (faq_report_urls_after_panels,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ### How can I link related reports together?
-    - Suppose have have two reports like below:
-    """)
-    return
-
-
-@app.cell
-def _(ENTITY, PROJECT, faq_report_urls_after_panels):
-    report1 = wr.Report(
-        entity=ENTITY,
-        project=PROJECT,
-        title="Report 1",
-        description="Great content coming from Report 1",
-        blocks=[
-            wr.H1(text="Heading from Report 1"),
-            wr.P(text="Lorem ipsum dolor sit amet. Aut fuga minus nam vero saepeA aperiam eum omnis dolorum et ducimus tempore aut illum quis aut alias vero. Sed explicabo illum est eius quianon vitae sed voluptatem incidunt. Vel architecto assumenda Ad voluptatem quo dicta provident et velit officia. Aut galisum inventoreSed dolore a illum adipisci a aliquam quidem sit corporis quia cum magnam similique."),
-            wr.PanelGrid(
-                panels=[
-                    wr.LinePlot(title="Episodic Return", x="global_step", y=["charts/episodic_return"], smoothing_factor=0.85, groupby_aggfunc="mean", groupby_rangefunc="minmax", layout=wr.Layout(x=0, y=0, w=12, h=8)),
-                    wr.MediaBrowser(media_keys=["videos"], num_columns=4, layout=wr.Layout(w=12, h=8)),
-                ],
-                runsets=[wr.Runset(entity="openrlbenchmark", project="cleanrl", query="bigfish", groupby=["env_id", "exp_name"])],
-                custom_run_colors={
-                    wr.RunsetGroup(runset_name="Run set", keys=(wr.RunsetGroupKey(key="bigfish", value="ppg_procgen"),)): "#2980b9",
-                    wr.RunsetGroup(runset_name="Run set", keys=(wr.RunsetGroupKey(key="bigfish", value="ppo_procgen"),)): "#e74c3c",
-                },
-            ),
-        ],
-    )
-    report1.save()
-
-    report2_1 = wr.Report(
-        entity=ENTITY,
-        project=PROJECT,
-        title="Report 2",
-        description="Great content coming from Report 2",
-        blocks=[
-            wr.H1(text="Heading from Report 2"),
-            wr.P(text="Est quod ducimus ut distinctio corruptiid optio qui cupiditate quibusdam ea corporis modi. Eum architecto vero sed error dignissimosEa repudiandae a recusandae sint ut sint molestiae ea pariatur quae. In pariatur voluptas ad facere neque 33 suscipit et odit nostrum ut internos molestiae est modi enim. Et rerum inventoreAut internos et dolores delectus aut Quis sunt sed nostrum magnam ab dolores dicta."),
-            wr.PanelGrid(
-                panels=[
-                    wr.LinePlot(title="SPS", x="global_step", y=["charts/SPS"]),
-                    wr.LinePlot(title="Episodic Length", x="global_step", y=["charts/episodic_length"]),
-                    wr.LinePlot(title="Episodic Return", x="global_step", y=["charts/episodic_return"]),
-                ],
-                runsets=[
-                    wr.Runset(entity="openrlbenchmark", project="cleanrl", name="DQN", groupby=["exp_name"]),
-                    wr.Runset(entity="openrlbenchmark", project="cleanrl", name="SAC-discrete 0.8", groupby=["exp_name"]),
-                    wr.Runset(entity="openrlbenchmark", project="cleanrl", name="SAC-discrete 0.88", groupby=["exp_name"]),
-                ],
-                custom_run_colors={
-                    wr.RunsetGroup(runset_name="DQN", keys=(wr.RunsetGroupKey(key="dqn_atari", value="exp_name"),)): "#e84118",
-                    wr.RunsetGroup(runset_name="SAC-discrete 0.8", keys=(wr.RunsetGroupKey(key="sac_atari", value="exp_name"),)): "#fbc531",
-                    wr.RunsetGroup(runset_name="SAC-discrete 0.88", keys=(wr.RunsetGroupKey(key="sac_atari", value="exp_name"),)): "#00a8ff",
-                },
-            ),
-        ],
-    )
-    report2_1.save()
-    faq_report_urls_after_linked_pair = [
-        *faq_report_urls_after_panels,
-        report1.url,
-        report2_1.url,
-    ]
-    return faq_report_urls_after_linked_pair, report1, report2_1
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    #### Combine blocks into a new report
-    """)
-    return
-
-
-@app.cell
-def _(ENTITY, PROJECT, faq_report_urls_after_linked_pair):
-    report_4 = wr.Report(
-        entity=ENTITY,
-        project=PROJECT,
-        title="Report with links",
-        description="Use `wr.Link(text, url)` to add links inside normal text, or use normal markdown syntax in a MarkdownBlock",
-        blocks=[
-            wr.H1("This is a normal heading"),
-            wr.P("And here is some normal text"),
-
-            wr.H1(["This is a heading ", wr.Link("with a link!", url="https://wandb.ai/")]),
-            wr.P(["Most text formats support ", wr.Link("adding links", url="https://wandb.ai/")]),
-
-            wr.MarkdownBlock("""You can also use markdown syntax for [links](https://wandb.ai/)"""),
-        ],
-    )
-    report_4.save()
-    faq_report_urls_after_links = [
-        *faq_report_urls_after_linked_pair,
-        report_4.url,
-    ]
-    return (faq_report_urls_after_links,)
-
-
-@app.cell
-def _(ENTITY, PROJECT, faq_report_urls_after_links, report1, report2_1):
-    report3 = wr.Report(
-        entity=ENTITY,
-        project=PROJECT,
-        title="Combined blocks report",
-        description="This report combines blocks from both Report 1 and Report 2",
-        blocks=[*report1.blocks, *report2_1.blocks],
-    )
-    report3.save()
-    faq_reports_complete = [*faq_report_urls_after_links, report3.url]
-    return (faq_reports_complete,)
-
-
-@app.cell(hide_code=True)
-def _(faq_reports_complete):
-    mo.callout(
-        mo.md(
-            f"Created {len(faq_reports_complete)} FAQ example Reports. "
-            f"[Open the combined Report]({faq_reports_complete[-1]})."
-        ),
-        kind="success",
-    )
+    links_report.save()
     return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ### I tried mutating an object in list but it didn't work!
-    tl;dr: It should always work if you assign a value to the attribute instead of mutating.  If you really need to mutate, do it before assignment.
+    ## 5. Update lists of blocks explicitly
 
-    ---
+    A Report contains lists such as `report.blocks`, `panel_grid.panels`, and
+    `panel_grid.runsets`. Object-reference behavior can vary across library versions.
+    To make an update explicit, edit the block and then reassign the block list.
+    Keep related mutations in one cell so marimo doesn't need to infer their order.
 
-    This can happen in a few places that contain lists of wandb objects, e.g.:
-    - `report.blocks`
-    - `panel_grid.panels`
-    - `panel_grid.runsets`
-
-    The current `wandb-workspaces` release keeps the assigned block object by reference, so the in-place mutation below is visible through `report.blocks`. Explicitly reassigning the block list still makes the intended update unambiguous before a later `save()`.
-
-    The following object stays local because none of these cells calls `save()`.
+    The following example stays local: it never calls `save()`.
     """)
     return
 
 
 @app.cell
-def _(ENTITY, PROJECT):
-    report_5 = wr.Report(entity=ENTITY, project=PROJECT)
-    return (report_5,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    Good: Assign `b`
-    """)
-    return
-
-
-@app.cell
-def _(report_5):
-    b = wr.H1(text=["Hello", " World!"])
-    report_5.blocks = [b]
-    assert b.text == ["Hello", " World!"]
-    assert report_5.blocks[0].text == ["Hello", " World!"]
-    initial_assignment_done = True
-    return (b,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    Current behavior: Mutate `b` without reassigning
-    """)
-    return
-
-
-@app.cell
-def _(b, report_5):
-    b.text = ["Something", " New"]
-    assert b.text == ["Something", " New"]
-    assert report_5.blocks[0].text == ["Something", " New"]
-
-    # Older releases could leave the previously assigned value here.
-    mutation_example_done = True
+def _(entity, project):
+    assignment_report = wr.Report(entity=entity, project=project)
+    heading = wr.H1(text=["Hello", " World!"])
+    assignment_report.blocks = [heading]
+    heading.text = ["Something", " New"]
+    assignment_report.blocks = [heading]
+    print(assignment_report.blocks[0].text)
     return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Recommended: Mutate `b` and then reassign it
+    ## Verify the saved Reports
+
+    Open the URLs printed by the publishing cells and check the narrative, panels,
+    Artifact lineage, and FAQ examples. If a panel is empty, confirm that its runset
+    points to a project with the requested metrics or media keys. If you skipped the
+    demo data, adapt the runsets and Artifact names to your existing data.
+
+    Inspect `wr.blocks` and `wr.panels` in your editor for more options. Edit local
+    drafts first, then publish only the examples you want to keep.
     """)
-    return
-
-
-@app.cell
-def _(b, report_5):
-    report_5.blocks = [b]
-    assert b.text == ["Something", " New"]
-    assert report_5.blocks[0].text == ["Something", " New"]
     return
 
 
