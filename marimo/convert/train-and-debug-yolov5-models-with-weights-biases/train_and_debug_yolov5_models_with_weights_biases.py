@@ -11,6 +11,9 @@
 #     "ultralytics>=8.4.149,<8.5",
 #     "wandb>=0.18,<0.29",
 # ]
+#
+# [tool.marimo.runtime]
+# on_cell_change = "lazy"
 # ///
 
 """Train a current Ultralytics YOLO model while tracking it with W&B.
@@ -22,17 +25,14 @@ Run:
 
 import marimo
 
-__generated_with = "0.24.2"
+__generated_with = "0.25.1"
 app = marimo.App(
     width="medium",
     app_title="Train and Debug Ultralytics YOLO Models with Weights & Biases",
 )
 
-
-@app.cell
-def _():
+with app.setup:
     import io
-    import tempfile
     import zipfile
     from pathlib import Path
     from urllib.request import urlopen
@@ -41,497 +41,281 @@ def _():
     import torch
     import wandb
     import yaml
+    from PIL import Image
     from ultralytics import YOLO, settings as yolo_settings
     from ultralytics.utils import ASSETS as yolo_assets
 
-    return (
-        Path,
-        YOLO,
-        io,
-        mo,
-        tempfile,
-        torch,
-        urlopen,
-        wandb,
-        yaml,
-        yolo_assets,
-        yolo_settings,
-        zipfile,
-    )
+    if torch.cuda.is_available():
+        device = 0
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/train-and-debug-yolov5-models-with-weights-biases/train_and_debug_yolov5_models_with_weights_biases.py/server)
 
     # Train and Debug Ultralytics YOLO Models with Weights & Biases
 
-    This notebook fine-tunes the current **Ultralytics YOLO26** model on a
-    chess-piece dataset and tracks the experiment with Weights & Biases.
-    You will:
+    In this lesson, you will use a pretrained object detector, fine-tune it to
+    recognize chess pieces, and use Weights & Biases to inspect its training metrics,
+    predictions, dataset, and model checkpoint.
 
-    1. run pretrained object detection,
-    2. version a custom dataset with a W&B Artifact,
-    3. fine-tune YOLO26 with the built-in W&B callback, and
-    4. inspect metrics, diagnostic plots, and the best-model Artifact.
+    The original Colab used YOLOv5. This version uses **YOLO26** through the
+    maintained [`ultralytics`](https://docs.ultralytics.com/) package and its
+    [Weights & Biases integration](https://docs.ultralytics.com/integrations/weights-biases/).
+    The object-detection and experiment-tracking workflow is the same; the
+    Python API replaces the original command-line scripts.
 
-    The notebook uses the maintained [`ultralytics`](https://pypi.org/project/ultralytics/)
-    package and its [W&B integration](https://docs.ultralytics.com/integrations/weights-biases/).
-
-    Opening the notebook does not create a W&B run or upload anything. Those
-    actions begin only after you submit the training form.
+    Open the notebook in the marimo **editor**. Cells that authenticate,
+    download files, or train start disabled: enable each from its cell menu
+    when you reach that step, then run it if it hasn't started. Editing a
+    setting marks dependent cells as stale until you run them again.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _(torch):
-    if torch.cuda.is_available():
-        training_device = 0
-    elif torch.backends.mps.is_available():
-        training_device = "mps"
-    else:
-        training_device = "cpu"
-
-    return (training_device,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    ## Prepare the data
+    ## Set up your experiment and log in
 
-    The tutorial uses a small public dataset whose images and labels already
-    follow Ultralytics' YOLO format. The download is gated so opening the
-    notebook does not write files.
+    Get your [Weights & Biases API key](https://wandb.ai/authorize) and set `WANDB_API_KEY` in
+    your runtime's environment or **Secrets** panel. Locally, you can also run
+    `wandb login` in a terminal. A hosted runtime needs its own credentials.
+
+    Set `entity` to your Weights & Biases team slug, or leave it as `None` to use your default
+    entity. You can find the slug in `wandb.ai/<entity>/<project>`. Choose a
+    project to group your experiments and a name for this run.
+
+    `wandb.login()` authenticates the SDK. Enabling the Ultralytics Weights & Biases
+    integration here ensures it is ready before we create either YOLO model.
+    This cell does not create a training run.
     """)
     return
 
 
 @app.cell
-def _(Path, io, tempfile, urlopen, yaml, zipfile):
-    def download_chess_dataset():
-        """Download and validate the public chess-piece dataset."""
-        workspace_path = Path(tempfile.mkdtemp(prefix="wandb-yolo26-"))
-        dataset_url = "https://public.roboflow.com/ds/1BpjFZe9ST?key=KXD7eDvwTa"
+def _():
+    entity = "wandb"
+    project = "yolo-wandb-demo"
+    run_name = "chess-yolo26n"
+    config = {
+        "model": "yolo26n.pt",
+        "epochs": 3,
+        "imgsz": 640,
+        "batch": 16,
+    }
 
-        with urlopen(dataset_url, timeout=120) as dataset_response:
-            with zipfile.ZipFile(io.BytesIO(dataset_response.read())) as archive:
-                for member in archive.infolist():
-                    member_path = (workspace_path / member.filename).resolve()
-                    if (
-                        workspace_path.resolve() != member_path
-                        and workspace_path.resolve() not in member_path.parents
-                    ):
-                        raise ValueError(
-                            f"Unsafe path in dataset archive: {member.filename}"
-                        )
-                archive.extractall(workspace_path)
-
-        data_yaml_path = workspace_path / "data.yaml"
-        if not data_yaml_path.exists():
-            raise FileNotFoundError("The downloaded dataset did not contain data.yaml")
-
-        dataset_config = yaml.safe_load(data_yaml_path.read_text())
-        dataset_config.update(
-            {
-                "path": str(workspace_path),
-                "train": "train/images",
-                "val": "valid/images",
-            }
-        )
-        data_yaml_path.write_text(yaml.safe_dump(dataset_config, sort_keys=False))
-        return workspace_path, data_yaml_path
-
-    return (download_chess_dataset,)
+    wandb.login()
+    yolo_settings.update({"wandb": True})
+    return config, entity, project, run_name
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    prepare_data_button = mo.ui.run_button(
-        label="Download the chess dataset",
-        kind="success",
-        tooltip="Downloads public files into a temporary workspace",
-    )
-    prepare_data_button
-    return (prepare_data_button,)
+def _():
+    mo.md(r"""
+    ## Detect objects with a pretrained model
+
+    YOLO26 is pretrained on the COCO dataset, which includes objects such as
+    people, buses, and stop signs. If your application needs those classes, a
+    pretrained model may already be useful without additional training.
+
+    Run the detector on a sample street image. This downloads the small
+    `yolo26n.pt` checkpoint. `conf=0.25` filters out predictions whose confidence
+    is below 25%; the image shows the remaining boxes, labels, and scores.
+    """)
+    return
+
+
+@app.cell
+def _(config):
+    pretrained_model = YOLO(config["model"])
+    prediction = pretrained_model.predict(
+        source=str(yolo_assets / "bus.jpg"),
+        imgsz=config["imgsz"],
+        conf=0.25,
+        device=device,
+        save=False,
+    )[0]
+    # Ultralytics plots use BGR; PIL expects RGB.
+    Image.fromarray(prediction.plot()[:, :, ::-1])
+    return
 
 
 @app.cell(hide_code=True)
-def _(download_chess_dataset, mo, prepare_data_button):
-    mo.stop(
-        not prepare_data_button.value,
-        mo.callout(
-            mo.md("Click the download button when you are ready."),
-            kind="info",
-        ),
-    )
+def _():
+    mo.md(r"""
+    ## Prepare the chess-piece dataset
 
+    Chess pieces are not among the COCO classes. To recognize them, we will
+    fine-tune the pretrained detector on
+    [chessboard images with labeled bounding boxes](https://public.roboflow.com/object-detection/chess-full).
+    Starting from pretrained weights lets us reuse features the model has
+    already learned.
+
+    The download contains images, YOLO-format text labels, and `data.yaml`.
+    The YAML file tells the trainer where the training and validation images
+    are and how class IDs map to names. The helper at the end downloads the
+    dataset into `data/chess` and fixes its paths for this runtime.
+    """)
+    return
+
+
+@app.cell
+def _():
     dataset_root, data_yaml_path = download_chess_dataset()
-    mo.callout(
-        mo.md(f"The chess dataset is ready at `{dataset_root}`."),
-        kind="success",
-    )
+    print(data_yaml_path.read_text())
     return data_yaml_path, dataset_root
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    ## Detect objects with a pretrained model
+    ## Fine-tune the detector and track the experiment
 
-    YOLO26 is pretrained on the COCO dataset. Before fine-tuning, run it on a
-    sample street image to see the base model's predictions. This step downloads
-    the small `yolo26n.pt` checkpoint but does not contact W&B.
+    Weights & Biases helps connect a model's behavior to the data and settings that produced
+    it. In the next cell:
+
+    1. `wandb.init` starts a run and records our configuration.
+    2. `wandb.Artifact` and `run.log_artifact` version the dataset used by this run.
+    3. `YOLO.train` fine-tunes the model. The built-in Weights & Biases integration logs
+       losses, validation metrics, prediction images, and diagnostic plots.
+       With `save=True`, it also logs the best checkpoint as a model Artifact.
+
+    The run is closed when training completes or raises an error. Its link
+    appears in the cell output while training is underway.
+
+    Three epochs provide a short demonstration; a GPU is recommended for
+    longer runs, but this notebook also supports CPU training. Local training
+    outputs are stored under `runs/chess`, outside the versioned dataset.
     """)
     return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    run_detection_button = mo.ui.run_button(
-        label="Run pretrained YOLO26 detection",
-        kind="success",
-    )
-    run_detection_button
-    return (run_detection_button,)
 
 
 @app.cell
-def _(YOLO, mo, run_detection_button, training_device, yolo_assets):
-    mo.stop(
-        not run_detection_button.value,
-        mo.callout(
-            mo.md("Click the detection button above to run inference."),
-            kind="info",
-        ),
-    )
-
-    _prediction_model = YOLO("yolo26n.pt")
-    _prediction = _prediction_model.predict(
-        source=str(yolo_assets / "bus.jpg"),
-        imgsz=640,
-        conf=0.25,
-        device=training_device,
-        save=False,
-        verbose=False,
-    )[0]
-    _detection_rows = _prediction.summary()
-    _annotated_image = _prediction.plot()[:, :, ::-1]
-
-    mo.vstack(
-        [
-            mo.image(
-                _annotated_image,
-                width=600,
-            ),
-            mo.ui.table(_detection_rows, label="Detections"),
-        ]
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## Connect to Weights & Biases
-
-    Enter your [W&B API key](https://wandb.ai/authorize) and, if needed, your
-    team or entity. Leave the key blank to use `WANDB_API_KEY` from molab's
-    Secrets panel or credentials already configured in the runtime.
-
-    Submitting this form authenticates the SDK. It does not create a run.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    _api_key_input = mo.ui.text(
-        value="",
-        kind="password",
-        label="W&B API key (blank uses runtime credentials)",
-        full_width=True,
-    )
-    _entity_input = mo.ui.text(
-        value="",
-        label="W&B entity or team (blank uses your default)",
-        full_width=True,
-    )
-    wandb_login_form = (
-        mo.md("{api_key}\n\n{entity}")
-        .batch(api_key=_api_key_input, entity=_entity_input)
-        .form(submit_button_label="Connect to W&B", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
-
-
-@app.cell(hide_code=True)
-def _(mo, wandb, wandb_login_form):
-    mo.stop(
-        wandb_login_form.value is None,
-        mo.callout(
-            mo.md("Submit the authentication form to continue."),
-            kind="info",
-        ),
-    )
-
-    _submitted_login = wandb_login_form.value
-    _api_key = _submitted_login["api_key"].strip()
-    _requested_entity = _submitted_login["entity"].strip()
-    try:
-        _login_ok = wandb.login(
-            key=_api_key or None,
-            relogin=bool(_api_key),
-        )
-        _resolved_entity = _requested_entity or wandb.Api().default_entity
-        _login_error = None
-    except wandb.errors.Error as _error:
-        _login_ok = False
-        _resolved_entity = None
-        _login_error = str(_error)
-
-    mo.stop(
-        not _login_ok or not _resolved_entity,
-        mo.callout(
-            mo.md(
-                "W&B authentication did not complete. Check the API key and "
-                "entity, then submit again.\n\n"
-                f"W&B reported: `{_login_error or 'No default entity was found.'}`"
-            ),
-            kind="danger",
-        ),
-    )
-
-    wandb_settings = {"entity": _resolved_entity}
-    mo.callout(
-        mo.md(f"Connected to W&B as entity `{_resolved_entity}`."),
-        kind="success",
-    )
-    return (wandb_settings,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ## Fine-tune YOLO26 and track the run
-
-    The current Ultralytics integration automatically logs training and
-    validation metrics, diagnostic images, performance curves, system metrics,
-    and the best checkpoint as a model Artifact.
-
-    Dataset versioning is explicit below: the notebook creates a W&B dataset
-    Artifact with `wandb.Artifact` and `run.log_artifact` before training.
-    This keeps the W&B workflow visible and reusable with other training
-    libraries.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(dataset_root, mo, wandb_settings):
-    _project_input = mo.ui.text(
-        value="yolo-wandb-demo",
-        label="W&B project",
-        full_width=True,
-    )
-    _run_name_input = mo.ui.text(
-        value="chess-yolo26n",
-        label="W&B run name",
-        full_width=True,
-    )
-    _epochs_input = mo.ui.number(
-        start=1,
-        stop=20,
-        value=3,
-        step=1,
-        label="Training epochs",
-    )
-    yolo_training_form = (
-        mo.md("{project}\n\n{run_name}\n\n{epochs}")
-        .batch(
-            project=_project_input,
-            run_name=_run_name_input,
-            epochs=_epochs_input,
-        )
-        .form(
-            submit_button_label="Train YOLO26 and log to W&B",
-            bordered=True,
-        )
-    )
-    mo.vstack(
-        [
-            mo.md(
-                f"The dataset is ready at `{dataset_root}`. The run will be "
-                f"logged under entity `{wandb_settings['entity']}`."
-            ),
-            yolo_training_form,
-        ]
-    )
-    return (yolo_training_form,)
-
-
-@app.cell
-def _(
-    data_yaml_path,
-    dataset_root,
-    mo,
-    training_device,
-    wandb,
-    wandb_settings,
-    yolo_training_form,
-):
-    mo.stop(
-        yolo_training_form.value is None,
-        mo.callout(
-            mo.md(
-                "Review the settings, then submit the form when you are ready "
-                "to create a W&B run and upload the dataset Artifact."
-            ),
-            kind="info",
-        ),
-    )
-
-    _submitted_training = yolo_training_form.value
-    _project = _submitted_training["project"].strip() or "yolo-wandb-demo"
-    _run_name = _submitted_training["run_name"].strip() or "chess-yolo26n"
-    _epochs = int(_submitted_training["epochs"])
-
-    if wandb.run is not None:
-        wandb.finish()
-
-    _run = wandb.init(
-        entity=wandb_settings["entity"],
-        project=_project,
-        name=_run_name,
+def _(config, data_yaml_path, dataset_root, entity, project, run_name):
+    with wandb.init(
+        entity=entity,
+        project=project,
+        name=run_name,
         job_type="training",
-        config={
-            "model": "yolo26n.pt",
-            "dataset": "chess-pieces",
-            "epochs": _epochs,
-            "device": str(training_device),
-        },
-    )
-    training_run_url = _run.url
+        config=config,
+    ) as run:
+        dataset_artifact = wandb.Artifact(
+            name="chess-pieces",
+            type="dataset",
+            description="Chess-piece images and YOLO bounding-box labels",
+        )
+        dataset_artifact.add_dir(str(dataset_root))
+        run.log_artifact(dataset_artifact, aliases=["latest"])
 
-    _artifact_name = f"{_project}-chess-dataset".replace("/", "-").replace(
-        " ", "-"
-    )
-    _dataset_artifact = wandb.Artifact(
-        name=_artifact_name,
-        type="dataset",
-        description="Chess-piece object-detection dataset in YOLO format",
-        metadata={"data_yaml": data_yaml_path.name},
-    )
-    _dataset_artifact.add_dir(str(dataset_root))
-    _run.log_artifact(_dataset_artifact, aliases=["latest"])
-
-    yolo_training_request = {
-        "epochs": _epochs,
-        "run_name": _run_name,
-        "local_project_dir": str(dataset_root / "runs"),
-    }
-    return training_run_url, yolo_training_request
-
-
-@app.cell(hide_code=True)
-def _(mo, training_run_url):
-    mo.callout(
-        mo.md(
-            f"[Open the live W&B run]({training_run_url}) while YOLO26 trains."
-        ),
-        kind="info",
-    )
-    training_run_link_ready = True
-    return (training_run_link_ready,)
-
-
-@app.cell
-def _(
-    Path,
-    YOLO,
-    data_yaml_path,
-    training_device,
-    training_run_link_ready,
-    wandb,
-    yolo_settings,
-    yolo_training_request,
-):
-    assert training_run_link_ready
-    _original_wandb_setting = yolo_settings["wandb"]
-    yolo_settings.update({"wandb": True})
-    try:
-        _training_model = YOLO("yolo26n.pt")
-        _training_results = _training_model.train(
+        training_model = YOLO(run.config.model)
+        training_results = training_model.train(
             data=str(data_yaml_path),
-            epochs=yolo_training_request["epochs"],
-            imgsz=640,
-            device=training_device,
-            project=yolo_training_request["local_project_dir"],
-            name=yolo_training_request["run_name"],
-            exist_ok=True,
+            epochs=run.config.epochs,
+            imgsz=run.config.imgsz,
+            batch=run.config.batch,
+            device=device,
+            workers=0,
+            project=str(Path("runs/chess").resolve()),
+            name=run.id,
             plots=True,
             save=True,
         )
-    finally:
-        if wandb.run is not None:
-            wandb.finish()
-        yolo_settings.update({"wandb": _original_wandb_setting})
 
-    training_output_dir = Path(_training_results.save_dir)
-    training_metrics = {
-        _name: round(float(_value), 4)
-        for _name, _value in _training_results.results_dict.items()
-    }
-    return training_metrics, training_output_dir
-
-
-@app.cell(hide_code=True)
-def _(mo, training_metrics, training_output_dir, training_run_url):
-    mo.vstack(
-        [
-            mo.callout(
-                mo.md(
-                    "Training finished and the W&B run is closed. "
-                    f"[Inspect the completed run]({training_run_url})."
-                ),
-                kind="success",
-            ),
-            mo.ui.table(
-                [
-                    {"metric": _name, "value": _value}
-                    for _name, _value in training_metrics.items()
-                ],
-                label="Final validation metrics",
-            ),
-            mo.md(f"Local outputs: `{training_output_dir}`"),
-        ]
-    )
+    training_results.results_dict
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    ## Verify and next steps
+    ## Verify and compare your experiments
 
-    In the W&B run, verify that you can find:
+    Open the Weights & Biases run link and inspect:
 
-    - training and validation losses across epochs;
-    - precision, recall, mAP50, and mAP50-95 charts;
-    - training mosaics, validation predictions, and performance curves;
-    - the input dataset under **Artifacts** with the `latest` alias; and
-    - the best YOLO checkpoint as a model Artifact with the `best` alias.
+    - **Config:** the model, epoch count, image size, and batch size you chose.
+    - **Charts:** training losses, precision, recall, mAP50, and mAP50-95.
+      Losses describe training progress; mAP measures detection quality on
+      held-out images, including whether the predicted boxes match the labels.
+    - **Images and plots:** validation predictions, confusion matrix, and
+      performance curves. Look for missed pieces or confused classes.
+    - **Artifacts:** the `chess-pieces` dataset and the best model checkpoint.
+      These record the input data and the model produced by this experiment.
 
-    Next, increase the epoch count or switch from `yolo26n.pt` to a larger
-    YOLO26 checkpoint and compare the runs in W&B. For interrupted training,
-    use Ultralytics' current local checkpoint flow (`YOLO("last.pt").train(resume=True)`),
-    or download a checkpoint Artifact with `run.use_artifact()` before
-    resuming on another machine.
+    Increase `epochs` in the configuration, then rerun setup and training.
+    Compare the runs in the same Weights & Biases project. Does validation mAP improve, and
+    do the prediction images show fewer mistakes?
     """)
     return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Resume interrupted training
+
+    Ultralytics saves `last.pt` in the run's local `weights` directory. To resume
+    an **unfinished** training job, use its actual checkpoint path:
+
+    ```python
+    model_to_resume = YOLO("runs/chess/<run-id>/weights/last.pt")
+    model_to_resume.train(resume=True)
+    ```
+
+    This restores the training state stored in that checkpoint. Keep the
+    dataset available at the paths recorded by the original job. The best-model
+    Artifact is useful for inference or a new fine-tuning run; it should not be
+    assumed to contain the optimizer state needed to resume an interrupted job.
+
+    See the [Ultralytics training guide](https://docs.ultralytics.com/modes/train/#resuming-interrupted-trainings)
+    for checkpoint resume behavior. The old YOLOv5 `wandb-artifact://` command
+    syntax is not used by this notebook.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Dataset helper
+
+    This helper downloads and unpacks the public dataset once, checks the
+    archive paths, and updates its YAML file for the local folder layout.
+    """)
+    return
+
+
+@app.function
+def download_chess_dataset():
+    dataset_root = Path("data/chess").resolve()
+    data_yaml_path = dataset_root / "data.yaml"
+    if not data_yaml_path.exists():
+        dataset_url = "https://public.roboflow.com/ds/1BpjFZe9ST?key=KXD7eDvwTa"
+        with urlopen(dataset_url, timeout=120) as response:
+            with zipfile.ZipFile(io.BytesIO(response.read())) as archive:
+                for member in archive.infolist():
+                    member_path = (dataset_root / member.filename).resolve()
+                    if not member_path.is_relative_to(dataset_root):
+                        raise ValueError(f"Unsafe path in dataset archive: {member.filename}")
+                archive.extractall(dataset_root)
+
+    if not data_yaml_path.exists():
+        raise FileNotFoundError("The downloaded dataset did not contain data.yaml")
+
+    dataset_config = yaml.safe_load(data_yaml_path.read_text())
+    dataset_config.pop("path", None)
+    dataset_config.update({"train": "train/images", "val": "valid/images"})
+    if (dataset_root / "test/images").exists():
+        dataset_config["test"] = "test/images"
+    else:
+        dataset_config.pop("test", None)
+    data_yaml_path.write_text(yaml.safe_dump(dataset_config, sort_keys=False))
+    return dataset_root, data_yaml_path
 
 
 if __name__ == "__main__":
