@@ -106,7 +106,7 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Authentication
@@ -344,7 +344,7 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     We also need the Pima Indians Diabetes dataset. Each sweep run reads this
@@ -532,7 +532,7 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     These visualizations can help you save both time and resources running expensive hyperparameter optimizations by honing in on the parameters (and value ranges) that are the most important, and thereby worthy of further exploration.

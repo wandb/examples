@@ -33,7 +33,7 @@ with app.setup:
     from torchvision.datasets import MNIST
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # PyTorch Lightning models with Weights & Biases
@@ -63,7 +63,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Configure the experiment and authenticate
@@ -94,7 +94,7 @@ def _():
     return batch_size, entity, epochs, project, run_name, seed
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Set up the dataloaders
@@ -128,7 +128,7 @@ def _(batch_size, seed):
     return training_loader, validation_loader
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Defining the Model
@@ -226,7 +226,7 @@ class MNIST_LitModule(pl.LightningModule):
         return preds, loss, acc
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Save Model Checkpoints
@@ -257,7 +257,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Using WandbLogger to log Images, Text and More
@@ -315,7 +315,7 @@ class LogPredictionsCallback(Callback):
         wandb_logger.log_table(key="sample_table", columns=columns, data=data)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Train the model and log to Weights & Biases
@@ -386,7 +386,7 @@ def _(
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Verify and next steps
@@ -405,7 +405,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     We can monitor losses, metrics, gradients, parameters and sample predictions as the model trains.
@@ -415,7 +415,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Resources

@@ -28,7 +28,7 @@ with app.setup:
     from PIL import Image
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # W&B Artifacts: Time-to-Live (TTL)
@@ -69,7 +69,7 @@ def _():
     return entity, project
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 2. Prepare Sample Images
@@ -122,7 +122,7 @@ def _():
     return train_source_dir, val_source_dir, workspace
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     Preview five images from the training sample before uploading them as an
@@ -145,7 +145,7 @@ def _(train_source_dir):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 3. Set TTL When Creating an Artifact
@@ -195,7 +195,7 @@ def _(entity, project, train_source_dir, val_source_dir):
     return project_path, raw_alias_paths
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 4. Change TTL on Existing Versions
@@ -227,7 +227,7 @@ def _(raw_alias_paths):
     return (compliant_artifact,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 5. Update All Versions in a Collection
@@ -257,7 +257,7 @@ def _(project_path):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 6. Record Lineage During Preprocessing
@@ -294,7 +294,7 @@ def _(compliant_artifact, entity, project, workspace):
     return (processed_artifact,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 7. Follow Lineage to Set Downstream TTL
@@ -327,7 +327,7 @@ def _(compliant_artifact, processed_artifact):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Inspect the Policies in W&B

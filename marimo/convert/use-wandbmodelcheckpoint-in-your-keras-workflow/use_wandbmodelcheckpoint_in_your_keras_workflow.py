@@ -25,7 +25,7 @@ with app.setup:
     from wandb.integration.keras import WandbModelCheckpoint
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Using Keras Checkpoint callback with Weights & Biases
@@ -35,7 +35,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     This notebook introduces the `WandbModelCheckpoint` callback. Use this callback to log your model checkpoints to Weights & Biases [Artifacts](https://docs.wandb.ai/guides/data-and-model-versioning).
@@ -43,7 +43,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     <style>
@@ -72,7 +72,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Authentication
@@ -142,7 +142,7 @@ def _(wandb_login_form):
     return (wandb_settings,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Hyperparameters
@@ -212,7 +212,7 @@ def _(training_request):
     return (configs,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Dataset
@@ -272,7 +272,7 @@ def _(configs, get_dataloader, train_ds, valid_ds):
     return trainloader, validloader
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Model
@@ -304,7 +304,7 @@ def _(configs):
     return (model,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Compile model
@@ -326,7 +326,7 @@ def _(model):
     return (compiled_model,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Train

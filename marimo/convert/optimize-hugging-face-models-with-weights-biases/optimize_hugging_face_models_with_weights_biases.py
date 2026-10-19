@@ -50,7 +50,7 @@ with app.setup:
     )
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/optimize-hugging-face-models-with-weights-biases/optimize_hugging_face_models_with_weights_biases.py/server)
@@ -60,7 +60,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Optimize Hugging Face models with Weights & Biases
@@ -68,7 +68,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     [Hugging Face](https://huggingface.co/) provides tools to quickly train neural networks for NLP (Natural Language Processing) on any task (classification, translation, question answering, etc) and any dataset with PyTorch and TensorFlow 2.0.
@@ -80,7 +80,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     Weights & Biases integration with 🤗 Hugging Face can automatically:
@@ -94,7 +94,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Here's what the Weights & Biases interactive dashboard will look like:
@@ -104,7 +104,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Installation and set-up
@@ -122,7 +122,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Configure Weights & Biases and authenticate
@@ -155,7 +155,7 @@ def _():
     return entity, project
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Train with an existing Hugging Face script
@@ -261,7 +261,7 @@ def _(quick_training_complete):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Advanced usage: customize a Trainer workflow
@@ -302,7 +302,7 @@ def _():
     )
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Load and inspect the dataset
@@ -338,7 +338,7 @@ def _(dataset):
     return label_names, num_labels
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     Rename `topic` to `labels`, the target column expected by `Trainer`. Keep the
@@ -354,7 +354,7 @@ def _(dataset):
     return (labeled_dataset,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Tokenize the text
@@ -395,7 +395,7 @@ def _(labeled_dataset, tokenizer):
     return (tokenized_dataset,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Load a model and inspect an initial prediction
@@ -443,7 +443,7 @@ def _(tokenizer, untrained_model):
     return initial_topic_prediction, sample_sentence
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Define an evaluation metric
@@ -463,7 +463,7 @@ def compute_metrics(eval_pred):
     return {"accuracy": float(np.mean(predictions == labels))}
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Configure training and Weights & Biases logging
@@ -555,7 +555,7 @@ def _(
     return (trained_model,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Predict with the trained model

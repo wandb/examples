@@ -41,7 +41,7 @@ with app.setup:
     data_root = Path(tempfile.gettempdir()) / "wandb-pytorch-sweeps-mnist"
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Organizing Hyperparameter Sweeps in PyTorch with Weights & Biases
@@ -53,7 +53,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     Finding a machine learning model that meets your desired metric (such as model accuracy) is normally a redundant task that can take multiple iterations. To make matters worse, it might be unclear which hyperparameter combinations to use for a given training run.
@@ -79,7 +79,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Authenticate and choose a project
@@ -107,7 +107,7 @@ def _():
     return entity, project
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Step 1: Define a sweep
@@ -162,7 +162,7 @@ def _():
     return (sweep_config,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Step 2: Initialize the sweep
@@ -184,7 +184,7 @@ def _(entity, project, sweep_config):
     return (sweep_id,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Step 3: Define the PyTorch training code
@@ -263,7 +263,7 @@ def train_epoch(sweep_run, network, loader, optimizer):
     return total_loss / total_examples
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Connect one trial to Weights & Biases
@@ -297,7 +297,7 @@ def train():
             sweep_run.log({"loss": avg_loss, "epoch": epoch})
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Step 4: Run a sweep agent
@@ -333,7 +333,7 @@ def _(entity, project, sweep_id, trial_count):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Verify and visualize sweep results
@@ -347,7 +347,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Parallel Coordinates Plot
@@ -358,7 +358,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Hyperparameter Importance Plot
@@ -372,7 +372,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Learn more about Weights & Biases Sweeps

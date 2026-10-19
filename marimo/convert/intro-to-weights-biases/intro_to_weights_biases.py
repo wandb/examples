@@ -31,7 +31,7 @@ with app.setup:
     ]
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Intro to Weights & Biases
@@ -78,7 +78,7 @@ def _():
     return entity, simulation_project, training_project
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 2. Track Simulated Experiments
@@ -119,7 +119,7 @@ def _(entity, simulation_project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 3. Compare runs in your project
@@ -157,7 +157,7 @@ def _():
     return device, dropout_values, training_config
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 5. Define the Data, Model, and Evaluation Helpers
@@ -240,7 +240,7 @@ def evaluate_model(device):
     return (evaluate_model,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 6. Build a Prediction Table
@@ -271,7 +271,7 @@ def make_prediction_table(images, predictions, labels, probabilities):
     return prediction_table
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 7. Train, Log Metrics, and Save Checkpoints
@@ -364,7 +364,7 @@ def _(
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 8. Inspect Metrics, Predictions, and Models
@@ -405,7 +405,7 @@ def _(entity, training_project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Next Steps

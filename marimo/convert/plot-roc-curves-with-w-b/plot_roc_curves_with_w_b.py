@@ -44,7 +44,7 @@ with app.setup:
     )
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Plot ROC Curves with W&B
@@ -67,7 +67,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Authentication
@@ -145,7 +145,7 @@ def _(wandb_login_form):
     return (wandb_settings,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Setup: Access the remote dataset
@@ -205,7 +205,7 @@ def ensure_dataset(dataset_fs):
     return str(train_path), str(validation_path), "Streamed and extracted the remote dataset."
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Training code
@@ -355,7 +355,7 @@ def train_and_log(config, wandb_settings, train_path, validation_path):
     return result
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Run the experiment

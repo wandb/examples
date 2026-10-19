@@ -37,7 +37,7 @@ with app.setup:
     from wandb.integration.xgboost import WandbCallback
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Vehicle Loan Default Prediction with XGBoost and Weights & Biases
@@ -89,7 +89,7 @@ def _():
     return entity, project
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 2. Choose the Dataset
@@ -128,7 +128,7 @@ def load_preprocessing_function(module_dir):
     return module.one_hot_encode_data
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 3. Preprocess and Log a Dataset Artifact
@@ -182,7 +182,7 @@ def _(
     return predictor_columns, processed_artifact_path
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 4. Split the Data and Record Lineage
@@ -232,7 +232,7 @@ def _(data_dir, entity, processed_artifact_path, project, target_column):
     return split_artifact_path, train_data, validation_data
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 5. Inspect Data with Weights & Biases Tables
@@ -257,7 +257,7 @@ def _(data_dir, entity, project, split_artifact_path, train_data):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 6. Prepare Predictors and Model Settings
@@ -307,7 +307,7 @@ def _(predictor_columns, target_column, train_data, validation_data):
     )
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 7. Define Evaluation Metrics
@@ -345,7 +345,7 @@ def evaluate_classifier(classifier, X_train, y_train, X_validation, y_validation
     }
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 8. Train and Log the Baseline
@@ -411,7 +411,7 @@ def _(
     return baseline_metrics, resolved_entity
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 9. Define a Hyperparameter Sweep
@@ -442,7 +442,7 @@ def _():
     return (sweep_config,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 10. Define One Sweep Trial
@@ -489,7 +489,7 @@ def _(
     return (sweep_train,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 11. Create the Sweep and Start an Agent

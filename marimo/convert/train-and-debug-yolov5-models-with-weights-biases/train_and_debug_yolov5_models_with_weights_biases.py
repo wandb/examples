@@ -53,7 +53,7 @@ with app.setup:
         device = "cpu"
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/train-and-debug-yolov5-models-with-weights-biases/train_and_debug_yolov5_models_with_weights_biases.py/server)
@@ -78,7 +78,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Set up your experiment and log in
@@ -115,7 +115,7 @@ def _():
     return config, entity, project, run_name
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Detect objects with a pretrained model
@@ -146,7 +146,7 @@ def _(config):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Prepare the chess-piece dataset
@@ -172,7 +172,7 @@ def _():
     return data_yaml_path, dataset_root
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Fine-tune the detector and track the experiment
@@ -231,7 +231,7 @@ def _(config, data_yaml_path, dataset_root, entity, project, run_name):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Verify and compare your experiments
@@ -254,7 +254,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Resume interrupted training
@@ -279,7 +279,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Dataset helper

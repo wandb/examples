@@ -35,7 +35,7 @@ with app.setup:
     os.environ['WANDB_WATCH'] = 'all'
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Hugging Face + Weights & Biases
@@ -63,7 +63,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Authentication
@@ -136,7 +136,7 @@ def _(wandb_login_form):
     return (wandb_settings,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Download script
@@ -160,7 +160,7 @@ def _():
     return (run_glue_path,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Train the model
@@ -197,7 +197,7 @@ def _():
     return (gpu_available,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Configure the training run
@@ -233,7 +233,7 @@ def _(wandb_settings):
     return run_environment, task_name, wandb_run_url
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Start training

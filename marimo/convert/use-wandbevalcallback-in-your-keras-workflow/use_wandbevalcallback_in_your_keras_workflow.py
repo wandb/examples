@@ -29,7 +29,7 @@ with app.setup:
     from wandb.integration.keras import WandbEvalCallback, WandbMetricsLogger
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Using Keras Evaluation Callbacks with Weights & Biases
@@ -50,7 +50,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Set up your experiment and log in
@@ -78,7 +78,7 @@ def _():
     return entity, project
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Hyperparameters
@@ -106,7 +106,7 @@ def _():
     return (configs,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Dataset
@@ -130,7 +130,7 @@ def _(configs):
     return trainloader, validloader
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Model
@@ -161,7 +161,7 @@ def get_model(configs, weights="imagenet"):
     return models.Model(inputs=inputs, outputs=outputs)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Compile model
@@ -191,7 +191,7 @@ def _(configs):
     return (model,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## `WandbEvalCallback`
@@ -247,7 +247,7 @@ class WandbClfEvalCallback(WandbEvalCallback):
         return preds
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Train
@@ -281,7 +281,7 @@ def _(configs, entity, model, project, trainloader, validloader):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Verify and next steps

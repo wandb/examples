@@ -15,7 +15,7 @@ with app.setup:
     import wandb
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     <style>
@@ -47,7 +47,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Authentication
@@ -117,7 +117,7 @@ def _(wandb_login_form):
     return (wandb_settings,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## What's a `config` for?
@@ -163,7 +163,7 @@ def _(wandb_settings):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     The previous cell returns a link to [run's](https://docs.coreweave.com/products/wandb/runs) **Overview** page in the W&B App UI.
@@ -173,7 +173,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     <img src="https://i.imgur.com/nAC9KEF.png" width="450"/>
@@ -181,7 +181,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     > Use dashes (-) or underscores (_) instead of periods (.) in your config variable names. For more information, see [Configure experiments](https://docs.coreweave.com/products/wandb/track/config).
@@ -189,7 +189,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Example: Update an existing config
@@ -225,7 +225,7 @@ def _(wandb_settings):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Next steps:

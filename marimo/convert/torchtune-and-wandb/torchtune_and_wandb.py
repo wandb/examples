@@ -32,7 +32,7 @@ with app.setup:
     from trl import SFTConfig, SFTTrainer
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Fine-tune SmolLM2 with LoRA and Weights & Biases
@@ -90,7 +90,7 @@ def _():
     return authenticated, entity, project
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 2. Choose the Device and Training Settings
@@ -146,7 +146,7 @@ def _():
     )
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 3. Stream Conversational Training Data
@@ -176,7 +176,7 @@ def _(authenticated, cache_dir, dataset_id, sample_count):
     return (train_dataset,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 4. Configure LoRA
@@ -204,7 +204,7 @@ def _():
     return (lora_config,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 5. Fine-tune and Track the Experiment

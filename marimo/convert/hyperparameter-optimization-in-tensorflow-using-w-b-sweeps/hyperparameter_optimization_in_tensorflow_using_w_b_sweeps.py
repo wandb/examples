@@ -27,7 +27,7 @@ with app.setup:
     from wandb.integration.keras import WandbMetricsLogger
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Weights & Biases Sweep + TensorFlow 2.x
@@ -44,7 +44,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     A sweep is a coordinated set of experiment runs. W&B chooses hyperparameter
@@ -59,7 +59,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     [Weights & Biases Sweeps](https://docs.coreweave.com/products/wandb/sweeps)
@@ -81,7 +81,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Step 1: Import W&B and log in
@@ -150,7 +150,7 @@ def _(wandb_login_form):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Step 2: Prepare the Dataset
@@ -189,7 +189,7 @@ def prepare_datasets(batch_size):
     return train_dataset, val_dataset
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Step 3: Define the Model and Training Workflow
@@ -211,7 +211,7 @@ def Model():
     return keras.Model(inputs=inputs, outputs=outputs)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Step 4: Log metrics with `WandbMetricsLogger`
@@ -245,7 +245,7 @@ def train(
     )
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Step 5: Configure the Sweep
@@ -288,7 +288,7 @@ def _():
     return (sweep_config,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Step 6: Wrap the Training Workflow
@@ -350,7 +350,7 @@ def sweep_train():
     return {"url": run_url, "epochs": len(training_history.history["loss"])}
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Step 7: Initialize the Sweep and Run an Agent
@@ -377,7 +377,7 @@ def _(sweep_id):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Visualize Results

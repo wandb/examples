@@ -24,7 +24,7 @@ with app.setup:
     import wandb
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # View & analyze model predictions during training
@@ -58,7 +58,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 1. Authenticate and Choose a Project
@@ -88,7 +88,7 @@ def _():
     return authenticated, entity, project
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 2. Set the Training and Table Sizes
@@ -130,7 +130,7 @@ def _():
     )
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 3. Define the Classifier
@@ -173,7 +173,7 @@ def _(CONV_KERNEL_SIZE, L1_SIZE, L2_SIZE):
     return (ConvNet,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 4. Load MNIST
@@ -217,7 +217,7 @@ def _(BATCH_SIZE, authenticated):
     return test_loader, train_loader
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 5. Train and Log Prediction Tables
@@ -348,7 +348,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## 6. Explore Your Predictions in W&B

@@ -26,7 +26,7 @@ with app.setup:
     from wandb.integration.keras import WandbMetricsLogger, WandbModelCheckpoint
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Introduction to Weights & Biases with Keras
@@ -81,7 +81,7 @@ def _():
     return entity, simulation_project, training_project
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Run simulated experiments
@@ -124,7 +124,7 @@ def _(entity, simulation_project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Train a simple Keras classifier
@@ -146,7 +146,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Configure the experiments
@@ -179,7 +179,7 @@ def _():
     return dropout_values, training_config
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Prepare MNIST once
@@ -202,7 +202,7 @@ def _():
     return x_train, x_validation, y_train, y_validation
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Train and log with Keras callbacks
@@ -270,7 +270,7 @@ def _(
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Inspect your results
@@ -284,7 +284,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Try Weights & Biases Alerts
@@ -354,7 +354,7 @@ def _(
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## What's next?

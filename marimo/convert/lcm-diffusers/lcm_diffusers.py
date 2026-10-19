@@ -27,7 +27,7 @@ with app.setup:
     MODEL_ID = "SimianLuo/LCM_Dreamshaper_v7"
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Image Generation with Consistency Models using Diffusers
@@ -45,7 +45,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Authentication
@@ -128,7 +128,7 @@ def _(wandb_login_form):
     return hf_token, wandb_settings
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Generate and log images

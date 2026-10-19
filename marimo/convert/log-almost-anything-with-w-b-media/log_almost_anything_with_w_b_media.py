@@ -27,7 +27,7 @@ with app.setup:
     import wandb
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     <style>
@@ -81,7 +81,7 @@ def _():
     return entity, project
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Load tutorial assets
@@ -101,7 +101,7 @@ def _():
     return asset_base_url, fs
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Log metrics
@@ -132,7 +132,7 @@ def _(apple_prices, entity, project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Log plots
@@ -157,7 +157,7 @@ def _(entity, project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Log histograms
@@ -177,7 +177,7 @@ def _(entity, project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Log images
@@ -198,7 +198,7 @@ def _(asset_base_url, entity, fs, project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Log videos
@@ -220,7 +220,7 @@ def _(asset_base_url, entity, fs, project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Log audio
@@ -280,7 +280,7 @@ def _(entity, project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Log tables
@@ -319,7 +319,7 @@ def _(entity, project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Log HTML
@@ -349,7 +349,7 @@ def _(asset_base_url, entity, fs, project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Log 3D objects
@@ -372,7 +372,7 @@ def _(asset_base_url, entity, fs, project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ### Log point clouds
@@ -432,7 +432,7 @@ def _(entity, project):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Verify and next steps

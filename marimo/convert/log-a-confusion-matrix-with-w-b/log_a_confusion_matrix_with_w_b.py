@@ -44,7 +44,7 @@ with app.setup:
     )
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # Plot a Confusion Matrix with Weights & Biases
@@ -79,7 +79,7 @@ def _():
     return (entity,)
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Configure the experiment
@@ -115,7 +115,7 @@ def _():
     return entity, project, training_config
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Prepare the iNaturalist sample
@@ -179,7 +179,7 @@ def _(dataset_fs):
     return train_data, val_data
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Build the data generators and model
@@ -256,7 +256,7 @@ def build_model(fc_size, num_classes):
     return model
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Log a confusion matrix after each epoch
@@ -302,7 +302,7 @@ class ConfusionMatrixLogger(Callback):
         )
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Train and save the results to Weights & Biases
@@ -371,7 +371,7 @@ def _(
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     Open the run in Weights & Biases App UI and find `conf_mat` in the **Custom Charts** panel.
