@@ -35,7 +35,7 @@ with app.setup:
     import wandb
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     # ColabFold with Weights & Biases: Align, Fold, Log
@@ -99,7 +99,7 @@ def _():
     return inference_backend, runtime_ready
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 2. Authenticate with Weights & Biases
@@ -126,7 +126,7 @@ def _():
     return authenticated, entity, project
 
 
-@app.cell(hide_code=False)
+@app.cell
 def _():
     mo.md(r"""
     ## 3. Choose a Protein and Prediction Settings
@@ -252,7 +252,7 @@ def _(SEQUENCES):
     )
 
 
-@app.cell(hide_code=False)
+@app.cell
 def _():
     mo.md(r"""
     ## 4. Align and Fold
@@ -359,7 +359,7 @@ def _(
     return (fold_result,)
 
 
-@app.cell(hide_code=False)
+@app.cell
 def _():
     mo.md(r"""
     ## 5. Inspect Alignment and Confidence
@@ -523,7 +523,7 @@ def _(prediction_summary):
     return
 
 
-@app.cell(hide_code=False)
+@app.cell
 def _():
     mo.md(r"""
     ## 6. Log the Prediction to Weights & Biases
@@ -606,12 +606,11 @@ def _(entity, prediction_summary, project):
         if pae_plot is not None:
             log_payload["predicted_aligned_error"] = pae_plot
         prediction_run.log(log_payload)
-
-    return 
+    return
 
 
 @app.cell(hide_code=True)
-def _(run_url):
+def _():
     mo.md(f"""
     ## 7. Compare Predictions
 
@@ -630,7 +629,7 @@ def _(run_url):
     return
 
 
-@app.cell(hide_code=False)
+@app.cell
 def _():
     mo.md(r"""
     ## References
