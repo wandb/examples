@@ -55,7 +55,7 @@ def _():
 
     ## Set up your experiment
 
-    Get your [Weights & Biases API key](https://wandb.ai/authorize) and set
+    Get your [Forge API key](https://wandb.ai/authorize) and set
     `WANDB_API_KEY` in your runtime's environment or **Secrets** panel. Locally,
     you can also run `wandb login` in a terminal. A hosted runtime needs its
     own credentials.
