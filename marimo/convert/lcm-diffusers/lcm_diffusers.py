@@ -50,7 +50,7 @@ def _():
     mo.md(r"""
     ## Authentication
 
-    Enter your [W&B API key](https://wandb.ai/authorize) and, if needed, your team or entity. You can leave the key blank when this environment already has W&B credentials. If this is your first time using W&B, [create a free account](https://wandb.ai/signup).
+    Enter your [Forge API key](https://wandb.ai/authorize) and, if needed, your team or entity. You can leave the key blank when this environment already has W&B credentials. If this is your first time using W&B, [create a free account](https://wandb.ai/signup).
 
     A [Hugging Face token](https://huggingface.co/settings/tokens) is optional. Supplying one avoids anonymous Hub rate limits and can make the initial model download more reliable.
     """)
@@ -61,7 +61,7 @@ def _():
 def _():
     _api_key_input = mo.ui.text(
         kind="password",
-        label="W&B API key (optional)",
+        label="Forge API key (optional)",
         placeholder="Paste a key or use cached credentials",
         full_width=True,
     )

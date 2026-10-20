@@ -104,7 +104,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     wandb_login_form = mo.md("{api_key}\n\n{entity}").batch(
-        api_key=mo.ui.text(kind="password", label="W&B API key (optional)", full_width=True),
+        api_key=mo.ui.text(kind="password", label="Forge API key (optional)", full_width=True),
         entity=mo.ui.text(label="W&B entity or team (optional)", full_width=True),
     ).form(submit_button_label="Connect to W&B", bordered=True)
     wandb_login_form
