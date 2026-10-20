@@ -35,9 +35,24 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/pipeline-versioning-with-w-b-artifacts/pipeline_versioning_with_w_b_artifacts.py/server)
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
 
-    <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/pipeline-versioning-with-w-b-artifacts/pipeline_versioning_with_w_b_artifacts.py/server)
 
     # Pipeline Versioning with Weights & Biases Artifacts
 

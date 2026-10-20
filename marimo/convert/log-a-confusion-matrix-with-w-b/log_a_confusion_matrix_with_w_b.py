@@ -17,7 +17,10 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="Plot a Confusion Matrix with Weights & Biases")
+app = marimo.App(
+    width="medium",
+    app_title="Plot a Confusion Matrix with Weights & Biases",
+)
 
 with app.setup:
     import shutil
@@ -44,9 +47,26 @@ with app.setup:
     )
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
     # Plot a Confusion Matrix with Weights & Biases
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/log-a-confusion-matrix-with-w-b/log_a_confusion_matrix_with_w_b.py/server)
@@ -79,7 +99,7 @@ def _():
     return (entity,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Configure the experiment
@@ -115,7 +135,7 @@ def _():
     return entity, project, training_config
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Prepare the iNaturalist sample
@@ -179,7 +199,7 @@ def _(dataset_fs):
     return train_data, val_data
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Build the data generators and model
@@ -256,7 +276,7 @@ def build_model(fc_size, num_classes):
     return model
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Log a confusion matrix after each epoch
@@ -302,7 +322,7 @@ class ConfusionMatrixLogger(Callback):
         )
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Train and save the results to Weights & Biases
@@ -371,7 +391,7 @@ def _(
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     Open the run in Weights & Biases App UI and find `conf_mat` in the **Custom Charts** panel.

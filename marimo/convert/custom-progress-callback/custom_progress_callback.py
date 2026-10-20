@@ -43,6 +43,23 @@ with app.setup:
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
     # Visualize LLM training progress with Weights & Biases Tables
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/custom-progress-callback/custom_progress_callback.py/server)

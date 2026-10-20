@@ -16,7 +16,10 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="Keras evaluation with Weights & Biases")
+app = marimo.App(
+    width="medium",
+    app_title="Keras evaluation with Weights & Biases",
+)
 
 with app.setup:
     import marimo as mo
@@ -29,9 +32,26 @@ with app.setup:
     from wandb.integration.keras import WandbEvalCallback, WandbMetricsLogger
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
     # Using Keras Evaluation Callbacks with Weights & Biases
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/use-wandbevalcallback-in-your-keras-workflow/use_wandbevalcallback_in_your_keras_workflow.py/server)
@@ -50,7 +70,7 @@ def _():
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Set up your experiment and log in
@@ -78,7 +98,7 @@ def _():
     return entity, project
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Hyperparameters
@@ -106,7 +126,7 @@ def _():
     return (configs,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Dataset
@@ -130,7 +150,7 @@ def _(configs):
     return trainloader, validloader
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Model
@@ -161,7 +181,7 @@ def get_model(configs, weights="imagenet"):
     return models.Model(inputs=inputs, outputs=outputs)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Compile model
@@ -191,7 +211,7 @@ def _(configs):
     return (model,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## `WandbEvalCallback`
@@ -247,7 +267,7 @@ class WandbClfEvalCallback(WandbEvalCallback):
         return preds
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Train
@@ -281,7 +301,7 @@ def _(configs, entity, model, project, trainloader, validloader):
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Verify and next steps

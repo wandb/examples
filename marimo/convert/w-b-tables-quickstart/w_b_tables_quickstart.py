@@ -11,7 +11,10 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="Weights & Biases Tables Quickstart")
+app = marimo.App(
+    width="medium",
+    app_title="Weights & Biases Tables Quickstart",
+)
 
 with app.setup:
     import marimo as mo
@@ -24,13 +27,9 @@ with app.setup:
     import wandb
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # View & analyze model predictions during training
-
-    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/w-b-tables-quickstart/w_b_tables_quickstart.py/server)
-
     <style>
     .wandb-header-logo--dark {
       display: none;
@@ -48,17 +47,16 @@ def _():
     <img class="wandb-header-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
     <img class="wandb-header-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
 
-    This quickstart guide covers how to track, visualize, and compare model predictions over the course of training, using PyTorch on MNIST data.
+    # View & analyze model predictions during training
 
-    With [Weights & Biases Tables](https://docs.wandb.com/datasets-and-predictions):
-    1. Log metrics, images, text, etc. to a `wandb.Table()` during model training or evaluation
-    2. View, sort, filter, group, join, interactively query, and explore these tables
-    3. Compare model predictions or results: dynamically across specific images, hyperparameters/model versions, or time steps.
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/w-b-tables-quickstart/w_b_tables_quickstart.py/server)
+
+    This notebooks covers how to track, visualize, and compare model predictions over the course of training, using PyTorch on MNIST data.
     """)
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 1. Authenticate and Choose a Project
@@ -88,7 +86,7 @@ def _():
     return authenticated, entity, project
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 2. Set the Training and Table Sizes
@@ -130,7 +128,7 @@ def _():
     )
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 3. Define the Classifier
@@ -173,7 +171,7 @@ def _(CONV_KERNEL_SIZE, L1_SIZE, L2_SIZE):
     return (ConvNet,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 4. Load MNIST
@@ -217,7 +215,7 @@ def _(BATCH_SIZE, authenticated):
     return test_loader, train_loader
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 5. Train and Log Prediction Tables
@@ -348,7 +346,7 @@ def _():
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 6. Explore Your Predictions in Weights & Biases

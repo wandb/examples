@@ -41,9 +41,26 @@ with app.setup:
         device = torch.device("cpu")
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
     # Weights & Biases + PyTorch
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py/server)
@@ -79,7 +96,7 @@ def _():
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     Follow along with a [video tutorial](https://wandb.me/pytorch-video)!
@@ -88,7 +105,7 @@ def _():
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Setup and authentication
@@ -126,7 +143,7 @@ def _():
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Define the Experiment and Pipeline
@@ -167,7 +184,7 @@ def _():
     return (config,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     Now, let's define the overall pipeline,
@@ -204,7 +221,7 @@ def model_pipeline(hyperparameters):
     return model
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     The only difference here from a standard pipeline
@@ -247,7 +264,7 @@ def make(config):
     return model, train_loader, test_loader, criterion, optimizer
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Define the Data Loading and Model
@@ -288,7 +305,7 @@ def make_loader(dataset, batch_size, shuffle):
     )
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     Defining the model is normally the fun part!
@@ -327,7 +344,7 @@ class ConvNet(nn.Module):
         return out
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Define Training Logic
@@ -388,7 +405,7 @@ def train(model, loader, criterion, optimizer, config, run):
                 print(f"Loss after {str(example_ct).zfill(5)} examples: {loss:.3f}")
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     The only difference is in the logging code:
@@ -446,7 +463,7 @@ def evaluate(model, test_loader, run):
     run.save(str(model_path), base_path=run.dir, policy="now")
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Run training and watch your metrics
@@ -481,7 +498,7 @@ def _(config):
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Verify your experiment
@@ -506,7 +523,7 @@ def _():
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Helper functions

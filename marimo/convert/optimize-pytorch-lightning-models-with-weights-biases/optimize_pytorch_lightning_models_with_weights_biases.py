@@ -13,7 +13,10 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="PyTorch Lightning with Weights & Biases")
+app = marimo.App(
+    width="medium",
+    app_title="PyTorch Lightning with Weights & Biases",
+)
 
 with app.setup:
     from pathlib import Path
@@ -33,9 +36,26 @@ with app.setup:
     from torchvision.datasets import MNIST
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
     # PyTorch Lightning models with Weights & Biases
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/optimize-pytorch-lightning-models-with-weights-biases/optimize_pytorch_lightning_models_with_weights_biases.py/server)
@@ -63,7 +83,7 @@ def _():
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Configure the experiment and authenticate
@@ -94,7 +114,7 @@ def _():
     return batch_size, entity, epochs, project, run_name, seed
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Set up the dataloaders
@@ -128,7 +148,7 @@ def _(batch_size, seed):
     return training_loader, validation_loader
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Defining the Model
@@ -226,7 +246,7 @@ class MNIST_LitModule(pl.LightningModule):
         return preds, loss, acc
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Save Model Checkpoints
@@ -257,7 +277,7 @@ def _():
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Using WandbLogger to log Images, Text and More
@@ -315,7 +335,7 @@ class LogPredictionsCallback(Callback):
         wandb_logger.log_table(key="sample_table", columns=columns, data=data)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Train the model and log to Weights & Biases
@@ -386,7 +406,7 @@ def _(
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Verify and next steps
@@ -405,7 +425,7 @@ def _():
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     We can monitor losses, metrics, gradients, parameters and sample predictions as the model trains.
@@ -415,7 +435,7 @@ def _():
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Resources

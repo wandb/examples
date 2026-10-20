@@ -17,8 +17,11 @@
 
 import marimo
 
-__generated_with = "0.24.2"
-app = marimo.App(width="medium", app_title="Plot ROC Curves with Weights & Biases")
+__generated_with = "0.25.1"
+app = marimo.App(
+    width="medium",
+    app_title="Plot ROC Curves with Weights & Biases",
+)
 
 with app.setup:
     import shutil
@@ -48,6 +51,23 @@ with app.setup:
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
     # Plot ROC Curves with Weights & Biases
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/plot-roc-curves-with-w-b/plot_roc_curves_with_w_b.py/server)
@@ -310,7 +330,7 @@ def _(config, entity, model, project, train_generator, validation_generator):
                 ROCCurveLogger(run, validation_generator),
             ],
         )
-    return (history,)
+    return
 
 
 @app.cell(hide_code=True)

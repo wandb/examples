@@ -50,39 +50,36 @@ with app.setup:
     )
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/optimize-hugging-face-models-with-weights-biases/optimize_hugging_face_models_with_weights_biases.py/server)
 
-    <img src="https://i.imgur.com/vnejHGh.png" width="800">
-    """)
-    return
-
-
-@app.cell(hide_code=False)
-def _():
-    mo.md(r"""
     # Optimize Hugging Face models with Weights & Biases
-    """)
-    return
 
-
-@app.cell(hide_code=False)
-def _():
-    mo.md(r"""
     [Hugging Face](https://huggingface.co/) provides tools to quickly train neural networks for NLP (Natural Language Processing) on any task (classification, translation, question answering, etc) and any dataset with PyTorch and TensorFlow 2.0.
 
     Coupled with [Weights & Biases integration](https://docs.wandb.ai/models/integrations/huggingface_transformers), you can quickly train and monitor models for full traceability and reproducibility without any extra line of code! The notebook metadata provides the libraries; configure Weights & Biases credentials below before starting an experiment.
 
     **Note**: To enable logging to Weights & Biases, set `report_to` to `wandb` in your `TrainingArguments` or script.
-    """)
-    return
 
-
-@app.cell(hide_code=False)
-def _():
-    mo.md(r"""
     Weights & Biases integration with 🤗 Hugging Face can automatically:
     * log your configuration parameters
     * log your losses and metrics
@@ -90,23 +87,6 @@ def _():
     * log your model
     * keep track of your code
     * log your system metrics (GPU, CPU, memory, temperature, etc)
-    """)
-    return
-
-
-@app.cell(hide_code=False)
-def _():
-    mo.md(r"""
-    ## Here's what the Weights & Biases interactive dashboard will look like:
-
-    ![](https://i.imgur.com/dF6d8HB.png)
-    """)
-    return
-
-
-@app.cell(hide_code=False)
-def _():
-    mo.md(r"""
     ## Installation and set-up
 
     We need the following 🤗 Hugging Face libraries:
@@ -122,7 +102,7 @@ def _():
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Configure Weights & Biases and authenticate
@@ -137,9 +117,8 @@ def _():
     `WANDB_WATCH="all"` enables gradient and parameter histograms. Both examples
     enable metrics with `report_to="wandb"` and give the run a descriptive name.
 
-    Running the quick example downloads BERT and MRPC, then starts a 300-step
-    training run. The custom example downloads Yahoo! Answers and DistilBERT;
-    its 30,000-step training run has a separate action button.
+    > Note: Running this notebook downloads BERT and MRPC, then starts a 300-step
+    training run. The custom example downloads Yahoo! Answers and DistilBERT.
     """)
     return
 
@@ -155,7 +134,7 @@ def _():
     return entity, project
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Train with an existing Hugging Face script
@@ -246,24 +225,16 @@ def _(
         check=True,
     )
     quick_training_complete = quick_training_process.returncode == 0
-    return (quick_training_complete,)
-
-
-@app.cell(hide_code=True)
-def _(quick_training_complete):
-    mo.md(f"""
-    Quick training completed: **{quick_training_complete}**.
-
-    Open the Weights & Biases run link printed by the script to inspect training loss, MRPC
-    evaluation metrics, and system telemetry. Open the run's **Artifacts** tab
-    to find the saved model and its evaluation metadata.
-    """)
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    Open the Weights & Biases run link printed by the script to inspect training loss, MRPC
+    evaluation metrics, and system telemetry. Open the run's **Artifacts** tab
+    to find the saved model and its evaluation metadata.
+
     ## Advanced usage: customize a Trainer workflow
 
     Now build a topic classifier with DistilBERT and Yahoo! Answers. This path
@@ -302,7 +273,7 @@ def _():
     )
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Load and inspect the dataset
@@ -338,7 +309,7 @@ def _(dataset):
     return label_names, num_labels
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     Rename `topic` to `labels`, the target column expected by `Trainer`. Keep the
@@ -354,7 +325,7 @@ def _(dataset):
     return (labeled_dataset,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Tokenize the text
@@ -395,7 +366,7 @@ def _(labeled_dataset, tokenizer):
     return (tokenized_dataset,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Load a model and inspect an initial prediction
@@ -443,7 +414,7 @@ def _(tokenizer, untrained_model):
     return initial_topic_prediction, sample_sentence
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Define an evaluation metric
@@ -463,7 +434,7 @@ def compute_metrics(eval_pred):
     return {"accuracy": float(np.mean(predictions == labels))}
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Configure training and Weights & Biases logging
@@ -555,7 +526,7 @@ def _(
     return (trained_model,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Predict with the trained model

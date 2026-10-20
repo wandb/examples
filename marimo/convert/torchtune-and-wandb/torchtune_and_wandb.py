@@ -17,7 +17,10 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="LoRA fine-tuning with Weights & Biases")
+app = marimo.App(
+    width="medium",
+    app_title="LoRA fine-tuning with Weights & Biases",
+)
 
 with app.setup:
     import tempfile
@@ -32,14 +35,29 @@ with app.setup:
     from trl import SFTConfig, SFTTrainer
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
     # Fine-tune SmolLM2 with LoRA and Weights & Biases
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py/server)
-
-    <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
 
     This lesson uses [Transformers](https://huggingface.co/docs/transformers),
     [TRL](https://huggingface.co/docs/trl), and
@@ -90,7 +108,7 @@ def _():
     return authenticated, entity, project
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 2. Choose the Device and Training Settings
@@ -146,7 +164,7 @@ def _():
     )
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 3. Stream Conversational Training Data
@@ -176,7 +194,7 @@ def _(authenticated, cache_dir, dataset_id, sample_count):
     return (train_dataset,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 4. Configure LoRA
@@ -204,7 +222,7 @@ def _():
     return (lora_config,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 5. Fine-tune and Track the Experiment

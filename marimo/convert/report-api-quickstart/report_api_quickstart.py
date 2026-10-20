@@ -12,7 +12,10 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="Weights & Biases Report API Quickstart")
+app = marimo.App(
+    width="medium",
+    app_title="Weights & Biases Report API Quickstart",
+)
 
 with app.setup:
     import math
@@ -26,14 +29,29 @@ with app.setup:
     from PIL import Image
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
     # Weights & Biases Report API Quickstart
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/report-api-quickstart/report_api_quickstart.py/server)
-
-    <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
 
     Use Workspaces and Reports API ([wandb-workspaces](https://github.com/wandb/wandb-workspaces)) to create and
     customize Weights & Biases Reports. A report combines narrative **blocks** with **panel grids**:
@@ -57,7 +75,7 @@ def _():
     return entity, project
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 2. Create data for the panels
@@ -82,7 +100,7 @@ def _():
     return demo_colors, demo_rng, demo_run_colors, demo_run_names
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     The next cell initializes three different loops:
@@ -167,7 +185,7 @@ def _(demo_colors, demo_rng, demo_run_colors, demo_run_names, entity, project):
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     Now that you have logged some runs, lets create a report.
@@ -195,7 +213,7 @@ def _():
     return (text_blocks,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Panel grids and run colors
@@ -233,7 +251,7 @@ def _(demo_run_colors, entity, project):
     return artifact_lineage, panel_grid
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Assemble, save, load, and update
@@ -267,7 +285,7 @@ def _(artifact_lineage, entity, panel_grid, project, text_blocks):
     return (quickstart_report,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 4. FAQ examples: build more local drafts
@@ -312,7 +330,7 @@ def _(entity, project):
     return (resize_report,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Block gallery
@@ -367,7 +385,7 @@ def _(entity, project):
     return (block_gallery_report,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Panel gallery
@@ -439,7 +457,7 @@ def _(entity, project):
     return (panel_gallery_report,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Related Reports, grouped colors, and combined blocks
@@ -521,7 +539,7 @@ def _(entity, project, related_report_one, related_report_two):
     return (combined_report,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Publish the FAQ examples
@@ -574,7 +592,7 @@ def _(
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 5. Update lists of blocks explicitly
@@ -600,7 +618,7 @@ def _(entity, project):
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Verify the saved Reports
