@@ -18,7 +18,7 @@
 import marimo
 
 __generated_with = "0.24.2"
-app = marimo.App(width="medium", app_title="Plot ROC Curves with W&B")
+app = marimo.App(width="medium", app_title="Plot ROC Curves with Weights & Biases")
 
 with app.setup:
     import shutil
@@ -48,7 +48,7 @@ with app.setup:
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # Plot ROC Curves with W&B
+    # Plot ROC Curves with Weights & Biases
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/plot-roc-curves-with-w-b/plot_roc_curves_with_w_b.py/server)
 
@@ -60,7 +60,7 @@ def _():
     as the decision threshold changes. For multiclass predictions, each curve
     treats one class as positive and all other classes as negative.
 
-    ![Example ROC curves in W&B](https://i.imgur.com/CqGXSzj.png)
+    ![Example ROC curves in Weights & Biases](https://i.imgur.com/CqGXSzj.png)
 
     The small training defaults let you try the workflow on a CPU. More data
     and epochs can improve the curves; a GPU speeds up training.
@@ -288,7 +288,7 @@ def _():
     mo.md(r"""
     ## Train
 
-    Create a W&B run, then pass both callbacks to `model.fit`.
+    Create a Weights & Biases run, then pass both callbacks to `model.fit`.
     `WandbMetricsLogger` records loss and accuracy; `ROCCurveLogger` records
     per-class ROC curves. Training and validation use all of their selected
     images, including the final partial batch.

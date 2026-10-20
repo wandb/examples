@@ -126,7 +126,7 @@ def _():
     return authenticated, entity, project
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 3. Choose a Protein and Prediction Settings
@@ -252,7 +252,7 @@ def _(SEQUENCES):
     )
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 4. Align and Fold
@@ -359,7 +359,7 @@ def _(
     return (fold_result,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 5. Inspect Alignment and Confidence
@@ -523,7 +523,7 @@ def _(prediction_summary):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 6. Log the Prediction to Weights & Biases
@@ -629,7 +629,7 @@ def _():
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## References

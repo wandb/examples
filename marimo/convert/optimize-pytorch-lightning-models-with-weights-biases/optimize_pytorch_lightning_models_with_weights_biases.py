@@ -13,7 +13,7 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="PyTorch Lightning with W&B")
+app = marimo.App(width="medium", app_title="PyTorch Lightning with Weights & Biases")
 
 with app.setup:
     from pathlib import Path

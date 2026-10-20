@@ -83,7 +83,7 @@ def _():
 def _():
     mo.md(r"""
     Follow along with a [video tutorial](https://wandb.me/pytorch-video)!
-    **Note**: Sections starting with _Step_ are all you need to integrate W&B in an existing pipeline. The rest just loads data and defines a model.
+    **Note**: Sections starting with _Step_ are all you need to integrate Weights & Biases in an existing pipeline. The rest just loads data and defines a model.
     """)
     return
 
@@ -101,16 +101,16 @@ def _():
     The example trains a small convolutional network on every fifth MNIST image:
     12,000 training examples and 2,000 test examples. A GPU is optional. Running
     the experiment downloads MNIST into `data/`, trains for five epochs, and
-    creates one W&B run with metrics and an ONNX model.
+    creates one Weights & Biases run with metrics and an ONNX model.
 
-    ### Step 1: Log in to W&B
+    ### Step 1: Log in to Weights & Biases
 
-    Create a [W&B account](https://wandb.ai) and get your
+    Create a [Weights & Biases account](https://wandb.ai) and get your
     [API key](https://wandb.ai/authorize). Set `WANDB_API_KEY` in your runtime's
     environment or **Secrets** panel. You can also use `wandb login` in a local
     terminal. A hosted runtime needs its own credentials.
 
-    The execution cell at the end calls `wandb.login()` before training. W&B
+    The execution cell at the end calls `wandb.login()` before training. Weights & Biases
     uses your default entity; set `WANDB_ENTITY` to your team slug if needed
     (the `<entity>` in `wandb.ai/<entity>/<project>`).
     """)
@@ -253,7 +253,7 @@ def _():
     ## Define the Data Loading and Model
 
     Now, we need to specify how the data is loaded and what the model looks like.
-    This part is very important, but it is no different from what it would be without W&B.
+    This part is very important, but it is no different from what it would be without Weights & Biases.
 
     `get_data` uses every fifth MNIST image to keep this tutorial small. `make` combines the data, model, loss, and optimizer. The loaders use the notebook process so the same code works in local and hosted sessions.
     """)
@@ -413,7 +413,7 @@ def _():
     [Open Neural Network eXchange (ONNX) format](https://onnx.ai/).
 
     Passing that filename to `wandb.Run.save()` ensures that the model parameters
-    are saved to W&B's servers: no more losing track of which `.h5` or `.pb`
+    are saved to Weights & Biases's servers: no more losing track of which `.h5` or `.pb`
     corresponds to which training runs.
 
     For more advanced features for storing, versioning, and distributing
@@ -452,7 +452,7 @@ def _():
     ## Run training and watch your metrics
 
     Now that we've defined the whole pipeline and slipped in
-    those few lines of W&B code,
+    those few lines of Weights & Biases code,
     we're ready to run our fully-tracked experiment. Enable the following code
     cell from its cell menu, then run it if it hasn't already started.
 
@@ -486,7 +486,7 @@ def _():
     mo.md(r"""
     ## Verify your experiment
 
-    Open the run link printed by W&B. Check that its **Config** matches the
+    Open the run link printed by Weights & Biases. Check that its **Config** matches the
     Python dictionary above, that the loss and gradient charts contain data,
     and that `test_accuracy` appears in the run summary. Under **Files**, look
     for `model.onnx`.

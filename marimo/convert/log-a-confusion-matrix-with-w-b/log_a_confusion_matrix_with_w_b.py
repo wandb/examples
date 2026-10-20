@@ -12,12 +12,12 @@
 #     "wandb==0.30.0",
 # ]
 # ///
-"""Fine-tune InceptionV3 and log a confusion matrix to W&B."""
+"""Fine-tune InceptionV3 and log a confusion matrix to Weights & Biases."""
 
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="Plot a Confusion Matrix with W&B")
+app = marimo.App(width="medium", app_title="Plot a Confusion Matrix with Weights & Biases")
 
 with app.setup:
     import shutil

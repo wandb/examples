@@ -7,14 +7,14 @@
 #     "wandb>=0.18,<1",
 # ]
 # ///
-"""Organize a PyTorch hyperparameter search with W&B Sweeps."""
+"""Organize a PyTorch hyperparameter search with Weights & Biases Sweeps."""
 
 import marimo
 
 __generated_with = "0.25.1"
 app = marimo.App(
     width="medium",
-    app_title="PyTorch hyperparameter sweeps with W&B",
+    app_title="PyTorch hyperparameter sweeps with Weights & Biases",
 )
 
 with app.setup:

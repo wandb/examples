@@ -16,7 +16,7 @@
 # on_cell_change = "lazy"
 # ///
 
-"""Train a current Ultralytics YOLO model while tracking it with W&B.
+"""Train a current Ultralytics YOLO model while tracking it with Weights & Biases.
 
 Run:
 

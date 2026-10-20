@@ -16,7 +16,7 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="Keras evaluation with W&B")
+app = marimo.App(width="medium", app_title="Keras evaluation with Weights & Biases")
 
 with app.setup:
     import marimo as mo

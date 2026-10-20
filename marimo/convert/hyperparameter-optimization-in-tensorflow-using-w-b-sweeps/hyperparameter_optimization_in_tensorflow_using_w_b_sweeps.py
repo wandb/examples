@@ -7,14 +7,14 @@
 #     "wandb>=0.18,<1",
 # ]
 # ///
-"""Optimize a TensorFlow classifier with W&B Sweeps."""
+"""Optimize a TensorFlow classifier with Weights & Biases Sweeps."""
 
 import marimo
 
 __generated_with = "0.25.1"
 app = marimo.App(
     width="medium",
-    app_title="TensorFlow hyperparameter sweeps with W&B",
+    app_title="TensorFlow hyperparameter sweeps with Weights & Biases",
 )
 
 with app.setup:
@@ -39,7 +39,7 @@ def _():
     This notebook shows the smallest practical loop for tuning TensorFlow
     hyperparameters with Weights & Biases Sweeps: define a search space, turn one
     training run into a reusable function, launch an agent, and inspect the
-    results in W&B.
+    results in Weights & Biases.
     """)
     return
 
@@ -47,14 +47,14 @@ def _():
 @app.cell(hide_code=False)
 def _():
     mo.md(r"""
-    A sweep is a coordinated set of experiment runs. W&B chooses hyperparameter
+    A sweep is a coordinated set of experiment runs. Weights & Biases chooses hyperparameter
     values, starts runs through your training function, logs metrics from each
     trial, and builds dashboards for comparing the results.
 
     By the end of the notebook, your sweep dashboard will look conceptually like
     this example:
 
-    ![Example W&B Sweeps dashboard](https://i.imgur.com/AN0qnpC.png)
+    ![Example Weights & Biases Sweeps dashboard](https://i.imgur.com/AN0qnpC.png)
     """)
     return
 
@@ -70,13 +70,13 @@ def _():
 
     ## What this notebook covers
 
-    The cells below walk through the core W&B Sweeps pattern:
+    The cells below walk through the core Weights & Biases Sweeps pattern:
 
-    * Authenticate with W&B.
+    * Authenticate with Weights & Biases.
     * Prepare a small TensorFlow image-classification problem.
     * Log training and validation metrics from Keras.
     * Define a sweep configuration for batch size and learning rate.
-    * Launch a W&B agent that runs multiple trials and reports results.
+    * Launch a Weights & Biases agent that runs multiple trials and reports results.
     """)
     return
 
@@ -84,10 +84,10 @@ def _():
 @app.cell(hide_code=False)
 def _():
     mo.md(r"""
-    ## Step 1: Import W&B and log in
+    ## Step 1: Import Weights & Biases and log in
 
-    The next two cells collect your W&B credentials and call `wandb.login()`.
-    W&B needs an authenticated session before it can create a sweep or sync
+    The next two cells collect your Weights & Biases credentials and call `wandb.login()`.
+    Weights & Biases needs an authenticated session before it can create a sweep or sync
     training metrics.
 
     Run the following cell and provide your [Forge API key](https://wandb.ai/authorize) and the name of your team. Then click **Connect to Weights & Biases**.
@@ -139,14 +139,14 @@ def _(wandb_login_form):
         not _login_ok,
         mo.callout(
             mo.md(
-                "W&B authentication did not complete. Check the API key or "
+                "Weights & Biases authentication did not complete. Check the API key or "
                 "molab Secrets configuration and submit again."
             ),
             kind="danger",
         ),
     )
 
-    mo.callout(mo.md("Connected to W&B."), kind="success")
+    mo.callout(mo.md("Connected to Weights & Biases."), kind="success")
     return
 
 
@@ -160,7 +160,7 @@ def _():
     training and validation.
 
     The function accepts `batch_size` because the sweep will tune that value. Each
-    W&B trial can therefore build datasets that match the hyperparameters chosen
+    Weights & Biases trial can therefore build datasets that match the hyperparameters chosen
     for that run.
     """)
     return
@@ -216,9 +216,9 @@ def _():
     mo.md(r"""
     ## Step 4: Log metrics with `WandbMetricsLogger`
 
-    The next function wraps `model.fit()` and attaches W&B's Keras metrics
+    The next function wraps `model.fit()` and attaches Weights & Biases's Keras metrics
     logger. `WandbMetricsLogger` receives the training and validation metrics
-    produced by Keras and sends them to the active W&B run.
+    produced by Keras and sends them to the active Weights & Biases run.
 
     With `log_freq=20`, it logs batch metrics every 20 batches and epoch metrics
     at the end of each epoch. Those logged values are what the sweep dashboard
@@ -251,12 +251,12 @@ def _():
     ## Step 5: Configure the Sweep
 
     The next cell defines the sweep configuration dictionary. This is the contract
-    between your training code and W&B: it tells W&B which hyperparameters to try,
+    between your training code and Weights & Biases: it tells Weights & Biases which hyperparameters to try,
     how to sample them, which metric to optimize, and when to stop weaker runs
     early.
 
     * Define the hyperparameters you're sweeping over.
-    * Choose a hyperparameter search method. W&B supports `random`, `grid`, and `bayes`.
+    * Choose a hyperparameter search method. Weights & Biases supports `random`, `grid`, and `bayes`.
     * Provide an objective metric; here we minimize `epoch/val_loss`, the validation-loss key logged by `WandbMetricsLogger`.
     * Use `hyperband` for early termination of poorly-performing runs.
     """)
@@ -293,10 +293,10 @@ def _():
     mo.md(r"""
     ## Step 6: Wrap the Training Workflow
 
-    A W&B agent needs a zero-argument training function. The next function,
-    `sweep_train`, is one complete trial: it starts a W&B run, reads the
+    A Weights & Biases agent needs a zero-argument training function. The next function,
+    `sweep_train`, is one complete trial: it starts a Weights & Biases run, reads the
     hyperparameters selected for that run from `run.config`, prepares data,
-    builds and compiles the model, trains it, and lets W&B collect metrics.
+    builds and compiles the model, trains it, and lets Weights & Biases collect metrics.
 
     The defaults passed to `wandb.init()` make the function runnable on its own,
     while sweep-selected values override `batch_size` and `learning_rate` during
@@ -355,10 +355,10 @@ def _():
     mo.md(r"""
     ## Step 7: Initialize the Sweep and Run an Agent
 
-    The next cell registers the sweep with W&B and stores the returned
+    The next cell registers the sweep with Weights & Biases and stores the returned
     `sweep_id`. The cell after that starts a local sweep agent.
 
-    The agent asks W&B for hyperparameter values, calls `sweep_train` for each
+    The agent asks Weights & Biases for hyperparameter values, calls `sweep_train` for each
     trial, and repeats until it reaches `count=10`. You can lower `count` while
     experimenting if you want a faster run.
     """)
@@ -382,7 +382,7 @@ def _():
     mo.md(r"""
     ## Visualize Results
 
-    After the sweep starts, W&B prints links to the project and sweep dashboards
+    After the sweep starts, Weights & Biases prints links to the project and sweep dashboards
     in the notebook output. Open those links to watch trials arrive live and
     compare their metrics.
 
@@ -390,7 +390,7 @@ def _():
     View project at:
     ```
 
-    In the W&B UI, compare parallel coordinates, parameter importance, and the
+    In the Weights & Biases UI, compare parallel coordinates, parameter importance, and the
     `epoch/val_loss` chart to understand which batch sizes and learning rates
     worked best.
 

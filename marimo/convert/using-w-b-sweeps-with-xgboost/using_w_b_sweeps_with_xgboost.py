@@ -15,7 +15,7 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="W&B Sweeps with XGBoost")
+app = marimo.App(width="medium", app_title="Weights & Biases Sweeps with XGBoost")
 
 with app.setup:
     from urllib.request import urlopen

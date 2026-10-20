@@ -38,9 +38,9 @@ def _():
 
     - Generate images from text with [Latent Consistency Models](https://huggingface.co/docs/diffusers/api/pipelines/latent_consistency_models) and [Diffusers](https://huggingface.co/docs/diffusers).
     - Manage image-generation experiments with [Weights & Biases](https://wandb.ai/site).
-    - Log prompts, generated images, and experiment configuration to W&B for visualization.
+    - Log prompts, generated images, and experiment configuration to Weights & Biases for visualization.
 
-    ![Diffusers autologging in W&B](https://raw.githubusercontent.com/wandb/examples/main/colabs/diffusers/assets/diffusers-autolog-4.gif)
+    ![Diffusers autologging in Weights & Biases](https://raw.githubusercontent.com/wandb/examples/main/colabs/diffusers/assets/diffusers-autolog-4.gif)
     """)
     return
 
@@ -50,7 +50,7 @@ def _():
     mo.md(r"""
     ## Authentication
 
-    Enter your [Forge API key](https://wandb.ai/authorize) and, if needed, your team or entity. You can leave the key blank when this environment already has W&B credentials. If this is your first time using W&B, [create a free account](https://wandb.ai/signup).
+    Enter your [Forge API key](https://wandb.ai/authorize) and, if needed, your team or entity. You can leave the key blank when this environment already has Weights & Biases credentials. If this is your first time using Weights & Biases, [create a free account](https://wandb.ai/signup).
 
     A [Hugging Face token](https://huggingface.co/settings/tokens) is optional. Supplying one avoids anonymous Hub rate limits and can make the initial model download more reliable.
     """)
@@ -66,7 +66,7 @@ def _():
         full_width=True,
     )
     _entity_input = mo.ui.text(
-        label="W&B entity or team (optional)",
+        label="Weights & Biases entity or team (optional)",
         placeholder="Leave blank to use your default entity",
         full_width=True,
     )
@@ -83,7 +83,7 @@ def _():
             entity=_entity_input,
             hf_token=_hf_token_input,
         )
-        .form(submit_button_label="Connect to W&B", bordered=True)
+        .form(submit_button_label="Connect to Weights & Biases", bordered=True)
     )
     wandb_login_form
     return (wandb_login_form,)
@@ -94,7 +94,7 @@ def _(wandb_login_form):
     mo.stop(
         wandb_login_form.value is None,
         mo.callout(
-            mo.md("Connect to W&B above before generating and logging images."),
+            mo.md("Connect to Weights & Biases above before generating and logging images."),
             kind="info",
         ),
     )
@@ -113,8 +113,8 @@ def _(wandb_login_form):
         not _login_ok,
         mo.callout(
             mo.md(
-                "W&B authentication did not complete. "
-                f"Check the API key and try again.\n\nW&B reported: `{_login_error or 'unknown error'}`"
+                "Weights & Biases authentication did not complete. "
+                f"Check the API key and try again.\n\nWeights & Biases reported: `{_login_error or 'unknown error'}`"
             ),
             kind="danger",
         ),
@@ -124,7 +124,7 @@ def _(wandb_login_form):
         "project": "diffusers_logging",
         "entity": _entity or None,
     }
-    mo.callout(mo.md("Connected to W&B."), kind="success")
+    mo.callout(mo.md("Connected to Weights & Biases."), kind="success")
     return hf_token, wandb_settings
 
 
@@ -133,7 +133,7 @@ def _():
     mo.md(r"""
     ## Generate and log images
 
-    The example uses two prompts and a fixed seed so you can reproduce the result. When you click the button below, the notebook downloads `SimianLuo/LCM_Dreamshaper_v7`, generates four images, and creates one W&B run in the `diffusers_logging` project. It uses CUDA, Apple Silicon's MPS backend, or CPU, in that order.
+    The example uses two prompts and a fixed seed so you can reproduce the result. When you click the button below, the notebook downloads `SimianLuo/LCM_Dreamshaper_v7`, generates four images, and creates one Weights & Biases run in the `diffusers_logging` project. It uses CUDA, Apple Silicon's MPS backend, or CPU, in that order.
     """)
     return
 
@@ -147,7 +147,7 @@ def _():
     ]
 
     # Make the experiment reproducible by controlling randomness.
-    # The seed is automatically logged to W&B.
+    # The seed is automatically logged to Weights & Biases.
     seed = 10
 
     # LCMs are designed for fast inference in very few denoising steps.
@@ -167,7 +167,7 @@ def generate_images_with_wandb(
     wandb_settings,
     hf_token,
 ):
-    """Generate images and let W&B Diffusers autolog capture the experiment."""
+    """Generate images and let Weights & Biases Diffusers autolog capture the experiment."""
     if wandb.run is not None:
         wandb.finish()
 
@@ -195,7 +195,7 @@ def generate_images_with_wandb(
     # A CPU generator produces repeatable results on both CPU and GPU runtimes.
     generator = torch.Generator(device="cpu").manual_seed(seed)
 
-    # W&B Diffusers autologging records the prompts, generated images, pipeline
+    # Weights & Biases Diffusers autologging records the prompts, generated images, pipeline
     # architecture, and experiment configuration used by the pipeline call.
     try:
         autolog(init=wandb_settings)
@@ -223,7 +223,7 @@ def _(
     wandb_settings,
 ):
     generate_button = mo.ui.run_button(
-        label="Download the model, generate images, and log to W&B"
+        label="Download the model, generate images, and log to Weights & Biases"
     )
     _entity_note = (
         f" for entity `{wandb_settings['entity']}`"
@@ -237,7 +237,7 @@ def _(
                     f"This runs `{generate_images_with_wandb.__name__}`, downloads "
                     f"model weights, generates {len(prompt) * num_images_per_prompt} "
                     f"images in {num_inference_steps} denoising steps with seed "
-                    f"`{seed}`, and creates one remote W&B run{_entity_note}."
+                    f"`{seed}`, and creates one remote Weights & Biases run{_entity_note}."
                 ),
                 kind="warn",
             ),
@@ -298,7 +298,7 @@ def _(generation_result):
     _run_url = generation_result["run_url"]
     _run_message = (
         f"Generation finished on `{generation_result['torch_device']}`. "
-        f"[Open the W&B run]({_run_url}) to inspect the prompts, images, and configuration."
+        f"[Open the Weights & Biases run]({_run_url}) to inspect the prompts, images, and configuration."
         if _run_url
         else f"Generation finished on `{generation_result['torch_device']}`."
     )

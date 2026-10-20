@@ -11,7 +11,7 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="W&B Artifact TTL Walkthrough")
+app = marimo.App(width="medium", app_title="Weights & Biases Artifact TTL Walkthrough")
 
 with app.setup:
     import random
@@ -31,7 +31,7 @@ with app.setup:
 @app.cell(hide_code=False)
 def _():
     mo.md(r"""
-    # W&B Artifacts: Time-to-Live (TTL)
+    # Weights & Biases Artifacts: Time-to-Live (TTL)
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/wandb-artifacts-time-to-live-ttl-walkthrough/wandb_artifacts_time_to_live_ttl_walkthrough.py/server)
 
@@ -51,7 +51,7 @@ def _():
     default entity.
 
     Configure `WANDB_API_KEY` in your environment or the molab Secrets panel
-    before running. You can get a key from [W&B](https://wandb.ai/authorize).
+    before running. You can get a key from [Weights & Biases](https://wandb.ai/authorize).
     In a terminal-backed session, `wandb.login()` can also prompt for a key.
 
     Running the code cells downloads Imagenette and uploads sample artifacts.
@@ -65,7 +65,7 @@ def _():
     project = "artifacts-ttl-demo"
     authenticated = wandb.login()
     if not authenticated:
-        raise RuntimeError("Configure W&B credentials before running the lesson.")
+        raise RuntimeError("Configure Weights & Biases credentials before running the lesson.")
     return entity, project
 
 
@@ -266,7 +266,7 @@ def _():
     images to 64 by 64 pixels, and logs a new `real-prepro` artifact.
 
     `preprocessing_run.use_artifact()` records the input relationship, and
-    `preprocessing_run.log_artifact()` records the output. Together they give W&B a lineage
+    `preprocessing_run.log_artifact()` records the output. Together they give Weights & Biases a lineage
     graph connecting the source data, preprocessing run, and processed data.
     """)
     return
@@ -330,7 +330,7 @@ def _(compliant_artifact, processed_artifact):
 @app.cell(hide_code=False)
 def _():
     mo.md(r"""
-    ## Inspect the Policies in W&B
+    ## Inspect the Policies in Weights & Biases
 
     Open the project link printed earlier and select **Artifacts**. Check the
     versions and their TTL policies: `real-raw:extended` has 365 days,

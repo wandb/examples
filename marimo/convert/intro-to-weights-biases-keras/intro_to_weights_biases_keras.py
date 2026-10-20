@@ -6,12 +6,12 @@
 #     "wandb>=0.18,<1",
 # ]
 # ///
-"""Learn the W&B experiment-tracking workflow with simulated and Keras runs."""
+"""Learn the Weights & Biases experiment-tracking workflow with simulated and Keras runs."""
 
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="Introduction to W&B with Keras")
+app = marimo.App(width="medium", app_title="Introduction to Weights & Biases with Keras")
 
 with app.setup:
     from pathlib import Path

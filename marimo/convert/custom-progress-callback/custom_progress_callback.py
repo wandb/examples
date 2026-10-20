@@ -43,7 +43,7 @@ with app.setup:
 @app.cell(hide_code=False)
 def _():
     mo.md(r"""
-    # Visualize LLM training progress with W&B Tables
+    # Visualize LLM training progress with Weights & Biases Tables
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/custom-progress-callback/custom_progress_callback.py/server)
 
@@ -51,7 +51,7 @@ def _():
 
     <img src="https://i.imgur.com/vnejHGh.png" width="800">
 
-    ## Why should I use W&B?
+    ## Why should I use Weights & Biases?
 
     <img src="https://wandb.me/mini-diagram" width="650">
 
@@ -61,9 +61,9 @@ def _():
     - **Secure**: All projects are private by default
     - **Trusted**: Used by machine learning teams at OpenAI, Toyota, Lyft and more
 
-    Think of W&B like GitHub for machine learning models— save machine learning experiments to your private, hosted dashboard. Experiment quickly with the confidence that all the versions of your models are saved for you, no matter where you're running your scripts.
+    Think of Weights & Biases like GitHub for machine learning models— save machine learning experiments to your private, hosted dashboard. Experiment quickly with the confidence that all the versions of your models are saved for you, no matter where you're running your scripts.
 
-    W&B lightweight integrations works with any Python script, and all you need to do is sign up for a free W&B account to start tracking and visualizing your models.
+    Weights & Biases lightweight integrations works with any Python script, and all you need to do is sign up for a free Weights & Biases account to start tracking and visualizing your models.
     """)
     return
 
@@ -73,8 +73,8 @@ def _():
     mo.md(r"""
     ## Getting started
 
-    This follows the Hugging Face + W&B tutorial: train a causal language model on
-    WikiText-2, then extend `WandbCallback` to compare its token predictions in W&B
+    This follows the Hugging Face + Weights & Biases tutorial: train a causal language model on
+    WikiText-2, then extend `WandbCallback` to compare its token predictions in Weights & Biases
     Tables after each epoch.
 
     The default GPT-2 model benefits from a GPU. CPU training is supported but slower;
@@ -90,12 +90,12 @@ def _():
     mo.md(r"""
     ## Authentication
 
-    [Create a W&B account](https://wandb.ai/signup), then enter your
+    [Create a Weights & Biases account](https://wandb.ai/signup), then enter your
     [API key](https://wandb.ai/authorize). You can leave the key blank to use
     `WANDB_API_KEY` from the marimo Secrets panel or credentials already stored in
     this runtime. A new molab session needs its own credentials.
 
-    If needed, enter a team entity from your W&B workspace URL:
+    If needed, enter a team entity from your Weights & Biases workspace URL:
     `wandb.ai/<entity>/<project>`. Choose a team where you can create runs.
     """)
     return
@@ -105,15 +105,15 @@ def _():
 def _():
     wandb_login_form = mo.md("{api_key}\n\n{entity}").batch(
         api_key=mo.ui.text(kind="password", label="Forge API key (optional)", full_width=True),
-        entity=mo.ui.text(label="W&B entity or team (optional)", full_width=True),
-    ).form(submit_button_label="Connect to W&B", bordered=True)
+        entity=mo.ui.text(label="Weights & Biases entity or team (optional)", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
     wandb_login_form
     return (wandb_login_form,)
 
 
 @app.cell(hide_code=True)
 def _(wandb_login_form):
-    mo.stop(wandb_login_form.value is None, mo.md("Connect to W&B above before training."))
+    mo.stop(wandb_login_form.value is None, mo.md("Connect to Weights & Biases above before training."))
     _api_key = wandb_login_form.value["api_key"].strip()
     try:
         _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
@@ -124,7 +124,7 @@ def _(wandb_login_form):
         mo.callout("Authentication did not complete. Check your API key or runtime credentials and reconnect.", kind="danger"),
     )
     wandb_settings = {"entity": wandb_login_form.value["entity"].strip() or None}
-    mo.callout("Connected to W&B.", kind="success")
+    mo.callout("Connected to Weights & Biases.", kind="success")
     return (wandb_settings,)
 
 
@@ -148,7 +148,7 @@ def _(wandb_login_form):
     training_form = mo.md(
         "{project}\n\n{run_name}\n\n{epochs}\n\n{train_texts}\n\n{validation_texts}\n\n{frequency}"
     ).batch(
-        project=mo.ui.text(value="huggingface", label="W&B project"),
+        project=mo.ui.text(value="huggingface", label="Weights & Biases project"),
         run_name=mo.ui.text(value="gpt2-wikitext2-prediction-progress", label="Run name"),
         epochs=mo.ui.number(start=1, stop=10, value=3, step=1, label="Epochs"),
         train_texts=mo.ui.number(start=0, stop=36718, value=2000, step=100, label="Training texts (0 = all)"),
@@ -156,7 +156,7 @@ def _(wandb_login_form):
         frequency=mo.ui.number(start=1, stop=10, value=1, step=1, label="Log predictions every N epochs"),
     ).form(submit_button_label="Train GPT-2 and log predictions", bordered=True)
     mo.vstack([
-        mo.md("Submitting downloads WikiText-2 and GPT-2, trains the model, and creates one W&B run with metrics, prediction Tables, and model checkpoints."),
+        mo.md("Submitting downloads WikiText-2 and GPT-2, trains the model, and creates one Weights & Biases run with metrics, prediction Tables, and model checkpoints."),
         training_form,
     ])
     return (training_form,)
@@ -165,7 +165,7 @@ def _(wandb_login_form):
 @app.cell(hide_code=True)
 def _(BLOCK_SIZE, MODEL_NAME, training_form, wandb_settings):
     mo.stop(training_form.value is None, mo.md("Submit the training form to prepare the dataset and train."))
-    mo.stop(not training_form.value["project"].strip(), mo.callout("Enter a W&B project name.", kind="warn"))
+    mo.stop(not training_form.value["project"].strip(), mo.callout("Enter a Weights & Biases project name.", kind="warn"))
     mo.stop(training_form.value["frequency"] > training_form.value["epochs"], mo.callout("Set the prediction frequency no higher than the number of epochs.", kind="warn"))
     training_config = dict(training_form.value)
     training_config["project"] = training_config["project"].strip()
@@ -289,7 +289,7 @@ def _():
 
     Load the pretrained GPT-2 model, evaluate once per epoch, and use the submitted
     epoch count. `fp16` is enabled only for CUDA. The training function below sets
-    `report_to="wandb"` explicitly and gives the W&B run a descriptive name.
+    `report_to="wandb"` explicitly and gives the Weights & Biases run a descriptive name.
 
     ### WandbPredictionProgressCallback
 
@@ -366,7 +366,7 @@ def _():
 
     The complete run lifecycle is inside `train_model`. Each submission creates a
     fresh model and closes the run when training completes or fails. Checkpoints
-    are uploaded as W&B Artifacts; temporary local checkpoints are removed afterward.
+    are uploaded as Weights & Biases Artifacts; temporary local checkpoints are removed afterward.
     """)
     return
 
@@ -405,7 +405,7 @@ def train_model(training_config, lm_datasets, tokenizer, callback_class):
                     report_to="wandb",
                     seed=42,
                 )
-                # W&B already owns the display name. Use its unique run ID for
+                # Weights & Biases already owns the display name. Use its unique run ID for
                 # checkpoint Artifacts, even when the display name has spaces.
                 training_args.run_name = None
                 trainer = Trainer(

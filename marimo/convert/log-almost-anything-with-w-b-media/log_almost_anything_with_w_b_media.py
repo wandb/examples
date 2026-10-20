@@ -66,8 +66,7 @@ def _():
 
     Running the following cells uploads examples to Weights & Biases. Each section creates a
     separate named run; its context manager finishes the run when the block exits.
-    Rerunning a logging cell creates a new run. To explore locally, set
-    `mode = "offline"`; Weights & Biases then saves runs locally for later syncing.
+    Rerunning a logging cell creates a new run.
     """)
     return
 
@@ -87,9 +86,7 @@ def _():
     ## Load tutorial assets
 
     We read the original tutorial's stock prices, image, video, piano recording,
-    HTML, and mesh from the Weights & Biases examples repository using `fsspec`. These examples
-    need internet access to download assets, even when Weights & Biases logging is offline.
-    Other sections generate their data locally with NumPy.
+    HTML, and mesh from the Weights & Biases examples repository using `fsspec`.
     """)
     return
 

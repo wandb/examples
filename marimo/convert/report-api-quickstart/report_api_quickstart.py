@@ -12,7 +12,7 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="W&B Report API Quickstart")
+app = marimo.App(width="medium", app_title="Weights & Biases Report API Quickstart")
 
 with app.setup:
     import math

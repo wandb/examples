@@ -36,9 +36,9 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    The goal of this notebook is to demonstrate how you and other members of your organization can use W&B Registry to track, share, and use dataset and model artifacts in your machine learning workflows. By the end of this notebook, you will know how to use W&B to:
+    The goal of this notebook is to demonstrate how you and other members of your organization can use Weights & Biases Registry to track, share, and use dataset and model artifacts in your machine learning workflows. By the end of this notebook, you will know how to use Weights & Biases to:
 
-    1. Create [collections](https://docs.wandb.ai/guides/registry/create_collection) within [W&B Registry](https://docs.wandb.ai/guides/registry)
+    1. Create [collections](https://docs.wandb.ai/guides/registry/create_collection) within [Weights & Biases Registry](https://docs.wandb.ai/guides/registry)
     2. Make dataset and model artifacts available to other members of your organization, and
     3. Download your trained model and dataset artifacts from the registry for inference
 
@@ -313,7 +313,7 @@ def _(PROJECT, TEAM_ENTITY, config, wandb):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    We can verify we correctly linked our artifact to our desired collection and registry with W&B App UI:
+    We can verify we correctly linked our artifact to our desired collection and registry with Weights & Biases App UI:
 
     1. Navigate to the Registry App
     2. Select on the Dataset registry
@@ -386,7 +386,7 @@ def _(mo):
     mo.md(r"""
     ## Train model
 
-    Next, let's train a model using the training data we published to the registry earlier in this notebook. After we train the model, we will publish that model to W&B.
+    Next, let's train a model using the training data we published to the registry earlier in this notebook. After we train the model, we will publish that model to Weights & Biases.
 
     To do this, let's first get the artifact we published to the "Dataset" registry. To retrieve an artifact from a registry, we need to know the name of that artifact. The name of an artifact in a registry consists of the prefix `wandb-registry-`, the name of the registry, the name of the collection, and the artifact version:
 
@@ -394,7 +394,7 @@ def _(mo):
     # Artifact name/filepath for downloading and using artifacts published to a registry
     f"wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME}:v{VERSION}"
     ```
-    Since we only linked one artifact version, the version we'll use is `v0`. (W&B uses 0 indexing).
+    Since we only linked one artifact version, the version we'll use is `v0`. (Weights & Biases uses 0 indexing).
 
     Note that the name of an artifact is nearly identical to the target path we specified in a previous step when we publish our artifact to the registry except for the version number:
 
@@ -467,7 +467,7 @@ def _(mo):
       * We then add the saved PyTorch model to our artifact object.
 
     A couple of things to note:
-    1. The preceding code cell adds a single artifact version to W&B. You can confirm this by navigating to your project workspace, select **Artifacts** in the left navigation, and under **models** click the name of the artifact (starts with `zoo-{run.id}`). You will see a single model with version `v0`.
+    1. The preceding code cell adds a single artifact version to Weights & Biases. You can confirm this by navigating to your project workspace, select **Artifacts** in the left navigation, and under **models** click the name of the artifact (starts with `zoo-{run.id}`). You will see a single model with version `v0`.
     2. At this point, we have only tracked the model artifact within our team's project. Anyone outside of our team does not have access to the model we created. To make this model accessible to members outside of our team, we will need to publish our model to the registry.
     """)
     return
@@ -481,7 +481,7 @@ def _(mo):
 
     To create a collection within a registry, we need to know the full name of the artifact. The full name of the artifact consists of the name we provided to it when we created the Artifact object and its location within our team's project.
 
-    There are two ways to get the full name of an artifact, interatively with the W&B App UI or programmatically with the W&B Python SDK. In this example, we'll programmatically create the name of the artifact since we have these values loaded into memory.
+    There are two ways to get the full name of an artifact, interatively with the Weights & Biases App UI or programmatically with the Weights & Biases Python SDK. In this example, we'll programmatically create the name of the artifact since we have these values loaded into memory.
 
     ### Programmatically create name of artifact
 
@@ -513,7 +513,7 @@ def _(mo):
     mo.md(r"""
     Now that we have the full name of our model artifact. Let's publish it to the model registry.
 
-    Similar to how we created a target path when we published our dataset artifact to the Dataset registry, let's create the target path for our model artifact. The target path tells W&B the collection and registry (Model registry) to link our artifact version to.
+    Similar to how we created a target path when we published our dataset artifact to the Dataset registry, let's create the target path for our model artifact. The target path tells Weights & Biases the collection and registry (Model registry) to link our artifact version to.
 
     As a reminder, the target path to link an artifact to a registry consists of:
 
@@ -564,7 +564,7 @@ def _(mo):
     mo.md(r"""
     ### View lineage map of registered model
 
-    Let's say that you did not know exactly which model version to use. You can check the lineage of all artifact versions on the W&B App UI. The lineage shows which artifacts were used as input to a run and which artifacts were the output of a given run.
+    Let's say that you did not know exactly which model version to use. You can check the lineage of all artifact versions on the Weights & Biases App UI. The lineage shows which artifacts were used as input to a run and which artifacts were the output of a given run.
 
     For example, the image below shows the "Zoo_Classifier_Models" collection within the model registry. Highlighted in yellow is the current model artifact version that is linked to the registry.
 
@@ -596,11 +596,11 @@ def _(mo):
 
     How can you retrieve the artifacts version that were published by another team? Simple:
 
-    1. Get the full name of the artifact version programmatically or interactively with the W&B App UI
-    2. Use the W&B Python SDK to download the artifacts
+    1. Get the full name of the artifact version programmatically or interactively with the Weights & Biases App UI
+    2. Use the Weights & Biases Python SDK to download the artifacts
 
     #### Interactively get full name of model and dataset artifacts from registry
-    1. Go to the W&B Registry app at https://wandb.ai/registry/.
+    1. Go to the Weights & Biases Registry app at https://wandb.ai/registry/.
     2. Select the registry that your artifact is linked to.
     3. Click the **View details** button next to the name of the collection with your linked artifact.
     4. Click on the **View** button next to the artifact version.
@@ -847,11 +847,11 @@ def _(mo):
     ## Summary
     In this notebook completed each major step in a typical machine learning workflow, from downloading a dataset, processing the dataset, defining a model, training that model on processed data, checking/saving the best model, and checking how the model performed by making predictions with that model on a dataset it had not seen before.
 
-    Throughout the process you learned how to use W&B Registry to:
+    Throughout the process you learned how to use Weights & Biases Registry to:
 
     * Track and publish multiple datasets
     * Track and publish a model
-    * Mimic how someone else in your organization (with correct permission) can download and use model and datasets published in the W&B Registry for further analysis.
+    * Mimic how someone else in your organization (with correct permission) can download and use model and datasets published in the Weights & Biases Registry for further analysis.
 
     ## Next steps:
 

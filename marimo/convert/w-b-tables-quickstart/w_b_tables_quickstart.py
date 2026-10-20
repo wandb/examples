@@ -11,7 +11,7 @@
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="W&B Tables Quickstart")
+app = marimo.App(width="medium", app_title="Weights & Biases Tables Quickstart")
 
 with app.setup:
     import marimo as mo
@@ -50,7 +50,7 @@ def _():
 
     This quickstart guide covers how to track, visualize, and compare model predictions over the course of training, using PyTorch on MNIST data.
 
-    With [W&B Tables](https://docs.wandb.com/datasets-and-predictions):
+    With [Weights & Biases Tables](https://docs.wandb.com/datasets-and-predictions):
     1. Log metrics, images, text, etc. to a `wandb.Table()` during model training or evaluation
     2. View, sort, filter, group, join, interactively query, and explore these tables
     3. Compare model predictions or results: dynamically across specific images, hyperparameters/model versions, or time steps.
@@ -64,16 +64,16 @@ def _():
     ## 1. Authenticate and Choose a Project
 
     The next cell calls `wandb.login()` and sets the project for your experiment.
-    Set `entity` to your W&B team name, or leave it as `None` to use your default
+    Set `entity` to your Weights & Biases team name, or leave it as `None` to use your default
     entity.
 
     Configure `WANDB_API_KEY` in your environment or the molab Secrets panel.
-    Get a key from [W&B](https://wandb.ai/authorize), or
+    Get a key from [Weights & Biases](https://wandb.ai/authorize), or
     [create an account](https://wandb.ai/signup). In a terminal-backed session,
     `wandb.login()` can also prompt for a key.
 
     Running the following code cells downloads MNIST, trains a model, and logs
-    metrics and prediction tables to W&B.
+    metrics and prediction tables to Weights & Biases.
     """)
     return
 
@@ -84,7 +84,7 @@ def _():
     project = "table-quickstart"
     authenticated = wandb.login()
     if not authenticated:
-        raise RuntimeError("Configure W&B credentials before running the lesson.")
+        raise RuntimeError("Configure Weights & Biases credentials before running the lesson.")
     return authenticated, entity, project
 
 
@@ -139,7 +139,7 @@ def _():
     ten logits per image, one for each digit. During evaluation, we apply
     softmax to convert those logits into per-class probabilities for the table.
 
-    This is ordinary PyTorch model code. The W&B integration happens later,
+    This is ordinary PyTorch model code. The Weights & Biases integration happens later,
     when we start a run and log its metrics and predictions.
     """)
     return
@@ -192,7 +192,7 @@ def _():
 @app.cell
 def _(BATCH_SIZE, authenticated):
     if not authenticated:
-        raise RuntimeError("Log in to W&B first.")
+        raise RuntimeError("Log in to Weights & Biases first.")
 
     train_dataset = torchvision.datasets.MNIST(
         root="./data", train=True, transform=T.ToTensor(), download=True,
@@ -222,16 +222,16 @@ def _():
     mo.md(r"""
     ## 5. Train and Log Prediction Tables
 
-    The next cell starts a W&B run with `wandb.init()` and records the training
+    The next cell starts a Weights & Biases run with `wandb.init()` and records the training
     configuration. Each execution builds a fresh model and optimizer.
 
-    During training, `training_run.log()` sends the loss to W&B. At the end of
+    During training, `training_run.log()` sends the loss to Weights & Biases. At the end of
     each epoch, we evaluate the model and build a new `wandb.Table`:
 
     - `columns` defines the schema: image ID, image, predicted digit, true digit,
       and ten class probabilities.
     - `add_data()` adds one row per image. `wandb.Image()` makes the image
-      viewable in W&B; the remaining values let you filter errors and compare
+      viewable in Weights & Biases; the remaining values let you filter errors and compare
       class scores.
     - `training_run.log()` uploads accuracy and the table under
       `test_predictions`. Logging a fresh table under the same key each epoch
@@ -351,9 +351,9 @@ def _():
 @app.cell(hide_code=False)
 def _():
     mo.md(r"""
-    ## 6. Explore Your Predictions in W&B
+    ## 6. Explore Your Predictions in Weights & Biases
 
-    [Open your W&B run]({run_url}) and find the `test_predictions` table.
+    [Open your Weights & Biases run]({run_url}) and find the `test_predictions` table.
     Each row connects an image to its true label, predicted label, and class
     probabilities.
 
@@ -368,7 +368,7 @@ def _():
 
     ## Next steps
 
-    - See the [W&B Tables guide](https://docs.wandb.ai/models/tables)
+    - See the [Weights & Biases Tables guide](https://docs.wandb.ai/models/tables)
     for more ways to query and compare your results.
     - Explore the [CNN-2: Progress over Training Time report](https://wandb.ai/stacey/table-quickstart/reports/CNN-2-Progress-over-Training-Time--Vmlldzo3NDY5ODU#false-positives-grouped-by-guess) for examples on how to compare, filter, and group predictions.
     """)

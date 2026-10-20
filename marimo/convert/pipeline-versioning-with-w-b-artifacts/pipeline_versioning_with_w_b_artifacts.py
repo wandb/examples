@@ -13,7 +13,7 @@ import marimo
 __generated_with = "0.25.1"
 app = marimo.App(
     width="medium",
-    app_title="Pipeline Versioning with W&B Artifacts",
+    app_title="Pipeline Versioning with Weights & Biases Artifacts",
 )
 
 

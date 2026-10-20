@@ -9,21 +9,22 @@
 #     "wandb>=0.19.10,<1",
 #     "xgboost>=2.0,<4",
 # ]
+#
+# [tool.marimo.runtime]
+# on_cell_change = "lazy"
 # ///
-"""Track a vehicle-loan classification pipeline with XGBoost and W&B."""
+"""Track a vehicle-loan classification pipeline with XGBoost and Weights & Biases."""
 
 import marimo
 
 __generated_with = "0.25.1"
 app = marimo.App(
     width="medium",
-    app_title="Vehicle loan classification with XGBoost and W&B",
+    app_title="Vehicle loan classification with XGBoost and Weights & Biases",
 )
 
 with app.setup:
-    import importlib.util
     import inspect
-    import sys
     import tempfile
     from pathlib import Path
 
@@ -37,7 +38,7 @@ with app.setup:
     from wandb.integration.xgboost import WandbCallback
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     # Vehicle Loan Default Prediction with XGBoost and Weights & Biases
@@ -59,7 +60,7 @@ def _():
 
     ## 1. Set Up and Authenticate
 
-    Open the notebook using its declared dependencies:
+    From this notebook's directory, open it using its declared dependencies:
 
     ```bash
     uvx marimo edit --sandbox credit_scorecards_with_xgboost_and_w_b.py
@@ -68,8 +69,8 @@ def _():
     > On macOS, XGBoost also needs OpenMP. If importing XGBoost reports a missing
     `libomp.dylib`, install it with `brew install libomp` and restart.
 
-    The next cell calls `wandb.login()` and sets the project. Use your team name
-    for `entity`, or `None` for your default entity. Configure `WANDB_API_KEY`
+    The next cell sets the destination for every run and calls `wandb.login()`.
+    Use your team name for `entity`, or `None` for your default entity. Configure `WANDB_API_KEY`
     in your environment or molab Secrets; get a key from
     [Weights & Biases](https://wandb.ai/authorize). Terminal-backed sessions can also prompt
     for a key.
@@ -82,14 +83,13 @@ def _():
 
 @app.cell
 def _():
-    entity = "wandb"
+    entity = None
     project = "vehicle_loan_default"
-    if not wandb.login():
-        raise RuntimeError("Configure Weights & Biases credentials before running the lesson.")
+    wandb.login()
     return entity, project
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 2. Choose the Dataset
@@ -98,9 +98,9 @@ def _():
     and creates a temporary working directory. The target is `loan_default`;
     ID columns are excluded from the model's predictors by preprocessing.
 
-    The helper below loads `one_hot_encode_data` from the Artifact's
-    `data_utils.py`. The preprocessing run records that function's source so
-    the resulting dataset can be traced to its transformation.
+    Keep the source Artifact path separate from your destination project:
+    it identifies the shared input dataset, while new Artifacts will be saved
+    to your project. The working directory holds the downloaded and derived CSVs.
     """)
     return
 
@@ -114,32 +114,52 @@ def _():
     return data_dir, id_columns, source_artifact_path, target_column
 
 
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    The source example treats age, time since disbursement, loan-to-value ratio
+    (`LTV`), and credit bureau score (`PERFORM_CNS_SCORE`) as numeric features.
+    Other predictors, including numeric IDs for states and manufacturers, are
+    categories: their codes should not imply an ordering.
+
+    The function below preserves the four numeric features and creates an
+    indicator column for each category with `pd.get_dummies()`. It retains
+    the row ID and target in the saved dataset, but excludes both from the
+    predictor list used for training. Encoding once before the split gives
+    both partitions the same columns; this transformation uses no target values.
+    """)
+    return
+
+
 @app.function
-def load_preprocessing_function(module_dir):
-    module_path = next(Path(module_dir).rglob("data_utils.py"), None)
-    if module_path is None:
-        raise FileNotFoundError("The source Artifact did not contain data_utils.py.")
-    spec = importlib.util.spec_from_file_location("credit_scorecard_data_utils", module_path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Could not load {module_path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module.one_hot_encode_data
+def one_hot_encode_data(dataset, id_columns, target_column):
+    numeric_columns = ["AgeInMonths", "DaysSinceDisbursement", "LTV", "PERFORM_CNS_SCORE"]
+    excluded_columns = id_columns + [target_column]
+    categorical_columns = sorted(set(dataset.columns) - set(excluded_columns + numeric_columns))
+    processed_data = pd.get_dummies(
+        dataset,
+        columns=categorical_columns,
+        prefix_sep="__",
+        dtype=int,
+    )
+    predictor_columns = processed_data.columns.drop(excluded_columns).tolist()
+    return processed_data, predictor_columns
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 3. Preprocess and Log a Dataset Artifact
 
     The next cell starts `preprocessing_run`, retrieves the raw dataset with
-    `use_artifact()`, and downloads its files. We read the CSV and use the
-    supplied one-hot encoding function to produce numeric predictors.
+    `use_artifact()`, and downloads its files. We read the CSV and apply the
+    encoding function above to produce numeric predictors.
 
     We save the processed CSV, attach it to a new `wandb.Artifact()`, and call
     `preprocessing_run.log_artifact()`. Consuming and producing Artifacts in
     the same run records the transformation in Weights & Biases's lineage graph.
+    The Artifact metadata also stores the encoding function's source so the
+    saved dataset can be traced to its transformation.
     `wait()` ensures the upload finishes before the next stage fetches it.
 
     For data stored in an existing Amazon S3 or GCS bucket, you can instead construct
@@ -161,11 +181,9 @@ def _(
     with wandb.init(entity=entity, project=project, job_type="preprocess-data", dir=str(data_dir)) as preprocessing_run:
         source_artifact = preprocessing_run.use_artifact(source_artifact_path, type="dataset")
         raw_dataset_dir = Path(source_artifact.download(root=str(data_dir / "raw")))
-        one_hot_encode_data = load_preprocessing_function(raw_dataset_dir)
         raw_csv_path = next(raw_dataset_dir.rglob("vehicle_loans_subset.csv"))
         raw_data = pd.read_csv(raw_csv_path)
         processed_data, predictor_columns = one_hot_encode_data(raw_data, id_columns, target_column)
-        predictor_columns = list(predictor_columns)
 
         processed_csv_path = data_dir / "proc_ds.csv"
         processed_data.to_csv(processed_csv_path, index=False)
@@ -182,7 +200,7 @@ def _(
     return predictor_columns, processed_artifact_path
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 4. Split the Data and Record Lineage
@@ -232,7 +250,7 @@ def _(data_dir, entity, processed_artifact_path, project, target_column):
     return split_artifact_path, train_data, validation_data
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 5. Inspect Data with Weights & Biases Tables
@@ -241,6 +259,8 @@ def _():
     `wandb.Table(dataframe=...)` turns a reproducible sample of up to 1,000
     training rows into an interactive table. `table_run.log()` saves it under
     `processed_dataset` for sorting, filtering, and inspection in Weights & Biases.
+    Look at the category indicators and `loan_default` values together to
+    check what the model will receive.
     """)
     return
 
@@ -257,7 +277,7 @@ def _(data_dir, entity, project, split_artifact_path, train_data):
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 6. Prepare Predictors and Model Settings
@@ -265,9 +285,12 @@ def _():
     The next cell separates predictors from the binary target, computes the
     training default rate, and defines the XGBoost parameters. We use histogram
     trees on CPU; a supported CUDA environment can add `device="cuda"`.
+    `base_score` initializes predictions at the training default rate before
+    any trees are added.
 
-    The early-stopping setting monitors the last evaluation metric, log loss,
-    on validation data. With only 25 trees, this is a short demonstration run.
+    Early stopping monitors the last evaluation metric, validation log loss,
+    and stops after five rounds without improvement. `n_estimators` caps
+    training at 25 trees, so the demonstration remains short.
     The settings are recorded in the training run and reused as sweep defaults.
     """)
     return
@@ -280,7 +303,7 @@ def _(predictor_columns, target_column, train_data, validation_data):
     y_train = train_data[target_column].astype(int)
     y_validation = validation_data[target_column].astype(int)
     base_rate = float(y_train.mean())
-    early_stopping_rounds = 40
+    early_stopping_rounds = 5
     model_parameters = {
         "objective": "binary:logistic",
         "base_score": base_rate,
@@ -307,14 +330,18 @@ def _(predictor_columns, target_column, train_data, validation_data):
     )
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 7. Define Evaluation Metrics
 
     The following helper calculates AUC, log loss, and KS statistics for the
-    baseline and sweep models. It uses the full training and validation sets.
-    Validation accuracy uses a threshold of 0.5.
+    baseline and sweep models from their predicted default probabilities.
+    AUC measures ranking across thresholds; log loss measures probability
+    quality; KS measures separation between the scores for the two classes.
+    The helper uses the full training and validation sets, with a threshold
+    of 0.5 for validation accuracy. Predictions use XGBoost's best iteration
+    selected by early stopping.
 
     These are descriptive model metrics. They do not establish calibration,
     fairness, or suitability for lending decisions. The Weights & Biases calls that record
@@ -327,7 +354,7 @@ def _():
 def evaluate_classifier(classifier, X_train, y_train, X_validation, y_validation):
     train_probabilities = classifier.predict_proba(X_train)[:, 1]
     validation_probabilities = classifier.predict_proba(X_validation)[:, 1]
-    false_positive_rate, true_positive_rate, thresholds = metrics.roc_curve(y_train, train_probabilities)
+    false_positive_rate, true_positive_rate, _ = metrics.roc_curve(y_train, train_probabilities)
     ks_stat, ks_pval = ks_2samp(
         validation_probabilities[y_validation == 1],
         validation_probabilities[y_validation == 0],
@@ -345,7 +372,7 @@ def evaluate_classifier(classifier, X_train, y_train, X_validation, y_validation
     }
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 8. Train and Log the Baseline
@@ -360,6 +387,9 @@ def _():
     validation AUC plus a ROC curve. The curve receives probabilities for both
     classes. For large datasets, we subsample only the visualization; the numeric
     evaluation metrics use all validation rows.
+
+    Inspect `validation_0-auc` and `validation_0-logloss` in the run's charts,
+    then compare the summary's `train_auc` and `val_auc` for signs of overfitting.
     """)
     return
 
@@ -405,13 +435,12 @@ def _(
                 classes_to_plot=[1],
             ),
         })
-        resolved_entity = training_run.entity
 
     print(f"Validation AUC: {baseline_metrics['val_auc']:.4f}")
-    return baseline_metrics, resolved_entity
+    return (baseline_metrics,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 9. Define a Hyperparameter Sweep
@@ -419,6 +448,10 @@ def _():
     The next cell specifies random search over learning rate, gamma, minimum
     child weight, and early-stopping rounds. The objective is to maximize
     `val_auc`, which each trial explicitly logs.
+
+    The patience values are smaller than the 25-tree limit so every choice
+    can affect when a trial stops. Learning rate controls each tree's
+    contribution; gamma and minimum child weight constrain tree growth.
 
     Sweeps automate comparison on this fixed validation split. Repeated tuning
     can overfit the validation set; an independent test set is needed to assess
@@ -436,13 +469,13 @@ def _():
             "learning_rate": {"min": 0.001, "max": 1.0},
             "gamma": {"min": 0.001, "max": 1.0},
             "min_child_weight": {"min": 1, "max": 150},
-            "early_stopping_rounds": {"values": [10, 20, 30, 40]},
+            "early_stopping_rounds": {"values": [3, 5, 10]},
         },
     }
     return (sweep_config,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 10. Define One Sweep Trial
@@ -463,15 +496,21 @@ def _():
 def _(
     X_train,
     X_validation,
+    data_dir,
     early_stopping_rounds,
+    entity,
     model_parameters,
+    project,
     split_artifact_path,
     y_train,
     y_validation,
 ):
     def sweep_train():
         with wandb.init(
+            entity=entity,
+            project=project,
             job_type="sweep",
+            dir=str(data_dir),
             config={**model_parameters, "early_stopping_rounds": early_stopping_rounds},
         ) as sweep_run:
             sweep_run.use_artifact(split_artifact_path, type="train-val-dataset")
@@ -489,13 +528,13 @@ def _(
     return (sweep_train,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 11. Create the Sweep and Start an Agent
 
     The next cell registers the configuration with `wandb.sweep()` and stores
-    its ID. The following cell calls `wandb.agent()` with `sweep_train` and a
+    its ID, then calls `wandb.agent()` with `sweep_train` and a
     limit of five trials. Lower `count` for a quicker experiment.
 
     Each run closes through its context manager before the next trial starts.
@@ -505,28 +544,23 @@ def _():
 
 
 @app.cell
-def _(baseline_metrics, project, resolved_entity, sweep_config):
+def _(baseline_metrics, entity, project, sweep_config, sweep_train):
     print(f"Baseline validation AUC: {baseline_metrics['val_auc']:.4f}")
-    sweep_id = wandb.sweep(sweep=sweep_config, entity=resolved_entity, project=project)
-    sweep_url = f"https://wandb.ai/{resolved_entity}/{project}/sweeps/{sweep_id}"
-    print(f"View the sweep: {sweep_url}")
-    return (sweep_id,)
-
-
-@app.cell
-def _(project, resolved_entity, sweep_id, sweep_train):
-    wandb.agent(sweep_id, function=sweep_train, entity=resolved_entity, project=project, count=5)
+    sweep_id = wandb.sweep(sweep=sweep_config, entity=entity, project=project)
+    wandb.agent(sweep_id, function=sweep_train, entity=entity, project=project, count=5)
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(f"""
-    ## 12. Explore the Experiment Records
+    mo.md(r"""
+    ## 12. Verify and Explore the Experiment Records
 
     Open the baseline run to inspect its metrics,
     feature importance, ROC curve, and saved model. The Artifacts graph connects
-    the source dataset, processed dataset, split, and training run.
+    the source dataset, `vehicle_defaults_processed`, `vehicle_defaults_split`,
+    and the training run. Open the `log-dataset` run's `processed_dataset`
+    Table to inspect the encoded inputs.
 
     Open the sweep dashboard to compare hyperparameters and
     validation AUC. Inspect parameter trends rather than relying on a single
