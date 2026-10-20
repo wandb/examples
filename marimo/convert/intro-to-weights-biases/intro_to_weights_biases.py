@@ -6,6 +6,9 @@
 #     "torchvision>=0.16",
 #     "wandb>=0.18",
 # ]
+#
+# [tool.marimo.runtime]
+# on_cell_change = "lazy"
 # ///
 
 import marimo
@@ -31,14 +34,29 @@ with app.setup:
     ]
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # Intro to Weights & Biases
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
+    # Introduction to Weights & Biases
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/intro-to-weights-biases/intro_to_weights_biases.py/server)
-
-    <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
 
     A Weights & Biases run records one experiment's configuration, metrics, and outputs.
     This lesson starts with simulated metrics, then tracks real PyTorch training,
@@ -47,23 +65,14 @@ def _():
 
     ## 1. Authenticate
 
-    Open the notebook with its declared dependencies:
-
-    ```bash
-    uvx marimo edit --sandbox intro_to_weights_biases.py
-    ```
-
-    The next cell calls `wandb.login()` and selects the projects used by the
-    two examples. Set `entity` to your team name, or use `None` for your
-    default entity.
-
-    Configure `WANDB_API_KEY` in your environment or molab Secrets. Get a key
-    from [Weights & Biases](https://wandb.ai/authorize), or
-    [create an account](https://wandb.ai/signup). Terminal-backed sessions can
-    also prompt for a key.
+    Set `entity` to your Weights & Biases team name, or leave it as `None` to use your
+    default entity. `wandb.login()` uses
+    your saved credentials or prompts for an [API key](https://wandb.ai/authorize).
+    In a locally hosted notebook, you can also set the `WANDB_API_KEY` secret.
 
     Running the code cells creates experiment runs, downloads MNIST, and uploads
-    metrics and checkpoints. The optional alert requires a separate click.
+    metrics and checkpoints. The optional alert has its own Python setting
+    near the end of the lesson.
     """)
     return
 
@@ -73,12 +82,12 @@ def _():
     entity = None
     simulation_project = "basic-intro"
     training_project = "pytorch-intro"
-    if not wandb.login():
-        raise RuntimeError("Configure Weights & Biases credentials before running the lesson.")
+
+    wandb.login()
     return entity, simulation_project, training_project
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 2. Track Simulated Experiments
@@ -96,7 +105,6 @@ def _():
 
 @app.cell
 def _(entity, simulation_project):
-    simulation_run_urls = []
     for experiment_index in range(5):
         simulation_config = {"epochs": 10, "seed": experiment_index, "dataset": "synthetic"}
         simulation_rng = random.Random(simulation_config["seed"])
@@ -115,16 +123,18 @@ def _(entity, simulation_project):
                     "acc": simulated_accuracy,
                     "loss": simulated_loss,
                 })
-            simulation_run_urls.append(simulation_run.url)
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 3. Compare runs in your project
 
-    Open any run returned as stdout in the previous cell. [Compare accuracy and loss across experiments](https://docs.coreweave.com/products/wandb/runs/compare-runs). Each run has its own configuration and metric history.
+    Open a run link printed by Weights & Biases in the previous cell. In the `basic-intro`
+    project, select the five simulation runs and compare their `acc` and `loss`
+    curves. Choose `epoch` as the horizontal axis to compare the same training
+    point across runs. Inspect each run's config to see its seed and epoch count.
 
     Next, we apply the same logging pattern to a real MNIST classifier.
 
@@ -157,101 +167,118 @@ def _():
     return device, dropout_values, training_config
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 5. Define the Data, Model, and Evaluation Helpers
+    ## 5. Load MNIST batches
 
-    The following helpers contain ordinary PyTorch code. They load sampled
-    MNIST batches, build an MLP, and evaluate loss and accuracy.
+    `get_dataloader()` loads MNIST into temporary storage and selects every
+    `sample_stride`-th image. `ToTensor()` converts each grayscale image to a
+    tensor with pixel values between 0 and 1.
 
-    Validation also returns the first batch's images, predictions, labels, and
-    class probabilities for a Weights & Biases prediction table. Its order stays fixed across
-    runs. We use `num_workers=0` for compatibility with notebook runtimes.
-
-    Defining these helpers does not download data or train a model.
+    Training batches are shuffled; validation batches retain the same order
+    across runs so we can compare predictions on the same images. Calling
+    this helper downloads missing data. `num_workers=0` works across notebook
+    runtimes, and pinned memory helps transfer batches to CUDA when available.
     """)
     return
 
 
-@app.cell
-def get_dataloader(device):
-    def get_dataloader(is_train, batch_size, sample_stride):
-        dataset = MNIST(
-            root=Path(tempfile.gettempdir()) / "wandb-intro-mnist",
-            train=is_train,
-            transform=T.ToTensor(),
-            download=True,
-        )
-        sampled_dataset = torch.utils.data.Subset(
-            dataset, indices=range(0, len(dataset), sample_stride),
-        )
-        return torch.utils.data.DataLoader(
-            sampled_dataset,
-            batch_size=batch_size,
-            shuffle=is_train,
-            pin_memory=device.startswith("cuda"),
-            num_workers=0,
-        )
-
-    return (get_dataloader,)
+@app.function
+def get_dataloader(is_train, batch_size, sample_stride):
+    dataset = MNIST(
+        root=Path(tempfile.gettempdir()) / "wandb-intro-mnist",
+        train=is_train,
+        transform=T.ToTensor(),
+        download=True,
+    )
+    sampled_dataset = torch.utils.data.Subset(
+        dataset, indices=range(0, len(dataset), sample_stride),
+    )
+    return torch.utils.data.DataLoader(
+        sampled_dataset,
+        batch_size=batch_size,
+        shuffle=is_train,
+        pin_memory=torch.cuda.is_available(),
+        num_workers=0,
+    )
 
 
-@app.cell
-def get_model(device):
-    def get_model(dropout):
-        return nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(28 * 28, 256),
-            nn.BatchNorm1d(256),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(256, 10),
-        ).to(device)
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ### Build a classifier to compare dropout rates
 
-    return (get_model,)
+    The MLP flattens each 28-by-28 image, learns 256 hidden features, and outputs
+    ten logits, one per digit. Cross-entropy loss accepts these logits directly.
+    `dropout` controls how many hidden activations are randomly zeroed during
+    training. Each call creates a fresh model on the selected device.
+    """)
+    return
 
 
-@app.cell
-def evaluate_model(device):
-    def evaluate_model(model, validation_loader, loss_function):
-        model.eval()
-        loss_sum = 0.0
-        correct = 0
-        prediction_batch = None
-        with torch.inference_mode():
-            for batch_index, (images, labels) in enumerate(validation_loader):
-                images, labels = images.to(device), labels.to(device)
-                outputs = model(images)
-                predictions = outputs.argmax(dim=1)
-                loss_sum += loss_function(outputs, labels).item() * len(labels)
-                correct += (predictions == labels).sum().item()
-                if batch_index == 0:
-                    prediction_batch = (
-                        images.cpu(), predictions.cpu(), labels.cpu(),
-                        outputs.softmax(dim=1).cpu(),
-                    )
-        return (
-            loss_sum / len(validation_loader.dataset),
-            correct / len(validation_loader.dataset),
-            prediction_batch,
-        )
-
-    return (evaluate_model,)
+@app.function
+def get_model(dropout, device):
+    return nn.Sequential(
+        nn.Flatten(),
+        nn.Linear(28 * 28, 256),
+        nn.BatchNorm1d(256),
+        nn.ReLU(),
+        nn.Dropout(dropout),
+        nn.Linear(256, 10),
+    ).to(device)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ### Evaluate on the held-out images
+
+    `model.eval()` turns off dropout and uses batch normalization's learned
+    statistics. `torch.inference_mode()` avoids tracking gradients during
+    validation. The helper averages loss by image count, so a smaller final
+    batch contributes the correct weight, and computes accuracy across the
+    entire validation subset.
+
+    It also returns the first batch's images, predictions, labels, and softmax
+    probabilities on the CPU. We will use that fixed batch to build a Weights & Biases Table.
+    """)
+    return
+
+
+@app.function
+def evaluate_model(model, validation_loader, loss_function, device):
+    model.eval()
+    loss_sum = 0.0
+    correct = 0
+    prediction_batch = None
+    with torch.inference_mode():
+        for batch_index, (images, labels) in enumerate(validation_loader):
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            predictions = outputs.argmax(dim=1)
+            loss_sum += loss_function(outputs, labels).item() * len(labels)
+            correct += (predictions == labels).sum().item()
+            if batch_index == 0:
+                prediction_batch = (
+                    images.cpu(), predictions.cpu(), labels.cpu(),
+                    outputs.softmax(dim=1).cpu(),
+                )
+    return (
+        loss_sum / len(validation_loader.dataset),
+        correct / len(validation_loader.dataset),
+        prediction_batch,
+    )
+
+
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 6. Build a Prediction Table
 
-    The next helper creates a `wandb.Table` with one row per image. Each row
+    The next helper functions creates a `wandb.Table` with one row per image. Each row
     contains a viewable `wandb.Image`, the predicted digit, the true label,
     and ten class probabilities.
-
-    This function builds the table; the training cell logs it to the active run
-    after the final validation pass. In Weights & Biases, filter rows where `pred != target`
-    to inspect mistakes.
     """)
     return
 
@@ -263,7 +290,7 @@ def make_prediction_table(images, predictions, labels, probabilities):
     )
     for image, prediction, label, scores in zip(images, predictions, labels, probabilities):
         prediction_table.add_data(
-            wandb.Image(image[0].numpy() * 255),
+            wandb.Image(image),
             prediction.item(),
             label.item(),
             *scores.tolist(),
@@ -271,7 +298,7 @@ def make_prediction_table(images, predictions, labels, probabilities):
     return prediction_table
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 7. Train, Log Metrics, and Save Checkpoints
@@ -283,7 +310,8 @@ def _():
     epoch, and a prediction table after the final epoch. The scalar summary
     `final_validation_accuracy` makes the final result easy to compare across runs.
 
-    At each epoch, `torch.save(model.state_dict(), ...)` saves model weights.
+    At each epoch, `torch.save(model.state_dict(), ...)` saves model weights
+    to a separate file so later epochs cannot overwrite an earlier checkpoint.
     `training_run.log_model()` uploads that checkpoint as a model Artifact with
     an epoch alias. The model architecture and dropout are recorded in the run
     configuration; recreate that architecture before loading its weights.
@@ -294,16 +322,7 @@ def _():
 
 
 @app.cell
-def _(
-    device,
-    dropout_values,
-    entity,
-    evaluate_model,
-    get_dataloader,
-    get_model,
-    training_config,
-    training_project,
-):
+def _(device, dropout_values, entity, training_config, training_project):
     for dropout in dropout_values:
         torch.manual_seed(training_config["seed"])
         with tempfile.TemporaryDirectory(prefix="wandb-mnist-checkpoints-") as checkpoint_directory:
@@ -315,7 +334,7 @@ def _(
                 run_config = training_run.config
                 train_loader = get_dataloader(True, run_config.batch_size, run_config.sample_stride)
                 validation_loader = get_dataloader(False, 2 * run_config.batch_size, run_config.sample_stride)
-                model = get_model(run_config.dropout)
+                model = get_model(run_config.dropout, device)
                 loss_function = nn.CrossEntropyLoss()
                 optimizer = torch.optim.Adam(model.parameters(), lr=run_config.lr)
                 example_count = 0
@@ -337,7 +356,7 @@ def _(
                         })
 
                     validation_loss, validation_accuracy, prediction_batch = evaluate_model(
-                        model, validation_loader, loss_function,
+                        model, validation_loader, loss_function, device,
                     )
                     validation_metrics = {
                         "epoch": epoch + 1,
@@ -348,7 +367,7 @@ def _(
                         validation_metrics["predictions_table"] = make_prediction_table(*prediction_batch)
                     training_run.log(validation_metrics)
 
-                    checkpoint_path = Path(checkpoint_directory) / "model_weights.pt"
+                    checkpoint_path = Path(checkpoint_directory) / f"model_weights_epoch_{epoch + 1}.pt"
                     torch.save(model.state_dict(), checkpoint_path)
                     training_run.log_model(
                         str(checkpoint_path),
@@ -364,48 +383,53 @@ def _(
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## 8. Inspect Metrics, Predictions, and Models
 
-    Compare dropout settings against validation loss and accuracy in your project.
-    Open a run's `predictions_table` to inspect images and class scores.
-    In **Artifacts**, find its saved model weights and epoch aliases.
-
-    Each run also records terminal output and available system metrics, which
-    can help explain differences in runtime.
+    In the `pytorch-intro` project, compare the three runs' `val/val_loss` and
+    `val/val_accuracy` curves. Use the config column `dropout` to identify each
+    experiment and `final_validation_accuracy` to compare their final results.
+    Open a run's `predictions_table` and filter `pred != target` to inspect
+    mistakes alongside the ten class probabilities. In **Artifacts**, open its
+    `mnist-<run-id>` model collection and inspect the versions with `epoch-1`,
+    `epoch-2`, and later aliases.
 
     ## 9. Optional: Send an Alert
 
-    The next two cells demonstrate `alert_run.alert()`. Enable notifications
-    in your [Weights & Biases user settings](https://wandb.ai/settings), then click
-    **Send example alert** to create a separate run and test the notification.
+    The next cell demonstrates `alert_run.alert()`. To try it, enable notifications
+    in your [Weights & Biases user settings](https://wandb.ai/settings) and change
+    `send_example_alert` to `True`. This creates a separate run and can send a
+    real notification through the email or Slack settings you configured.
 
     We log three synthetic accuracy values. The final value crosses a threshold
     of 0.3 and triggers an alert. This is independent of the MNIST results and
-    can send a real email or Slack notification through your Weights & Biases settings.
+    does not run until you opt in with the Python setting below.
     """)
     return
 
 
 @app.cell
 def _(entity, training_project):
-    with wandb.init(project=training_project, entity=entity, job_type="alert-demo") as alert_run:
-        accuracy_threshold = 0.3
-        for alert_step, alert_accuracy in enumerate([0.8, 0.65, 0.25]):
-            alert_run.log({"step": alert_step, "accuracy": alert_accuracy})
-            if alert_accuracy < accuracy_threshold:
-                alert_run.alert(
-                    title="Low accuracy",
-                    text=f"Demo accuracy {alert_accuracy} is below {accuracy_threshold} at step {alert_step}.",
-                )
-                print(f"Alert triggered: {alert_run.url}")
-                break
+    send_example_alert = False
+
+    if send_example_alert:
+        with wandb.init(project=training_project, entity=entity, job_type="alert-demo") as alert_run:
+            accuracy_threshold = 0.3
+            for alert_step, alert_accuracy in enumerate([0.8, 0.65, 0.25]):
+                alert_run.log({"step": alert_step, "accuracy": alert_accuracy})
+                if alert_accuracy < accuracy_threshold:
+                    alert_run.alert(
+                        title="Low accuracy",
+                        text=f"Demo accuracy {alert_accuracy} is below {accuracy_threshold} at step {alert_step}.",
+                    )
+                    print(f"Alert triggered: {alert_run.url}")
+                    break
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Next Steps

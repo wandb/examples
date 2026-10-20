@@ -6,8 +6,10 @@
 #     "tensorflow>=2.16,<3",
 #     "wandb>=0.18,<1",
 # ]
+#
+# [tool.marimo.runtime]
+# on_cell_change = "lazy"
 # ///
-"""Optimize a TensorFlow classifier with Weights & Biases Sweeps."""
 
 import marimo
 
@@ -27,238 +29,126 @@ with app.setup:
     from wandb.integration.keras import WandbMetricsLogger
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # Weights & Biases Sweep + TensorFlow 2.x
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
+    # Tune a TensorFlow model with Weights & Biases Sweeps
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/hyperparameter-optimization-in-tensorflow-using-w-b-sweeps/hyperparameter_optimization_in_tensorflow_using_w_b_sweeps.py/server)
 
-    <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
+    A sweep is a collection of experiments that explores a hyperparameter search
+    space. Here, each trial trains the same MNIST digit classifier with a
+    different batch size and learning rate. Weights & Biases selects the settings, and its
+    Keras integration logs the metrics used to compare trials.
 
-    This notebook shows the smallest practical loop for tuning TensorFlow
-    hyperparameters with Weights & Biases Sweeps: define a search space, turn one
-    training run into a reusable function, launch an agent, and inspect the
-    results in Weights & Biases.
+    The workflow has three parts: define the search space, write a function that
+    trains one model using `run.config`, and start an agent to run the trials.
+    This example launches up to ten trials with two epochs each.
+
+    ## Choose your Weights & Biases project and log in
+
+    Set `entity` to your username or team, or leave it as `None` to use your
+    default entity. The same `project` is used for the sweep, agent, and runs.
+    `wandb.login()` uses existing credentials or prompts for an
+    [API key](https://wandb.ai/authorize). In a hosted notebook, you can also
+    supply the key through the `WANDB_API_KEY` secret.
     """)
     return
 
 
-@app.cell(hide_code=False)
+@app.cell
 def _():
-    mo.md(r"""
-    A sweep is a coordinated set of experiment runs. Weights & Biases chooses hyperparameter
-    values, starts runs through your training function, logs metrics from each
-    trial, and builds dashboards for comparing the results.
+    entity = None
+    project = "sweeps-tensorflow"
 
-    By the end of the notebook, your sweep dashboard will look conceptually like
-    this example:
-
-    ![Example Weights & Biases Sweeps dashboard](https://i.imgur.com/AN0qnpC.png)
-    """)
-    return
-
-
-@app.cell(hide_code=False)
-def _():
-    mo.md(r"""
-    [Weights & Biases Sweeps](https://docs.coreweave.com/products/wandb/sweeps)
-    automate hyperparameter search and visualize rich, interactive experiment
-    tracking. They support search methods such as random search, grid search, and
-    Bayesian optimization, and they can scale from this single-notebook example to
-    agents running on many machines.
-
-    ## What this notebook covers
-
-    The cells below walk through the core Weights & Biases Sweeps pattern:
-
-    * Authenticate with Weights & Biases.
-    * Prepare a small TensorFlow image-classification problem.
-    * Log training and validation metrics from Keras.
-    * Define a sweep configuration for batch size and learning rate.
-    * Launch a Weights & Biases agent that runs multiple trials and reports results.
-    """)
-    return
-
-
-@app.cell(hide_code=False)
-def _():
-    mo.md(r"""
-    ## Step 1: Import Weights & Biases and log in
-
-    The next two cells collect your Weights & Biases credentials and call `wandb.login()`.
-    Weights & Biases needs an authenticated session before it can create a sweep or sync
-    training metrics.
-
-    Run the following cell and provide your [Forge API key](https://wandb.ai/authorize) and the name of your team. Then click **Connect to Weights & Biases**.
-    """)
-    return
+    wandb.login()
+    return entity, project
 
 
 @app.cell(hide_code=True)
 def _():
-    wandb_login_form = (
-        mo.md("{api_key}\n\n{entity}")
-        .batch(
-            api_key=mo.ui.text(
-                kind="password",
-                label="Forge API key (optional)",
-                placeholder="Paste a key or use configured credentials",
-                full_width=True,
-            ),
-            entity=mo.ui.text(
-                label="Forge team name (optional)",
-                placeholder="Leave blank to use your default entity",
-                full_width=True,
-            ),
-        )
-        .form(submit_button_label="Connect to Weights & Biases", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
+    mo.md(r"""
+    ## Prepare data shared by every trial
 
+    MNIST contains 28 × 28 grayscale images with integer labels from 0 to 9.
+    Flatten each image to 784 features and convert pixel values from 0–255 to
+    floating-point values from 0–1.
 
-@app.cell(hide_code=True)
-def _(wandb_login_form):
-    mo.stop(
-        wandb_login_form.value is None,
-        mo.callout(
-            mo.md("Submit the form above to authenticate before creating a sweep."),
-            kind="info",
-        ),
-    )
-
-    _submitted = wandb_login_form.value
-    _api_key = _submitted["api_key"].strip()
-    try:
-        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
-    except (wandb.errors.Error, ValueError):
-        _login_ok = False
-
-    mo.stop(
-        not _login_ok,
-        mo.callout(
-            mo.md(
-                "Weights & Biases authentication did not complete. Check the API key or "
-                "molab Secrets configuration and submit again."
-            ),
-            kind="danger",
-        ),
-    )
-
-    mo.callout(mo.md("Connected to Weights & Biases."), kind="success")
+    Load and normalize the data once. Use the first 50,000 training examples
+    for fitting and the remaining 10,000 for validation, keeping that split
+    fixed across trials. The official test set is reserved for evaluating the
+    model after hyperparameter selection.
+    """)
     return
 
 
-@app.cell(hide_code=False)
+@app.cell
+def _():
+    (images, labels), _ = keras.datasets.mnist.load_data()
+    images = images.reshape(-1, 784).astype(np.float32) / 255.0
+
+    train_images, train_labels = images[:-10000], labels[:-10000]
+    val_images, val_labels = images[-10000:], labels[-10000:]
+    return train_images, train_labels, val_images, val_labels
+
+
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Step 2: Prepare the Dataset
+    ## Keep the model architecture fixed
 
-    The following function loads MNIST, normalizes pixel values, flattens each
-    image into a 784-feature vector, and returns `tf.data.Dataset` objects for
-    training and validation.
+    Each trial creates a fresh multilayer perceptron with two hidden layers of
+    64 ReLU units. The ten outputs are class scores, or logits. The training
+    function will use a loss with `from_logits=True`, so the final layer does
+    not apply softmax.
 
-    The function accepts `batch_size` because the sweep will tune that value. Each
-    Weights & Biases trial can therefore build datasets that match the hyperparameters chosen
-    for that run.
+    Keeping the architecture fixed lets us compare the effect of the two
+    hyperparameters in the search space.
     """)
     return
 
 
 @app.function
-def prepare_datasets(batch_size):
-    # Prepare the training dataset
-    (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
-
-    x_train = x_train / 255.0
-    x_test = x_test / 255.0
-    x_train = np.reshape(x_train, (-1, 784))
-    x_test = np.reshape(x_test, (-1, 784))
-
-    # build input pipeline using tf.data
-    train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
-    train_dataset = (
-        train_dataset.shuffle(buffer_size=1024)
-        .batch(batch_size)
-        .prefetch(buffer_size=tf.data.AUTOTUNE)
-    )
-
-    val_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test))
-    val_dataset = val_dataset.batch(batch_size).prefetch(buffer_size=tf.data.AUTOTUNE)
-    return train_dataset, val_dataset
-
-
-@app.cell(hide_code=False)
-def _():
-    mo.md(r"""
-    ## Step 3: Define the Model and Training Workflow
-
-    The next function builds the TensorFlow model that every sweep trial will
-    train. We keep the architecture fixed so the sweep can focus on two
-    hyperparameters: batch size and learning rate.
-    """)
-    return
-
-
-@app.function
-def Model():
+def build_model():
     inputs = keras.Input(shape=(784,), name="digits")
-    x1 = keras.layers.Dense(64, activation="relu")(inputs)
-    x2 = keras.layers.Dense(64, activation="relu")(x1)
-    outputs = keras.layers.Dense(10, name="predictions")(x2)
-
+    hidden = keras.layers.Dense(64, activation="relu")(inputs)
+    hidden = keras.layers.Dense(64, activation="relu")(hidden)
+    outputs = keras.layers.Dense(10, name="predictions")(hidden)
     return keras.Model(inputs=inputs, outputs=outputs)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Step 4: Log metrics with `WandbMetricsLogger`
+    ## Define the search space and objective
 
-    The next function wraps `model.fit()` and attaches Weights & Biases's Keras metrics
-    logger. `WandbMetricsLogger` receives the training and validation metrics
-    produced by Keras and sends them to the active Weights & Biases run.
+    `method="random"` samples a batch size and learning rate from the listed
+    values for each trial. The objective is to minimize `epoch/val_loss`.
+    That exact key is logged by `WandbMetricsLogger` at the end of each epoch;
+    the sweep metric name must match the logged name.
 
-    With `log_freq=20`, it logs batch metrics every 20 batches and epoch metrics
-    at the end of each epoch. Those logged values are what the sweep dashboard
-    uses to compare trials.
-    """)
-    return
-
-
-@app.function
-def train(
-    train_dataset,
-    val_dataset,
-    model,
-    epochs=10,
-    log_step=200,
-):
-    # 3️⃣ log metrics using WandbMetricsLogger
-    return model.fit(
-        train_dataset,
-        validation_data=val_dataset,
-        epochs=epochs,
-        callbacks=[WandbMetricsLogger(log_freq=log_step)],
-        verbose=2,
-    )
-
-
-@app.cell(hide_code=False)
-def _():
-    mo.md(r"""
-    ## Step 5: Configure the Sweep
-
-    The next cell defines the sweep configuration dictionary. This is the contract
-    between your training code and Weights & Biases: it tells Weights & Biases which hyperparameters to try,
-    how to sample them, which metric to optimize, and when to stop weaker runs
-    early.
-
-    * Define the hyperparameters you're sweeping over.
-    * Choose a hyperparameter search method. Weights & Biases supports `random`, `grid`, and `bayes`.
-    * Provide an objective metric; here we minimize `epoch/val_loss`, the validation-loss key logged by `WandbMetricsLogger`.
-    * Use `hyperband` for early termination of poorly-performing runs.
+    Hyperband can stop weaker trials early. Its `min_iter=1` sets the first
+    comparison point after one report of the objective metric, which here
+    corresponds to one epoch. Checks happen asynchronously, so these short
+    two-epoch trials may finish before they can be stopped. Longer trials
+    provide more opportunity for early termination.
     """)
     return
 
@@ -267,134 +157,157 @@ def _():
 def _():
     sweep_config = {
         "method": "random",
-        "metric": {
-            "name": "epoch/val_loss",
-            "goal": "minimize",
-        },
-        "early_terminate": {
-            "type": "hyperband",
-            # Trials run for two epochs, so pruning must be allowed after epoch one.
-            "min_iter": 1,
-        },
+        "metric": {"name": "epoch/val_loss", "goal": "minimize"},
+        "early_terminate": {"type": "hyperband", "min_iter": 1},
         "parameters": {
-            "batch_size": {
-                "values": [32, 64, 128, 256],
-            },
-            "learning_rate": {
-                "values": [0.01, 0.005, 0.001, 0.0005, 0.0001],
-            },
+            "batch_size": {"values": [32, 64, 128, 256]},
+            "learning_rate": {"values": [0.01, 0.005, 0.001, 0.0005, 0.0001]},
         },
     }
     return (sweep_config,)
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Step 6: Wrap the Training Workflow
+    ## Define one complete trial
 
-    A Weights & Biases agent needs a zero-argument training function. The next function,
-    `sweep_train`, is one complete trial: it starts a Weights & Biases run, reads the
-    hyperparameters selected for that run from `run.config`, prepares data,
-    builds and compiles the model, trains it, and lets Weights & Biases collect metrics.
+    The agent calls a function with no arguments. Inside `sweep_train`,
+    `wandb.init()` starts the run and supplies default settings; the sweep's
+    selected batch size and learning rate override those defaults in
+    `run.config`. The context manager finishes the run when training ends.
 
-    The defaults passed to `wandb.init()` make the function runnable on its own,
-    while sweep-selected values override `batch_size` and `learning_rate` during
-    agent runs.
-    """)
-    return
+    Each trial resets Keras and uses the same random seed before building a
+    fresh model. The selected batch size controls the `tf.data` pipelines, and
+    the selected learning rate configures SGD. The training dataset shuffles
+    before batching; `model.fit(shuffle=False)` leaves that order to the
+    pipeline. Validation data uses the same examples and order for every trial.
 
-
-@app.function
-def sweep_train():
-    # Set default values
-    config_defaults = {
-        "batch_size": 64,
-        "learning_rate": 0.01,
-        # Specify the other hyperparameters to the configuration, if any
-        "epochs": 2,
-        "log_step": 20,
-        "architecture_name": "MLP",
-        "dataset_name": "MNIST",
-    }
-
-    # Initialize wandb with a sample project name
-    # Sweep values overwrite these defaults.
-    with wandb.init(config=config_defaults) as run:
-        config = run.config
-
-        train_dataset, val_dataset = prepare_datasets(config.batch_size)
-
-        # initialize model
-        tf.keras.backend.clear_session()
-        model = Model()
-
-        # Instantiate an optimizer to train the model.
-        optimizer = keras.optimizers.SGD(learning_rate=config.learning_rate)
-        # Instantiate a loss function.
-        loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-
-        # Prepare the metrics.
-        metrics = [keras.metrics.SparseCategoricalAccuracy(name="acc")]
-
-        model.compile(optimizer=optimizer, loss=loss_fn, metrics=metrics)
-        training_history = train(
-            train_dataset,
-            val_dataset,
-            model,
-            epochs=config.epochs,
-            log_step=config.log_step,
-        )
-        run_url = run.url
-
-    return {"url": run_url, "epochs": len(training_history.history["loss"])}
-
-
-@app.cell(hide_code=False)
-def _():
-    mo.md(r"""
-    ## Step 7: Initialize the Sweep and Run an Agent
-
-    The next cell registers the sweep with Weights & Biases and stores the returned
-    `sweep_id`. The cell after that starts a local sweep agent.
-
-    The agent asks Weights & Biases for hyperparameter values, calls `sweep_train` for each
-    trial, and repeats until it reaches `count=10`. You can lower `count` while
-    experimenting if you want a faster run.
+    `WandbMetricsLogger(log_freq=20)` logs batch metrics every 20 batches and
+    training and validation metrics after each epoch. In addition to the
+    optimized `epoch/val_loss`, inspect `epoch/acc` and `epoch/val_acc` for digit
+    classification accuracy. To change the training budget, edit `epochs` in
+    the defaults below.
     """)
     return
 
 
 @app.cell
-def _(sweep_config):
-    sweep_id = wandb.sweep(sweep_config, project="sweeps-tensorflow")
+def _(entity, project, train_images, train_labels, val_images, val_labels):
+    def sweep_train():
+        config_defaults = {
+            "batch_size": 64,
+            "learning_rate": 0.01,
+            "epochs": 2,
+            "log_step": 20,
+            "seed": 42,
+            "architecture_name": "MLP",
+            "dataset_name": "MNIST",
+        }
+
+        with wandb.init(entity=entity, project=project, config=config_defaults) as run:
+            config = run.config
+            keras.backend.clear_session()
+            keras.utils.set_random_seed(config.seed)
+
+            train_dataset = (
+                tf.data.Dataset.from_tensor_slices((train_images, train_labels))
+                .shuffle(buffer_size=1024, seed=config.seed)
+                .batch(config.batch_size)
+                .prefetch(tf.data.AUTOTUNE)
+            )
+            val_dataset = (
+                tf.data.Dataset.from_tensor_slices((val_images, val_labels))
+                .batch(config.batch_size)
+                .prefetch(tf.data.AUTOTUNE)
+            )
+
+            model = build_model()
+            model.compile(
+                optimizer=keras.optimizers.SGD(learning_rate=config.learning_rate),
+                loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                metrics=[keras.metrics.SparseCategoricalAccuracy(name="acc")],
+            )
+            return model.fit(
+                train_dataset,
+                validation_data=val_dataset,
+                epochs=config.epochs,
+                callbacks=[WandbMetricsLogger(log_freq=config.log_step)],
+                shuffle=False,
+                verbose=2,
+            )
+
+    return (sweep_train,)
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Register the sweep
+
+    `wandb.sweep()` sends the search configuration to Weights & Biases and returns the
+    sweep's ID. This creates the sweep in your chosen entity and project;
+    training begins when an agent starts. Weights & Biases prints a link to the sweep
+    dashboard. Rerunning this cell creates a new sweep.
+    """)
+    return
+
+
+@app.cell
+def _(entity, project, sweep_config):
+    sweep_id = wandb.sweep(sweep_config, entity=entity, project=project)
     return (sweep_id,)
 
 
-@app.cell
-def _(sweep_id):
-    wandb.agent(sweep_id, function=sweep_train, count=10)
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Start an agent
+
+    The agent requests hyperparameters from Weights & Biases and calls `sweep_train` for
+    each trial. `count=10` limits how many trials this agent starts; lower it
+    for a quicker experiment. The call waits while trials run.
+
+    To add trials to an existing sweep, use its ID as `sweep_id` and run the
+    agent cell again, keeping the same entity and project. Sweep coordination
+    requires a connection to your Weights & Biases server.
+    """)
     return
 
 
-@app.cell(hide_code=False)
+@app.cell
+def _(entity, project, sweep_id, sweep_train):
+    wandb.agent(
+        sweep_id,
+        function=sweep_train,
+        count=10,
+        entity=entity,
+        project=project,
+    )
+    return
+
+
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Visualize Results
+    ## Verify and compare results
 
-    After the sweep starts, Weights & Biases prints links to the project and sweep dashboards
-    in the notebook output. Open those links to watch trials arrive live and
-    compare their metrics.
+    Open the sweep link printed during registration. In the runs table, check
+    that `batch_size` and `learning_rate` vary between trials. Each run's config
+    also records the fixed epoch budget, seed, architecture, and dataset.
 
-    ```
-    View project at:
-    ```
+    Compare `epoch/val_loss` across runs and inspect the corresponding
+    `epoch/val_acc` curves. Use the parallel-coordinates plot to connect
+    hyperparameter choices to validation loss. Parameter importance becomes
+    more informative as you collect more trials. This reference dashboard
+    illustrates the views to look for:
 
-    In the Weights & Biases UI, compare parallel coordinates, parameter importance, and the
-    `epoch/val_loss` chart to understand which batch sizes and learning rates
-    worked best.
+    ![Example Weights & Biases Sweeps dashboard](https://i.imgur.com/AN0qnpC.png)
 
-    https://docs.coreweave.com/products/wandb/sweeps/visualize-sweep-results
+    Try `method="bayes"` or expand the search space, then register a new sweep
+    and compare the results. After selecting hyperparameters, evaluate the
+    chosen model on the reserved test set to estimate performance on unseen
+    data.
     """)
     return
 

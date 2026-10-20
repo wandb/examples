@@ -56,9 +56,9 @@ def _():
     ## Choose where to save the example
 
     Set `entity` to your Weights & Biases team name, or leave it as `None` to use your
-    default entity. All examples use the project below. `wandb.login()` uses
+    default entity. `wandb.login()` uses
     your saved credentials or prompts for an [API key](https://wandb.ai/authorize).
-    In a hosted notebook, you can also set the `WANDB_API_KEY` secret.
+    In a locally hosted notebook, you can also set the `WANDB_API_KEY` secret.
     """)
     return
 

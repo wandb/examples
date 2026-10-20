@@ -5,13 +5,19 @@
 #     "tensorflow>=2.16,<3",
 #     "wandb>=0.18,<1",
 # ]
+#
+# [tool.marimo.runtime]
+# on_cell_change = "lazy"
 # ///
 """Learn the Weights & Biases experiment-tracking workflow with simulated and Keras runs."""
 
 import marimo
 
 __generated_with = "0.25.1"
-app = marimo.App(width="medium", app_title="Introduction to Weights & Biases with Keras")
+app = marimo.App(
+    width="medium",
+    app_title="Introduction to Weights & Biases with Keras",
+)
 
 with app.setup:
     from pathlib import Path
@@ -26,14 +32,29 @@ with app.setup:
     from wandb.integration.keras import WandbMetricsLogger, WandbModelCheckpoint
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
     # Introduction to Weights & Biases with Keras
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/intro-to-weights-biases-keras/intro_to_weights_biases_keras.py/server)
-
-    <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
 
     Use [Weights & Biases](https://wandb.ai/site?utm_source=keras_intro_colab&utm_medium=code&utm_campaign=keras_intro)
     for experiment tracking, model checkpointing, and collaboration. This
@@ -46,42 +67,32 @@ def _():
 
     ## A shared dashboard for your experiments
 
-    With just a few lines of code, you can create rich, interactive, shareable
+    With few lines of code, you can create rich, interactive, shareable
     dashboards like this [example Weights & Biases project](https://wandb.ai/wandb/wandb_example).
 
     ![Example Weights & Biases dashboard](https://i.imgur.com/Pell4Oo.png)
 
-    ## Data and privacy
+    ## Authenticate to Weights & Biases
 
-    Weights & Biases encrypts data in transit and at rest. Organizations that need to keep
-    data in their own environment can use
-    [Weights & Biases Self-Managed](https://docs.wandb.ai/platform/hosting/hosting-options/self-managed).
-    You can also query and export logged data with the
-    [Weights & Biases Public API](https://docs.wandb.ai/models/ref/python/public-api/).
-
-    ## Connect to Weights & Biases
-
-    Configure `WANDB_API_KEY` in your environment or molab Secrets, then run
-    `wandb.login()` below. Get a key from [Weights & Biases](https://wandb.ai/authorize).
-    Terminal-backed sessions can also prompt for a key. A new molab session
-    does not inherit credentials from your computer.
-
-    Set `entity` to your team name, or keep `None` for your default entity. The two projects separate simulated metrics from real Keras training.
+    Set `entity` to your Weights & Biases team name, or leave it as `None` to use your
+    default entity. `wandb.login()` uses
+    your saved credentials or prompts for an [API key](https://wandb.ai/authorize).
+    In a locally hosted notebook, you can also set the `WANDB_API_KEY` secret.
     """)
     return
 
 
 @app.cell
 def _():
-    entity = "wandb"
+    entity = None
     simulation_project = "basic-intro"
     training_project = "keras-intro"
-    if not wandb.login():
-        raise RuntimeError("Configure Weights & Biases credentials before running the lesson.")
+
+    wandb.login()
     return entity, simulation_project, training_project
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Run simulated experiments
@@ -124,36 +135,28 @@ def _(entity, simulation_project):
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Train a simple Keras classifier
+    ## Train a Keras classifier
 
     This example downloads MNIST, trains a small dense classifier, and streams
-    metrics to Weights & Biases. It uses the current dedicated callbacks:
+    metrics to Weights & Biases. Two callbacks handle the logging:
 
     - `WandbMetricsLogger` records Keras training and validation metrics.
     - `WandbModelCheckpoint` saves each epoch's model and logs it as a Weights & Biases Artifact.
 
-    The former all-in-one `WandbCallback` is
-    [legacy](https://docs.wandb.ai/models/integrations/keras); new workflows
-    should select the dedicated callback for each behavior they need.
-
     Checkpoints are written to a temporary directory and removed after Weights & Biases has
     finished the run, so rerunning this notebook does not leave model files in
     the repository.
-    """)
-    return
 
-
-@app.cell(hide_code=False)
-def _():
-    mo.md(r"""
     ### Configure the experiments
 
-    Edit the settings below to control training time. We train five fresh models
-    with different, reproducibly sampled dropout rates. Weights & Biases records each model's
-    settings so you can compare dropout against validation loss and accuracy.
+    The dictionary below defines the model's layers, optimizer, and training
+    settings. We train five fresh models with reproducibly sampled dropout
+    rates. Weights & Biases records each model's settings so you can compare
+    dropout against validation loss and accuracy. Reduce `experiment_count`
+    or `epochs` for a quicker run.
     """)
     return
 
@@ -179,7 +182,7 @@ def _():
     return dropout_values, training_config
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Prepare MNIST once
@@ -202,7 +205,7 @@ def _():
     return x_train, x_validation, y_train, y_validation
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Train and log with Keras callbacks
@@ -270,7 +273,7 @@ def _(
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ### Inspect your results
@@ -284,7 +287,7 @@ def _():
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Try Weights & Biases Alerts
@@ -294,48 +297,34 @@ def _():
     trying this section, enable **Scriptable run alerts** and configure a
     destination in your Weights & Biases user settings.
 
-    The demo logs synthetic accuracy values and calls `alert_run.alert()` on the
-    first value at or below the threshold. Edit the Python settings below, then
-    click **Run demo and send alert if triggered**. This creates one run and may
-    send a real Slack or email notification. It is independent of the MNIST results.
+    The next cell logs synthetic accuracy values between zero and one. The
+    first value at or below `accuracy_threshold` triggers `alert_run.alert()`
+    and ends the loop. These values are independent of the MNIST results.
+
+    Set the threshold and random seed below, then run the cell to create an
+    alert-demo run. With notifications configured, this can send a real Slack
+    or email alert. `wait_duration=300` limits repeated alerts with the same
+    title to one every five minutes.
     """)
     return
 
 
 @app.cell
-def _():
+def _(entity, training_project):
     accuracy_threshold = 0.3
     max_alert_steps = 1000
     alert_seed = 7
-    return accuracy_threshold, alert_seed, max_alert_steps
 
-
-@app.cell
-def _():
-    send_alert = mo.ui.run_button(label="Run demo and send alert if triggered")
-    send_alert
-    return (send_alert,)
-
-
-@app.cell
-def _(
-    accuracy_threshold,
-    alert_seed,
-    entity,
-    max_alert_steps,
-    send_alert,
-    training_project,
-):
-    mo.stop(not send_alert.value)
     alert_rng = random.Random(alert_seed)
     with wandb.init(
         entity=entity,
         project=training_project,
         name="keras-low-accuracy-alert-demo",
         job_type="alert-demo",
+        config={"accuracy_threshold": accuracy_threshold, "seed": alert_seed},
     ) as alert_run:
         for alert_step in range(max_alert_steps):
-            alert_accuracy = round(alert_rng.random() + alert_rng.random(), 3)
+            alert_accuracy = round(alert_rng.random(), 3)
             alert_run.log({"step": alert_step, "accuracy": alert_accuracy})
             if alert_accuracy <= accuracy_threshold:
                 alert_run.alert(
@@ -354,10 +343,21 @@ def _(
     return
 
 
-@app.cell(hide_code=False)
+@app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## What's next?
+    ## Verify and next steps
+
+    In your W&B workspace, check:
+
+    - **`basic-intro`**: each simulation has eight logged accuracy and loss values.
+    - **`keras-intro`**: compare `dropout` in each training run's config with
+      `epoch/val_loss`, `epoch/val_accuracy`, and `final_validation_accuracy`.
+      Open a training run's **Artifacts** tab to find its per-epoch Keras models.
+    - **Alert demo**: inspect the accuracy history in the run named
+      `keras-low-accuracy-alert-demo`. With the default seed, the second value
+      crosses the threshold. Check your configured notification destination
+      for the warning.
 
     Continue with
     [Organizing hyperparameter sweeps in PyTorch](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py/server)
