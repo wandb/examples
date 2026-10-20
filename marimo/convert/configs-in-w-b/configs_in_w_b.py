@@ -47,18 +47,12 @@ def _():
     A run's `config` records the inputs to an experiment: hyperparameters,
     dataset names, model types, and other settings. Saving these values helps
     you reproduce a run and compare experiments with different settings.
-    Save outputs such as loss and accuracy with `run.log()`.
+    Save outputs such as loss and accuracy with `wandb.rRun.log()`.
 
     This lesson creates one small example run, adds configuration values from
     Python and `argparse`, then updates the finished run with the Public API.
     It records example settings without downloading data or training a model.
-    """)
-    return
 
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
     ## Choose where to save the example
 
     Set `entity` to your Weights & Biases team name, or leave it as `None` to use your

@@ -60,23 +60,13 @@ def _():
 
     ## 1. Set Up and Authenticate
 
-    From this notebook's directory, open it using its declared dependencies:
-
-    ```bash
-    uvx marimo edit --sandbox credit_scorecards_with_xgboost_and_w_b.py
-    ```
-
     > On macOS, XGBoost also needs OpenMP. If importing XGBoost reports a missing
     `libomp.dylib`, install it with `brew install libomp` and restart.
 
-    The next cell sets the destination for every run and calls `wandb.login()`.
-    Use your team name for `entity`, or `None` for your default entity. Configure `WANDB_API_KEY`
-    in your environment or molab Secrets; get a key from
-    [Weights & Biases](https://wandb.ai/authorize). Terminal-backed sessions can also prompt
-    for a key.
+    The next cell sets the destination project for every run and calls `wandb.login()`.
+    Use your team name for `entity`, or `None` for your default entity.
 
-    Running the code cells downloads the source Artifact, uploads derived
-    datasets and a model, then runs a small hyperparameter sweep.
+    If prompted, specify your [Forge API Key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys). If you run the notebook locally, you can set `WANDB_API_KEY` in your environment or molab Secrets.
     """)
     return
 
@@ -94,13 +84,8 @@ def _():
     mo.md(r"""
     ## 2. Choose the Dataset
 
-    The next cell identifies the source Artifact, ID columns, and target column,
-    and creates a temporary working directory. The target is `loan_default`;
-    ID columns are excluded from the model's predictors by preprocessing.
-
-    Keep the source Artifact path separate from your destination project:
-    it identifies the shared input dataset, while new Artifacts will be saved
-    to your project. The working directory holds the downloaded and derived CSVs.
+    The next cell defines the path of the source Artifact, ID columns, target column,
+    and creates a temporary working directory. The artifact's path points to a dataset artifact saved from a Weights & Biases user.
     """)
     return
 
@@ -151,9 +136,9 @@ def _():
     mo.md(r"""
     ## 3. Preprocess and Log a Dataset Artifact
 
-    The next cell starts `preprocessing_run`, retrieves the raw dataset with
-    `use_artifact()`, and downloads its files. We read the CSV and apply the
-    encoding function above to produce numeric predictors.
+    The next cell initializes a run (`preprocessing_run`). During the run, we retrieve the raw dataset with
+    `wandb.Run.use_artifact()`, and then you download its files. We read the CSV and apply the
+    encoding function (`one_hot_encode_data`) to produce numeric predictors.
 
     We save the processed CSV, attach it to a new `wandb.Artifact()`, and call
     `preprocessing_run.log_artifact()`. Consuming and producing Artifacts in
@@ -161,10 +146,6 @@ def _():
     The Artifact metadata also stores the encoding function's source so the
     saved dataset can be traced to its transformation.
     `wait()` ensures the upload finishes before the next stage fetches it.
-
-    For data stored in an existing Amazon S3 or GCS bucket, you can instead construct
-    an Artifact with `artifact.add_reference("s3://bucket/path")`. That records
-    an external reference rather than uploading another copy.
     """)
     return
 
@@ -255,12 +236,10 @@ def _():
     mo.md(r"""
     ## 5. Inspect Data with Weights & Biases Tables
 
-    The next cell starts `table_run` and records the split Artifact as an input.
+    The next cell initilizes a run (`table_run`) and records the split Artifact as an input.
     `wandb.Table(dataframe=...)` turns a reproducible sample of up to 1,000
     training rows into an interactive table. `table_run.log()` saves it under
-    `processed_dataset` for sorting, filtering, and inspection in Weights & Biases.
-    Look at the category indicators and `loan_default` values together to
-    check what the model will receive.
+    `processed_dataset` for sorting, filtering, and inspection in the Weights & Biases App UI.
     """)
     return
 
@@ -283,8 +262,7 @@ def _():
     ## 6. Prepare Predictors and Model Settings
 
     The next cell separates predictors from the binary target, computes the
-    training default rate, and defines the XGBoost parameters. We use histogram
-    trees on CPU; a supported CUDA environment can add `device="cuda"`.
+    training default rate, and defines the XGBoost parameters. We use histogram trees.
     `base_score` initializes predictions at the training default rate before
     any trees are added.
 
@@ -337,15 +315,18 @@ def _():
 
     The following helper calculates AUC, log loss, and KS statistics for the
     baseline and sweep models from their predicted default probabilities.
-    AUC measures ranking across thresholds; log loss measures probability
-    quality; KS measures separation between the scores for the two classes.
+
+    - AUC measures ranking across thresholds
+    - log loss measures probability
+    quality
+    - KS measures separation between the scores for the two classes
+
     The helper uses the full training and validation sets, with a threshold
     of 0.5 for validation accuracy. Predictions use XGBoost's best iteration
     selected by early stopping.
 
     These are descriptive model metrics. They do not establish calibration,
-    fairness, or suitability for lending decisions. The Weights & Biases calls that record
-    these values appear in the training cells below.
+    fairness, or suitability for lending decisions.
     """)
     return
 
@@ -377,7 +358,7 @@ def _():
     mo.md(r"""
     ## 8. Train and Log the Baseline
 
-    The next cell starts `training_run`, records the split Artifact as an input,
+    The next cell initializes a run called (`training_run`), records the split Artifact as an input,
     and logs hyperparameters in its configuration. Passing
     `WandbCallback(log_model=True)` to `XGBClassifier` logs evaluation metrics
     and feature importance during training, and uploads the trained booster as
@@ -451,10 +432,10 @@ def _():
 
     The patience values are smaller than the 25-tree limit so every choice
     can affect when a trial stops. Learning rate controls each tree's
-    contribution; gamma and minimum child weight constrain tree growth.
+    contribution while the gamma and minimum child weight constrain tree growth.
 
     Sweeps automate comparison on this fixed validation split. Repeated tuning
-    can overfit the validation set; an independent test set is needed to assess
+    can overfit the validation set. It is recommended that you keep an independent test set to assess
     the selected model's performance.
     """)
     return

@@ -58,11 +58,7 @@ def _():
 
     ## Choose where to log
 
-    Set `entity` to your Weights & Biases username or team, or leave it as `None` to use
-    your default entity. `project` groups the experiments you want to compare.
-    Run `wandb.login()` to authenticate; it uses existing credentials or prompts
-    for an [API key](https://wandb.ai/authorize). In a hosted notebook, you can
-    also provide the key through the `WANDB_API_KEY` secret.
+    If prompted, specify your [Forge API Key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys). If you run the notebook locally, you can set `WANDB_API_KEY` in your environment or molab Secrets.
     """)
     return
 
