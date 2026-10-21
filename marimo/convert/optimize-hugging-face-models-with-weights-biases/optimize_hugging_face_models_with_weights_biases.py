@@ -35,6 +35,9 @@ with app.setup:
     # This lesson uses PyTorch; avoid optional TensorFlow/Keras imports.
     os.environ["USE_TF"] = "0"
 
+    # Check subprocess dependencies during setup, before starting a training run.
+    import accelerate
+    import evaluate
     import fsspec
     import marimo as mo
     import numpy as np
@@ -72,32 +75,34 @@ def _():
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/optimize-hugging-face-models-with-weights-biases/optimize_hugging_face_models_with_weights_biases.py/server)
 
-    # Optimize Hugging Face models with Weights & Biases
+    # Track Hugging Face training with Weights & Biases
 
-    [Hugging Face](https://huggingface.co/) provides tools to quickly train neural networks for NLP (Natural Language Processing) on any task (classification, translation, question answering, etc) and any dataset with PyTorch and TensorFlow 2.0.
+    This lesson shows two ways to connect Hugging Face training to Weights & Biases.
+    First, run an existing BERT training script on MRPC. Then build a custom
+    DistilBERT topic-classification workflow with `Trainer`.
 
-    Coupled with [Weights & Biases integration](https://docs.wandb.ai/models/integrations/huggingface_transformers), you can quickly train and monitor models for full traceability and reproducibility without any extra line of code! The notebook metadata provides the libraries; configure Weights & Biases credentials below before starting an experiment.
+    Both examples use `report_to="wandb"` to log training and evaluation metrics.
+    The settings below also enable parameter and gradient histograms and upload
+    the final model as an Artifact. These records help you compare experiments
+    and identify the settings and model files used by each run.
 
-    **Note**: To enable logging to Weights & Biases, set `report_to` to `wandb` in your `TrainingArguments` or script.
+    ## Environment setup
 
-    Weights & Biases integration with 🤗 Hugging Face can automatically:
-    * log your configuration parameters
-    * log your losses and metrics
-    * log gradients and parameter distributions
-    * log your model
-    * keep track of your code
-    * log your system metrics (GPU, CPU, memory, temperature, etc)
-    ## Installation and set-up
+    The notebook declares its dependencies in the script metadata. Open it with
+    `uvx marimo edit optimize_hugging_face_models_with_weights_biases.py --sandbox`
+    from this notebook's folder to install and use those dependencies.
+    If you use an existing Python environment instead, install the declared
+    dependencies there too. The training subprocess uses the notebook's Python
+    interpreter; it does not install packages from the script metadata.
 
-    We need the following 🤗 Hugging Face libraries:
-    * [transformers](https://huggingface.co/transformers/) contains an API for training models and many pre-trained models
-    * [tokenizers](https://huggingface.co/docs/tokenizers) is automatically installed by transformers and "tokenize" our data (ie it converts text to sequence of numbers)
-    * [datasets](https://huggingface.co/docs/datasets/) contains a rich source of data and common metrics, perfect for prototyping
+    The examples use Transformers
+    for models and training, tokenizers to convert text to token IDs, and Datasets
+    to load and prepare examples. The GLUE script also needs Evaluate to compute
+    metrics and Accelerate to run the Trainer.
 
-    The notebook dependency metadata includes these libraries and `wandb`.
-    Transformers and `run_glue.py` use the same pinned source revision so the
-    script and installed APIs stay compatible. Keep the IPython dependency:
-    Transformers uses its notebook progress callback when marimo is loaded.
+    Transformers and `run_glue.py` use the same pinned source revision. Keep those
+    versions aligned when updating the notebook so the script’s arguments match
+    the installed library.
     """)
     return
 
@@ -190,7 +195,7 @@ def _():
 
     The next cells download the script from the same source revision as the
     installed Transformers library, then run it with this Python environment.
-    `--report_to wandb` activates the integration; Weights & Biases prints the run link in
+    `--report_to wandb` activates the integration. Weights & Biases prints the run link in
     the subprocess output. The script finishes its run when the process exits.
 
     We evaluate and save every 30 steps, retain two checkpoints, and reload the
@@ -419,10 +424,10 @@ def _():
     Explore supported architectures on the [Model Hub](https://huggingface.co/models).
     `AutoModelForSequenceClassification` loads a pretrained encoder and adds a
     classification head for our ten topics. The new head has not learned the
-    topic labels yet, so its initial predictions are a baseline.
+    topic labels yet, so its initial predictions are not meaningful topic classifications.
 
     `get_topic()` tokenizes a sentence, moves its tensors to the model's device,
-    and selects the largest output logit. Evaluation mode disables dropout;
+    and selects the largest output logit. Evaluation mode disables dropout.
     `torch.no_grad()` avoids building a gradient graph for inference.
     """)
     return
