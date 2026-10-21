@@ -53,21 +53,58 @@ def _():
     Python and `argparse`, then updates the finished run with the Public API.
     It records example settings without downloading data or training a model.
 
-    ## Choose where to save the example
+    ## Authenticate with Weights & Biases
 
-    Set `entity` to your Weights & Biases team name, or leave it as `None` to use your
-    default entity. `wandb.login()` uses
-    your saved credentials or prompts for an [API key](https://wandb.ai/authorize).
-    In a locally hosted notebook, you can also set the `WANDB_API_KEY` secret.
+    Authenticate with Weights & Biases to log your experiments. Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the field below, then select **Connect to Weights & Biases**. Do not paste your API key into the notebook’s source code.
+
+    If you run this notebook locally, Weights & Biases automatically uses credentials from the `WANDB_API_KEY` environment variable or your `.netrc` file. If these credentials are available, you do not need to enter your key.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    wandb_login_form = mo.md("{api_key}\n").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True)
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_login_form
+    return (wandb_login_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_login_form):
+    mo.stop(wandb_login_form.value is None, mo.md("Connect to Weights & Biases above before training."))
+
+    _api_key = wandb_login_form.value["api_key"].strip()
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Authentication did not complete. Check your API key or runtime credentials and reconnect.", kind="danger"),
+    )
+
+    mo.callout("Connected to Weights & Biases.", kind="success")
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Specify project and entity
+
+    Set `entity` to your Weights & Biases team name. Optionally, change `project` to the project where you want to log runs. Otherwise, the notebook uses the provided project name.
     """)
     return
 
 
 @app.cell
 def _():
-    entity = None
+    entity = "your-entity"
     project = "config_example"
-    wandb.login()
     return entity, project
 
 
@@ -90,7 +127,6 @@ def _():
         "dataset": "CelebA",
         "type": "baseline",
     }
-    config
     return (config,)
 
 
