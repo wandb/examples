@@ -94,7 +94,7 @@ def _(wandb_login_form):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Specify project and entity
+    ## Set your team and project
 
     Set `entity` to your Weights & Biases team name. Optionally, change `project` to the project where you want to log runs. Otherwise, the notebook uses the provided project name.
     """)
