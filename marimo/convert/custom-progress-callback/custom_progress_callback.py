@@ -64,7 +64,9 @@ def _():
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/custom-progress-callback/custom_progress_callback.py/server)
 
-    In this example we will see how to instrument a custom [callback](https://huggingface.co/docs/transformers/main_classes/callback) for the Hugging Face [Trainer](https://huggingface.co/docs/transformers/main_classes/trainer) to periodically visualize model predictions using Weights & Biases [Tables](https://wandb.ai/site/tables)
+    Train GPT-2 on WikiText-2 and inspect how its next-token predictions change
+    across epochs. A custom Hugging Face Trainer callback logs the same validation
+    examples to Weights & Biases Tables, alongside the training metrics.
 
     > Note: The default GPT-2 model benefits from a GPU. CPU training is supported but slower. We recommend that you start with one epoch and fewer training texts.
 
@@ -126,10 +128,14 @@ def _():
     mo.md(r"""
     ## Train a language model
 
-    In this notebook, we'll see how to train a [Transformers](https://github.com/huggingface/transformers) model on a causal language modeling task: predict the next token in a sentence. Labels copy the input tokens; the model shifts them internally to compute next-token loss. Its causal attention mask prevents access to future tokens.
+    Causal language modeling trains a model to predict the next token from the
+    preceding tokens. Here, the labels initially copy the input tokens. GPT-2
+    shifts the labels internally when computing loss so each output is compared
+    with the next token. Its causal attention mask hides later tokens.
 
-    We will see how to load and preprocess the dataset for the task and train a model on it using the `Trainer` API.
-    We will be building a custom trainer callback to visualize the model predictions using Weights & Biases Tables by periodically logging the predictions to the table.
+    Choose the training budget below. The following cells prepare WikiText-2,
+    build the prediction callback, and train a fresh GPT-2 model when you submit
+    the training form.
     """)
     return
 
@@ -196,18 +202,13 @@ def _(training_config):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    For causal language modeling (CLM) task we are going to take all the texts in our dataset and concatenate them after they are tokenized.
-    Then we split them in examples of a certain sequence length. This way the model will receive chunks of contiguous text that may look like:
-    ```
-    part of text 1
-    ```
-    or
-    ```
-    end of text 1 [BOS_TOKEN] beginning of text 2
-    ```
-    depending on whether they span over several of the original texts in the dataset or not. We copy the inputs to the labels; the model shifts them internally when computing next-token loss.
+    Tokenize the text, concatenate token sequences within each processing batch,
+    and split them into fixed-length blocks. A block can cross a boundary between
+    two source texts. This code does not explicitly insert a separator between them.
 
-    We will use the [`gpt2`](https://huggingface.co/gpt2) architecture for this example. You can pick any of the checkpoints listed [here](https://huggingface.co/models?filter=causal-lm) instead.
+    We use the GPT-2 tokenizer and model together. If you choose another model,
+    update `MODEL_NAME` and check that its tokenizer, context length, and training
+    requirements fit this example.
     """)
     return
 
@@ -247,7 +248,10 @@ def _(datasets, tokenizer):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Next, we need to concatenate all our texts together then split the result in small chunks of a certain `block_size`. Here we will use a block_size of `128`.
+    The `group_texts` helper joins token sequences within each batch of 1,000
+    source texts and divides them into `BLOCK_SIZE`-token examples. The default
+    block size is 128. It discards the final incomplete block in each processing
+    batch and copies the input IDs into `labels` for next-token training.
     """)
     return
 
@@ -352,12 +356,13 @@ def _():
 
     First instantiate `Trainer` with the model, training arguments, and train and
     evaluation datasets. Our callback needs the trainer itself, so add it afterward
-    with `add_callback`. Remove the automatically installed `WandbCallback` first;
-    the custom subclass already provides that integration.
+    with `add_callback`. Remove the automatically installed `WandbCallback` first
+    to avoid duplicate logging from the base integration and our subclass.
 
     The complete run lifecycle is inside `train_model`. Each submission creates a
     fresh model and closes the run when training completes or fails. Checkpoints
-    are uploaded as Weights & Biases Artifacts; temporary local checkpoints are removed afterward.
+    are uploaded as Weights & Biases Artifacts. Temporary local checkpoints are
+    removed after the run finishes.
     """)
     return
 
