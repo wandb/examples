@@ -77,6 +77,62 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+    ## Authenticate with Weights & Biases
+
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `zoo_experiment`. Then select **Connect to Weights & Biases**.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="zoo_experiment", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(mo, wandb, wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    TEAM_ENTITY = _entity
+    PROJECT = _project
+    mo.md("✓ Connected to Weights & Biases.")
+    return PROJECT, TEAM_ENTITY
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     ## Retrieve and process dataset
     We will use the open source [Zoo dataset](https://archive.ics.uci.edu/dataset/111/zoo) from the UCI Machine Learning Repository.
 
@@ -220,9 +276,7 @@ def _(mo):
 
 
 @app.cell
-def _(dataset_target_path, wandb):
-    TEAM_ENTITY = "<TEAM_A>"
-    PROJECT = "zoo_experiment"
+def _(PROJECT, TEAM_ENTITY, dataset_target_path, wandb):
 
     run = wandb.init(
         entity=TEAM_ENTITY,
@@ -242,7 +296,7 @@ def _(dataset_target_path, wandb):
     run.link_artifact(artifact=artifact, target_path=dataset_target_path)
 
     run.finish()
-    return PROJECT, TEAM_ENTITY
+    return
 
 
 @app.cell(hide_code=True)

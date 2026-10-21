@@ -78,18 +78,6 @@ def _():
     In this tutorial you will create a hyperparameter search with Weights & Biases PyTorch integration. Follow along with a [video tutorial](https://wandb.me/sweeps-video).
 
     ![](https://i.imgur.com/WVKkMWw.png)
-
-    ## Sweeps: An Overview
-
-    Running a hyperparameter sweep with Weights & Biases is very easy. There are just 3 simple steps:
-
-    1. **Define the sweep:** we do this by creating a dictionary or a [YAML file](https://docs.wandb.ai/models/sweeps/define-sweep-configuration) that specifies the parameters to search through, the search strategy, the optimization metric, and so on.
-
-    2. **Initialize the sweep:** with one line of code we initialize the sweep and pass in the dictionary of sweep configurations:
-    `sweep_id = wandb.sweep(sweep_config)`
-
-    3. **Run the sweep agent:** also accomplished with one line of code, we call `wandb.agent()` and pass the `sweep_id` to run, along with a function that defines your model architecture and trains it:
-    `wandb.agent(sweep_id, function=train)`
     """)
     return
 
@@ -97,41 +85,68 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Authenticate and choose a project
+    ## Authenticate with Weights & Biases
 
-    Set `WANDB_API_KEY` in your environment or molab Secrets, or use credentials
-    already stored in this runtime. In a terminal-backed session, `wandb.login()`
-    can also prompt for your [API key](https://wandb.ai/authorize). A fresh molab
-    session does not inherit credentials from your computer.
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
 
-    Edit the project and team entity below.
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
 
-    Running the sweep and agent cells creates a remote Weights & Biases sweep and up to five
-    training runs on this machine. Each trial downloads MNIST if needed and
-    trains on every fifth training image (12,000 examples).
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `pytorch-sweeps-demo`. Then select **Connect to Weights & Biases**.
     """)
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
-    project = "pytorch-sweeps-demo"
-    entity = None  # Set this to your Weights & Biases team if needed.
-    if not wandb.login():
-        raise RuntimeError("Configure Weights & Biases credentials before starting the sweep.")
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="pytorch-sweeps-demo", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
     return entity, project
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Step 1: Define a sweep
+    ## Define a sweep
 
     The next cell defines the complete search space in one nested dictionary.
-    Weights & Biases supports `grid`, `random`, and `bayes` search; here `random` samples a new
-    combination for each trial. The objective is to minimize the metric named
-    `loss`, which the training function will log once per epoch. Random search
-    does not require an objective, but recording one makes the goal explicit.
+    Weights & Biases supports `grid`, `random`, and `bayes` search.
+
+    The objective of the hyperparameter search in this notebook is to minimize the metric named `loss`, which the training function will log once per epoch.
 
     Under `parameters`, use:
 
@@ -141,11 +156,7 @@ def _():
       0.1, and a logarithmically sampled batch size between 32 and 256, rounded
       to a multiple of 8 by `q`.
 
-    Other distributions have their own settings, such as `mu` and `sigma` for a
-    normal distribution. Finite `values` are also useful for narrowing continuous
-    parameters to a few candidate settings. See the
-    [sweep configuration reference](https://docs.wandb.ai/models/sweeps/sweep-config-keys)
-    for the full set of options. The command-line equivalent uses a YAML file.
+    See the [sweep configuration reference](https://docs.wandb.ai/models/sweeps/sweep-config-keys) for the full set of options. The command-line equivalent uses a YAML file.
     """)
     return
 
@@ -180,7 +191,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Step 2: Initialize the sweep
+    ## Initialize the sweep
 
     `wandb.sweep()` registers the configuration with a Weights & Biases-managed controller
     and returns `sweep_id`. The controller chooses hyperparameters; an agent on
@@ -202,7 +213,7 @@ def _(entity, project, sweep_config):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Step 3: Define the PyTorch training code
+    ## Define the PyTorch training code
 
     The following helpers handle the repeated work in each trial:
 
@@ -281,9 +292,7 @@ def train_epoch(sweep_run, network, loader, optimizer):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ### Connect one trial to Weights & Biases
-
-    An agent needs a zero-argument function to call for each trial. `train()`
+    The sweep agent needs a zero-argument function to call for each trial. `train()`
     starts `sweep_run` with `wandb.init()` and reads the controller's sampled
     hyperparameters from `sweep_run.config`. It builds fresh data, model, and
     optimizer objects, then logs the epoch's mean loss under the exact `loss`
@@ -315,7 +324,7 @@ def train():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Step 4: Run a sweep agent
+    ## Run a sweep agent
 
     Set `trial_count` below, then run the agent cell. `wandb.agent()` asks the
     controller for hyperparameters and calls `train()` up to that many times.

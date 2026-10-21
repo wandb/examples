@@ -53,37 +53,72 @@ def _():
 
     This notebooks covers how to track, visualize, and compare model predictions over the course of training, using PyTorch on MNIST data.
 
-    ## 1. Authenticate and Choose a Project
-
-    The next cell calls `wandb.login()` and sets the project for your experiment.
-    Set `entity` to your Weights & Biases team name, or leave it as `None` to use your default
-    entity.
-
-    Configure `WANDB_API_KEY` in your environment or the molab Secrets panel.
-    Get a key from [Weights & Biases](https://wandb.ai/authorize), or
-    [create an account](https://wandb.ai/signup). In a terminal-backed session,
-    `wandb.login()` can also prompt for a key.
-
     Running the following code cells downloads MNIST, trains a model, and logs
     metrics and prediction tables to Weights & Biases.
     """)
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
-    entity = None
-    project = "table-quickstart"
-    authenticated = wandb.login()
-    if not authenticated:
-        raise RuntimeError("Configure Weights & Biases credentials before running the lesson.")
-    return authenticated, entity, project
+    mo.md(r"""
+    ## Authenticate with Weights & Biases
+
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `table-quickstart`. Then select **Connect to Weights & Biases**.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="table-quickstart", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
+    return entity, project
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 2. Set the Training and Table Sizes
+    ## Set the Training and Table Sizes
 
     The next cell selects a GPU when available and defines the model's
     hyperparameters. One epoch keeps the demo short; increase `EPOCHS` to compare
@@ -125,7 +160,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 3. Define the Classifier
+    ## Define the Classifier
 
     The next cell defines a small convolutional network for MNIST. It returns
     ten logits per image, one for each digit. During evaluation, we apply
@@ -168,7 +203,7 @@ def _(CONV_KERNEL_SIZE, L1_SIZE, L2_SIZE):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 4. Load MNIST
+    ## Load MNIST
 
     The next cell downloads MNIST and creates training and test data loaders.
     Training batches are shuffled; test batches stay in a fixed order so each
@@ -182,9 +217,7 @@ def _():
 
 
 @app.cell
-def _(BATCH_SIZE, authenticated):
-    if not authenticated:
-        raise RuntimeError("Log in to Weights & Biases first.")
+def _(BATCH_SIZE):
 
     train_dataset = torchvision.datasets.MNIST(
         root="./data", train=True, transform=T.ToTensor(), download=True,
@@ -212,7 +245,7 @@ def _(BATCH_SIZE, authenticated):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 5. Train and Log Prediction Tables
+    ## Train and Log Prediction Tables
 
     The next cell starts a Weights & Biases run with `wandb.init()` and records the training
     configuration. Each execution builds a fresh model and optimizer.
@@ -335,7 +368,7 @@ def _(
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 6. Explore Your Predictions in Weights & Biases
+    ## Explore Your Predictions in Weights & Biases
 
     [Open your Weights & Biases run]({run_url}) and find the `test_predictions` table.
     Each row connects an image to its true label, predicted label, and class
@@ -356,6 +389,11 @@ def _():
     for more ways to query and compare your results.
     - Explore the [CNN-2: Progress over Training Time report](https://wandb.ai/stacey/table-quickstart/reports/CNN-2-Progress-over-Training-Time--Vmlldzo3NDY5ODU#false-positives-grouped-by-guess) for examples on how to compare, filter, and group predictions.
     """)
+    return
+
+
+@app.cell
+def _():
     return
 
 

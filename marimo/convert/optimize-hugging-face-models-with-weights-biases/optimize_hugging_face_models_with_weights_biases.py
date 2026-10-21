@@ -105,14 +105,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Configure Weights & Biases and authenticate
-
-    Set `WANDB_API_KEY` in your environment or molab Secrets, or use credentials
-    already stored in this runtime. In a terminal-backed session, `wandb.login()`
-    can also prompt for your [API key](https://wandb.ai/authorize). A fresh molab
-    session does not inherit credentials from your computer.
-
-    Edit the project and optional team entity below. `WANDB_LOG_MODEL="end"`
+    `WANDB_LOG_MODEL="end"`
     tells the Transformers callback to log the trained model as a Weights & Biases Artifact.
     `WANDB_WATCH="all"` enables gradient and parameter histograms. Both examples
     enable metrics with `report_to="wandb"` and give the run a descriptive name.
@@ -123,15 +116,67 @@ def _():
     return
 
 
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Authenticate with Weights & Biases
+
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `huggingface-demo`. Then select **Connect to Weights & Biases**.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="huggingface-demo", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
+    return entity, project
+
+
 @app.cell
 def _():
-    project = "huggingface-demo"
-    entity = None  # Set this to your Weights & Biases team.
     os.environ["WANDB_LOG_MODEL"] = "end"
     os.environ["WANDB_WATCH"] = "all"
-    if not wandb.login():
-        raise RuntimeError("Configure Weights & Biases credentials before running this lesson.")
-    return entity, project
+    return
 
 
 @app.cell(hide_code=True)

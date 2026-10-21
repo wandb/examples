@@ -61,24 +61,63 @@ def _():
     The workflow has three parts: define the search space, write a function that
     trains one model using `run.config`, and start an agent to run the trials.
     This example launches up to ten trials with two epochs each.
-
-    ## Choose your Weights & Biases project and log in
-
-    Set `entity` to your username or team, or leave it as `None` to use your
-    default entity. The same `project` is used for the sweep, agent, and runs.
-    `wandb.login()` uses existing credentials or prompts for an
-    [API key](https://wandb.ai/authorize). In a hosted notebook, you can also
-    supply the key through the `WANDB_API_KEY` secret.
     """)
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
-    entity = None
-    project = "sweeps-tensorflow"
+    mo.md(r"""
+    ## Authenticate with Weights & Biases
 
-    wandb.login()
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `sweeps-tensorflow`. Then select **Connect to Weights & Biases**.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="sweeps-tensorflow", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
     return entity, project
 
 
@@ -237,7 +276,7 @@ def _(entity, project, train_images, train_labels, val_images, val_labels):
                 verbose=2,
             )
 
-    return (sweep_train,)
+    return
 
 
 @app.cell(hide_code=True)
@@ -256,7 +295,7 @@ def _():
 @app.cell
 def _(entity, project, sweep_config):
     sweep_id = wandb.sweep(sweep_config, entity=entity, project=project)
-    return (sweep_id,)
+    return
 
 
 @app.cell(hide_code=True)
@@ -265,8 +304,7 @@ def _():
     ## Start an agent
 
     The agent requests hyperparameters from Weights & Biases and calls `sweep_train` for
-    each trial. `count=10` limits how many trials this agent starts; lower it
-    for a quicker experiment. The call waits while trials run.
+    each trial. `count=10` limits how many trials this agent starts. Lower the count for a quicker experiment.
 
     To add trials to an existing sweep, use its ID as `sweep_id` and run the
     agent cell again, keeping the same entity and project. Sweep coordination
@@ -275,16 +313,18 @@ def _():
     return
 
 
-@app.cell
-def _(entity, project, sweep_id, sweep_train):
+app._unparsable_cell(
+    r"""
     wandb.agent(
         sweep_id,
-        function=sweep_train,
+        function=sweep_train,x
         count=10,
         entity=entity,
         project=project,
     )
-    return
+    """,
+    name="_"
+)
 
 
 @app.cell(hide_code=True)

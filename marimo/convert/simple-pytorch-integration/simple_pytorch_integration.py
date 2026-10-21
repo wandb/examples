@@ -67,7 +67,13 @@ def _():
 
     In this notebook you will learn how to integrate Weights & Biases with your PyTorch code to add experiment tracking to your pipeline.
 
-    ### In pseudocode, what we'll do is:
+    The example trains a small convolutional network on every fifth MNIST image:
+    12,000 training examples and 2,000 test examples. A GPU is optional. Running
+    the experiment downloads MNIST into `data/`, trains for five epochs, and
+    creates one Weights & Biases run with metrics and an ONNX model.
+
+    In pseudocode, what we'll do is:
+
     ```python
     # import the library
     import wandb
@@ -99,56 +105,63 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Follow along with a [video tutorial](https://wandb.me/pytorch-video)!
-    **Note**: Sections starting with _Step_ are all you need to integrate Weights & Biases in an existing pipeline. The rest just loads data and defines a model.
+    ## Authenticate with Weights & Biases
+
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `pytorch_demo`. Then select **Connect to Weights & Biases**.
     """)
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(r"""
-    ## Setup and authentication
-
-    Open this tutorial in the marimo **editor** and run the cells as you read.
-    Editing a hyperparameter marks dependent cells as stale until you run them
-    again. The final experiment cell starts disabled; enable it from its cell
-    menu when you are ready to log in and train.
-
-    The example trains a small convolutional network on every fifth MNIST image:
-    12,000 training examples and 2,000 test examples. A GPU is optional. Running
-    the experiment downloads MNIST into `data/`, trains for five epochs, and
-    creates one Weights & Biases run with metrics and an ONNX model.
-
-    ### Step 1: Log in to Weights & Biases
-
-    Create a [Weights & Biases account](https://wandb.ai) and get your
-    [API key](https://wandb.ai/authorize). Set `WANDB_API_KEY` in your runtime's
-    environment or **Secrets** panel. You can also use `wandb login` in a local
-    terminal. A hosted runtime needs its own credentials.
-
-    The execution cell at the end calls `wandb.login()` before training. Weights & Biases
-    uses your default entity; set `WANDB_ENTITY` to your team slug if needed
-    (the `<entity>` in `wandb.ai/<entity>/<project>`).
-    """)
-    return
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="pytorch_demo", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
 
 
-@app.cell
-def _():
-    entity = "wandb"
-    project = "pytorch_demo"
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
 
-    wandb.login()
-    return
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
+    return entity, project
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
     ## Define the Experiment and Pipeline
-
-    ### Step 2: Track metadata and hyperparameters with `wandb.init`
 
     Programmatically, the first thing we do is define our experiment:
     what are the hyperparameters? what metadata is associated with this run?
@@ -200,11 +213,11 @@ def _():
 
 
 @app.function
-def model_pipeline(hyperparameters):
+def model_pipeline(hyperparameters, entity, project):
     seed_everything(hyperparameters["seed"])
 
     # tell wandb to get started
-    with wandb.init(project="pytorch-demo", config=hyperparameters) as run:
+    with wandb.init(entity=entity, project=project, config=hyperparameters) as run:
         # access all HPs through run.config, so logging matches execution!
         config = run.config
 
@@ -349,17 +362,12 @@ def _():
     mo.md(r"""
     ## Define Training Logic
 
-    Next, let's define a triaing loop.
-
     The next cells define a training loop:
 
     - Forward pass
     - Compute loss
     - Apply optimizer
     - Backward pass
-
-
-    ### Step 3. Track gradients
 
     During training we will use `wandb.Run.watch()` to log the gradients and the parameters of your PyTorch model.
     """)
@@ -421,8 +429,6 @@ def _():
     Once the model is done training, we want to test it:
     run it against some fresh data from production, perhaps,
     or apply it to some hand-curated "hard examples".
-
-    ### Optional Step 4: Save the model
 
     This is also a great time to save the model's architecture
     and final parameters to disk.
@@ -493,8 +499,8 @@ def _():
 
 
 @app.cell
-def _(config):
-    model_pipeline(config)
+def _(config, entity, project):
+    model_pipeline(config, entity, project)
     return
 
 

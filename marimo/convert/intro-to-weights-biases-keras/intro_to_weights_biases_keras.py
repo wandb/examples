@@ -65,30 +65,68 @@ def _():
     and model checkpoints. Edit the Python configuration before running the
     examples.
 
-    ## A shared dashboard for your experiments
-
-    With few lines of code, you can create rich, interactive, shareable
-    dashboards like this [example Weights & Biases project](https://wandb.ai/wandb/wandb_example).
 
     ![Example Weights & Biases dashboard](https://i.imgur.com/Pell4Oo.png)
-
-    ## Authenticate to Weights & Biases
-
-    Set `entity` to your Weights & Biases team name, or leave it as `None` to use your
-    default entity. `wandb.login()` uses
-    your saved credentials or prompts for an [API key](https://wandb.ai/authorize).
-    In a locally hosted notebook, you can also set the `WANDB_API_KEY` secret.
     """)
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
-    entity = None
-    simulation_project = "basic-intro"
-    training_project = "keras-intro"
+    mo.md(r"""
+    ## Authenticate with Weights & Biases
 
-    wandb.login()
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose projects for simulated metrics and training runs. The fields below contain this lesson’s defaults. Then select **Connect to Weights & Biases**.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{simulation_project}\n\n{training_project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        simulation_project=mo.ui.text(value="basic-intro", label="Simulation project", full_width=True),
+        training_project=mo.ui.text(value="keras-intro", label="Training project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _simulation_project = _submission["simulation_project"].strip()
+    _training_project = _submission["training_project"].strip()
+    mo.stop(
+        not _entity or not _simulation_project or not _training_project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    entity = _entity
+    simulation_project = _simulation_project
+    training_project = _training_project
+    mo.md("✓ Connected to Weights & Biases.")
     return entity, simulation_project, training_project
 
 
@@ -103,9 +141,9 @@ def _():
     2. Log metrics from training.
     3. Open the printed run links to compare results in the dashboard.
 
-    The next cell creates five experiments by default. These accuracy and loss
-    curves are synthetic; no model is trained. A fixed seed makes the examples
-    reproducible. Each context manager finishes its run before the next starts.
+    The next cell creates five experiments. Each experiment consists of a training loop that generates synthetic loss and accuracy. These metrics are logged to the active run.
+
+    A fixed seed makes the examples reproducible.
     """)
     return
 
@@ -147,8 +185,7 @@ def _():
     - `WandbModelCheckpoint` saves each epoch's model and logs it as a Weights & Biases Artifact.
 
     Checkpoints are written to a temporary directory and removed after Weights & Biases has
-    finished the run, so rerunning this notebook does not leave model files in
-    the repository.
+    finished the run.
 
     ### Configure the experiments
 
@@ -187,10 +224,8 @@ def _():
     mo.md(r"""
     ### Prepare MNIST once
 
-    The next cell downloads MNIST if needed, normalizes pixels to `[0, 1]`,
+    The next cell downloads MNIST, normalizes pixels to `[0, 1]`,
     and samples 12,000 training images and 500 held-out images for a shorter demo.
-    All experiments reuse these arrays. We use the held-out images for validation
-    during training; they are not an independent final test.
     """)
     return
 

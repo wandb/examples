@@ -63,13 +63,6 @@ def _():
     prediction tables, and model checkpoints. An optional final example shows
     how to send a Weights & Biases alert.
 
-    ## 1. Authenticate
-
-    Set `entity` to your Weights & Biases team name, or leave it as `None` to use your
-    default entity. `wandb.login()` uses
-    your saved credentials or prompts for an [API key](https://wandb.ai/authorize).
-    In a locally hosted notebook, you can also set the `WANDB_API_KEY` secret.
-
     Running the code cells creates experiment runs, downloads MNIST, and uploads
     metrics and checkpoints. The optional alert has its own Python setting
     near the end of the lesson.
@@ -77,20 +70,69 @@ def _():
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
-    entity = None
-    simulation_project = "basic-intro"
-    training_project = "pytorch-intro"
+    mo.md(r"""
+    ## Authenticate with Weights & Biases
 
-    wandb.login()
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose projects for simulated metrics and training runs. The fields below contain this lesson’s defaults. Then select **Connect to Weights & Biases**.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{simulation_project}\n\n{training_project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        simulation_project=mo.ui.text(value="basic-intro", label="Simulation project", full_width=True),
+        training_project=mo.ui.text(value="pytorch-intro", label="Training project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _simulation_project = _submission["simulation_project"].strip()
+    _training_project = _submission["training_project"].strip()
+    mo.stop(
+        not _entity or not _simulation_project or not _training_project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    entity = _entity
+    simulation_project = _simulation_project
+    training_project = _training_project
+    mo.md("✓ Connected to Weights & Biases.")
     return entity, simulation_project, training_project
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 2. Track Simulated Experiments
+    ## Track Simulated Experiments
 
     The next cell creates five `simulation_run` objects in sequence. Each call
     to `wandb.init()` starts a separate experiment and records its configuration.
@@ -129,7 +171,7 @@ def _(entity, simulation_project):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 3. Compare runs in your project
+    ## Compare runs in your project
 
     Open a run link printed by Weights & Biases in the previous cell. In the `basic-intro`
     project, select the five simulation runs and compare their `acc` and `loss`
@@ -138,7 +180,7 @@ def _():
 
     Next, we apply the same logging pattern to a real MNIST classifier.
 
-    ## 4. Set the PyTorch Experiment Configuration
+    ## Set the PyTorch Experiment Configuration
 
     The next cell chooses CUDA when available, otherwise CPU, and defines common
     training settings. We train three fresh models with dropout values 0.1, 0.3,
@@ -170,7 +212,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 5. Load MNIST batches
+    ## Load MNIST batches
 
     `get_dataloader()` loads MNIST into temporary storage and selects every
     `sample_stride`-th image. `ToTensor()` converts each grayscale image to a
@@ -274,7 +316,7 @@ def evaluate_model(model, validation_loader, loss_function, device):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 6. Build a Prediction Table
+    ## Build a Prediction Table
 
     The next helper functions creates a `wandb.Table` with one row per image. Each row
     contains a viewable `wandb.Image`, the predicted digit, the true label,
@@ -301,7 +343,7 @@ def make_prediction_table(images, predictions, labels, probabilities):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 7. Train, Log Metrics, and Save Checkpoints
+    ## Train, Log Metrics, and Save Checkpoints
 
     The next cell runs one experiment per dropout value. `training_run.config`
     records the settings, and every run starts with a fresh model and optimizer.
@@ -386,7 +428,7 @@ def _(device, dropout_values, entity, training_config, training_project):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 8. Inspect Metrics, Predictions, and Models
+    ## Inspect Metrics, Predictions, and Models
 
     In the `pytorch-intro` project, compare the three runs' `val/val_loss` and
     `val/val_accuracy` curves. Use the config column `dropout` to identify each
@@ -396,7 +438,7 @@ def _():
     `mnist-<run-id>` model collection and inspect the versions with `epoch-1`,
     `epoch-2`, and later aliases.
 
-    ## 9. Optional: Send an Alert
+    ## Optional: Send an Alert
 
     The next cell demonstrates `alert_run.alert()`. To try it, enable notifications
     in your [Weights & Biases user settings](https://wandb.ai/settings) and change

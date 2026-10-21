@@ -70,27 +70,40 @@ def _():
 
     ## Authenticate with Weights & Biases
 
-    Authenticate with Weights & Biases to log your experiments. Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the field below, then select **Connect to Weights & Biases**. Do not paste your API key into the notebook’s source code.
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
 
-    If you run this notebook locally, Weights & Biases automatically uses credentials from the `WANDB_API_KEY` environment variable or your `.netrc` file. If these credentials are available, you do not need to enter your key.
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `huggingface`. Then select **Connect to Weights & Biases**.
     """)
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    wandb_login_form = mo.md("{api_key}\n").batch(
-        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True)
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="huggingface", label="Project", full_width=True),
     ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
-    wandb_login_form
-    return (wandb_login_form,)
+    wandb_setup_form
+    return (wandb_setup_form,)
 
 
 @app.cell(hide_code=True)
-def _(wandb_login_form):
-    mo.stop(wandb_login_form.value is None, mo.md("Connect to Weights & Biases above before training."))
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
 
-    _api_key = wandb_login_form.value["api_key"].strip()
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
 
     try:
         _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
@@ -99,11 +112,13 @@ def _(wandb_login_form):
 
     mo.stop(
         not _login_ok,
-        mo.callout("Authentication did not complete. Check your API key or runtime credentials and reconnect.", kind="danger"),
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
     )
 
-    mo.callout("Connected to Weights & Biases.", kind="success")
-    return
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
+    return entity, project
 
 
 @app.cell(hide_code=True)
@@ -120,13 +135,12 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _(wandb_login_form):
+def _(wandb_setup_form):
     # Reconnecting resets training consent without hiding the configuration form.
-    _connection_submission = wandb_login_form.value
+    _connection_submission = wandb_setup_form.value
     training_form = mo.md(
-        "{project}\n\n{run_name}\n\n{epochs}\n\n{train_texts}\n\n{validation_texts}\n\n{frequency}"
+        "{run_name}\n\n{epochs}\n\n{train_texts}\n\n{validation_texts}\n\n{frequency}"
     ).batch(
-        project=mo.ui.text(value="huggingface", label="Weights & Biases project"),
         run_name=mo.ui.text(value="gpt2-wikitext2-prediction-progress", label="Run name"),
         epochs=mo.ui.number(start=1, stop=10, value=3, step=1, label="Epochs"),
         train_texts=mo.ui.number(start=0, stop=36718, value=2000, step=100, label="Training texts (0 = all)"),
@@ -141,14 +155,13 @@ def _(wandb_login_form):
 
 
 @app.cell(hide_code=True)
-def _(BLOCK_SIZE, MODEL_NAME, training_form, wandb_settings):
+def _(BLOCK_SIZE, MODEL_NAME, entity, project, training_form):
     mo.stop(training_form.value is None, mo.md("Submit the training form to prepare the dataset and train."))
-    mo.stop(not training_form.value["project"].strip(), mo.callout("Enter a Weights & Biases project name.", kind="warn"))
     mo.stop(training_form.value["frequency"] > training_form.value["epochs"], mo.callout("Set the prediction frequency no higher than the number of epochs.", kind="warn"))
     training_config = dict(training_form.value)
-    training_config["project"] = training_config["project"].strip()
+    training_config["project"] = project
     training_config["run_name"] = training_config["run_name"].strip() or None
-    training_config["entity"] = wandb_settings["entity"]
+    training_config["entity"] = entity
     training_config["model"] = MODEL_NAME
     training_config["block_size"] = BLOCK_SIZE
     return (training_config,)

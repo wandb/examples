@@ -73,34 +73,75 @@ def _():
     This notebook demonstrates experiment tracking for a classifier; it does not
     construct or validate a points-based lending scorecard.
 
-    ## 1. Set Up and Authenticate
-
     > On macOS, XGBoost also needs OpenMP. If importing XGBoost reports a missing
     `libomp.dylib`, install it with `brew install libomp` and restart.
-
-    The next cell sets the destination project for every run and calls `wandb.login()`.
-    Use your team name for `entity`, or `None` for your default entity.
-
-    If prompted, specify your [Forge API Key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys). If you run the notebook locally, you can set `WANDB_API_KEY` in your environment or molab Secrets.
     """)
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
-    entity = None
-    project = "vehicle_loan_default"
-    wandb.login()
+    mo.md(r"""
+    ## Authenticate with Weights & Biases
+
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `vehicle_loan_default`. Then select **Connect to Weights & Biases**.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="vehicle_loan_default", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
     return entity, project
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 2. Choose the Dataset
+    ## Get the Dataset
 
     The next cell defines the path of the source Artifact, ID columns, target column,
-    and creates a temporary working directory. The artifact's path points to a dataset artifact saved from a Weights & Biases user.
+    and creates a temporary working directory. The artifact's path points to a dataset artifact saved from a previous Weights & Biases user.
     """)
     return
 
@@ -149,7 +190,7 @@ def one_hot_encode_data(dataset, id_columns, target_column):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 3. Preprocess and Log a Dataset Artifact
+    ## Preprocess and Log a Dataset Artifact
 
     The next cell initializes a run (`preprocessing_run`). During the run, we retrieve the raw dataset with
     `wandb.Run.use_artifact()`, and then you download its files. We read the CSV and apply the
@@ -199,7 +240,7 @@ def _(
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 4. Split the Data and Record Lineage
+    ## Split the Data and Record Lineage
 
     The next cell consumes the processed Artifact in `split_run`, then makes a
     reproducible, stratified train/validation split. Stratification preserves
@@ -249,7 +290,7 @@ def _(data_dir, entity, processed_artifact_path, project, target_column):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 5. Inspect Data with Weights & Biases Tables
+    ## Inspect Data with Weights & Biases Tables
 
     The next cell initilizes a run (`table_run`) and records the split Artifact as an input.
     `wandb.Table(dataframe=...)` turns a reproducible sample of up to 1,000
@@ -274,7 +315,7 @@ def _(data_dir, entity, project, split_artifact_path, train_data):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 6. Prepare Predictors and Model Settings
+    ## Prepare Predictors and Model Settings
 
     The next cell separates predictors from the binary target, computes the
     training default rate, and defines the XGBoost parameters. We use histogram trees.
@@ -326,7 +367,7 @@ def _(predictor_columns, target_column, train_data, validation_data):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 7. Define Evaluation Metrics
+    ## Define Evaluation Metrics
 
     The following helper calculates AUC, log loss, and KS statistics for the
     baseline and sweep models from their predicted default probabilities.
@@ -371,7 +412,7 @@ def evaluate_classifier(classifier, X_train, y_train, X_validation, y_validation
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 8. Train and Log the Baseline
+    ## Train and Log the Baseline
 
     The next cell initializes a run called (`training_run`), records the split Artifact as an input,
     and logs hyperparameters in its configuration. Passing
@@ -439,7 +480,7 @@ def _(
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 9. Define a Hyperparameter Sweep
+    ## Define a Hyperparameter Sweep
 
     The next cell specifies random search over learning rate, gamma, minimum
     child weight, and early-stopping rounds. The objective is to maximize
@@ -450,8 +491,7 @@ def _():
     contribution while the gamma and minimum child weight constrain tree growth.
 
     Sweeps automate comparison on this fixed validation split. Repeated tuning
-    can overfit the validation set. It is recommended that you keep an independent test set to assess
-    the selected model's performance.
+    can overfit the validation set. It is recommended that you keep an independent test set to assess the selected model's performance.
     """)
     return
 
@@ -474,11 +514,9 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 10. Define One Sweep Trial
+    ## Define Training Function
 
-    The next cell defines the zero-argument function the Weights & Biases agent calls.
-    `wandb.init()` starts `sweep_run` with baseline defaults; Weights & Biases replaces
-    the searched values with the settings selected for that trial.
+    The next cell defines the function that Weights & Biases agent calls to conduct the sweep.
 
     Each trial consumes the same split Artifact, creates a fresh classifier
     and callback, trains, and logs `val_auc`. `job_type="sweep"` distinguishes
@@ -527,11 +565,11 @@ def _(
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 11. Create the Sweep and Start an Agent
+    ## Create the Sweep and Start an Agent
 
-    The next cell registers the configuration with `wandb.sweep()` and stores
-    its ID, then calls `wandb.agent()` with `sweep_train` and a
-    limit of five trials. Lower `count` for a quicker experiment.
+    The next cell creates a sweep (`wandb.sweep()`), stores
+    the sweep ID, then calls `wandb.agent()`. We pass `sweep_train` as the training function and
+    limit the number of sweeps to five trials (`count=5`). Lower `count` for a quicker experiment.
 
     Each run closes through its context manager before the next trial starts.
     The dashboard compares the selected parameters against validation AUC.
@@ -550,7 +588,7 @@ def _(baseline_metrics, entity, project, sweep_config, sweep_train):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 12. Verify and Explore the Experiment Records
+    ## Verify and Explore the Experiment Records
 
     Open the baseline run to inspect its metrics,
     feature importance, ROC curve, and saved model. The Artifacts graph connects

@@ -70,6 +70,8 @@ def _():
     ten steps to demonstrate the integration. This is a short workflow example,
     not an evaluation of model quality.
 
+    The default model and dataset are public. For a private or gated repository, configure `HF_TOKEN` as well.
+
     ## Environment Setup
 
     Open this notebook with its declared Python and package versions:
@@ -83,35 +85,70 @@ def _():
     Python environment does not automatically apply those requirements.
     This lesson uses TRL 1.13; TRL 1.15's fused loss path requires a kernel
     that is unavailable on macOS.
-
-    ## 1. Authenticate and Choose a Project
-
-    The next cell calls `wandb.login()` and sets the experiment's destination.
-    Set `entity` to your team name, or use `None` for your default entity.
-
-    Configure `WANDB_API_KEY` in your environment or the molab Secrets panel;
-    get a key from [Weights & Biases](https://wandb.ai/authorize). In a terminal-backed
-    session, `wandb.login()` can also prompt for a key. The default model and
-    dataset are public. If you select a private or gated repository, configure
-    `HF_TOKEN` as well.
     """)
     return
-
-
-@app.cell
-def _():
-    entity = "your-entity"
-    project = "smollm2-lora"
-    authenticated = wandb.login()
-    if not authenticated:
-        raise RuntimeError("Configure Weights & Biases credentials before running the lesson.")
-    return authenticated, entity, project
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 2. Choose the Device and Training Settings
+    ## Authenticate with Weights & Biases
+
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `smollm2-lora`. Then select **Connect to Weights & Biases**.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="smollm2-lora", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
+    return entity, project
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Choose the Device and Training Settings
 
     The next cell selects CUDA, Apple MPS, or CPU and sets a suitable model
     dtype. CUDA uses bfloat16 when supported, otherwise float16; MPS and CPU use
@@ -167,7 +204,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 3. Stream Conversational Training Data
+    ## Stream Conversational Training Data
 
     The next cell loads `trl-lib/Capybara` with `streaming=True`, shuffles
     with a fixed seed, and takes a small sample. Streaming avoids downloading
@@ -181,9 +218,7 @@ def _():
 
 
 @app.cell
-def _(authenticated, cache_dir, dataset_id, sample_count):
-    if not authenticated:
-        raise RuntimeError("Log in to Weights & Biases first.")
+def _(cache_dir, dataset_id, sample_count):
     train_dataset = load_dataset(
         dataset_id,
         split="train",
@@ -197,7 +232,7 @@ def _(authenticated, cache_dir, dataset_id, sample_count):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 4. Configure LoRA
+    ## Configure LoRA
 
     The next cell creates a PEFT configuration for the model's attention
     projections. LoRA freezes the base weights and trains small added matrices.
@@ -225,7 +260,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 5. Fine-tune and Track the Experiment
+    ## Fine-tune and Track the Experiment
 
     The next cell loads a fresh model and tokenizer, then starts
     `fine_tuning_run` with `wandb.init()`. The run configuration records the
@@ -353,33 +388,25 @@ def _(
     print(f"Trainable parameters: {trainable_parameters:,} / {total_parameters:,}")
     print(f"Adapter saved to: {adapter_output_dir}")
     print(f"View the Weights & Biases run: {run_url}")
-    return adapter_output_dir, run_url
+    return
 
 
 @app.cell(hide_code=True)
-def _(adapter_output_dir, run_url):
+def _():
     mo.md(f"""
     ## 6. Inspect Metrics and the Saved Adapter
 
-    [Open your Weights & Biases run]({run_url}) to inspect training loss, learning rate,
+    Open your Weights & Biases run to inspect training loss, learning rate,
     and system metrics. The configuration records the settings you chose, and
     the run summary includes the percentage of trainable parameters.
 
     In **Artifacts**, open the logged model Artifact to browse the adapter
-    weights, tokenizer files, and base-model metadata. The local copy is in
-    `{adapter_output_dir}`. To use the adapter later, load it alongside the
-    base model named in its metadata.
+    weights, tokenizer files, and base-model metadata. To use the adapter later, load it alongside the base model named in its metadata.
 
     Try changing the learning rate or LoRA rank, rerun the training cell, and
-    compare the experiments in your Weights & Biases project. The ten-step demo verifies the
-    workflow; assessing model quality requires a longer run and held-out
+    compare the experiments in your Weights & Biases project. The ten-step demo verifies the workflow; assessing model quality requires a longer run and held-out
     evaluation data.
     """)
-    return
-
-
-@app.cell
-def _():
     return
 
 

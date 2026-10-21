@@ -50,36 +50,71 @@ def _():
     soft-deletes the version; storage cleanup happens separately. Linking a
     version to Registry deactivates its TTL.
 
-    ## 1. Authenticate and Choose a Project
-
-    The next cell calls `wandb.login()` and sets the destination for this demo.
-    Use a project for tutorial data and an account with permission to edit TTL
-    policies. Set `entity` to your team name, or leave it as `None` to use your
-    default entity.
-
-    Configure `WANDB_API_KEY` in your environment or the molab Secrets panel
-    before running. You can get a key from [Weights & Biases](https://wandb.ai/authorize).
-    In a terminal-backed session, `wandb.login()` can also prompt for a key.
-
     Running the code cells downloads Imagenette and uploads sample artifacts.
     """)
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
-    entity = "your-entity"
-    project = "artifacts-ttl-demo"
-    authenticated = wandb.login()
-    if not authenticated:
-        raise RuntimeError("Configure Weights & Biases credentials before running the lesson.")
+    mo.md(r"""
+    ## Authenticate with Weights & Biases
+
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `artifacts-ttl-demo`. Then select **Connect to Weights & Biases**.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="artifacts-ttl-demo", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
     return entity, project
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 2. Prepare Sample Images
+    ## Prepare Sample Images
 
     [Imagenette](https://github.com/fastai/imagenette) contains images from ten
     ImageNet classes. The next cell downloads and extracts it into a temporary
@@ -155,7 +190,7 @@ def _(train_source_dir):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 3. Set TTL When Creating an Artifact
+    ## Set TTL When Creating an Artifact
 
     The next cell starts a run, creates dataset artifacts with
     `wandb.Artifact()`, adds files with `add_dir()`, and sets a ten-day TTL
@@ -205,7 +240,7 @@ def _(entity, project, train_source_dir, val_source_dir):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 4. Change TTL on Existing Versions
+    ## Change TTL on Existing Versions
 
     Suppose we can now keep one version for a year and another indefinitely.
     The next cell fetches each version by alias with `wandb.Api().artifact()`,
@@ -237,7 +272,7 @@ def _(raw_alias_paths):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 5. Update All Versions in a Collection
+    ## Update All Versions in a Collection
 
     `wandb.Api().artifacts()` lists the versions in an artifact collection.
     The next cell queries `fake-raw` directly, then deactivates each version's
@@ -267,7 +302,7 @@ def _(project_path):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 6. Record Lineage During Preprocessing
+    ## Record Lineage During Preprocessing
 
     The next cell consumes the `compliant` version of `real-raw`, resizes its
     images to 64 by 64 pixels, and logs a new `real-prepro` artifact.
@@ -304,7 +339,7 @@ def _(compliant_artifact, entity, project, workspace):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 7. Follow Lineage to Set Downstream TTL
+    ## Follow Lineage to Set Downstream TTL
 
     TTL policies do not automatically propagate to derived artifacts. The next
     cell fetches our source version and uses `used_by()` to find its consuming
@@ -337,7 +372,7 @@ def _(compliant_artifact, processed_artifact):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Inspect the Policies in Weights & Biases
+    ## Inspect TTL Policies
 
     Open the project link printed earlier and select **Artifacts**. Check the
     versions and their TTL policies: `real-raw:extended` has 365 days,
