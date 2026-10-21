@@ -9,7 +9,6 @@
 #     "peft==0.21.0",
 #     "torch==2.6.0",
 #     "transformers==5.17.0",
-#     "trl==1.13.0",
 #     "wandb==0.30.0",
 # ]
 # ///
@@ -30,9 +29,11 @@ with app.setup:
     import torch
     import wandb
     from datasets import load_dataset
-    from peft import LoraConfig, TaskType
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    from trl import SFTConfig, SFTTrainer
+    from peft import LoraConfig, TaskType, get_peft_model
+    from transformers import (
+        AutoModelForCausalLM, AutoTokenizer, DataCollatorForSeq2Seq,
+        Trainer, TrainingArguments,
+    )
 
 
 @app.cell(hide_code=True)
@@ -59,8 +60,7 @@ def _():
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py/server)
 
-    This lesson uses [Transformers](https://huggingface.co/docs/transformers),
-    [TRL](https://huggingface.co/docs/trl), and
+    This lesson uses [Transformers](https://huggingface.co/docs/transformers) and
     [PEFT](https://huggingface.co/docs/peft) to fine-tune a small language model
     with LoRA. You will track the experiment in Weights & Biases, inspect training metrics,
     and save the trained adapter as a model Artifact.
@@ -71,20 +71,6 @@ def _():
     not an evaluation of model quality.
 
     The default model and dataset are public. For a private or gated repository, configure `HF_TOKEN` as well.
-
-    ## Environment Setup
-
-    Open this notebook with its declared Python and package versions:
-
-    ```bash
-    uvx marimo edit --sandbox torchtune_and_wandb.py
-    ```
-
-    Run this command from the notebook's directory. The sandbox reads the
-    dependency metadata at the top of the file. Opening it in an existing
-    Python environment does not automatically apply those requirements.
-    This lesson uses TRL 1.13; TRL 1.15's fused loss path requires a kernel
-    that is unavailable on macOS.
     """)
     return
 
@@ -151,8 +137,8 @@ def _():
     ## Choose the Device and Training Settings
 
     The next cell selects CUDA, Apple MPS, or CPU and sets a suitable model
-    dtype. CUDA uses bfloat16 when supported, otherwise float16; MPS and CPU use
-    float32.
+    dtype. CUDA uses bfloat16 when supported and float16 otherwise. MPS and CPU
+    use float32.
 
     Edit the model, dataset, sample count, and step limit here. A small batch size
     and a 256-token limit keep this demo modest. A GPU is faster, but the default
@@ -209,7 +195,7 @@ def _():
     The next cell loads `trl-lib/Capybara` with `streaming=True`, shuffles
     with a fixed seed, and takes a small sample. Streaming avoids downloading
     and caching the entire dataset. Examples contain conversations that
-    `SFTTrainer` formats with the model's chat template.
+    we format with the model's chat template before training.
 
     Because this dataset is iterable, we set `max_steps` explicitly in the
     training configuration rather than relying on a known dataset length.
@@ -239,7 +225,7 @@ def _():
 
     `r` controls their rank, `lora_alpha` controls their scaling, and
     `lora_dropout` applies dropout on the adapter path. We pass this
-    configuration to `SFTTrainer`, which constructs the trainable adapter.
+    configuration to `get_peft_model`, which constructs the trainable adapter.
     The parameter counts logged later show how much of the model is trainable.
     """)
     return
@@ -266,16 +252,22 @@ def _():
     `fine_tuning_run` with `wandb.init()`. The run configuration records the
     dataset, training settings, and LoRA hyperparameters for comparison later.
 
-    In `SFTConfig`, `report_to="wandb"` enables the Transformers Weights & Biases
+    In `TrainingArguments`, `report_to="wandb"` enables the Transformers Weights & Biases
     integration. `logging_steps=1` reports metrics at every training step.
     The trainer uses the active Weights & Biases run, so its metrics and our model Artifact
     belong to the same experiment.
 
+    We use the standard Transformers `Trainer` so training does not require
+    TRL's fused Triton loss kernels. Each conversation is tokenized with the
+    chat template and truncated to `max_length`. The model learns to predict
+    the next token throughout the conversation; padding is excluded from the loss.
+
     After training, `trainer.save_model()` saves the PEFT adapter and
     `tokenizer.save_pretrained()` saves the tokenizer. We add that directory
     to a `wandb.Artifact(type="model")` and upload it with
-    `fine_tuning_run.log_artifact()`. The base model weights are not included;
-    the Artifact metadata records which base model the adapter needs.
+    `fine_tuning_run.log_artifact()`. The saved files contain the adapter rather
+    than a full copy of the base model. The Artifact metadata identifies the
+    base model needed to load the adapter.
 
     Finally, we add the trainable parameter count and percentage to
     `fine_tuning_run.summary`. The context manager finishes the run once
@@ -313,10 +305,27 @@ def _(
         cache_dir=cache_dir,
     )
     model.config.use_cache = False
+    model = get_peft_model(model, lora_config)
+
+    def _tokenize_conversation(example):
+        encoded = tokenizer.apply_chat_template(
+            example["messages"],
+            tokenize=True,
+            add_generation_prompt=False,
+            truncation=True,
+            max_length=max_length,
+            return_dict=True,
+        )
+        encoded["labels"] = encoded["input_ids"].copy()
+        return encoded
+
+    tokenized_dataset = train_dataset.map(_tokenize_conversation)
+    # Pad labels with -100, preserving real EOS tokens even when EOS is also PAD.
+    data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, label_pad_token_id=-100)
 
     output_root.mkdir(parents=True, exist_ok=True)
     adapter_output_dir = tempfile.mkdtemp(prefix="run-", dir=output_root)
-    training_args = SFTConfig(
+    training_args = TrainingArguments(
         output_dir=adapter_output_dir,
         max_steps=max_steps,
         per_device_train_batch_size=batch_size,
@@ -326,8 +335,6 @@ def _(
         save_strategy="no",
         report_to="wandb",
         run_name=run_name,
-        max_length=max_length,
-        packing=False,
         bf16=training_device == "cuda" and model_dtype == torch.bfloat16,
         fp16=training_device == "cuda" and model_dtype == torch.float16,
         optim="adamw_torch",
@@ -354,12 +361,12 @@ def _(
             "lora_dropout": lora_config.lora_dropout,
         },
     ) as fine_tuning_run:
-        trainer = SFTTrainer(
+        trainer = Trainer(
             model=model,
             args=training_args,
-            train_dataset=train_dataset,
+            train_dataset=tokenized_dataset,
             processing_class=tokenizer,
-            peft_config=lora_config,
+            data_collator=data_collator,
         )
         trainable_parameters, total_parameters = trainer.model.get_nb_trainable_parameters()
         training_result = trainer.train()
@@ -393,8 +400,8 @@ def _(
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(f"""
-    ## 6. Inspect Metrics and the Saved Adapter
+    mo.md(r"""
+    ## Inspect Metrics and the Saved Adapter
 
     Open your Weights & Biases run to inspect training loss, learning rate,
     and system metrics. The configuration records the settings you chose, and
@@ -404,8 +411,8 @@ def _():
     weights, tokenizer files, and base-model metadata. To use the adapter later, load it alongside the base model named in its metadata.
 
     Try changing the learning rate or LoRA rank, rerun the training cell, and
-    compare the experiments in your Weights & Biases project. The ten-step demo verifies the workflow; assessing model quality requires a longer run and held-out
-    evaluation data.
+    compare the experiments in your Weights & Biases project. The ten-step demo exercises the logging workflow. Assess model quality
+    with a suitable training budget and held-out evaluation data.
     """)
     return
 
