@@ -18,7 +18,7 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.25.2"
 app = marimo.App(auto_download=["html"])
 
 with app.setup:
@@ -32,6 +32,13 @@ with app.setup:
     from pathlib import Path
     from urllib.request import urlopen
 
+    # The training subprocess needs these packages in the notebook's interpreter.
+    # Explicit imports also expose them to marimo's package management.
+    import accelerate
+    import datasets
+    import evaluate
+    import torch
+    import transformers
     import wandb
 
 
@@ -59,19 +66,34 @@ def _():
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/huggingface-wandb/huggingface_wandb.py/server)
 
-    Fine-tune BERT to decide whether two sentences have the same meaning, and
-    track its configuration, training metrics, and evaluation results in Weights & Biases.
-    The Microsoft Research Paraphrase Corpus (MRPC) provides labeled sentence
-    pairs and is part of the GLUE language-understanding benchmark.
+    This notebooks shows how to train and monitor Hugging Face models with Weights & Biases. Microsoft Research Paraphrase Corpus (MRPC) provides labeled sentence pairs and is part of the GLUE language-understanding benchmark.
 
-    Hugging Face's `run_glue.py` script handles data preparation and training.
-    Its built-in Trainer integration sends metrics to Weights & Biases when you pass
-    `--report_to wandb`; you do not need to add logging calls to the script.
+    We will use Hugging Face's `run_glue.py` script to handle data preparation and training. Its built-in `Trainer` integration sends metrics to Weights & Biases when you pass `--report_to wandb`. The Trainer callback handles metric logging for you.
 
     A GPU is recommended for the full BERT run below. The first run downloads
     the pretrained model and MRPC data. CPU execution works but takes longer.
 
     <img src="https://i.imgur.com/vnejHGh.png" width="800" alt="Example of Hugging Face training metrics in Weights & Biases" />
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Run with the notebook's dependencies
+
+    From this notebook's directory, launch it with its declared Python and package versions:
+
+    ```bash
+    uvx marimo edit --sandbox huggingface_wandb.py
+    ```
+
+    The training script uses the same Python interpreter as the notebook.
+    Opening this file in an existing marimo environment does not install the
+    dependencies listed at the top of the file. That environment must also
+    contain `evaluate`, `accelerate`, `datasets`, PyTorch, and Transformers.
+    The sandbox command installs the declared dependencies in an isolated environment.
     """)
     return
 
@@ -164,6 +186,11 @@ def _():
     mo.md(r"""
     ## Configure Weights & Biases for the training process
 
+    The script runs in a separate Python process. The next cell copies the runtime
+    environment and adds your selected project and team. Existing environment
+    credentials are inherited, and credentials saved by the SDK are available
+    to the child process in the same runtime.
+
     `WANDB_WATCH="all"` adds parameter and gradient histograms to the run.
     Set it to `"false"` if you only need metrics and want to reduce logging
     overhead. The Trainer creates the Weights & Biases run when training starts.
@@ -199,8 +226,8 @@ def _():
     Each execution saves the final model and metric files in a new temporary
     output directory. For a quick check, add `--max_train_samples 64` and
     `--max_eval_samples 32`, reduce `--num_train_epochs` to `1`, and set
-    `--logging_steps` to `1`. Those small samples verify the workflow; use the
-    full dataset to compare model quality.
+    `--logging_steps` to `1`. Those small samples help check that the workflow runs. Use a larger, fixed
+    validation set when comparing model quality.
     """)
     return
 
@@ -242,7 +269,7 @@ def _():
     is the horizontal axis, and evaluation points appear after each epoch.
     Check the run's config for settings such as `learning_rate`,
     `num_train_epochs`, and `per_device_train_batch_size`. The system metrics
-    show resource usage; parameter and gradient histograms are logged
+    show resource usage. Parameter and gradient histograms are logged
     periodically when `WANDB_WATCH` is `"all"`.
 
     Try another learning rate or change `--model_name_or_path` to
