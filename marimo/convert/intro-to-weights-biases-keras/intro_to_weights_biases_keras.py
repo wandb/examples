@@ -5,14 +5,19 @@
 #     "tensorflow>=2.16,<3",
 #     "wandb>=0.18,<1",
 # ]
+#
+# [tool.marimo.runtime]
+# on_cell_change = "lazy"
 # ///
-"""Learn the W&B experiment-tracking workflow with simulated and Keras runs."""
+"""Learn the Weights & Biases experiment-tracking workflow with simulated and Keras runs."""
 
 import marimo
 
-__generated_with = "0.24.2"
-app = marimo.App(width="medium", app_title="Introduction to W&B with Keras")
-
+__generated_with = "0.25.1"
+app = marimo.App(
+    width="medium",
+    app_title="Introduction to Weights & Biases with Keras",
+)
 
 with app.setup:
     from pathlib import Path
@@ -30,19 +35,38 @@ with app.setup:
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
     # Introduction to Weights & Biases with Keras
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/intro-to-weights-biases-keras/intro_to_weights_biases_keras.py/server)
-
-    <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
 
     Use [Weights & Biases](https://wandb.ai/site?utm_source=keras_intro_colab&utm_medium=code&utm_campaign=keras_intro)
     for experiment tracking, model checkpointing, and collaboration. This
     tutorial starts with simulated metrics, then trains a small Keras classifier,
     and finishes with a scriptable alert.
 
-    Nothing is sent to W&B, no dataset is downloaded, and no model is trained
-    until you explicitly connect and submit the corresponding action form.
+    Running the code cells creates Weights & Biases runs, downloads MNIST, and uploads metrics
+    and model checkpoints. Edit the Python configuration before running the
+    examples.
+
+
+    ![Example Weights & Biases dashboard](https://i.imgur.com/Pell4Oo.png)
     """)
     return
 
@@ -50,76 +74,45 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## A shared dashboard for your experiments
+    ## Authenticate with Weights & Biases
 
-    With just a few lines of code, you can create rich, interactive, shareable
-    dashboards like this [example W&B project](https://wandb.ai/wandb/wandb_example).
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
 
-    ![Example W&B dashboard](https://i.imgur.com/Pell4Oo.png)
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
 
-    ## Data and privacy
+    ## Set your team and project
 
-    W&B encrypts data in transit and at rest. Organizations that need to keep
-    data in their own environment can use
-    [W&B Self-Managed](https://docs.wandb.ai/platform/hosting/hosting-options/self-managed).
-    You can also query and export logged data with the
-    [W&B Public API](https://docs.wandb.ai/models/ref/python/public-api/).
+    Enter your Weights & Biases team name and choose projects for simulated metrics and training runs. The fields below contain this lesson’s defaults. Then select **Connect to Weights & Biases**.
     """)
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(r"""
-    ## Connect to W&B
-
-    Enter your [W&B API key](https://wandb.ai/authorize), or leave it blank to
-    use `WANDB_API_KEY` from the molab Secrets panel or credentials already
-    configured in this runtime. A new molab session does not inherit a login
-    from your computer.
-
-    The entity is the team name in a W&B project URL:
-    `wandb.ai/<entity>/<project>`. Leave it blank to use your default entity.
-    Editing either field is inert until you submit the form.
-    """)
-    return
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{simulation_project}\n\n{training_project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        simulation_project=mo.ui.text(value="basic-intro", label="Simulation project", full_width=True),
+        training_project=mo.ui.text(value="keras-intro", label="Training project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
 
 
 @app.cell(hide_code=True)
-def _():
-    wandb_login_form = (
-        mo.md("{api_key}\n\n{entity}")
-        .batch(
-            api_key=mo.ui.text(
-                kind="password",
-                label="W&B API key (optional)",
-                placeholder="Paste a key or use configured credentials",
-                full_width=True,
-            ),
-            entity=mo.ui.text(
-                label="W&B entity or team (optional)",
-                placeholder="Leave blank to use your default entity",
-                full_width=True,
-            ),
-        )
-        .form(submit_button_label="Connect to W&B", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
 
-
-@app.cell(hide_code=True)
-def _(wandb_login_form):
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _simulation_project = _submission["simulation_project"].strip()
+    _training_project = _submission["training_project"].strip()
     mo.stop(
-        wandb_login_form.value is None,
-        mo.callout(
-            mo.md("Submit the form above before starting any W&B run."),
-            kind="info",
-        ),
+        not _entity or not _simulation_project or not _training_project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
     )
 
-    _submitted = wandb_login_form.value
-    _api_key = _submitted["api_key"].strip()
     try:
         _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
     except (wandb.errors.Error, ValueError):
@@ -127,455 +120,283 @@ def _(wandb_login_form):
 
     mo.stop(
         not _login_ok,
-        mo.callout(
-            mo.md(
-                "W&B authentication did not complete. Check the API key or "
-                "molab Secrets configuration and submit again."
-            ),
-            kind="danger",
-        ),
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
     )
 
-    wandb_connection = {"entity": _submitted["entity"].strip() or None}
-    mo.callout(mo.md("Connected to W&B."), kind="success")
-    return (wandb_connection,)
+    entity = _entity
+    simulation_project = _simulation_project
+    training_project = _training_project
+    mo.md("✓ Connected to Weights & Biases.")
+    return entity, simulation_project, training_project
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Run a simulated experiment
+    ## Run simulated experiments
 
-    The basic W&B workflow has three steps:
+    The basic Weights & Biases workflow has three steps:
 
-    1. Start a run and record the hyperparameters in its config.
-    2. Log metrics from a training or evaluation loop.
-    3. Open the run links to compare results in the dashboard.
+    1. Start a run with `wandb.init()` and record its configuration.
+    2. Log metrics from training.
+    3. Open the printed run links to compare results in the dashboard.
 
-    The original tutorial launched five runs. Choose a smaller count for a quick
-    test or keep five for the full comparison. Submitting the form creates that
-    many remote runs in the selected project.
+    The next cell creates five runs and logs eight generated loss and accuracy
+    values to each. No model is trained in this step. The synthetic curves make
+    it easy to see how configuration, history, and run comparisons fit together.
+
+    A fixed seed makes the examples reproducible.
     """)
     return
 
 
-@app.cell(hide_code=True)
-def _():
-    quickstart_form = (
-        mo.md("{project}\n\n{run_count}\n\n{seed}")
-        .batch(
-            project=mo.ui.text(
-                value="basic-intro",
-                label="W&B project",
-                full_width=True,
-            ),
-            run_count=mo.ui.number(
-                start=1,
-                stop=5,
-                step=1,
-                value=5,
-                label="Number of simulated runs",
-            ),
-            seed=mo.ui.number(
-                start=0,
-                stop=10_000,
-                step=1,
-                value=42,
-                label="Random seed",
-            ),
-        )
-        .form(submit_button_label="Create simulated W&B runs", bordered=True)
-    )
-    quickstart_form
-    return (quickstart_form,)
+@app.cell
+def _(entity, simulation_project):
+    simulation_count = 5
+    simulation_seed = 42
+    simulation_rng = random.Random(simulation_seed)
 
-
-@app.cell(hide_code=True)
-def _(quickstart_form, wandb_connection):
-    mo.stop(
-        quickstart_form.value is None,
-        mo.callout(
-            mo.md("Submit the form to create and log the simulated runs."),
-            kind="info",
-        ),
-    )
-
-    _submitted = quickstart_form.value
-    _project = _submitted["project"].strip() or "basic-intro"
-    _rng = random.Random(int(_submitted["seed"]))
-    _run_links = []
-
-    # Launch simulated experiments. Each context manager finishes its run.
-    for _index in range(int(_submitted["run_count"])):
-        _config = {
-            "learning_rate": 0.02,
-            "architecture": "CNN",
-            "dataset": "CIFAR-100",
-        }
+    for simulation_index in range(simulation_count):
         with wandb.init(
-            entity=wandb_connection["entity"],
-            project=_project,
-            name=f"simulated-run-{_index + 1}",
-            config=_config,
-        ) as _run:
-            _offset = _rng.random() / 5
-            for _step in range(2, 10):
-                _accuracy = 1 - 2**(-_step) - _rng.random() / _step - _offset
-                _loss = 2**(-_step) + _rng.random() / _step + _offset
-                # Log metrics from the simulated training loop.
-                _run.log({"accuracy": _accuracy, "loss": _loss})
-            _run_links.append((_run.name, _run.url))
-
-    quickstart_result = {
-        "project": _project,
-        "runs": tuple(_run_links),
-    }
-    return (quickstart_result,)
-
-
-@app.cell(hide_code=True)
-def _(quickstart_result):
-    _links = "\n".join(
-        f"- [{_name}]({_url})" if _url else f"- {_name} (URL unavailable)"
-        for _name, _url in quickstart_result["runs"]
-    )
-    mo.callout(
-        mo.md(
-            f"Created {len(quickstart_result['runs'])} runs in "
-            f"`{quickstart_result['project']}`:\n\n{_links}"
-        ),
-        kind="success",
-    )
+            entity=entity,
+            project=simulation_project,
+            name=f"keras-intro-simulation-{simulation_index + 1}",
+            config={"dataset": "synthetic", "seed": simulation_seed, "epochs": 8},
+        ) as simulation_run:
+            offset = simulation_rng.random() / 5
+            for simulation_epoch in range(2, 10):
+                simulated_accuracy = 1 - 2**(-simulation_epoch) - simulation_rng.random() / simulation_epoch - offset
+                simulated_loss = 2**(-simulation_epoch) + simulation_rng.random() / simulation_epoch + offset
+                simulation_run.log({
+                    "epoch": simulation_epoch - 1,
+                    "accuracy": simulated_accuracy,
+                    "loss": simulated_loss,
+                })
     return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Train a simple Keras classifier
+    ## Train a Keras classifier
 
     This example downloads MNIST, trains a small dense classifier, and streams
-    metrics to W&B. It uses the current dedicated callbacks:
+    metrics to Weights & Biases. Two callbacks handle the logging:
 
     - `WandbMetricsLogger` records Keras training and validation metrics.
-    - `WandbModelCheckpoint` saves the best model and logs it as a W&B Artifact.
+    - `WandbModelCheckpoint` saves each epoch's model and logs it as a Weights & Biases Artifact.
 
-    The former all-in-one `WandbCallback` is
-    [legacy](https://docs.wandb.ai/models/integrations/keras); new workflows
-    should select the dedicated callback for each behavior they need.
+    Checkpoints are written to a temporary directory and removed after Weights & Biases has
+    finished the run.
 
-    Checkpoints are written to a temporary directory and removed after W&B has
-    finished the run, so rerunning this notebook does not leave model files in
-    the repository.
+    ### Configure the experiments
+
+    The dictionary below defines the model's layers, optimizer, and training
+    settings. We train five fresh models with reproducibly sampled dropout
+    rates. Weights & Biases records each model's settings so you can compare
+    dropout against validation loss and accuracy. Reduce `experiment_count`
+    or `epochs` for a quicker run.
     """)
     return
 
 
+@app.cell
+def _():
+    training_config = {
+        "layer_1": 512,
+        "activation_1": "relu",
+        "layer_2": 10,
+        "activation_2": "softmax",
+        "optimizer": "sgd",
+        "loss": "sparse_categorical_crossentropy",
+        "metric": "accuracy",
+        "epochs": 6,
+        "batch_size": 256,
+        "seed": 42,
+        "dataset": "MNIST",
+    }
+    experiment_count = 5
+    dropout_rng = random.Random(training_config["seed"])
+    dropout_values = [dropout_rng.uniform(0.01, 0.80) for _ in range(experiment_count)]
+    return dropout_values, training_config
+
+
 @app.cell(hide_code=True)
 def _():
-    keras_form = (
-        mo.md("{project}\n\n{experiment_count}\n\n{epochs}\n\n{batch_size}\n\n{seed}")
-        .batch(
-            project=mo.ui.text(
-                value="keras-intro",
-                label="W&B project",
-                full_width=True,
-            ),
-            experiment_count=mo.ui.number(
-                start=1,
-                stop=5,
-                step=1,
-                value=5,
-                label="Number of Keras experiments",
-            ),
-            epochs=mo.ui.number(
-                start=1,
-                stop=10,
-                step=1,
-                value=6,
-                label="Epochs per experiment",
-            ),
-            batch_size=mo.ui.dropdown(
-                options=[128, 256, 512],
-                value=256,
-                label="Batch size",
-            ),
-            seed=mo.ui.number(
-                start=0,
-                stop=10_000,
-                step=1,
-                value=42,
-                label="Random seed",
-            ),
-        )
-        .form(
-            submit_button_label="Download MNIST and train Keras experiments",
-            bordered=True,
-        )
-    )
-    keras_form
-    return (keras_form,)
+    mo.md(r"""
+    ### Prepare MNIST once
+
+    The next cell downloads MNIST, normalizes pixels to `[0, 1]`,
+    and samples 12,000 training images and 500 held-out images for a shorter demo.
+    The held-out sample comes from the official test split but is used here to
+    compare dropout settings. Treat it as validation data for this exercise.
+    """)
+    return
+
+
+@app.cell
+def _():
+    (x_train, y_train), (x_validation, y_validation) = tf.keras.datasets.mnist.load_data()
+    x_train = x_train[::5].astype("float32") / 255.0
+    y_train = y_train[::5]
+    x_validation = x_validation[::20].astype("float32") / 255.0
+    y_validation = y_validation[::20]
+    return x_train, x_validation, y_train, y_validation
 
 
 @app.cell(hide_code=True)
-def _(keras_form, wandb_connection):
-    mo.stop(
-        keras_form.value is None,
-        mo.callout(
-            mo.md("Submit the form to download MNIST and start training."),
-            kind="info",
-        ),
-    )
+def _():
+    mo.md(r"""
+    ### Train and log with Keras callbacks
 
-    _submitted = keras_form.value
-    _project = _submitted["project"].strip() or "keras-intro"
-    _seed = int(_submitted["seed"])
-    _rng = random.Random(_seed)
+    Each `wandb.init()` creates a separate `training_run`. A fresh model and
+    optimizer are built for each dropout value. The seed is reset for each
+    experiment to make comparisons easier to reproduce.
 
-    # Download and normalize MNIST only after explicit form submission.
-    (_x_train, _y_train), (_x_test, _y_test) = tf.keras.datasets.mnist.load_data()
-    _x_train, _x_test = _x_train / 255.0, _x_test / 255.0
-    _x_train, _y_train = _x_train[::5], _y_train[::5]
-    _x_test, _y_test = _x_test[::20], _y_test[::20]
+    `WandbMetricsLogger` sends training and validation metrics after each epoch.
+    `WandbModelCheckpoint` saves the model after each epoch and uploads the
+    checkpoint as a model Artifact. The `{epoch:02d}` filename placeholder keeps
+    checkpoints separate. The run's summary also records its final validation accuracy.
+    """)
+    return
 
-    _run_summaries = []
-    with tempfile.TemporaryDirectory(prefix="wandb-keras-checkpoints-") as _checkpoint_dir:
-        for _index in range(int(_submitted["experiment_count"])):
-            tf.keras.backend.clear_session()
-            tf.keras.utils.set_random_seed(_seed + _index)
-            _config = {
-                "layer_1": 512,
-                "activation_1": "relu",
-                "dropout": _rng.uniform(0.01, 0.80),
-                "layer_2": 10,
-                "activation_2": "softmax",
-                "optimizer": "sgd",
-                "loss": "sparse_categorical_crossentropy",
-                "metric": "accuracy",
-                "epochs": int(_submitted["epochs"]),
-                "batch_size": int(_submitted["batch_size"]),
-            }
 
+@app.cell
+def _(
+    dropout_values,
+    entity,
+    training_config,
+    training_project,
+    x_train,
+    x_validation,
+    y_train,
+    y_validation,
+):
+    for experiment_index, dropout in enumerate(dropout_values):
+        tf.keras.backend.clear_session()
+        tf.keras.utils.set_random_seed(training_config["seed"])
+        with tempfile.TemporaryDirectory(prefix="wandb-keras-checkpoints-") as checkpoint_directory:
             with wandb.init(
-                entity=wandb_connection["entity"],
-                project=_project,
-                name=f"keras-mnist-{_index + 1}",
-                config=_config,
-            ) as _run:
-                _model = tf.keras.Sequential(
-                    [
-                        tf.keras.Input(shape=(28, 28)),
-                        tf.keras.layers.Flatten(),
-                        tf.keras.layers.Dense(
-                            _run.config["layer_1"],
-                            activation=_run.config["activation_1"],
-                        ),
-                        tf.keras.layers.Dropout(_run.config["dropout"]),
-                        tf.keras.layers.Dense(
-                            _run.config["layer_2"],
-                            activation=_run.config["activation_2"],
-                        ),
-                    ]
+                entity=entity,
+                project=training_project,
+                name=f"keras-mnist-{experiment_index + 1}-dropout-{dropout:.2f}",
+                config={**training_config, "dropout": dropout},
+            ) as training_run:
+                run_config = training_run.config
+                model = tf.keras.Sequential([
+                    tf.keras.Input(shape=(28, 28)),
+                    tf.keras.layers.Flatten(),
+                    tf.keras.layers.Dense(run_config.layer_1, activation=run_config.activation_1),
+                    tf.keras.layers.Dropout(run_config.dropout),
+                    tf.keras.layers.Dense(run_config.layer_2, activation=run_config.activation_2),
+                ])
+                model.compile(
+                    optimizer=run_config.optimizer,
+                    loss=run_config.loss,
+                    metrics=[run_config.metric],
                 )
-                _model.compile(
-                    optimizer=_run.config["optimizer"],
-                    loss=_run.config["loss"],
-                    metrics=[_run.config["metric"]],
-                )
-
-                _checkpoint_path = str(
-                    Path(_checkpoint_dir)
-                    / f"experiment-{_index + 1}-best.keras"
-                )
-                _history = _model.fit(
-                    x=_x_train,
-                    y=_y_train,
-                    epochs=_run.config["epochs"],
-                    batch_size=_run.config["batch_size"],
-                    validation_data=(_x_test, _y_test),
+                checkpoint_path = str(Path(checkpoint_directory) / "model-{epoch:02d}.keras")
+                history = model.fit(
+                    x=x_train,
+                    y=y_train,
+                    epochs=run_config.epochs,
+                    batch_size=run_config.batch_size,
+                    validation_data=(x_validation, y_validation),
                     callbacks=[
                         WandbMetricsLogger(log_freq="epoch"),
-                        WandbModelCheckpoint(
-                            filepath=_checkpoint_path,
-                            monitor="val_loss",
-                            mode="min",
-                            save_best_only=True,
-                        ),
+                        WandbModelCheckpoint(filepath=checkpoint_path),
                     ],
                     verbose=2,
                 )
-                _run_summaries.append(
-                    {
-                        "name": _run.name,
-                        "url": _run.url,
-                        "val_accuracy": float(
-                            _history.history["val_accuracy"][-1]
-                        ),
-                    }
-                )
-
-    keras_result = {
-        "project": _project,
-        "runs": tuple(_run_summaries),
-    }
-    return (keras_result,)
-
-
-@app.cell(hide_code=True)
-def _(keras_result):
-    _rows = "\n".join(
-        (
-            f"- [{_run['name']}]({_run['url']}): "
-            f"final validation accuracy `{_run['val_accuracy']:.3f}`"
-            if _run["url"]
-            else (
-                f"- {_run['name']}: final validation accuracy "
-                f"`{_run['val_accuracy']:.3f}` (URL unavailable)"
-            )
-        )
-        for _run in keras_result["runs"]
-    )
-    mo.callout(
-        mo.md(
-            f"Finished {len(keras_result['runs'])} Keras experiments in "
-            f"`{keras_result['project']}`:\n\n{_rows}"
-        ),
-        kind="success",
-    )
+                training_run.summary["final_validation_accuracy"] = float(history.history["val_accuracy"][-1])
     return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Try W&B Alerts
+    ### Inspect your results
 
-    [W&B Alerts](https://docs.wandb.ai/models/runs/alert) can notify you through
-    Slack or email when code detects a condition such as low accuracy. Before
-    trying this section, enable **Scriptable run alerts** and configure a
-    destination in your W&B user settings.
-
-    The demo logs simulated accuracy values and calls `run.alert()` on the first
-    value at or below the threshold. Submitting this form creates one run and
-    may send a real external notification.
+    Open the project link printed by Weights & Biases. Compare dropout values in the run
+    configurations against the `epoch/val_loss` and `epoch/val_accuracy` charts
+    and the `final_validation_accuracy` summary. In a run's **Artifacts** tab,
+    find the saved Keras model. You can download it and load it with
+    `tf.keras.models.load_model()` to reuse the checkpoint.
     """)
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    alert_form = (
-        mo.md("{project}\n\n{threshold}\n\n{max_steps}\n\n{seed}")
-        .batch(
-            project=mo.ui.text(
-                value="keras-intro",
-                label="W&B project",
-                full_width=True,
-            ),
-            threshold=mo.ui.number(
-                start=0.0,
-                stop=2.0,
-                step=0.05,
-                value=0.3,
-                label="Low-accuracy threshold",
-            ),
-            max_steps=mo.ui.number(
-                start=1,
-                stop=1_000,
-                step=1,
-                value=1_000,
-                label="Maximum simulated steps",
-            ),
-            seed=mo.ui.number(
-                start=0,
-                stop=10_000,
-                step=1,
-                value=7,
-                label="Random seed",
-            ),
-        )
-        .form(
-            submit_button_label="Run demo and send alert if triggered",
-            bordered=True,
-        )
-    )
-    alert_form
-    return (alert_form,)
+    mo.md(r"""
+    ## Try Weights & Biases Alerts
+
+    [Weights & Biases Alerts](https://docs.wandb.ai/models/runs/alert) can notify you through
+    Slack or email when code detects a condition such as low accuracy. Before
+    trying this section, enable **Scriptable run alerts** and configure a
+    destination in your Weights & Biases user settings.
+
+    The next cell logs synthetic accuracy values between zero and one. The
+    first value at or below `accuracy_threshold` triggers `alert_run.alert()`
+    and ends the loop. These values are independent of the MNIST results.
+
+    Set the threshold and random seed below, then run the cell to create an
+    alert-demo run. With notifications configured, this can send a real Slack
+    or email alert. `wait_duration=300` limits repeated alerts with the same
+    title to one every five minutes.
+    """)
+    return
 
 
-@app.cell(hide_code=True)
-def _(alert_form, wandb_connection):
-    mo.stop(
-        alert_form.value is None,
-        mo.callout(
-            mo.md("Submit the form to create the alert demo run."),
-            kind="info",
-        ),
-    )
+@app.cell
+def _(entity, training_project):
+    accuracy_threshold = 0.3
+    max_alert_steps = 1000
+    alert_seed = 7
 
-    _submitted = alert_form.value
-    _project = _submitted["project"].strip() or "keras-intro"
-    _threshold = float(_submitted["threshold"])
-    _rng = random.Random(int(_submitted["seed"]))
-    _trigger = None
-
+    alert_rng = random.Random(alert_seed)
     with wandb.init(
-        entity=wandb_connection["entity"],
-        project=_project,
-        name="low-accuracy-alert-demo",
-    ) as _run:
-        for _step in range(int(_submitted["max_steps"])):
-            _accuracy = round(_rng.random() + _rng.random(), 3)
-            _run.log({"accuracy": _accuracy})
-
-            if _accuracy <= _threshold:
-                _run.alert(
+        entity=entity,
+        project=training_project,
+        name="keras-low-accuracy-alert-demo",
+        job_type="alert-demo",
+        config={"accuracy_threshold": accuracy_threshold, "seed": alert_seed},
+    ) as alert_run:
+        for alert_step in range(max_alert_steps):
+            alert_accuracy = round(alert_rng.random(), 3)
+            alert_run.log({"step": alert_step, "accuracy": alert_accuracy})
+            if alert_accuracy <= accuracy_threshold:
+                alert_run.alert(
                     title="Low accuracy",
                     text=(
-                        f"Accuracy {_accuracy} at step {_step} is below the "
-                        f"acceptable threshold {_threshold}."
+                        f"Accuracy {alert_accuracy} at step {alert_step} is at or below "
+                        f"the threshold {accuracy_threshold}."
                     ),
                     level=AlertLevel.WARN,
                     wait_duration=300,
                 )
-                _trigger = {"step": _step, "accuracy": _accuracy}
+                print(f"Alert triggered: {alert_run.url}")
                 break
-        _run_url = _run.url
-
-    alert_result = {
-        "run_url": _run_url,
-        "trigger": _trigger,
-        "max_steps": int(_submitted["max_steps"]),
-    }
-    return (alert_result,)
-
-
-@app.cell(hide_code=True)
-def _(alert_result):
-    if alert_result["trigger"] is None:
-        _message = (
-            f"No accuracy value crossed the threshold in "
-            f"{alert_result['max_steps']} steps, so no alert was sent."
-        )
-    else:
-        _message = (
-            f"Sent the alert at step {alert_result['trigger']['step']} with "
-            f"accuracy `{alert_result['trigger']['accuracy']}`."
-        )
-
-    _run_link = (
-        f"[Open the alert demo run]({alert_result['run_url']})."
-        if alert_result["run_url"]
-        else "The run URL is unavailable."
-    )
-    mo.callout(mo.md(f"{_message}\n\n{_run_link}"), kind="success")
+        else:
+            print("No value crossed the threshold; no alert was sent.")
     return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## What's next?
+    ## Verify and next steps
+
+    In your W&B workspace, check:
+
+    - **Simulation project** (default `basic-intro`): each simulation has eight logged accuracy and loss values.
+    - **Training project** (default `keras-intro`): compare `dropout` in each training run's config with
+      `epoch/val_loss`, `epoch/val_accuracy`, and `final_validation_accuracy`.
+      Open a training run's **Artifacts** tab to find its per-epoch Keras models.
+    - **Alert demo**: inspect the accuracy history in the run named
+      `keras-low-accuracy-alert-demo`. With the default seed, the second value
+      crosses the threshold. Check your configured notification destination
+      for the warning.
 
     Continue with
     [Organizing hyperparameter sweeps in PyTorch](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py/server)

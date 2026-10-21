@@ -1,88 +1,79 @@
 # /// script
+# requires-python = ">=3.11,<3.14"
 # dependencies = [
 #     "accelerate",
 #     "datasets",
 #     "evaluate",
-#     "fsspec[http]==2026.6.0",
-#     "transformers @ git+https://github.com/huggingface/transformers",
-#     "wandb==0.29.0",
+#     "marimo>=0.24.2",
+#     "scikit-learn==1.9.1",
+#     "scipy==1.18.1",
+#     "torch==2.14.1",
+#     "transformers==4.57.6",
+#     "wandb==0.30.0",
 # ]
+#
+# [tool.marimo.runtime]
+# on_cell_change = "lazy"
 # ///
 
 import marimo
 
-__generated_with = "0.24.0"
+__generated_with = "0.25.2"
 app = marimo.App(auto_download=["html"])
 
 with app.setup:
     import marimo as mo
 
     import os
-    import sys
-    import uuid
     import subprocess
+    import sys
+    import tempfile
+    from importlib.metadata import version
+    from pathlib import Path
+    from urllib.request import urlopen
+
+    # The training subprocess needs these packages in the notebook's interpreter.
+    # Explicit imports also expose them to marimo's package management.
+    import accelerate
+    import datasets
+    import evaluate
     import torch
+    import transformers
     import wandb
-    import fsspec
-
-    # Optional: log both gradients and parameters
-    os.environ['WANDB_WATCH'] = 'all'
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    # Hugging Face + W&B
-
-    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/huggingface-wandb/huggingface_wandb.py/server)
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    Visualize your [Hugging Face](https://github.com/huggingface/transformers) model's performance quickly with a seamless [W&B](https://wandb.ai/site) integration.
-
-    Compare hyperparameters, output metrics, and system stats like GPU utilization across your models.
-
-    <img src="https://i.imgur.com/vnejHGh.png" width="800" alt="Hugging Face and Weights & Biases integration" />
-    """)
-    return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
     <style>
-    .wandb-by-cw-logo--dark {
+    .wandb-config-logo--dark {
       display: none;
     }
 
-    :host-context(body.dark) .wandb-by-cw-logo--light {
+    body.dark .wandb-config-logo--light {
       display: none;
     }
 
-    :host-context(body.dark) .wandb-by-cw-logo--dark {
+    body.dark .wandb-config-logo--dark {
       display: block;
     }
     </style>
 
-    ## Why should I use W&B?
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
 
-    Use [Weights & Biases](https://wandb.com) for machine learning experiment tracking, dataset versioning, and project collaboration.
+    # Hugging Face + Weights & Biases
 
-    <img src="https://wandb.me/mini-diagram" width="600" alt="Weights & Biases features" />
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/huggingface-wandb/huggingface_wandb.py/server)
 
-    - **Unified dashboard**: Central repository for all your model metrics and predictions
-    - **Lightweight**: No code changes required to integrate with Hugging Face
-    - **Accessible**: Free for individuals and academic teams
-    - **Secure**: All projects are private by default
-    - **Trusted**: Used by machine learning teams at OpenAI, Toyota, Lyft and more
+    This notebooks shows how to train and monitor Hugging Face models with Weights & Biases. Microsoft Research Paraphrase Corpus (MRPC) provides labeled sentence pairs and is part of the GLUE language-understanding benchmark.
 
-    Think of W&B like GitHub for machine learning models— save machine learning experiments to your private, hosted dashboard. Experiment quickly with the confidence that all the versions of your models are saved for you, no matter where you're running your scripts.
+    We will use Hugging Face's `run_glue.py` script to handle data preparation and training. Its built-in `Trainer` integration sends metrics to Weights & Biases when you pass `--report_to wandb`. The Trainer callback handles metric logging for you.
 
-    W&B lightweight integrations works with any Python script, and all you need to do is sign up for a free W&B account to start tracking and visualizing your models.
+    A GPU is recommended for the full BERT run below. The first run downloads
+    the pretrained model and MRPC data. CPU execution works but takes longer.
+
+    <img src="https://i.imgur.com/vnejHGh.png" width="800" alt="Example of Hugging Face training metrics in Weights & Biases" />
     """)
     return
 
@@ -90,258 +81,206 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Getting started
+    ## Run with the notebook's dependencies
 
-    In this tutorial, we work with the Hugging Face and Weights & Biases libraries, and the GLUE dataset and training script.
-    - [Hugging Face Transformers](https://github.com/huggingface/transformers): Natural language models and datasets
-    - [Weights & Biases](https://docs.wandb.com/): Experiment tracking and visualization
-    - [GLUE dataset](https://gluebenchmark.com/): A language understanding benchmark dataset
-    - [GLUE script](https://github.com/huggingface/transformers/blob/master/examples/run_glue.py): Model training script for sequence classification
+    From this notebook's directory, launch it with its declared Python and package versions:
+
+    ```bash
+    uvx marimo edit --sandbox huggingface_wandb.py
+    ```
+
+    The training script uses the same Python interpreter as the notebook.
+    Opening this file in an existing marimo environment does not install the
+    dependencies listed at the top of the file. That environment must also
+    contain `evaluate`, `accelerate`, `datasets`, PyTorch, and Transformers.
+    The sandbox command installs the declared dependencies in an isolated environment.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Authenticate with Weights & Biases
+
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `huggingface-demo`. Then select **Connect to Weights & Biases**.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="huggingface-demo", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
+    return entity, project
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Download the training script
+
+    Download `run_glue.py` from the same Transformers release installed by this
+    notebook. Matching the versions keeps the script's arguments and APIs
+    compatible with the library. The script is saved in temporary storage so
+    it can be launched in the next steps.
     """)
     return
 
 
 @app.cell
 def _():
+    transformers_version = version("transformers")
     run_glue_url = (
         "https://raw.githubusercontent.com/huggingface/transformers/"
-        "refs/heads/main/examples/pytorch/text-classification/run_glue.py"
+        f"v{transformers_version}/examples/pytorch/text-classification/run_glue.py"
     )
-    run_glue_path = "run_glue.py"
+    run_glue_path = Path(tempfile.mkdtemp(prefix="huggingface-glue-")) / "run_glue.py"
 
-    with fsspec.open(run_glue_url, "rb") as _source:
-        with open(run_glue_path, "wb") as _destination:
-            _destination.write(_source.read())
+    with urlopen(run_glue_url, timeout=60) as source:
+        run_glue_path.write_bytes(source.read())
     return (run_glue_path,)
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    In the Hugging Face Transformers repo, we've instrumented the Trainer to automatically log training and evaluation metrics to W&B at each logging step.
+    ## Configure Weights & Biases for the training process
 
-    Here's an in depth look at how the integration works: [Hugging Face + W&B Report](https://app.wandb.ai/jxmorris12/huggingface-demo/reports/Train-a-model-with-Hugging-Face-and-Weights-%26-Biases--VmlldzoxMDE2MTU).
+    The script runs in a separate Python process. The next cell copies the runtime
+    environment and adds your selected project and team. Existing environment
+    credentials are inherited, and credentials saved by the SDK are available
+    to the child process in the same runtime.
+
+    `WANDB_WATCH="all"` adds parameter and gradient histograms to the run.
+    Set it to `"false"` if you only need metrics and want to reduce logging
+    overhead. The Trainer creates the Weights & Biases run when training starts.
     """)
     return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Authentication
-
-    Enter your [W&B API key](https://wandb.ai/authorize) and, if needed, your team or entity. You can leave the key blank when this environment already has W&B credentials.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    _api_key_input = mo.ui.text(
-        kind="password",
-        label="W&B API key (optional)",
-        placeholder="Paste a key or use cached credentials",
-        full_width=True,
-    )
-    _entity_input = mo.ui.text(
-        label="W&B entity or team (optional)",
-        placeholder="Leave blank to use your default entity",
-        full_width=True,
-    )
-    wandb_login_form = (
-        mo.md("{api_key}\n\n{entity}")
-        .batch(api_key=_api_key_input, entity=_entity_input)
-        .form(submit_button_label="Connect to W&B", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
-
-
-@app.cell(hide_code=True)
-def _(wandb_login_form):
-    mo.stop(
-        wandb_login_form.value is None,
-        mo.callout(
-            mo.md("Connect to W&B above before running the training example."),
-            kind="info",
-        ),
-    )
-
-    _api_key = wandb_login_form.value["api_key"].strip()
-    _entity = wandb_login_form.value["entity"].strip()
-    try:
-        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
-        _login_error = None
-    except wandb.errors.Error as _error:
-        _login_ok = False
-        _login_error = str(_error)
-
-    mo.stop(
-        not _login_ok,
-        mo.callout(
-            mo.md(
-                "W&B authentication did not complete. "
-                f"Check the API key and try again. \n\nW&B reported: `{_login_error or 'unknown error'}`"
-            ),
-            kind="danger",
-        ),
-    )
-
-    wandb_settings = {
-        "project": "huggingface-demo",
-        "entity": _entity or None,
-    }
-    mo.callout(
-        mo.md("Connected to W&B."),
-        kind="success",
-    )
-    return (wandb_settings,)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    Optionally, we can set environment variables to customize W&B logging. See [documentation](https://docs.wandb.com/library/integrations/huggingface).
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Train the model
-    Next, call the downloaded training script [run_glue.py](https://huggingface.co/transformers/examples.html#glue) and see training automatically get tracked to the Weights & Biases dashboard. This script fine-tunes BERT on the Microsoft Research Paraphrase Corpus— pairs of sentences with human annotations indicating whether they are semantically equivalent.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    gpu_available = torch.cuda.is_available()
-
-    (
-        mo.callout(
-            mo.md(
-                f"GPU ready: **{torch.cuda.get_device_name(0)}**. "
-                "The training script will use it automatically."
-            ),
-            kind="success",
-        )
-        if gpu_available
-        else mo.callout(
-            mo.md(
-                "No GPU is attached to this session. In Molab, click the "
-                "notebook specs button in the header, attach a GPU, then save "
-                "and restart. Reconnect to W&B after the restart. Training is "
-                "paused to prevent an unexpectedly slow CPU run."
-            ),
-            kind="warn",
-            title="GPU not available",
-        )
-    )
-    return (gpu_available,)
 
 
 @app.cell
-def _(wandb_settings):
-    task_name = "MRPC"
-    wandb_run_id = uuid.uuid4().hex
-    wandb_run_entity = (
-        wandb_settings["entity"] or wandb.Api().default_entity
-    )
-
+def _(entity, project):
     run_environment = os.environ.copy()
-    run_environment.update(
-        {
-            "WANDB_RUN_ID": wandb_run_id,
-            "WANDB_ENTITY": wandb_run_entity,
-            "WANDB_PROJECT": wandb_settings["project"],
-        }
-    )
-    wandb_run_url = wandb.Settings(
-        entity=wandb_run_entity,
-        project=wandb_settings["project"],
-        run_id=wandb_run_id,
-    ).run_url
-    return run_environment, task_name, wandb_run_url
+    run_environment["WANDB_PROJECT"] = project
+    run_environment["WANDB_WATCH"] = "all"
+    if entity is not None:
+        run_environment["WANDB_ENTITY"] = entity
+    return (run_environment,)
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Fine-tune BERT on MRPC
+
+    The arguments below select `bert-base-uncased`, tokenize sentence pairs to
+    at most 256 tokens, and train for three epochs with a batch size of 32 and
+    learning rate of `2e-4`. `--logging_steps 50` records training metrics every
+    50 optimizer steps, while `--eval_strategy epoch` evaluates on the validation
+    set after each epoch. MRPC evaluation reports accuracy and F1.
+
+    `--report_to wandb` enables experiment tracking. The process prints a link
+    to the run as training begins. It uses the same Python environment as the
+    notebook and automatically selects an available accelerator or CPU.
+
+    Each execution saves the final model and metric files in a new temporary
+    output directory. For a quick check, add `--max_train_samples 64` and
+    `--max_eval_samples 32`, reduce `--num_train_epochs` to `1`, and set
+    `--logging_steps` to `1`. Those small samples help check that the workflow runs. Use a larger, fixed
+    validation set when comparing model quality.
+    """)
+    return
 
 
 @app.cell
-def _(gpu_available, run_environment, run_glue_path, task_name):
-    mo.stop(not gpu_available)
+def _(run_environment, run_glue_path):
+    output_dir = tempfile.mkdtemp(prefix="bert-mrpc-")
+    training_command = [
+        sys.executable,
+        str(run_glue_path),
+        "--model_name_or_path", "bert-base-uncased",
+        "--task_name", "mrpc",
+        "--do_train",
+        "--do_eval",
+        "--max_seq_length", "256",
+        "--per_device_train_batch_size", "32",
+        "--learning_rate", "2e-4",
+        "--num_train_epochs", "3",
+        "--logging_steps", "50",
+        "--eval_strategy", "epoch",
+        "--save_strategy", "no",
+        "--output_dir", output_dir,
+        "--run_name", "bert-base-mrpc",
+        "--report_to", "wandb",
+    ]
 
-    subprocess.run(
-        [
-            sys.executable,
-            run_glue_path,
-            "--model_name_or_path",
-            "bert-base-uncased",
-            "--task_name",
-            task_name,
-            "--do_train",
-            "--do_eval",
-            "--max_seq_length",
-            "256",
-            "--per_device_train_batch_size",
-            "32",
-            "--learning_rate",
-            "2e-4",
-            "--num_train_epochs",
-            "3",
-            "--output_dir",
-            f"/tmp/{task_name}/",
-            "--report_to",
-            "wandb",
-            "--logging_steps",
-            "50",
-        ],
-        env=run_environment,
-        check=True,
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(wandb_run_url):
-    mo.md(f"""
-    ## Visualize results in dashboard
-
-    [**Open this training run in W&B**]({wandb_run_url})
-
-    Click the link above, or go to [wandb.ai](https://app.wandb.ai) to see your results stream in live. The link to see your run in the browser will appear after all the dependencies are loaded — look for the following output: "**wandb**: View run at [URL to your unique run]"
-
-    **Visualize Model Performance**
-    It's easy to look across dozens of experiments, zoom in on interesting findings, and visualize highly dimensional data.
-
-    ![](https://gblobscdn.gitbook.com/assets%2F-Lqya5RvLedGEWPhtkjU%2F-M79Y5aLAFsMEcybMZcC%2F-M79YL90K1jiq-3jeQK-%2Fhf%20gif%2015.gif?alt=media&token=523d73f4-3f6c-499c-b7e8-ef5be0c10c2a)
-
-    **Compare Architectures**
-    Here's an example comparing [BERT vs DistilBERT](https://app.wandb.ai/jack-morris/david-vs-goliath/reports/Does-model-size-matter%3F-Comparing-BERT-and-DistilBERT-using-Sweeps--VmlldzoxMDUxNzU) — it's easy to see how different architectures effect the evaluation accuracy throughout training with automatic line plot visualizations.
-    ![](https://gblobscdn.gitbook.com/assets%2F-Lqya5RvLedGEWPhtkjU%2F-M79Y5aLAFsMEcybMZcC%2F-M79Ytpj6q6Jlv9RKZGT%2Fgif%20for%20comparing%20bert.gif?alt=media&token=e3dee5de-d120-4330-b4bd-2e2ddbb8315e)
-    """)
+    subprocess.run(training_command, env=run_environment, check=True)
     return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ### Track key information effortlessly by default
-    Weights & Biases saves a new run for each experiment. Here's the information that gets saved by default:
-    - **Hyperparameters**: Settings for your model are saved in Config
-    - **Model Metrics**: Time series data of metrics streaming in are saved in Log
-    - **Terminal Logs**: Command line outputs are saved and available in a tab
-    - **System Metrics**: GPU and CPU utilization, memory, temperature etc.
-    """)
-    return
+    ## Verify the run and compare experiments
 
+    Open the run link printed by Weights & Biases during training, or find the run named
+    `bert-base-mrpc` in your chosen project. In the run's workspace, inspect
+    `train/loss`, `eval/loss`, `eval/accuracy`, and `eval/f1`. The training step
+    is the horizontal axis, and evaluation points appear after each epoch.
+    Check the run's config for settings such as `learning_rate`,
+    `num_train_epochs`, and `per_device_train_batch_size`. The system metrics
+    show resource usage. Parameter and gradient histograms are logged
+    periodically when `WANDB_WATCH` is `"all"`.
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Learn more!
-    - [Documentation](https://docs.wandb.ai/tutorials/huggingface/): docs on the Weights & Biases and Hugging Face integration
-    - [Videos](http://wandb.me/youtube): tutorials, interviews with practitioners, and more on our YouTube channel
-    - Contact: Message us at contact@wandb.com with questions
+    Try another learning rate or change `--model_name_or_path` to
+    `distilbert-base-uncased`, give the experiment a descriptive `--run_name`,
+    and rerun training. Compare the runs' validation accuracy and F1 alongside
+    training time in the project workspace.
+
+    See the [Hugging Face + Weights & Biases Report](https://app.wandb.ai/jxmorris12/huggingface-demo/reports/Train-a-model-with-Hugging-Face-and-Weights-%26-Biases--VmlldzoxMDE2MTU)
+    for an example dashboard, and the
+    [BERT versus DistilBERT report](https://app.wandb.ai/jack-morris/david-vs-goliath/reports/Does-model-size-matter%3F-Comparing-BERT-and-DistilBERT-using-Sweeps--VmlldzoxMDUxNzU)
+    for a comparison of architectures.
     """)
     return
 

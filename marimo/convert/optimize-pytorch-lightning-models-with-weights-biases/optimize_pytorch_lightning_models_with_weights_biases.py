@@ -12,15 +12,19 @@
 
 import marimo
 
-__generated_with = "0.24.2"
-app = marimo.App(width="medium", app_title="PyTorch Lightning with W&B")
+__generated_with = "0.25.1"
+app = marimo.App(
+    width="medium",
+    app_title="PyTorch Lightning with Weights & Biases",
+)
 
 with app.setup:
+    from pathlib import Path
+
     import marimo as mo
     import lightning.pytorch as pl
     import torch
     import wandb
-    from pathlib import Path
     from lightning.pytorch import Trainer
     from lightning.pytorch.callbacks import Callback, ModelCheckpoint
     from lightning.pytorch.loggers import WandbLogger
@@ -35,33 +39,38 @@ with app.setup:
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # Pytorch Lightning models with Weights & Biases
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
+    # Track PyTorch Lightning training with Weights & Biases
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/optimize-pytorch-lightning-models-with-weights-biases/optimize_pytorch_lightning_models_with_weights_biases.py/server)
 
-    Pytorch Lightning is a lightweight wrapper for organizing your PyTorch code and easily adding advanced features such as distributed training, 16-bit precision or gradient accumulation.
+    Train an MNIST classifier and use `WandbLogger` to record its hyperparameters,
+    metrics, prediction examples, and checkpoints. Lightning organizes the training
+    loop, while the logger sends the values recorded with `self.log()` to Weights & Biases.
 
-    Coupled with the [Weights & Biases integration](https://docs.wandb.ai/models/integrations/lightning), you can quickly train and monitor models for full traceability and reproducibility with only 2 extra lines of code:
+    This example also adds `watch()` for gradient and parameter histograms, a
+    custom callback for prediction Tables, and `ModelCheckpoint` for saved weights.
+    These require explicit configuration, which the following sections explain.
 
-    ```python
-    from lightning.pytorch.loggers import WandbLogger
-    from lightning.pytorch import Trainer
-
-    wandb_logger = WandbLogger()
-    trainer = Trainer(logger=wandb_logger)
-    ```
-
-    W&B integration with Pytorch Lightning can automatically:
-
-    * log your configuration parameters
-    * log your losses and metrics
-    * log your model checkpoints
-    * keep track of your code
-    * log your system metrics (GPU, CPU, memory, temperature, etc.)
-
-    ## Docs
-
-    You can find the PyTorch Lightning WandbLogger docs [here](https://lightning.ai/docs/pytorch/stable/extensions/generated/lightning.pytorch.loggers.WandbLogger.html) and the Weights & Biases docs [here](https://docs.wandb.ai/models/integrations/lightning)
+    The basic connection is to pass a `WandbLogger` to the Lightning `Trainer`.
+    The training cell below supplies an existing Weights & Biases run so its
+    team, project, name, and lifecycle are controlled by the notebook.
     """)
     return
 
@@ -69,73 +78,98 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Authentication
+    ## Authenticate with Weights & Biases
 
-    Connect to W&B so that experiments are associated with your account. Enter your [W&B API key](https://wandb.ai/authorize), or leave it blank to use `WANDB_API_KEY` from the marimo Secrets panel or credentials already available in this runtime. A new molab session does not inherit credentials from your computer.
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
 
-    Set the team entity to choose where runs are stored. Find it in your W&B team's URL, `wandb.ai/<team-entity>`, or leave it blank to use your account's default team.
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `MNIST`. Then select **Connect to Weights & Biases**.
     """)
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    wandb_login_form = (
-        mo.md("{api_key}\n\n{entity}")
-        .batch(
-            api_key=mo.ui.text(kind="password", label="W&B API key (optional)", full_width=True),
-            entity=mo.ui.text(label="W&B entity or team (optional)", full_width=True),
-        )
-        .form(submit_button_label="Connect to W&B", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="MNIST", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
 
 
 @app.cell(hide_code=True)
-def _(wandb_login_form):
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
     mo.stop(
-        wandb_login_form.value is None,
-        mo.callout("Connect to W&B before submitting a training run.", kind="info"),
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
     )
-    _api_key = wandb_login_form.value["api_key"].strip()
+
     try:
-        _connected = wandb.login(key=_api_key or None, relogin=bool(_api_key))
-    except wandb.errors.Error:
-        _connected = False
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
     mo.stop(
-        not _connected,
-        mo.callout(
-            "W&B authentication did not complete. Check the API key or this runtime's credentials, then reconnect.",
-            kind="danger",
-        ),
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
     )
-    wandb_settings = {"entity": wandb_login_form.value["entity"].strip() or None}
-    mo.callout("Connected to W&B. Configure and submit the training form below.", kind="success")
-    return (wandb_settings,)
+
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
+    return entity, project
+
+
+@app.cell
+def _():
+    run_name = "lightning-mnist-128x128"
+    epochs = 5
+    batch_size = 64
+    seed = 42
+    return batch_size, epochs, run_name, seed
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Setting up the dataloader
+    ## Set up the dataloaders
 
-    For the context of this tutorial we use vanilla PyTorch dataloaders on the MNIST dataset. The helper preserves the 55,000 / 5,000 training and validation split. A fixed seed makes that split reproducible across runs.
+    Download MNIST, convert its images to tensors, and normalize them using the
+    dataset's mean and standard deviation. Split its 60,000 examples into 55,000
+    training and 5,000 validation images. Seeded generators make the split and
+    training shuffle reproducible. Validation keeps a fixed order so the callback
+    can show the same examples after each epoch.
     """)
     return
 
 
-@app.function
-def load_mnist(batch_size=64):
-    transform = transforms.Compose([
+@app.cell
+def _(batch_size, seed):
+    mnist_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,)),
     ])
-    dataset = MNIST(root="./data", download=True, transform=transform)
+    mnist_dataset = MNIST(root="./data", download=True, transform=mnist_transform)
     training_set, validation_set = random_split(
-        dataset, [55000, 5000], generator=torch.Generator().manual_seed(42)
+        mnist_dataset, [55000, 5000], generator=torch.Generator().manual_seed(seed)
     )
-    training_loader = DataLoader(training_set, batch_size=batch_size, shuffle=True)
+    training_loader = DataLoader(
+        training_set,
+        batch_size=batch_size,
+        shuffle=True,
+        generator=torch.Generator().manual_seed(seed),
+    )
     validation_loader = DataLoader(validation_set, batch_size=batch_size)
     return training_loader, validation_loader
 
@@ -145,9 +179,13 @@ def _():
     mo.md(r"""
     ## Defining the Model
 
-    **Tips**:
+    The following `LightningModule` defines a three-layer MNIST classifier, its
+    Adam optimizer, and shared prediction, loss, and accuracy calculations.
+    `validation_step()` returns predictions for the media callback below.
 
-    * Call `self.save_hyperparameters()` in `__init__` to automatically log your hyperparameters to **W&B**.
+    **Weights & Biases integration points**:
+
+    * Call `self.save_hyperparameters()` in `__init__` to automatically log your hyperparameters to **Weights & Biases**.
     * Call `self.log` in `training_step` and `validation_step` to log the metrics.
     """)
     return
@@ -171,7 +209,7 @@ class MNIST_LitModule(pl.LightningModule):
         # optimizer parameters
         self.lr = lr
 
-        # save hyper-parameters to self.hparams (auto-logged by W&B)
+        # save hyper-parameters to self.hparams (auto-logged by Weights & Biases)
         self.save_hyperparameters()
 
     def forward(self, x):
@@ -234,21 +272,12 @@ class MNIST_LitModule(pl.LightningModule):
         return preds, loss, acc
 
 
-@app.cell
-def _():
-    model = MNIST_LitModule(n_layer_1=128, n_layer_2=128)
-    model
-    return
-
-
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    The model is now ready! The training helper creates a fresh `MNIST_LitModule(n_layer_1=128, n_layer_2=128)` for each submission.
-
     ## Save Model Checkpoints
 
-    The `ModelCheckpoint` callback is required along with the `WandbLogger` argument to log model checkpoints to W&B. Monitor `val_accuracy` with `mode="max"` to save the best validation checkpoint.
+    The `ModelCheckpoint` callback is required along with the `WandbLogger` argument to log model checkpoints to Weights & Biases. Monitor `val_accuracy` with `mode="max"` to save the best validation checkpoint.
 
     ```python
     checkpoint_callback = ModelCheckpoint(monitor="val_accuracy", mode="max")
@@ -256,18 +285,18 @@ def _():
 
     ## Tracking Experiments with WandbLogger
 
-    PyTorch Lightning has a `WandbLogger` to easily log your experiments with Weights & Biases. Just pass it to your `Trainer` to log to W&B. The helper below passes an explicit W&B run to the logger so each submission has a clear name and lifecycle. Its entity comes from the authentication form.
+    PyTorch Lightning has a `WandbLogger` to easily log your experiments with Weights & Biases. Just pass it to your `Trainer` to log to Weights & Biases. The training cell below passes `training_run` as the logger's `experiment`, keeping the run name, project, and lifecycle explicit.
 
     ### `lightning.pytorch.loggers.WandbLogger()`
 
     | Functionality | Argument or function | Notes |
     | --- | --- | --- |
-    | Logging models | `WandbLogger(..., log_model="all")` or `log_model=True` | Log new checkpoints during training with `"all"`, or at the end with `True`. |
+    | Logging models | `WandbLogger(..., log_model="all")` or `log_model=True` | Use `"all"` to upload saved checkpoints during training. `True` usually uploads at the end, but also uploads during training when `save_top_k=-1`. |
     | Set custom run names | `WandbLogger(..., name="my_run_name")` | This notebook names the explicit run passed as `experiment`. |
-    | Organize runs by project | `WandbLogger(..., project="my_project")` | Set the project in the training form. |
+    | Organize runs by project | `WandbLogger(..., project="my_project")` | Choose the project in the setup form. |
     | Log gradients and parameters | `wandb_logger.watch(model, log="all")` | Adds histograms during training. |
     | Log hyperparameters | `self.save_hyperparameters()` | Call in `LightningModule.__init__`. |
-    | Log custom objects | `wandb_logger.log_text`, `log_image`, `log_table` | Includes text, images, and W&B Tables. |
+    | Log custom objects | `wandb_logger.log_text`, `log_image`, `log_table` | Includes text, images, and Weights & Biases Tables. |
 
     See the [WandbLogger docs](https://lightning.ai/docs/pytorch/stable/extensions/generated/lightning.pytorch.loggers.WandbLogger.html) for all parameters.
     """)
@@ -279,13 +308,13 @@ def _():
     mo.md(r"""
     ## Using WandbLogger to log Images, Text and More
 
-    Pytorch Lightning is extensible through its callback system. We can create a custom callback to automatically log sample predictions during validation. `WandbLogger` provides convenient media logging functions:
+    PyTorch Lightning is extensible through its callback system. We can create a custom callback to automatically log sample predictions during validation. `WandbLogger` provides convenient media logging functions:
 
     * `WandbLogger.log_text` for text data
     * `WandbLogger.log_image` for images
-    * `WandbLogger.log_table` for [W&B Tables](https://docs.wandb.ai/models/tables).
+    * `WandbLogger.log_table` for [Weights & Biases Tables](https://docs.wandb.ai/models/tables).
 
-    An alternative to `self.log` in the model class is `trainer.logger.experiment.log({...})` for custom W&B media.
+    An alternative to `self.log` in the model class is `trainer.logger.experiment.log({...})` for custom Weights & Biases media.
 
     In this case we log the first 20 images in the first batch of the validation dataset along with the predicted and ground truth labels. We skip Lightning's initial sanity check so it does not log a duplicate set of untrained predictions. Images are moved to CPU and unnormalized for display.
     """)
@@ -335,130 +364,88 @@ class LogPredictionsCallback(Callback):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Train Your Model
+    ## Train the model and log to Weights & Biases
 
-    Choose a project, a readable run name, and the number of epochs. **Train model and log to W&B** downloads MNIST if needed, trains a new model, and creates one W&B run with metrics, prediction images, a predictions Table, and model checkpoint Artifacts. Each submission starts a fresh run; adding a short experiment description to the name helps compare results.
+    The next cell creates a fresh model with two hidden layers of 128 units, then
+    starts `training_run`. Passing it to `WandbLogger(experiment=training_run)`
+    connects Lightning's `self.log()` calls to this run. `watch()` adds gradient
+    and parameter histograms every 100 training steps.
 
-    The helper keeps the featured integration together: create the run and `WandbLogger`, attach the callbacks to `Trainer`, then call `trainer.fit`. The context manager finishes the run even if training raises an error.
+    Attach the prediction callback and a `ModelCheckpoint` callback to `Trainer`.
+    The checkpoint callback saves a checkpoint when validation accuracy improves.
+    `log_model="all"` uploads each newly saved checkpoint as an Artifact, with
+    `latest` and `best` aliases. The checkpoints also remain available locally.
+
+    `trainer.fit()` runs training and validation. Its metrics, prediction images,
+    and Tables go to Weights & Biases through the logger. Exiting the `with` block finishes the
+    run, including if training raises an error. Rerunning this cell starts a fresh
+    model and run. Give each configuration a descriptive run name. Resetting the
+    training loader's generator also repeats the shuffle order on each rerun.
     """)
     return
 
 
-@app.cell(hide_code=True)
-def _(wandb_login_form):
-    # Recreate the form after authentication is submitted, requiring a fresh training submission.
-    _connection_is_submitted = wandb_login_form.value is not None
-    training_form = (
-        mo.md("{project}\n\n{run_name}\n\n{epochs}\n\n{batch_size}")
-        .batch(
-            project=mo.ui.text(value="MNIST", label="W&B project"),
-            run_name=mo.ui.text(value="lightning-mnist", label="Run name"),
-            epochs=mo.ui.slider(start=1, stop=10, value=5, label="Epochs", show_value=True),
-            batch_size=mo.ui.dropdown(options=[32, 64, 128], value=64, label="Batch size"),
-        )
-        .form(submit_button_label="Train model and log to W&B", bordered=True)
-    )
-    training_form
-    return (training_form,)
+@app.cell
+def _(
+    batch_size,
+    entity,
+    epochs,
+    project,
+    run_name,
+    seed,
+    training_loader,
+    validation_loader,
+):
+    pl.seed_everything(seed, workers=True)
+    training_loader.generator.manual_seed(seed)
+    model = MNIST_LitModule(n_layer_1=128, n_layer_2=128, lr=1e-3)
+    log_predictions_callback = LogPredictionsCallback()
 
-
-@app.cell(hide_code=True)
-def _(training_form):
-    mo.stop(training_form.value is None, mo.md("Submit the training form when you are ready."))
-    mo.stop(
-        not training_form.value["project"].strip() or not training_form.value["run_name"].strip(),
-        mo.callout("Enter a project and run name, then submit again.", kind="warn"),
-    )
-    training_config = {
-        **training_form.value,
-        "project": training_form.value["project"].strip(),
-        "run_name": training_form.value["run_name"].strip(),
-    }
-    return (training_config,)
-
-
-@app.function
-def train_model(config, wandb_settings, model_class, prediction_callback_class, loaders):
-    training_loader, validation_loader = loaders
-    pl.seed_everything(42, workers=True)
-    model = model_class(n_layer_1=128, n_layer_2=128)
-    log_predictions_callback = prediction_callback_class()
-
-    # A context manager closes this run before a new submission can create one.
     with wandb.init(
-        project=config["project"],  # group runs in the selected project
-        entity=wandb_settings["entity"],
-        name=config["run_name"],
-        config={"epochs": config["epochs"], "batch_size": config["batch_size"], "seed": 42},
+        project=project,
+        entity=entity,
+        name=run_name,
+        config={"epochs": epochs, "batch_size": batch_size, "seed": seed},
         job_type="train",
-    ) as run:
-        wandb_logger = WandbLogger(
-            experiment=run,
-            log_model="all",  # log all new checkpoints during training
-        )
+    ) as training_run:
+        wandb_logger = WandbLogger(experiment=training_run, log_model="all")
         checkpoint_callback = ModelCheckpoint(
-            dirpath=str(Path(run.dir) / "checkpoints"),
+            dirpath=str(Path(training_run.dir) / "checkpoints"),
             monitor="val_accuracy",
             mode="max",
             save_top_k=1,
         )
         wandb_logger.watch(model, log="all", log_freq=100, log_graph=False)
         trainer = Trainer(
-            logger=wandb_logger,  # W&B integration
-            callbacks=[
-                log_predictions_callback,  # logging of sample predictions
-                checkpoint_callback,  # our model checkpoint callback
-            ],
-            accelerator="auto",  # use GPU when available
+            logger=wandb_logger,
+            callbacks=[log_predictions_callback, checkpoint_callback],
+            accelerator="auto",  # Use an available GPU, or fall back to CPU.
             devices=1,
-            max_epochs=config["epochs"],  # number of epochs
+            max_epochs=epochs,
             log_every_n_steps=10,
         )
         trainer.fit(model, training_loader, validation_loader)
-        result = {
-            "run_url": run.url,
-            "run_id": run.id,
-            "best_val_accuracy": float(checkpoint_callback.best_model_score.cpu()),
-            "checkpoint": checkpoint_callback.best_model_path,
-        }
-    return result
-
-
-@app.cell
-def _(training_config, wandb_settings):
-    training_result = train_model(
-        training_config,
-        wandb_settings,
-        model_class=MNIST_LitModule,
-        prediction_callback_class=LogPredictionsCallback,
-        loaders=load_mnist(training_config["batch_size"]),
-    )
-    return (training_result,)
+        best_val_accuracy = float(checkpoint_callback.best_model_score.cpu())
+        checkpoint_path = checkpoint_callback.best_model_path
+    return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    When we want to close a W&B run, we call `run.finish()` (or `wandb.finish()` for the active run). Here, exiting the `with wandb.init(...) as run` block does this automatically before the result below is available.
+    ## Verify and next steps
+
+    The training cell’s output shows the best validation accuracy, the local checkpoint,
+    and a run link when logging online. In the Weights & Biases workspace, inspect:
+
+    - `train_loss`, `train_accuracy`, `val_loss`, and `val_accuracy` charts.
+    - `sample_images` and `sample_table` to compare predictions with true labels.
+    - Gradient and parameter histograms recorded by `watch()`.
+    - The run's Artifacts tab for model checkpoints and the `best` alias.
+
+    Change the learning rate or hidden-layer sizes in the training cell, give the
+    experiment a new run name, and rerun it to compare results.
     """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(training_result):
-    _run_link = (
-        f"[Open the W&B run]({training_result['run_url']})"
-        if training_result["run_url"] else "Offline run finished; its files are stored locally."
-    )
-    mo.callout(
-        mo.md(
-            f"{_run_link}\n\nBest validation accuracy: **{training_result['best_val_accuracy']:.1%}**. "
-            "Inspect `train_loss`, `train_accuracy`, `val_loss`, and `val_accuracy` in Workspace. "
-            "Open `sample_images` and `sample_table` to compare predictions with labels, and "
-            "the run's Artifacts tab for the checkpoint with the `best` alias."
-        ),
-        kind="success",
-    )
     return
 
 
@@ -477,12 +464,9 @@ def _():
     mo.md(r"""
     ## Resources
 
-    * [Pytorch Lightning and W&B integration documentation](https://docs.wandb.ai/models/integrations/lightning) contains a few tips for taking most advantage of W&B.
-    * [Pytorch Lightning documentation](https://lightning.ai/docs/pytorch/stable/extensions/logging.html) is thorough and full of examples.
-
-    ## Questions about W&B
-
-    If you have any questions about using W&B to track your model performance and predictions, please contact support@wandb.com.
+    * [PyTorch Lightning and Weights & Biases integration documentation](https://docs.wandb.ai/models/integrations/lightning) contains a few tips for taking most advantage of Weights & Biases.
+    * [PyTorch Lightning documentation](https://lightning.ai/docs/pytorch/stable/extensions/logging.html) is thorough and full of examples.
+    * [PyTorch Lightning WandbLogger docs](https://lightning.ai/docs/pytorch/stable/extensions/generated/lightning.pytorch.loggers.WandbLogger.html) and the [Weights & Biases docs](https://docs.wandb.ai/models/integrations/lightning).
     """)
     return
 

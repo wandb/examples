@@ -9,351 +9,230 @@
 #     "peft==0.21.0",
 #     "torch==2.6.0",
 #     "transformers==5.17.0",
-#     "trl==1.13.0",
 #     "wandb==0.30.0",
 # ]
 # ///
 
 import marimo
 
-__generated_with = "0.24.2"
-app = marimo.App(width="medium", app_title="torchtune and W&B")
+__generated_with = "0.25.1"
+app = marimo.App(
+    width="medium",
+    app_title="LoRA fine-tuning with Weights & Biases",
+)
 
-
-@app.cell
-def _():
-    import os
-    import uuid
+with app.setup:
+    import tempfile
     from pathlib import Path
 
     import marimo as mo
     import torch
     import wandb
     from datasets import load_dataset
-    from huggingface_hub import HfApi
-    from peft import LoraConfig, TaskType
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-    from trl import SFTConfig, SFTTrainer
-
-    return (
-        AutoModelForCausalLM,
-        AutoTokenizer,
-        HfApi,
-        LoraConfig,
-        Path,
-        SFTConfig,
-        SFTTrainer,
-        TaskType,
-        load_dataset,
-        mo,
-        os,
-        torch,
-        uuid,
-        wandb,
+    from peft import LoraConfig, TaskType, get_peft_model
+    from transformers import (
+        AutoModelForCausalLM, AutoTokenizer, DataCollatorForSeq2Seq,
+        Trainer, TrainingArguments,
     )
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py/server)
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
 
-    <img src="https://wandb.me/logo-im-png" width="400" alt="Weights & Biases" />
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
 
     # Fine-tune SmolLM2 with LoRA and Weights & Biases
 
-    This notebook uses the maintained Hugging Face training stack:
-    [Transformers](https://huggingface.co/docs/transformers),
-    [TRL](https://huggingface.co/docs/trl), and
-    [PEFT](https://huggingface.co/docs/peft). You will stream a conversational
-    dataset, train a compact LoRA adapter, and inspect the live metrics and saved
-    adapter in W&B.
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/torchtune-and-wandb/torchtune_and_wandb.py/server)
 
-    The default model is the Apache-2.0 licensed
-    [`HuggingFaceTB/SmolLM2-135M-Instruct`](https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct),
-    whose model weights are roughly 269 MB.
+    This lesson uses [Transformers](https://huggingface.co/docs/transformers) and
+    [PEFT](https://huggingface.co/docs/peft) to fine-tune a small language model
+    with LoRA. You will track the experiment in Weights & Biases, inspect training metrics,
+    and save the trained adapter as a model Artifact.
+
+    The public model `HuggingFaceTB/SmolLM2-135M-Instruct` has 135 million
+    parameters. We stream a small sample of conversational data and train for
+    ten steps to demonstrate the integration. This is a short workflow example,
+    not an evaluation of model quality.
+
+    The default model and dataset are public. For a private or gated repository, configure `HF_TOKEN` as well.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    ## Prerequisites
+    ## Authenticate with Weights & Biases
 
-    Storage use is deliberately bounded: the dataset is streamed instead of fully
-    cached, the base model is much smaller than the former 7B checkpoint, and PEFT
-    saves only the trained LoRA adapter. Opening the notebook does not download a
-    model, start training, or create a W&B run.
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `smollm2-lora`. Then select **Connect to Weights & Biases**.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _(torch):
-    _cuda_available = torch.cuda.is_available()
-    _mps_available = (
-        torch.backends.mps.is_built() and torch.backends.mps.is_available()
+def _():
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="smollm2-lora", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
     )
 
-    if _cuda_available:
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
+    return entity, project
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Choose the Device and Training Settings
+
+    The next cell selects CUDA, Apple MPS, or CPU and sets a suitable model
+    dtype. CUDA uses bfloat16 when supported and float16 otherwise. MPS and CPU
+    use float32.
+
+    Edit the model, dataset, sample count, and step limit here. A small batch size
+    and a 256-token limit keep this demo modest. A GPU is faster, but the default
+    model can also train on CPU. Each execution saves to a new folder under
+    `output_root` so artifacts contain only that experiment's files.
+    """)
+    return
+
+
+@app.cell
+def _():
+    if torch.cuda.is_available():
         training_device = "cuda"
-        model_dtype = (
-            torch.bfloat16
-            if torch.cuda.is_bf16_supported()
-            else torch.float16
-        )
-    elif _mps_available:
+        model_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    elif torch.backends.mps.is_built() and torch.backends.mps.is_available():
         training_device = "mps"
         model_dtype = torch.float32
     else:
         training_device = "cpu"
         model_dtype = torch.float32
-    return model_dtype, training_device
+
+    model_id = "HuggingFaceTB/SmolLM2-135M-Instruct"
+    dataset_id = "trl-lib/Capybara"
+    sample_count = 128
+    max_steps = 10
+    batch_size = 2 if training_device == "cuda" else 1
+    learning_rate = 2e-4
+    max_length = 256
+    run_name = "smollm2-lora-demo"
+    cache_dir = "/tmp/huggingface"
+    output_root = Path("/tmp/smollm2-lora-wandb")
+    print(f"Training device: {training_device}; dtype: {model_dtype}")
+    return (
+        batch_size,
+        cache_dir,
+        dataset_id,
+        learning_rate,
+        max_length,
+        max_steps,
+        model_dtype,
+        model_id,
+        output_root,
+        run_name,
+        sample_count,
+        training_device,
+    )
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    ## Authentication and remote storage
+    ## Stream Conversational Training Data
 
-    Enter your [W&B API key](https://wandb.ai/authorize), or leave it blank to use
-    `WANDB_API_KEY` from molab Secrets or existing credentials. The entity is the
-    team name in `wandb.ai/<entity>/<project>`.
+    The next cell loads `trl-lib/Capybara` with `streaming=True`, shuffles
+    with a fixed seed, and takes a small sample. Streaming avoids downloading
+    and caching the entire dataset. Examples contain conversations that
+    we format with the model's chat template before training.
 
-    The default Hugging Face model and dataset are public, so the Hugging Face token
-    is optional. Creating the `HfApi` client also makes the Hub available in
-    marimo's **Files → Remote Storage** panel. The client is read-only in this
-    notebook.
+    Because this dataset is iterable, we set `max_steps` explicitly in the
+    training configuration rather than relying on a known dataset length.
     """)
     return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    wandb_login_form = (
-        mo.md("{api_key}\n\n{entity}\n\n{project}\n\n{hf_token}")
-        .batch(
-            api_key=mo.ui.text(
-                kind="password",
-                label="W&B API key (optional)",
-                placeholder="Paste a key or use configured credentials",
-                full_width=True,
-            ),
-            entity=mo.ui.text(
-                label="W&B entity or team (optional)",
-                placeholder="Leave blank to use your default entity",
-                full_width=True,
-            ),
-            project=mo.ui.text(
-                value="smollm2-lora",
-                label="W&B project",
-                full_width=True,
-            ),
-            hf_token=mo.ui.text(
-                kind="password",
-                label="Hugging Face token (optional)",
-                placeholder="Only needed for private or gated repositories",
-                full_width=True,
-            ),
-        )
-        .form(submit_button_label="Connect", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
-
-
-@app.cell(hide_code=True)
-def _(HfApi, mo, wandb, wandb_login_form):
-    mo.stop(
-        wandb_login_form.value is None,
-        mo.callout(
-            mo.md("Submit the authentication form to continue."),
-            kind="info",
-        ),
-    )
-
-    _submitted_login = wandb_login_form.value
-    _api_key = _submitted_login["api_key"].strip()
-    _requested_entity = _submitted_login["entity"].strip()
-    _project = _submitted_login["project"].strip() or "smollm2-lora"
-    _hf_token = _submitted_login["hf_token"].strip()
-    try:
-        _login_ok = wandb.login(
-            key=_api_key or None,
-            relogin=bool(_api_key),
-        )
-        _resolved_entity = _requested_entity or wandb.Api().default_entity
-        _login_error = None
-    except (wandb.errors.Error, ValueError) as _error:
-        _login_ok = False
-        _resolved_entity = None
-        _login_error = str(_error)
-
-    mo.stop(
-        not _login_ok or not _resolved_entity,
-        mo.callout(
-            mo.md(
-                "W&B authentication did not complete. Check the API key and "
-                "entity, then submit again.\n\n"
-                f"W&B reported: `{_login_error or 'No default entity was found.'}`"
-            ),
-            kind="danger",
-        ),
-    )
-
-    wandb_settings = {
-        "api_key": _api_key,
-        "entity": _resolved_entity,
-        "project": _project,
-    }
-    hf_settings = {"token": _hf_token}
-    hf = HfApi(token=_hf_token or None)
-    mo.callout(
-        mo.md(
-            f"Connected to W&B. Training will target "
-            f"`{_resolved_entity}/{_project}`."
-        ),
-        kind="success",
-    )
-    return hf, hf_settings, wandb_settings
-
-
-@app.cell(hide_code=True)
-def _(hf, mo):
-    _hf_endpoint = hf.endpoint
-    mo.md(f"""
-    ## Choose the training job
-
-    The public `hf` client connected to `{_hf_endpoint}` lets you browse model and
-    dataset repositories in marimo's Remote Storage panel. PyTorch still needs
-    model tensors locally while training, so the notebook minimizes that footprint
-    by using a 135M-parameter model. The Capybara dataset is loaded with
-    `streaming=True`, which avoids a full dataset download and Arrow cache.
-
-    Submitting the form below is the only action that downloads the model, creates
-    a W&B run, or starts training.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    lora_training_form = (
-        mo.md(
-            "{model_id}\n\n{dataset_id}\n\n{sample_count}\n\n"
-            "{max_steps}\n\n{run_name}\n\n{output_dir}"
-        )
-        .batch(
-            model_id=mo.ui.text(
-                value="HuggingFaceTB/SmolLM2-135M-Instruct",
-                label="Hugging Face model",
-                full_width=True,
-            ),
-            dataset_id=mo.ui.text(
-                value="trl-lib/Capybara",
-                label="Streaming dataset",
-                full_width=True,
-            ),
-            sample_count=mo.ui.number(
-                start=32,
-                stop=2000,
-                step=32,
-                value=128,
-                label="Training examples",
-            ),
-            max_steps=mo.ui.number(
-                start=1,
-                stop=200,
-                step=1,
-                value=10,
-                label="Maximum training steps",
-            ),
-            run_name=mo.ui.text(
-                value="smollm2-lora-demo",
-                label="W&B run name",
-                full_width=True,
-            ),
-            output_dir=mo.ui.text(
-                value="/tmp/smollm2-lora-wandb",
-                label="Adapter output directory",
-                full_width=True,
-            ),
-        )
-        .form(submit_button_label="Fine-tune with W&B", bordered=True)
-    )
-    lora_training_form
-    return (lora_training_form,)
 
 
 @app.cell
-def _(Path, lora_training_form, mo, model_dtype, training_device, uuid):
-    mo.stop(
-        lora_training_form.value is None,
-        mo.callout(
-            mo.md(
-                "Review the settings, then click **Fine-tune with W&B** to start."
-            ),
-            kind="info",
-        ),
+def _(cache_dir, dataset_id, sample_count):
+    train_dataset = load_dataset(
+        dataset_id,
+        split="train",
+        streaming=True,
+        cache_dir=cache_dir,
     )
-
-    _values = lora_training_form.value
-    _model_id = _values["model_id"].strip()
-    _dataset_id = _values["dataset_id"].strip()
-    _output_dir = _values["output_dir"].strip()
-    mo.stop(
-        not _model_id or not _dataset_id or not _output_dir,
-        mo.callout(
-            mo.md("Provide a model, dataset, and adapter output directory."),
-            kind="warn",
-        ),
-    )
-
-    _batch_size = 2 if training_device == "cuda" else 1
-    _max_steps = int(_values["max_steps"])
-    _sample_count = int(_values["sample_count"])
-    mo.stop(
-        _sample_count < _max_steps * _batch_size,
-        mo.callout(
-            mo.md("Choose at least one streamed example per training batch."),
-            kind="warn",
-        ),
-    )
-
-    lora_training_request = {
-        "batch_size": _batch_size,
-        "cache_dir": "/tmp/huggingface",
-        "dataset_id": _dataset_id,
-        "device": training_device,
-        "dtype": model_dtype,
-        "max_steps": _max_steps,
-        "model_id": _model_id,
-        "output_dir": str(Path(_output_dir).expanduser()),
-        "run_id": uuid.uuid4().hex,
-        "run_name": _values["run_name"].strip() or "smollm2-lora-demo",
-        "sample_count": _sample_count,
-    }
-    return (lora_training_request,)
+    train_dataset = train_dataset.shuffle(seed=42, buffer_size=1000).take(sample_count)
+    return (train_dataset,)
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""
-    ## Configure LoRA and W&B logging
+    ## Configure LoRA
 
-    LoRA freezes the base model and adds small trainable matrices to selected
-    attention projections. TRL's `SFTTrainer` accepts this PEFT configuration and
-    reports metrics through the standard Transformers W&B integration.
+    The next cell creates a PEFT configuration for the model's attention
+    projections. LoRA freezes the base weights and trains small added matrices.
 
-    Only the adapter is saved and uploaded as a W&B Artifact; the 269 MB base model
-    is not duplicated in the output directory.
+    `r` controls their rank, `lora_alpha` controls their scaling, and
+    `lora_dropout` applies dropout on the adapter path. We pass this
+    configuration to `get_peft_model`, which constructs the trainable adapter.
+    The parameter counts logged later show how much of the model is trainable.
     """)
     return
 
 
-@app.cell(hide_code=True)
-def _(LoraConfig, TaskType, lora_training_request, mo, wandb_settings):
+@app.cell
+def _():
     lora_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
@@ -361,209 +240,180 @@ def _(LoraConfig, TaskType, lora_training_request, mo, wandb_settings):
         lora_alpha=16,
         lora_dropout=0.05,
     )
-
-    mo.md(
-        f"**Model:** `{lora_training_request['model_id']}`  \n"
-        f"**Dataset:** `{lora_training_request['dataset_id']}` (streamed)  \n"
-        f"**Steps:** `{lora_training_request['max_steps']}`  \n"
-        f"**W&B target:** `{wandb_settings['entity']}/{wandb_settings['project']}`"
-    )
     return (lora_config,)
 
 
 @app.cell(hide_code=True)
-def _(Path, lora_training_request, wandb, wandb_settings):
-    _request = lora_training_request
-    _wandb_dir = Path("/tmp/wandb")
-    _hf_cache_dir = Path(_request["cache_dir"])
-    _wandb_dir.mkdir(parents=True, exist_ok=True)
-    _hf_cache_dir.mkdir(parents=True, exist_ok=True)
+def _():
+    mo.md(r"""
+    ## Fine-tune and Track the Experiment
 
-    lora_run_environment = {
-        "WANDB_ENTITY": wandb_settings["entity"],
-        "WANDB_PROJECT": wandb_settings["project"],
-        "WANDB_RUN_ID": _request["run_id"],
-        "WANDB_NAME": _request["run_name"],
-        "WANDB_DIR": str(_wandb_dir),
-        "HF_HOME": str(_hf_cache_dir),
-    }
-    if wandb_settings["api_key"]:
-        lora_run_environment["WANDB_API_KEY"] = wandb_settings["api_key"]
+    The next cell loads a fresh model and tokenizer, then starts
+    `fine_tuning_run` with `wandb.init()`. The run configuration records the
+    dataset, training settings, and LoRA hyperparameters for comparison later.
 
-    lora_run_url = wandb.Settings(
-        entity=wandb_settings["entity"],
-        project=wandb_settings["project"],
-        run_id=_request["run_id"],
-    ).run_url
-    return lora_run_environment, lora_run_url
+    In `TrainingArguments`, `report_to="wandb"` enables the Transformers Weights & Biases
+    integration. `logging_steps=1` reports metrics at every training step.
+    The trainer uses the active Weights & Biases run, so its metrics and our model Artifact
+    belong to the same experiment.
 
+    We use the standard Transformers `Trainer` so training does not require
+    TRL's fused Triton loss kernels. Each conversation is tokenized with the
+    chat template and truncated to `max_length`. The model learns to predict
+    the next token throughout the conversation; padding is excluded from the loss.
 
-@app.cell(hide_code=True)
-def _(lora_run_url, mo):
-    mo.callout(
-        mo.md(
-            f"[Open the live training run in W&B]({lora_run_url}) while the "
-            "training cell runs."
-        ),
-        kind="info",
-    )
+    After training, `trainer.save_model()` saves the PEFT adapter and
+    `tokenizer.save_pretrained()` saves the tokenizer. We add that directory
+    to a `wandb.Artifact(type="model")` and upload it with
+    `fine_tuning_run.log_artifact()`. The saved files contain the adapter rather
+    than a full copy of the base model. The Artifact metadata identifies the
+    base model needed to load the adapter.
+
+    Finally, we add the trainable parameter count and percentage to
+    `fine_tuning_run.summary`. The context manager finishes the run once
+    training and artifact logging complete.
+    """)
     return
 
 
 @app.cell
 def _(
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    SFTConfig,
-    SFTTrainer,
-    hf_settings,
-    load_dataset,
+    batch_size,
+    cache_dir,
+    dataset_id,
+    entity,
+    learning_rate,
     lora_config,
-    lora_run_environment,
-    lora_training_request,
-    os,
-    torch,
-    wandb,
-    wandb_settings,
+    max_length,
+    max_steps,
+    model_dtype,
+    model_id,
+    output_root,
+    project,
+    run_name,
+    sample_count,
+    train_dataset,
+    training_device,
 ):
-    _request = lora_training_request
-    _hf_token = hf_settings["token"] or None
-    _previous_environment = {
-        _key: os.environ.get(_key) for _key in lora_run_environment
-    }
-    os.environ.update(lora_run_environment)
+    tokenizer = AutoTokenizer.from_pretrained(model_id, cache_dir=cache_dir)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
 
-    try:
-        _dataset = load_dataset(
-            _request["dataset_id"],
-            split="train",
-            streaming=True,
-            token=_hf_token,
-            cache_dir=_request["cache_dir"],
-        )
-        _dataset = _dataset.shuffle(seed=42, buffer_size=1000).take(
-            _request["sample_count"]
-        )
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id,
+        dtype=model_dtype,
+        cache_dir=cache_dir,
+    )
+    model.config.use_cache = False
+    model = get_peft_model(model, lora_config)
 
-        _tokenizer = AutoTokenizer.from_pretrained(
-            _request["model_id"],
-            token=_hf_token,
-            cache_dir=_request["cache_dir"],
+    def _tokenize_conversation(example):
+        encoded = tokenizer.apply_chat_template(
+            example["messages"],
+            tokenize=True,
+            add_generation_prompt=False,
+            truncation=True,
+            max_length=max_length,
+            return_dict=True,
         )
-        if _tokenizer.pad_token is None:
-            _tokenizer.pad_token = _tokenizer.eos_token
+        encoded["labels"] = encoded["input_ids"].copy()
+        return encoded
 
-        _model = AutoModelForCausalLM.from_pretrained(
-            _request["model_id"],
-            dtype=_request["dtype"],
-            token=_hf_token,
-            cache_dir=_request["cache_dir"],
+    tokenized_dataset = train_dataset.map(_tokenize_conversation)
+    # Pad labels with -100, preserving real EOS tokens even when EOS is also PAD.
+    data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, label_pad_token_id=-100)
+
+    output_root.mkdir(parents=True, exist_ok=True)
+    adapter_output_dir = tempfile.mkdtemp(prefix="run-", dir=output_root)
+    training_args = TrainingArguments(
+        output_dir=adapter_output_dir,
+        max_steps=max_steps,
+        per_device_train_batch_size=batch_size,
+        gradient_accumulation_steps=1,
+        learning_rate=learning_rate,
+        logging_steps=1,
+        save_strategy="no",
+        report_to="wandb",
+        run_name=run_name,
+        bf16=training_device == "cuda" and model_dtype == torch.bfloat16,
+        fp16=training_device == "cuda" and model_dtype == torch.float16,
+        optim="adamw_torch",
+        dataloader_pin_memory=training_device == "cuda",
+        use_cpu=training_device == "cpu",
+        seed=42,
+    )
+
+    with wandb.init(
+        entity=entity,
+        project=project,
+        name=run_name,
+        config={
+            "model_id": model_id,
+            "dataset_id": dataset_id,
+            "sample_count": sample_count,
+            "max_steps": max_steps,
+            "batch_size": batch_size,
+            "learning_rate": learning_rate,
+            "max_length": max_length,
+            "device": training_device,
+            "lora_r": lora_config.r,
+            "lora_alpha": lora_config.lora_alpha,
+            "lora_dropout": lora_config.lora_dropout,
+        },
+    ) as fine_tuning_run:
+        trainer = Trainer(
+            model=model,
+            args=training_args,
+            train_dataset=tokenized_dataset,
+            processing_class=tokenizer,
+            data_collator=data_collator,
         )
-        _model.config.use_cache = False
+        trainable_parameters, total_parameters = trainer.model.get_nb_trainable_parameters()
+        training_result = trainer.train()
+        trainer.save_model(adapter_output_dir)
+        tokenizer.save_pretrained(adapter_output_dir)
 
-        _training_args = SFTConfig(
-            output_dir=_request["output_dir"],
-            max_steps=_request["max_steps"],
-            per_device_train_batch_size=_request["batch_size"],
-            gradient_accumulation_steps=1,
-            learning_rate=2e-4,
-            logging_steps=1,
-            save_strategy="no",
-            report_to="wandb",
-            run_name=_request["run_name"],
-            max_length=256,
-            packing=False,
-            bf16=(
-                _request["device"] == "cuda"
-                and _request["dtype"] == torch.bfloat16
-            ),
-            fp16=(
-                _request["device"] == "cuda"
-                and _request["dtype"] == torch.float16
-            ),
-            optim="adamw_torch",
-            dataloader_pin_memory=_request["device"] == "cuda",
-            use_cpu=_request["device"] == "cpu",
-            seed=42,
-        )
-
-        with wandb.init(
-            entity=wandb_settings["entity"],
-            project=wandb_settings["project"],
-            id=_request["run_id"],
-            name=_request["run_name"],
-            config={
-                "model_id": _request["model_id"],
-                "dataset_id": _request["dataset_id"],
-                "sample_count": _request["sample_count"],
-                "max_steps": _request["max_steps"],
-                "device": _request["device"],
-                "lora_r": lora_config.r,
-                "lora_alpha": lora_config.lora_alpha,
-                "lora_dropout": lora_config.lora_dropout,
+        adapter_artifact = wandb.Artifact(
+            name=f"{fine_tuning_run.id}-lora-adapter",
+            type="model",
+            metadata={
+                "base_model": model_id,
+                "dataset": dataset_id,
+                "trainable_parameters": trainable_parameters,
+                "total_parameters": total_parameters,
             },
-        ) as _run:
-            _trainer = SFTTrainer(
-                model=_model,
-                args=_training_args,
-                train_dataset=_dataset,
-                processing_class=_tokenizer,
-                peft_config=lora_config,
-            )
-            _trainable_parameters, _total_parameters = (
-                _trainer.model.get_nb_trainable_parameters()
-            )
-            _result = _trainer.train()
-            _trainer.save_model(_request["output_dir"])
-            _tokenizer.save_pretrained(_request["output_dir"])
+        )
+        adapter_artifact.add_dir(adapter_output_dir)
+        fine_tuning_run.log_artifact(adapter_artifact)
 
-            _artifact = wandb.Artifact(
-                name=f"{_run.id}-lora-adapter",
-                type="model",
-                metadata={
-                    "base_model": _request["model_id"],
-                    "dataset": _request["dataset_id"],
-                    "trainable_parameters": _trainable_parameters,
-                    "total_parameters": _total_parameters,
-                },
-            )
-            _artifact.add_dir(_request["output_dir"])
-            _run.log_artifact(_artifact)
-            _run.summary["trainable_parameters"] = _trainable_parameters
-            _run.summary["trainable_percent"] = (
-                100 * _trainable_parameters / _total_parameters
-            )
-            _run.summary["adapter_output_dir"] = _request["output_dir"]
+        fine_tuning_run.summary["trainable_parameters"] = trainable_parameters
+        fine_tuning_run.summary["trainable_percent"] = 100 * trainable_parameters / total_parameters
+        fine_tuning_run.summary["adapter_output_dir"] = adapter_output_dir
+        run_url = fine_tuning_run.url
 
-            lora_training_summary = {
-                "adapter_artifact": _artifact.name,
-                "output_dir": _request["output_dir"],
-                "run_url": _run.url,
-                "train_loss": _result.metrics.get("train_loss"),
-                "trainable_parameters": _trainable_parameters,
-                "total_parameters": _total_parameters,
-            }
-    finally:
-        for _key, _previous_value in _previous_environment.items():
-            if _previous_value is None:
-                os.environ.pop(_key, None)
-            else:
-                os.environ[_key] = _previous_value
-    return (lora_training_summary,)
+    print(f"Training loss: {training_result.metrics.get('train_loss')}")
+    print(f"Trainable parameters: {trainable_parameters:,} / {total_parameters:,}")
+    print(f"Adapter saved to: {adapter_output_dir}")
+    print(f"View the Weights & Biases run: {run_url}")
+    return
 
 
 @app.cell(hide_code=True)
-def _(lora_training_summary, mo):
-    mo.callout(
-        mo.md(
-            "Fine-tuning finished. Open the "
-            f"[W&B run]({lora_training_summary['run_url']}) to inspect the loss "
-            "and system metrics, then open the model Artifact to find the LoRA "
-            f"adapter. The local adapter is in "
-            f"`{lora_training_summary['output_dir']}`."
-        ),
-        kind="success",
-    )
+def _():
+    mo.md(r"""
+    ## Inspect Metrics and the Saved Adapter
+
+    Open your Weights & Biases run to inspect training loss, learning rate,
+    and system metrics. The configuration records the settings you chose, and
+    the run summary includes the percentage of trainable parameters.
+
+    In **Artifacts**, open the logged model Artifact to browse the adapter
+    weights, tokenizer files, and base-model metadata. To use the adapter later, load it alongside the base model named in its metadata.
+
+    Try changing the learning rate or LoRA rank, rerun the training cell, and
+    compare the experiments in your Weights & Biases project. The ten-step demo exercises the logging workflow. Assess model quality
+    with a suitable training budget and held-out evaluation data.
+    """)
     return
 
 

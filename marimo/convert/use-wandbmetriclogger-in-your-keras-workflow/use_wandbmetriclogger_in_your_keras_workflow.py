@@ -7,12 +7,18 @@
 #     "tensorflow-datasets>=4.9,<5",
 #     "wandb>=0.18,<1",
 # ]
+#
+# [tool.marimo.runtime]
+# on_cell_change = "lazy"
 # ///
 
 import marimo
 
-__generated_with = "0.24.2"
-app = marimo.App(width="medium", app_title="Keras metrics with W&B")
+__generated_with = "0.25.1"
+app = marimo.App(
+    width="medium",
+    app_title="Keras metrics with Weights & Biases",
+)
 
 with app.setup:
     import marimo as mo
@@ -28,14 +34,32 @@ with app.setup:
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # Using Keras MetricsLogger in your Keras workflow
+    <style>
+    .wandb-config-logo--dark {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--light {
+      display: none;
+    }
+
+    body.dark .wandb-config-logo--dark {
+      display: block;
+    }
+    </style>
+
+    <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+    <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
+
+    # Using WandbMetricsLogger in your Keras workflow
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/use-wandbmetriclogger-in-your-keras-workflow/use_wandbmetriclogger_in_your_keras_workflow.py/server)
 
     This notebook introduces the `WandbMetricsLogger` callback for [experiment tracking](https://docs.wandb.ai/models/integrations/keras). It logs training and validation metrics along with system metrics to Weights & Biases.
 
-    A CPU is sufficient; a GPU speeds up training. The first
-    training submission downloads Fashion-MNIST and ImageNet weights.
+
+
+    This notebook is designed to run on your local machine's CPU.
     """)
     return
 
@@ -43,138 +67,82 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    <style>
-    .wandb-by-cw-logo--dark {
-      display: none;
-    }
+    ## Authenticate with Weights & Biases
 
-    :host-context(body.dark) .wandb-by-cw-logo--light {
-      display: none;
-    }
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
 
-    :host-context(body.dark) .wandb-by-cw-logo--dark {
-      display: block;
-    }
-    </style>
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
 
-    ## Why should I use W&B?
+    ## Set your team and project
 
-    <img class="wandb-by-cw-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="320" alt="Weights & Biases by CoreWeave" />
-    <img class="wandb-by-cw-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="320" alt="Weights & Biases by CoreWeave" />
-
-    Use Weights & Biases for machine learning experiment tracking, dataset versioning, and project collaboration.
-
-    <img src="https://wandb.me/mini-diagram" width="650" alt="Weights & Biases features" />
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `intro-keras`. Then select **Connect to Weights & Biases**.
     """)
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(r"""
-    ## Authentication
-
-    Enter your [W&B API key](https://wandb.ai/authorize), or leave it blank to use
-    `WANDB_API_KEY` from the marimo Secrets panel or credentials already stored
-    in this runtime. A fresh molab session does not inherit your local login.
-    If needed, [create a free W&B account](https://wandb.ai/signup).
-
-    The entity is the team name in your W&B project URL:
-    `wandb.ai/<entity>/<project>`. Leave it blank to use your default entity.
-    A blank run name lets W&B generate a name for each experiment.
-
-    Submit the form to authenticate, download data and weights, create one W&B
-    run, and train the model. The callback streams training and validation metrics to that run.
-    """)
-    return
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="intro-keras", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
 
 
 @app.cell(hide_code=True)
-def _():
-    training_form = (
-        mo.md(
-            """
-            {api_key}
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
 
-            {entity}
-
-            {project}
-
-            {run_name}
-
-            ## Hyperparameters
-
-            A Python dictionary records these hyperparameters in the W&B run
-            config so experiments can be compared and reproduced.
-
-            {epochs}  {batch_size}
-
-            {learning_rate}
-            """
-        )
-        .batch(
-            api_key=mo.ui.text(kind="password", label="W&B API key (optional)", full_width=True),
-            entity=mo.ui.text(label="W&B entity or team (optional)", full_width=True),
-            project=mo.ui.text(value="intro-keras", label="W&B project", full_width=True),
-            run_name=mo.ui.text(label="Run name (blank auto-generates)", full_width=True),
-            epochs=mo.ui.number(start=1, stop=50, step=1, value=10, label="Epochs"),
-            batch_size=mo.ui.dropdown(options=[32, 64, 128, 256], value=64, label="Batch size"),
-            learning_rate=mo.ui.number(start=0.00001, stop=0.1, step=0.00001, value=0.001, label="Learning rate"),
-        )
-        .form(submit_button_label="Download data and train with W&B", bordered=True)
-    )
-    training_form
-    return (training_form,)
-
-
-@app.cell(hide_code=True)
-def _(training_form):
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
     mo.stop(
-        training_form.value is None,
-        mo.callout(mo.md("Submit the form above to download data and train."), kind="info"),
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
     )
-    _submitted = training_form.value
-    mo.stop(
-        not _submitted["project"].strip(),
-        mo.callout(mo.md("Enter a W&B project name and submit again."), kind="danger"),
-    )
-    _api_key = _submitted["api_key"].strip()
+
     try:
         _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
     except (wandb.errors.Error, ValueError):
         _login_ok = False
+
     mo.stop(
         not _login_ok,
-        mo.callout(
-            mo.md("W&B authentication did not complete. Check your API key or runtime secret, then submit again."),
-            kind="danger",
-        ),
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
     )
-    wandb_settings = {
-        "project": _submitted["project"].strip(),
-        "entity": _submitted["entity"].strip() or None,
-        "name": _submitted["run_name"].strip() or None,
-    }
-    training_request = {
-        "epochs": int(_submitted["epochs"]),
-        "batch_size": int(_submitted["batch_size"]),
-        "learning_rate": float(_submitted["learning_rate"]),
-    }
-    mo.callout(mo.md("Authenticated. Preparing the submitted training run."), kind="success")
-    return training_request, wandb_settings
+
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
+    return entity, project
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Hyperparameters
+
+    Use a Python dictionary to define the experiment. Passing it to
+    `wandb.init(config=configs)` records these settings with the run, so you
+    can compare experiments and reproduce the model's configuration.
+    """)
+    return
 
 
 @app.cell
-def _(training_request):
+def _():
     configs = dict(
         dataset="fashion_mnist",
         num_classes=10,
         shuffle_buffer=1024,
-        batch_size=training_request["batch_size"],
+        batch_size=64,
         image_size=28,
         image_channels=1,
-        learning_rate=training_request["learning_rate"],
-        epochs=training_request["epochs"],
+        learning_rate=0.001,
+        epochs=10,
         seed=42,
     )
     return (configs,)
@@ -187,9 +155,12 @@ def _():
 
     We use [Fashion-MNIST](https://www.tensorflow.org/datasets/catalog/fashion_mnist)
     from the TensorFlow Datasets catalog to build a simple image classification
-    pipeline. Labels become one-hot vectors; images keep their 0–255 range
-    until the model applies MobileNetV2 preprocessing. Validation examples stay
+    pipeline. Labels become one-hot vectors. The input pipeline keeps image pixels in
+    the 0–255 range. The model later applies MobileNetV2 preprocessing
+    after its trainable convolution. Validation examples stay
     in a fixed order.
+
+    The data-loading helpers are defined at the end of the notebook.
     """)
     return
 
@@ -208,8 +179,10 @@ def _():
     ## Model
 
     A frozen ImageNet MobileNetV2 supplies image features. The model resizes each
-    grayscale image to 32 × 32, learns a three-channel convolution, applies
-    MobileNetV2 preprocessing, and trains a ten-class classification head.
+    grayscale image to 32 × 32 and uses a trainable convolution to produce
+    three channels. It then applies MobileNetV2 preprocessing and trains a
+    ten-class classification head. The convolution and head learn while the
+    backbone weights stay fixed.
     """)
     return
 
@@ -240,8 +213,8 @@ def _():
 
     Adam uses the learning rate recorded in `configs`. Alongside cross-entropy
     loss, track accuracy and top-five accuracy on training and validation data.
-    The same cell creates and compiles the model so training always receives a
-    fresh, compiled model after a new submission.
+    Rerun this cell before each new experiment to start with a fresh model.
+    Rerunning only the training cell continues from the current model weights.
     """)
     return
 
@@ -268,9 +241,9 @@ def _():
     mo.md(r"""
     ## Train
 
-    Initialize W&B before constructing `WandbMetricsLogger`, then pass the
+    Initialize Weights & Biases before constructing `WandbMetricsLogger`, then pass the
     callback to `model.fit`. `log_freq=10` logs training metrics every ten
-    batches; epoch and validation metrics are also logged at epoch end. Use
+    batches. Training and validation metrics are also logged at epoch end. Use
     `log_freq="epoch"` for epoch-only logging or `"batch"` for every batch.
 
     The context manager finishes the run after training, including if training
@@ -280,41 +253,33 @@ def _():
 
 
 @app.cell
-def _(configs, model, trainloader, validloader, wandb_settings):
-    if wandb.run is not None:
-        wandb.run.finish()
-
-    # Initialize a W&B run
-    with wandb.init(**wandb_settings, config=configs) as training_run:
-        wandb_run_url = training_run.url
-        # Train your model
-        training_history = model.fit(
+def _(configs, entity, model, project, trainloader, validloader):
+    with wandb.init(entity=entity, project=project, config=configs):
+        history = model.fit(
             trainloader,
             epochs=configs["epochs"],
             validation_data=validloader,
             shuffle=False,  # The tf.data training pipeline already shuffles.
-            callbacks=[WandbMetricsLogger(log_freq=10)],  # Notice the use of WandbMetricsLogger here
+            callbacks=[WandbMetricsLogger(log_freq=10)],
         )
-        # Close the W&B run
-    training_result = {
-        "url": wandb_run_url,
-        "epochs": len(training_history.history["loss"]),
-    }
-    return (training_result,)
+    return
 
 
 @app.cell(hide_code=True)
-def _(training_result):
-    mo.callout(
-        mo.md(
-            f"Training finished after {training_result['epochs']} epochs. "
-            f"[Open the W&B run]({training_result['url']}).\n\n"
-            "In the run's Workspace, inspect `epoch/loss`, `epoch/accuracy`, "
-            "`epoch/val_loss`, and `epoch/val_accuracy`, then compare the "
-            "`batch/*` charts. Check Config for the batch size and learning rate."
-        ),
-        kind="success",
-    )
+def _():
+    mo.md(r"""
+    ## Explore your results
+
+    Open the run link printed by Weights & Biases. In the run's Workspace, inspect
+    `epoch/loss`, `epoch/accuracy`, `epoch/val_loss`, and `epoch/val_accuracy`.
+    Compare these epoch summaries with the more frequent `batch/*` metrics.
+    Check Config for the batch size and learning rate recorded with the run.
+
+    Try a different learning rate in `configs`, rebuild the model with the
+    compile cell, and train again. Compare validation loss and accuracy across
+    the two runs in your project. You can also change `log_freq` to see how
+    logging frequency affects the detail in your training charts.
+    """)
     return
 
 
@@ -333,7 +298,6 @@ def _():
 def parse_data(example, num_classes):
     # Get image
     image = example["image"]
-    # image = tf.image.convert_image_dtype(image, dtype=tf.float32)
     image = tf.cast(image, tf.float32)
 
     # Get label

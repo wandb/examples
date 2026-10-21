@@ -36,13 +36,18 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    The goal of this notebook is to demonstrate how you and other members of your organization can use W&B Registry to track, share, and use dataset and model artifacts in your machine learning workflows. By the end of this notebook, you will know how to use W&B to:
+    Use Weights & Biases Registry to share versioned datasets and models across
+    teams. This lesson converts the UCI Zoo dataset to tensors, logs and links
+    those files to a Registry collection, trains a classifier, and retrieves the
+    saved model and test data for inference.
 
-    1. Create [collections](https://docs.wandb.ai/guides/registry/create_collection) within [W&B Registry](https://docs.wandb.ai/guides/registry)
-    2. Make dataset and model artifacts available to other members of your organization, and
-    3. Download your trained model and dataset artifacts from the registry for inference
+    The classifier uses animal attributes such as feathers, fins, and number of
+    legs to predict one of seven dataset classes. The model is intentionally
+    small so the lesson can focus on Artifact paths, version selection, and lineage.
 
-    To achieve this, we will train a neural network to identify animal classes (mammal, amphibian, reptile, and so forth) based on features such as weather or not they ahve feathers, fins, and so on.
+    Before publishing, check that the target registries exist and that your
+    account can link versions to their collections. Registry access also determines
+    which colleagues can retrieve the linked files.
     """)
     return
 
@@ -72,6 +77,62 @@ def _():
     from sklearn.model_selection import train_test_split
 
     return fetch_ucirepo, nn, pd, torch, train_test_split, wandb
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Authenticate with Weights & Biases
+
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `zoo_experiment`. Then select **Connect to Weights & Biases**.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="zoo_experiment", label="Project", full_width=True),
+    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(mo, wandb, wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
+
+    try:
+        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    TEAM_ENTITY = _entity
+    PROJECT = _project
+    mo.md("✓ Connected to Weights & Biases.")
+    return PROJECT, TEAM_ENTITY
 
 
 @app.cell(hide_code=True)
@@ -123,9 +184,14 @@ def _(X):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Process data
+    ### Convert the data to tensors
 
-    For training let's convert our dataset from a [pandas `DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html) to [a tensor with PyTorch](https://pytorch.org/docs/stable/generated/torch.tensor.html#torch.tensor), convert the data type of our input tensor(float64 to float32) to match the data type of the `nn.Linear module`, and convert our label tensor to index from 0-6:
+    Convert feature values to `float32`, matching the linear layers’ weights.
+    Convert labels to integer tensors and subtract one so the original class
+    IDs 1–7 become 0–6, as required by the seven-output classifier.
+
+    Keep the numeric class IDs consistent through training and evaluation.
+    Human-readable labels are added only when displaying predictions.
     """)
     return
 
@@ -161,24 +227,22 @@ def _(dataset, labels, torch):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Track and publish dataset
+    ## Log and link the dataset
 
-    Within the Dataset registry we will create a collection called "zoo-dataset-tensors". A *collection* is a set of linked artifact versions in a registry.
+    An Artifact stores a versioned set of files in a project. A Registry collection
+    contains links to Artifact versions so authorized users can discover and reuse
+    them. Linking creates a reference to the source version.
 
-    To create a collection we need to do two things:
-    1. Specify the collection and registry we want to link our artifact version to. To do this, we specify a "target path" for our artifact version.
-    2. Use the `wandb.run.link_artifact` method and pass our artifact object and the target path.
+    The target path identifies the registry and collection. The registry must
+    already exist. This example uses a `dataset` registry and a collection named
+    `zoo-dataset-tensors`. Match the registry name to the one in your organization.
 
-    #### Define target path of the collection
-
-    The target path of a collection consists of two parts:
-    * The name of the registry
-    * The name of the collection within the registry
-
-    If you know these two fields, you can create the full name yourself with string concatenation, f-strings, and so forth:
     ```python
     target_path = f"wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME}"
     ```
+
+    See [Link an artifact version to a collection](https://docs.coreweave.com/products/registry/link_version)
+    for the required permissions and supported paths.
     """)
     return
 
@@ -186,17 +250,15 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Publish dataset to registry
+    ### Publish the dataset to Registry
 
-    Let's publish our dataset to the Dataset registry in a collection called "zoo-dataset-tensors". To do this, we will
+    Define the target path, start a run, and create a dataset Artifact. Add the
+    feature and label tensor files, then call `run.link_artifact()` with the
+    Artifact and target path. For this draft Artifact, the call logs the files
+    as a run output and links the resulting version to the collection.
 
-    1. Get or create the target path. (For this notebook we will programmatically create the target path).
-    1. Initialize a run
-    1. Create an artifact object
-    2. Add each split dataset as individual files to the artifact object
-    3. Link the artifact object to the collection with `run.link_artifact()`. Here we specify the target path and the artifact we want to link.
-
-    First, let's create the target path:
+    These first files contain the full dataset. The following section creates
+    and publishes separate training and test files.
     """)
     return
 
@@ -214,15 +276,15 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Now that we have the target path, let's publish the dataset to the "Dataset" registry. In the following code cell, ensure to replace the values enclosed in `<>` with your team's entity:
+    The next cell uses the team and project from the setup form. It adds
+    `zoo_dataset.pt` and `zoo_labels.pt` to a dataset Artifact, links the version
+    to `dataset_target_path`, and finishes the run.
     """)
     return
 
 
 @app.cell
-def _(dataset_target_path, wandb):
-    TEAM_ENTITY = "<TEAM_A>"
-    PROJECT = "zoo_experiment"
+def _(PROJECT, TEAM_ENTITY, dataset_target_path, wandb):
 
     run = wandb.init(
         entity=TEAM_ENTITY,
@@ -242,7 +304,7 @@ def _(dataset_target_path, wandb):
     run.link_artifact(artifact=artifact, target_path=dataset_target_path)
 
     run.finish()
-    return PROJECT, TEAM_ENTITY
+    return
 
 
 @app.cell(hide_code=True)
@@ -313,7 +375,7 @@ def _(PROJECT, TEAM_ENTITY, config, wandb):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    We can verify we correctly linked our artifact to our desired collection and registry with W&B App UI:
+    We can verify we correctly linked our artifact to our desired collection and registry with Weights & Biases App UI:
 
     1. Navigate to the Registry App
     2. Select on the Dataset registry
@@ -329,9 +391,12 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Define a model
+    ## Define a classifier
 
-    The following cells show how to create a simple neural network classifier with PyTorch. There is nothing unique about this model, so we'll will not go into detail of this code block.
+    The network maps 16 animal attributes to 16 hidden units with a sigmoid
+    activation, then produces seven class scores. Cross-entropy loss accepts
+    these scores directly. The same architecture must be recreated when loading
+    the saved state dictionary later.
     """)
     return
 
@@ -384,24 +449,22 @@ def _(hyperparameter_config, model, nn, torch):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Train model
+    ## Train from a registered dataset
 
-    Next, let's train a model using the training data we published to the registry earlier in this notebook. After we train the model, we will publish that model to W&B.
-
-    To do this, let's first get the artifact we published to the "Dataset" registry. To retrieve an artifact from a registry, we need to know the name of that artifact. The name of an artifact in a registry consists of the prefix `wandb-registry-`, the name of the registry, the name of the collection, and the artifact version:
-
-    ```python
-    # Artifact name/filepath for downloading and using artifacts published to a registry
-    f"wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME}:v{VERSION}"
-    ```
-    Since we only linked one artifact version, the version we'll use is `v0`. (W&B uses 0 indexing).
-
-    Note that the name of an artifact is nearly identical to the target path we specified in a previous step when we publish our artifact to the registry except for the version number:
+    Retrieve the split dataset through its Registry path so the training run
+    records exactly which Artifact version it consumed.
 
     ```python
-    # Target path for publising an artifact version to a registry
-    f"wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME}"
+    artifact_name = f"wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME}:v{VERSION}"
     ```
+
+    The code below selects `v0`. That is appropriate only if it is the split you
+    intend to train on. If the collection already existed or you reran publication,
+    inspect its versions and update `VERSION` before training. A Registry collection’s
+    version number need not match the source project’s version number.
+
+    A target path identifies the collection used when linking. Adding a version
+    suffix selects a specific entry to download.
     """)
     return
 
@@ -458,17 +521,18 @@ def _(
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    The preceding cell might look intimidating. Let's break it down:
+    The training run downloads the feature and label files from the registered
+    split, updates the model, and logs training loss. Every 100 iterations,
+    including iteration zero, it saves weights when the loss improves over the
+    previous saved checkpoint.
 
-    * First, we download the dataset from the Dataset registry and load it as a tensor
-    * Next, we create a simple training loop
-      * Within the training loop we log the loss for each step
-      * We checkpoint(save) the model every time the remainder of the epoch divided by 100 is 0 and the loss is lower than the previously recorded loss.
-      * We then add the saved PyTorch model to our artifact object.
+    The checkpoint file is overwritten locally. After training, the code uploads
+    only the final saved checkpoint as one model Artifact version. It does not
+    upload a version at every checkpoint interval, and checkpoint selection uses
+    training loss rather than held-out performance.
 
-    A couple of things to note:
-    1. The preceding code cell adds a single artifact version to W&B. You can confirm this by navigating to your project workspace, select **Artifacts** in the left navigation, and under **models** click the name of the artifact (starts with `zoo-{run.id}`). You will see a single model with version `v0`.
-    2. At this point, we have only tracked the model artifact within our team's project. Anyone outside of our team does not have access to the model we created. To make this model accessible to members outside of our team, we will need to publish our model to the registry.
+    The model is now stored in the selected project. The next step links that
+    version to Registry, where access is governed by the registry’s permissions.
     """)
     return
 
@@ -476,26 +540,18 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Publish model to registry
-    Let's make this model artifact available to other users in our organization. To do this, we will create a collection within the Model registry.
+    ## Link the trained model to Registry
 
-    To create a collection within a registry, we need to know the full name of the artifact. The full name of the artifact consists of the name we provided to it when we created the Artifact object and its location within our team's project.
+    First identify the model version stored in the team project. Its path contains
+    the team, project, Artifact name, and version suffix.
 
-    There are two ways to get the full name of an artifact, interatively with the W&B App UI or programmatically with the W&B Python SDK. In this example, we'll programmatically create the name of the artifact since we have these values loaded into memory.
-
-    ### Programmatically create name of artifact
-
-    The full name of an artifact consists of four components:
-    * Team entity
-    * Project name
-    * The name of the artifact (the string you passed when you created the artifact object with `wandb.Artifact()`)
-    * The artifact version
-
-    Putting this together, the full name of an artifact is:
     ```python
-    # Full name of an artifact in a team project
-    artifact_name = f'{TEAM_ENTITY}/{PROJECT}/{ARTIFACT_NAME}:v{VERSION}'
+    artifact_name = f"{TEAM_ENTITY}/{PROJECT}/{ARTIFACT_NAME}:v{VERSION}"
     ```
+
+    This example uses a run-specific model name and selects its first version,
+    `v0`. If you adapt the code to reuse Artifact names, choose the intended
+    version explicitly before linking it.
     """)
     return
 
@@ -511,16 +567,16 @@ def _(PROJECT, TEAM_ENTITY, model_artifact_name):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Now that we have the full name of our model artifact. Let's publish it to the model registry.
-
-    Similar to how we created a target path when we published our dataset artifact to the Dataset registry, let's create the target path for our model artifact. The target path tells W&B the collection and registry (Model registry) to link our artifact version to.
-
-    As a reminder, the target path to link an artifact to a registry consists of:
+    Define the destination collection for the model version. The next cell uses
+    the `model` registry and the `Zoo_Classifier_Models` collection. Check that
+    the registry name matches your organization before running the linking cell.
 
     ```python
-    # Target path used to link artifact to registry
     target_path = f"wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME}"
     ```
+
+    The source Artifact path selects the files to share. The target path selects
+    where users will discover that version in Registry.
     """)
     return
 
@@ -562,24 +618,20 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### View lineage map of registered model
+    ### Inspect the registered model’s lineage
 
-    Let's say that you did not know exactly which model version to use. You can check the lineage of all artifact versions on the W&B App UI. The lineage shows which artifacts were used as input to a run and which artifacts were the output of a given run.
+    Open the model version in Registry and inspect its **Lineage** view. Follow
+    the input edge to the split dataset and the output edge from the training
+    run to the model. This connects the saved weights to the data version used
+    for training.
 
-    For example, the image below shows the "Zoo_Classifier_Models" collection within the model registry. Highlighted in yellow is the current model artifact version that is linked to the registry.
+    The screenshot below is an earlier example. Its run names and version numbers
+    will differ from yours.
 
-    From left to right we see that the run "trim-rain-2" was responible for creating the "split_zoo_dataset" artifact. (Recall that this is the dataset artifact that contains the test and training data).
+    ![Example dataset and model lineage](./images/dag_model_registry.png)
 
-    We then see that the "golden-sunset-3" run used the "split_zoo_dataset" artifact for training. Within this run, we created a model artifact. The specific artifact version we linked to "Zoo_Classifier_Models" is called `zoo-wyhak4o0:v10`.
-
-    ![](./images/dag_model_registry.png)
-
-    To view the lineage map of an artifact in a registry:
-
-    1. Navigate to the Registry app at https://wandb.ai/registry
-    2. Click on a registry
-    3. Select an artifact version
-    3. Select the **Lineage** tab
+    Use the lineage graph to choose a model version based on its recorded inputs
+    and training run, then copy that version’s full path for inference.
     """)
     return
 
@@ -587,27 +639,20 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ---
-    ## Download artifacts from registry for inference
+    ## Download registered artifacts for inference
 
-    For this last section, suppose you are a different user in a different team within the same organization. You and your team want to download the model and test dataset that was published to your organization's registry by a different team. You and your team will use the model and test dataset for inference and store those findings in a project called "Check_Zoo_Model".
+    The final section simulates using the registered model from another team’s
+    project. It downloads model weights and the test split, recreates the model,
+    and compares predictions with the saved labels.
 
-    Note: The team member that wants do use and download published artifacts has [member role permissions](https://docs.wandb.ai/guides/registry/configure_registry#registry-roles-permissions).  This means they can view and download artifacts from the registry.
+    The API key submitted earlier must have access to the Registry versions and
+    permission to create runs in the destination project. Changing the destination
+    team does not authenticate as a different person.
 
-    How can you retrieve the artifacts version that were published by another team? Simple:
-
-    1. Get the full name of the artifact version programmatically or interactively with the W&B App UI
-    2. Use the W&B Python SDK to download the artifacts
-
-    #### Interactively get full name of model and dataset artifacts from registry
-    1. Go to the W&B Registry app at https://wandb.ai/registry/.
-    2. Select the registry that your artifact is linked to.
-    3. Click the **View details** button next to the name of the collection with your linked artifact.
-    4. Click on the **View** button next to the artifact version.
-    5. Within the **Version** tab, copy path listed next to **Full Name**.
-    6. Paste the full name of the registry for the `artifact_or_name` field in `run.use_artifact()`.
-
-    Note: In this example, we happen to know these values, so we'll programmatically create the full name of our model and dataset artifacts published in the registry.
+    Open each version in Registry and copy its full Artifact path, or construct
+    the path from the registry, collection, and version. The examples below use
+    `VERSION_1 = 0` and `VERSION_2 = 0`. Update them if the intended model or test
+    split has another version number.
     """)
     return
 
@@ -634,9 +679,9 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    In the following code cell, ensure to replace the values enclosed in `<>` with the entity of a different team in your organization than the one you specified earlier in this notebook.
-
-    Note: If you do not have another team entity, you can re-use the entity you specified earlier.
+    Replace `<TEAM_B>` with a team where your authenticated account can create
+    runs. You can reuse the team selected in the setup form if you do not have
+    a second team. The run records the downloaded model as an input.
     """)
     return
 
@@ -655,7 +700,8 @@ def _(model_artifact_name_1, wandb):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    For PyTorch models, we need to redefine our model architecture:
+    The checkpoint contains a state dictionary. Recreate the same architecture
+    before loading its saved weights.
     """)
     return
 
@@ -720,11 +766,19 @@ def _(local_dataset_path, run_5, torch):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Make predictions with loaded model
+    ### Interpret model predictions
 
-    How does our model perform? Recall that the goal of the neural network is to predict the animall class based on features of that animal.
+    The model returns seven scores for each animal. Taking `argmax` selects a
+    numeric class ID. The display dictionary should map those IDs to the same
+    classes used by the dataset.
 
-    For each prediction, our model returns an integer that refers the class. Let's create a dictionary so we can map the integer to the class name:
+    **The display dictionary below needs correction before interpreting class
+    names.** After subtracting one from the UCI labels, ID 0 is mammal and ID 1
+    is bird. ID 3 includes fish, and ID 6 covers the dataset’s remaining
+    invertebrates, not only crustaceans. Check the
+    [UCI class definitions](https://www.archive.ics.uci.edu/dataset/111/zoo)
+    when updating that mapping. Numeric prediction comparisons remain the basis
+    for accuracy.
     """)
     return
 
@@ -761,7 +815,9 @@ def _(loaded_data, loaded_model, torch):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    These integers don't mean much, let's convert them to return the animal class and store this into a pandas DataFrame for us to compare the predicted vs the true values:
+    Build a DataFrame that pairs each prediction with its reference label.
+    Use the numeric IDs to check correctness, and verify the display dictionary
+    before using class names to explain individual errors.
     """)
     return
 
@@ -793,7 +849,8 @@ def _(df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Let's see how many it predicted corrected
+    Count correct and incorrect predictions to see how many test examples
+    contribute to the accuracy percentage.
     """)
     return
 
@@ -823,7 +880,10 @@ def _(df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    The percentage the model predicted correct might vary. As of writing this notebook, our the model correctly predicted ~88% of the time:
+    Use the percentage calculated from your current predictions. The historical
+    output below reports about 88%, but it is not a target or a result produced
+    by the current run. This small test split can give noticeably different
+    scores after changes to training or initialization.
     """)
     return
 
@@ -842,20 +902,23 @@ app._unparsable_cell(
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    As a next step, you could dig into the examples that were incorrectly predicted and try to figure out why it predicted incorrectly. You could also try feature engineering to extract more features to train with.
+    ## Review the saved experiment
 
-    ## Summary
-    In this notebook completed each major step in a typical machine learning workflow, from downloading a dataset, processing the dataset, defining a model, training that model on processed data, checking/saving the best model, and checking how the model performed by making predictions with that model on a dataset it had not seen before.
+    You have logged dataset files, linked their versions to Registry, trained
+    from a registered split, and retrieved a model and test data for inference.
+    The Registry paths and lineage connect these steps across projects.
 
-    Throughout the process you learned how to use W&B Registry to:
+    Inspect incorrect predictions alongside the original animal attributes.
+    The test split is small, so avoid drawing broad conclusions from one accuracy
+    value. If you use these examples to change the model, reserve other data for
+    a final evaluation.
 
-    * Track and publish multiple datasets
-    * Track and publish a model
-    * Mimic how someone else in your organization (with correct permission) can download and use model and datasets published in the W&B Registry for further analysis.
+    ## Document a model version for reuse
 
-    ## Next steps:
-
-    As the number of machine learning experiments increases, so does the complexity of keeping track of saved models and datasets. For each model version, we recommend that you document key aspects of your model such as a brief summary of the model, information about the architecture of the model, how someone can deserialize a saved model, and so forth. You can provide all of this information, and more, within the **Description** field of the model version.
+    Add a description explaining the expected input features, network architecture,
+    class-ID mapping, and how to load the state dictionary. Include the training
+    data version and evaluation results. This gives another user the information
+    needed to use the saved model correctly.
     """)
     return
 
