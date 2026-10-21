@@ -83,7 +83,8 @@ def _():
     ![Example ROC curves in Weights & Biases](https://i.imgur.com/CqGXSzj.png)
 
     The small training defaults let you try the workflow on a CPU. More data
-    and epochs can improve the curves; a GPU speeds up training.
+    and epochs let you test whether additional training improves class separation.
+    A GPU can reduce training time.
     """)
     return
 
@@ -262,8 +263,8 @@ def _():
 
     Freeze the pretrained InceptionV3 base and train a new classification head.
     The final softmax layer produces one probability per class. Rerun the model
-    creation cell before each new experiment to start with a fresh head;
-    rerunning only the training cell continues from the current model weights.
+    creation cell before each new experiment to start with a fresh head.
+    Rerunning only the training cell continues from the current model weights.
     """)
     return
 
@@ -303,8 +304,8 @@ def _():
     - Predicted probabilities, with shape `(num_images, num_classes)`.
     - Class names in the same order as the probability columns.
 
-    Use the probabilities rather than the predicted class IDs: ROC curves
-    evaluate different thresholds. The callback processes one batch of images
+    Pass probabilities so the chart can evaluate many decision thresholds.
+    Predicted class IDs alone discard the scores needed to build the curves. The callback processes one batch of images
     at a time and collects only labels and probabilities for the chart.
 
     Keep the `roc_curve` logging key consistent so runs can share a chart panel.
@@ -347,7 +348,7 @@ def _():
     ## Train
 
     Create a Weights & Biases run, then pass both callbacks to `model.fit`.
-    `WandbMetricsLogger` records loss and accuracy; `ROCCurveLogger` records
+    `WandbMetricsLogger` records loss and accuracy. `ROCCurveLogger` records
     per-class ROC curves. Training and validation use all of their selected
     images, including the final partial batch.
 
@@ -405,13 +406,31 @@ def _():
 
 
 @app.function
+def dataset_classes_with_images(directory):
+    directory = Path(directory)
+    if not directory.is_dir():
+        return ()
+    class_dirs = sorted(path for path in directory.iterdir() if path.is_dir())
+    if not class_dirs or any(
+        not any(
+            path.is_file() and path.suffix.lower() in {".jpg", ".jpeg", ".png"}
+            for path in class_dir.rglob("*")
+        )
+        for class_dir in class_dirs
+    ):
+        return ()
+    return tuple(path.name for path in class_dirs)
+
+
+@app.function
 def ensure_dataset():
     """Materialize and extract the remote dataset once, then return its paths."""
     archive_path = RUNTIME_CACHE_ROOT / "nature_12K.zip"
     train_path = RUNTIME_CACHE_ROOT / "inaturalist_12K" / "train"
     validation_path = RUNTIME_CACHE_ROOT / "inaturalist_12K" / "val"
 
-    if train_path.is_dir() and validation_path.is_dir():
+    train_classes = dataset_classes_with_images(train_path)
+    if len(train_classes) == 10 and train_classes == dataset_classes_with_images(validation_path):
         return str(train_path), str(validation_path)
 
     RUNTIME_CACHE_ROOT.mkdir(parents=True, exist_ok=True)
@@ -427,10 +446,12 @@ def ensure_dataset():
     with zipfile.ZipFile(archive_path) as archive:
         archive.extractall(archive_path.parent)
 
-    if not train_path.is_dir() or not validation_path.is_dir():
-        raise FileNotFoundError(
-            "The archive did not contain inaturalist_12K/train and "
-            "inaturalist_12K/val."
+    train_classes = dataset_classes_with_images(train_path)
+    if len(train_classes) != 10 or train_classes != dataset_classes_with_images(validation_path):
+        raise ValueError(
+            "The extracted dataset must contain the same ten classes with images "
+            f"in both train and val. Check {archive_path}; replace an incomplete "
+            "archive and rerun dataset preparation."
         )
 
     return str(train_path), str(validation_path)
@@ -439,6 +460,8 @@ def ensure_dataset():
 @app.function
 def sample_images(directory, num_images, seed):
     class_dirs = sorted(path for path in Path(directory).iterdir() if path.is_dir())
+    if not class_dirs:
+        raise ValueError(f"No class folders found in {directory}. Rerun dataset preparation.")
     if num_images < len(class_dirs):
         raise ValueError("Choose at least one image per class.")
     per_class, remainder = divmod(num_images, len(class_dirs))
@@ -446,12 +469,19 @@ def sample_images(directory, num_images, seed):
     for index, class_dir in enumerate(class_dirs):
         filenames = sorted(
             str(path)
-            for path in class_dir.iterdir()
-            if path.suffix.lower() in {".jpg", ".jpeg", ".png"}
+            for path in class_dir.rglob("*")
+            if path.is_file() and path.suffix.lower() in {".jpg", ".jpeg", ".png"}
         )
+        requested = per_class + (index < remainder)
+        if len(filenames) < requested:
+            raise ValueError(
+                f"Class '{class_dir.name}' in {directory} has {len(filenames)} images, "
+                f"but sampling requires {requested}. Rerun dataset preparation if "
+                "files are missing, or reduce the requested sample size."
+            )
         class_images = pd.DataFrame({"filename": filenames, "class": class_dir.name})
         samples.append(
-            class_images.sample(n=per_class + (index < remainder), random_state=seed)
+            class_images.sample(n=requested, random_state=seed)
         )
     return pd.concat(samples, ignore_index=True)
 
