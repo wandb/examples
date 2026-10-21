@@ -43,7 +43,7 @@ with app.setup:
 
     DATASET_URL = "https://storage.googleapis.com/wandb_datasets/nature_12K.zip"
     RUNTIME_CACHE_ROOT = (
-        Path(tempfile.gettempdir()) / "wandb-examples" / "inaturalist-12k"
+        Path(tempfile.gettempdir()) / "data" / "marimo"/ "inaturalist-12k"
     )
 
 
@@ -71,11 +71,16 @@ def _():
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/log-a-confusion-matrix-with-w-b/log_a_confusion_matrix_with_w_b.py/server)
 
-    This notebook explores a transfer learning problem: finetuning InceptionV3 with ImageNet weights to identify 10 types of living things (birds, plants, insects, etc) from 10K photos via [iNaturalist 2017](https://github.com/visipedia/inat_comp).
+    Learn to log a confusion matrix after each training epoch and use it to
+    identify which classes a model confuses. The example trains a classification
+    head on a frozen InceptionV3 backbone using a ten-class sample from
+    [iNaturalist 2017](https://github.com/visipedia/inat_comp).
 
     ![confusion_matrix](https://i.imgur.com/rvKx8RF.png)
 
-    Note: Hyperparameters like number of epochs and training dataset size are set to minimum values here for demo efficiency. On the full training data, the model should get to the low 80s in validation accuracy within an epoch or so.
+    The small training defaults are intended to demonstrate logging. They do
+    not establish an expected accuracy. Inspect the confusion matrix alongside
+    validation loss and accuracy before deciding what to change.
     """)
     return
 
@@ -85,9 +90,10 @@ def _():
     mo.md(r"""
     Edit these values to compare runs. Training and validation use whole batches,
     rounded up to cover the requested example counts (up to the dataset size).
-    Increase `num_train` toward 10,000 or try 3–10 epochs for a stronger model.
+    Increase `num_train` or the epoch count to test whether additional training
+    improves validation performance.
     The confusion matrix uses the first `num_log_batches` validation batches each
-    epoch; increase this value to include more examples.
+    epoch. Increase this value to include more examples in the chart.
     """)
     return
 
@@ -171,8 +177,11 @@ def _():
 
     The [iNaturalist 2017](https://github.com/visipedia/inat_comp) sample contains
     10,000 training images and 2,000 validation images across 10 classes.
-    **The archive is about 3.6 GB.** Run the following cell to start the download,
-    extraction, ImageNet weight download, training, and Weights & Biases logging. Depending on the hardware you use, it may take a few minutes to complete.
+    **The archive is about 3.6 GB**, even when training on a small sample.
+    The cells below expose the archive and define a download helper. The call
+    to `ensure_dataset()` downloads and extracts it. Later cells load ImageNet
+    weights and start training. Download and training time depend on your network
+    and hardware.
 
     `dataset_fs` exposes the public archive in marimo's data side panel without
     downloading it. `ensure_dataset()` streams it into a temporary runtime cache
@@ -239,7 +248,7 @@ def _():
     IDs so each row and column of the confusion matrix has the correct label.
 
     `build_model()` freezes the ImageNet backbone and trains a new classification
-    head. This is the initial transfer-learning phase; the backbone stays frozen.
+    head. Only the new head’s weights are updated in this example.
     """)
     return
 
@@ -315,7 +324,9 @@ def _():
     class IDs. `wandb.plot.confusion_matrix()` builds a Weights & Biases chart from those IDs
     and the true labels. `training_run.log()` saves it under the stable key
     `conf_mat`, making it easy to compare epochs and runs. Diagonal entries are
-    correct predictions; off-diagonal entries show which classes are confused.
+    correct predictions. Off-diagonal entries show which classes are confused.
+    The matrix covers the validation batches selected by `num_log_batches`,
+    which may be fewer examples than the validation metrics cover.
     """)
     return
 
