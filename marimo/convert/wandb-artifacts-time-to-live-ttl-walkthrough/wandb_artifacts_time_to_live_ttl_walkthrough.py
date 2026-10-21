@@ -34,10 +34,6 @@ with app.setup:
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    # View & analyze model predictions during training
-
-    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/w-b-tables-quickstart/w_b_tables_quickstart.py/server)
-
     # Weights & Biases Artifacts: Time-to-Live (TTL)
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/wandb-artifacts-time-to-live-ttl-walkthrough/wandb_artifacts_time_to_live_ttl_walkthrough.py/server)
@@ -47,7 +43,7 @@ def _():
     updating a collection of versions, and following artifact lineage.
 
     TTL is measured from an artifact version's creation time. Expiration
-    soft-deletes the version; storage cleanup happens separately. Linking a
+    marks the version for deletion. Storage cleanup happens separately. Linking a
     version to Registry deactivates its TTL.
 
     Running the code cells downloads Imagenette and uploads sample artifacts.
@@ -123,8 +119,8 @@ def _():
     does not repeatedly shrink it.
 
     We call the training sample "real" and the validation sample "fake" to
-    illustrate different retention policies. Both contain actual photographs;
-    these labels are only part of the example.
+    illustrate different retention policies. Both contain actual photographs.
+    The names describe roles in this example, not whether the images are generated.
     """)
     return
 
@@ -199,8 +195,8 @@ def _():
     We create two versions of `real-raw`, with aliases `extended` and
     `compliant`, so the next example can give them different policies. Different
     directory names inside their manifests ensure these are distinct versions,
-    even though they contain the same images. Aliases name versions; they do
-    not have separate TTL policies.
+    even though they contain the same images. A TTL applies to a version, so
+    all aliases pointing to that version share its retention policy.
 
     We also log `fake-raw` with a ten-day TTL for the bulk-update example.
     `wait()` ensures each upload finishes before later cells fetch it.
@@ -246,7 +242,7 @@ def _():
     The next cell fetches each version by alias with `wandb.Api().artifact()`,
     changes its `ttl`, and calls `save()` to persist the change.
 
-    A `timedelta` sets the retention duration; `None` deactivates TTL. Changing
+    A `timedelta` sets the retention duration. Setting `ttl = None` deactivates TTL. Changing
     the duration does not reset the version's creation date. These metadata
     updates do not require a new run or another file upload.
     """)
@@ -346,8 +342,8 @@ def _():
     runs. For each run, `logged_artifacts()` lists its outputs. We select dataset
     outputs, then give them a 30-day TTL and save the changes.
 
-    This walks one hop downstream: source artifact, consuming run, output
-    artifacts. A longer pipeline would repeat this traversal for each output.
+    This follows one dependency step from the source Artifact, through each
+    consuming run, to that run’s output Artifacts. A longer pipeline would repeat this traversal for each output.
     """)
     return
 

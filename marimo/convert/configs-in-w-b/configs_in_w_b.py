@@ -44,10 +44,10 @@ def _():
 
     # Save experiment configurations with Weights & Biases
 
-    A run's `config` records the inputs to an experiment: hyperparameters,
-    dataset names, model types, and other settings. Saving these values helps
+    A run's `config` records the settings you supply for an experiment, such as
+    hyperparameters, dataset names, and model types. Saving these values helps
     you reproduce a run and compare experiments with different settings.
-    Save outputs such as loss and accuracy with `wandb.rRun.log()`.
+    Save outputs such as loss and accuracy with `wandb.Run.log()`.
 
     This lesson creates one small example run, adds configuration values from
     Python and `argparse`, then updates the finished run with the Public API.
@@ -111,8 +111,9 @@ def _():
     mo.md(r"""
     ## Start with a Python dictionary
 
-    The dictionary below describes an example experiment using the CelebA
-    dataset and a baseline model. We will pass it to `wandb.init(config=...)`
+    The dictionary below records `CelebA` as a dataset name and `baseline` as
+    a model type. These are example metadata values. This notebook does not
+    load CelebA or build a model. We will pass it to `wandb.init(config=...)`
     when creating the run. Use descriptive keys with underscores or dashes
     instead of periods.
     """)
@@ -161,9 +162,8 @@ def _():
     ## Save and extend the run's configuration
 
     `wandb.init(config=config)` saves the initial dictionary. While the run is
-    active, add new fields using attribute access (`epochs`) or dictionary
-    access (`batch_size`), then merge the parsed arguments with `update()`.
-    You can read saved values using either style as well.
+    active, add new fields using attribute access or dictionary
+    access, then merge the parsed arguments with `update()`.
 
     The cell displays the combined configuration so you can check all six
     fields. The context manager finishes and syncs the run before the next

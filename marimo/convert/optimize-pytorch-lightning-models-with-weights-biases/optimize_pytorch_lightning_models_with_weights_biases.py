@@ -56,29 +56,21 @@ def _():
     <img class="wandb-config-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
     <img class="wandb-config-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
 
-    # PyTorch Lightning models with Weights & Biases
+    # Track PyTorch Lightning training with Weights & Biases
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/optimize-pytorch-lightning-models-with-weights-biases/optimize_pytorch_lightning_models_with_weights_biases.py/server)
 
-    PyTorch Lightning is a lightweight wrapper for organizing your PyTorch code and easily adding advanced features such as distributed training, 16-bit precision or gradient accumulation.
+    Train an MNIST classifier and use `WandbLogger` to record its hyperparameters,
+    metrics, prediction examples, and checkpoints. Lightning organizes the training
+    loop, while the logger sends the values recorded with `self.log()` to Weights & Biases.
 
-    Coupled with the [Weights & Biases integration](https://docs.wandb.ai/models/integrations/lightning), you can quickly train and monitor models for full traceability and reproducibility with only 2 extra lines of code:
+    This example also adds `watch()` for gradient and parameter histograms, a
+    custom callback for prediction Tables, and `ModelCheckpoint` for saved weights.
+    These require explicit configuration, which the following sections explain.
 
-    ```python
-    from lightning.pytorch.loggers import WandbLogger
-    from lightning.pytorch import Trainer
-
-    wandb_logger = WandbLogger()
-    trainer = Trainer(logger=wandb_logger)
-    ```
-
-    Weights & Biases integration with PyTorch Lightning can automatically:
-
-    * log your configuration parameters
-    * log your losses and metrics
-    * log your model checkpoints
-    * keep track of your code
-    * log your system metrics (GPU, CPU, memory, temperature, etc.)
+    The basic connection is to pass a `WandbLogger` to the Lightning `Trainer`.
+    The training cell below supplies an existing Weights & Biases run so its
+    team, project, name, and lifecycle are controlled by the notebook.
     """)
     return
 
@@ -156,7 +148,7 @@ def _():
     Download MNIST, convert its images to tensors, and normalize them using the
     dataset's mean and standard deviation. Split its 60,000 examples into 55,000
     training and 5,000 validation images. Seeded generators make the split and
-    training shuffle reproducible; validation keeps a fixed order so the callback
+    training shuffle reproducible. Validation keeps a fixed order so the callback
     can show the same examples after each epoch.
     """)
     return
@@ -299,9 +291,9 @@ def _():
 
     | Functionality | Argument or function | Notes |
     | --- | --- | --- |
-    | Logging models | `WandbLogger(..., log_model="all")` or `log_model=True` | Log new checkpoints during training with `"all"`, or at the end with `True`. |
+    | Logging models | `WandbLogger(..., log_model="all")` or `log_model=True` | Use `"all"` to upload saved checkpoints during training. `True` usually uploads at the end, but also uploads during training when `save_top_k=-1`. |
     | Set custom run names | `WandbLogger(..., name="my_run_name")` | This notebook names the explicit run passed as `experiment`. |
-    | Organize runs by project | `WandbLogger(..., project="my_project")` | Set the project in the configuration cell. |
+    | Organize runs by project | `WandbLogger(..., project="my_project")` | Choose the project in the setup form. |
     | Log gradients and parameters | `wandb_logger.watch(model, log="all")` | Adds histograms during training. |
     | Log hyperparameters | `self.save_hyperparameters()` | Call in `LightningModule.__init__`. |
     | Log custom objects | `wandb_logger.log_text`, `log_image`, `log_table` | Includes text, images, and Weights & Biases Tables. |
@@ -380,14 +372,14 @@ def _():
     and parameter histograms every 100 training steps.
 
     Attach the prediction callback and a `ModelCheckpoint` callback to `Trainer`.
-    The checkpoint callback keeps the highest validation accuracy;
+    The checkpoint callback saves a checkpoint when validation accuracy improves.
     `log_model="all"` uploads each newly saved checkpoint as an Artifact, with
     `latest` and `best` aliases. The checkpoints also remain available locally.
 
     `trainer.fit()` runs training and validation. Its metrics, prediction images,
     and Tables go to Weights & Biases through the logger. Exiting the `with` block finishes the
     run, including if training raises an error. Rerunning this cell starts a fresh
-    model and run; change the run name when comparing settings. Resetting the
+    model and run. Give each configuration a descriptive run name. Resetting the
     training loader's generator also repeats the shuffle order on each rerun.
     """)
     return
@@ -398,7 +390,6 @@ def _(
     batch_size,
     entity,
     epochs,
-    mode,
     project,
     run_name,
     seed,
@@ -414,7 +405,6 @@ def _(
         project=project,
         entity=entity,
         name=run_name,
-        mode=mode,
         config={"epochs": epochs, "batch_size": batch_size, "seed": seed},
         job_type="train",
     ) as training_run:
@@ -445,7 +435,7 @@ def _():
     mo.md(r"""
     ## Verify and next steps
 
-    The output below shows the best validation accuracy, the local checkpoint,
+    The training cell’s output shows the best validation accuracy, the local checkpoint,
     and a run link when logging online. In the Weights & Biases workspace, inspect:
 
     - `train_loss`, `train_accuracy`, `val_loss`, and `val_accuracy` charts.

@@ -54,12 +54,13 @@ def _():
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/hyperparameter-optimization-in-tensorflow-using-w-b-sweeps/hyperparameter_optimization_in_tensorflow_using_w_b_sweeps.py/server)
 
     A sweep is a collection of experiments that explores a hyperparameter search
-    space. Here, each trial trains the same MNIST digit classifier with a
+    space. In this notebook, each trial trains the same MNIST digit classifier with a
     different batch size and learning rate. Weights & Biases selects the settings, and its
     Keras integration logs the metrics used to compare trials.
 
-    The workflow has three parts: define the search space, write a function that
-    trains one model using `run.config`, and start an agent to run the trials.
+    First define a search space and a metric to optimize. Then write a function
+    that trains one model using `run.config`. Finally, start a sweep agent to
+    request settings and call that function for each trial.
     This example launches up to ten trials with two epochs each.
     """)
     return
@@ -180,8 +181,8 @@ def _():
 
     `method="random"` samples a batch size and learning rate from the listed
     values for each trial. The objective is to minimize `epoch/val_loss`.
-    That exact key is logged by `WandbMetricsLogger` at the end of each epoch;
-    the sweep metric name must match the logged name.
+    That exact key is logged by `WandbMetricsLogger` at the end of each epoch.
+    The sweep metric name must match the logged name exactly.
 
     Hyperband can stop weaker trials early. Its `min_iter=1` sets the first
     comparison point after one report of the objective metric, which here
@@ -212,14 +213,14 @@ def _():
     ## Define one complete trial
 
     The agent calls a function with no arguments. Inside `sweep_train`,
-    `wandb.init()` starts the run and supplies default settings; the sweep's
-    selected batch size and learning rate override those defaults in
+    `wandb.init()` starts the run with default settings. The sweep’s selected
+    batch size and learning rate override those defaults in
     `run.config`. The context manager finishes the run when training ends.
 
     Each trial resets Keras and uses the same random seed before building a
     fresh model. The selected batch size controls the `tf.data` pipelines, and
     the selected learning rate configures SGD. The training dataset shuffles
-    before batching; `model.fit(shuffle=False)` leaves that order to the
+    before batching. `model.fit(shuffle=False)` leaves that order to the
     pipeline. Validation data uses the same examples and order for every trial.
 
     `WandbMetricsLogger(log_freq=20)` logs batch metrics every 20 batches and
@@ -276,7 +277,7 @@ def _(entity, project, train_images, train_labels, val_images, val_labels):
                 verbose=2,
             )
 
-    return
+    return (sweep_train,)
 
 
 @app.cell(hide_code=True)
@@ -285,8 +286,8 @@ def _():
     ## Register the sweep
 
     `wandb.sweep()` sends the search configuration to Weights & Biases and returns the
-    sweep's ID. This creates the sweep in your chosen entity and project;
-    training begins when an agent starts. Weights & Biases prints a link to the sweep
+    sweep’s ID. Registration creates the sweep in your chosen team and project.
+    Training begins when an agent starts. Weights & Biases prints a link to the sweep
     dashboard. Rerunning this cell creates a new sweep.
     """)
     return
@@ -295,7 +296,7 @@ def _():
 @app.cell
 def _(entity, project, sweep_config):
     sweep_id = wandb.sweep(sweep_config, entity=entity, project=project)
-    return
+    return (sweep_id,)
 
 
 @app.cell(hide_code=True)
@@ -313,18 +314,16 @@ def _():
     return
 
 
-app._unparsable_cell(
-    r"""
+@app.cell
+def _(entity, project, sweep_id, sweep_train):
     wandb.agent(
         sweep_id,
-        function=sweep_train,x
+        function=sweep_train,
         count=10,
         entity=entity,
         project=project,
     )
-    """,
-    name="_"
-)
+    return
 
 
 @app.cell(hide_code=True)

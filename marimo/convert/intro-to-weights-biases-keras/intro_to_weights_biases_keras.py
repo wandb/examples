@@ -141,7 +141,9 @@ def _():
     2. Log metrics from training.
     3. Open the printed run links to compare results in the dashboard.
 
-    The next cell creates five experiments. Each experiment consists of a training loop that generates synthetic loss and accuracy. These metrics are logged to the active run.
+    The next cell creates five runs and logs eight generated loss and accuracy
+    values to each. No model is trained in this step. The synthetic curves make
+    it easy to see how configuration, history, and run comparisons fit together.
 
     A fixed seed makes the examples reproducible.
     """)
@@ -226,6 +228,8 @@ def _():
 
     The next cell downloads MNIST, normalizes pixels to `[0, 1]`,
     and samples 12,000 training images and 500 held-out images for a shorter demo.
+    The held-out sample comes from the official test split but is used here to
+    compare dropout settings. Treat it as validation data for this exercise.
     """)
     return
 
@@ -385,8 +389,8 @@ def _():
 
     In your W&B workspace, check:
 
-    - **`basic-intro`**: each simulation has eight logged accuracy and loss values.
-    - **`keras-intro`**: compare `dropout` in each training run's config with
+    - **Simulation project** (default `basic-intro`): each simulation has eight logged accuracy and loss values.
+    - **Training project** (default `keras-intro`): compare `dropout` in each training run's config with
       `epoch/val_loss`, `epoch/val_accuracy`, and `final_validation_accuracy`.
       Open a training run's **Artifacts** tab to find its per-epoch Keras models.
     - **Alert demo**: inspect the accuracy history in the run named

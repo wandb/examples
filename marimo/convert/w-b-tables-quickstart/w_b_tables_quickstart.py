@@ -51,7 +51,9 @@ def _():
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/w-b-tables-quickstart/w_b_tables_quickstart.py/server)
 
-    This notebooks covers how to track, visualize, and compare model predictions over the course of training, using PyTorch on MNIST data.
+    Train an MNIST classifier and log a Table of labeled prediction examples
+    after each epoch. Use the images, predictions, and class probabilities to
+    inspect mistakes that an aggregate accuracy score cannot explain.
 
     Running the following code cells downloads MNIST, trains a model, and logs
     metrics and prediction tables to Weights & Biases.
@@ -121,7 +123,7 @@ def _():
     ## Set the Training and Table Sizes
 
     The next cell selects a GPU when available and defines the model's
-    hyperparameters. One epoch keeps the demo short; increase `EPOCHS` to compare
+    hyperparameters. One epoch keeps the demo short. Increase `EPOCHS` to compare
     predictions at different points in training.
 
     We evaluate all 10,000 test images, but log only 32 images from each of the
@@ -206,7 +208,7 @@ def _():
     ## Load MNIST
 
     The next cell downloads MNIST and creates training and test data loaders.
-    Training batches are shuffled; test batches stay in a fixed order so each
+    Training batches are shuffled. Test batches stay in a fixed order so each
     logged image has the same identifier across epochs and experiments.
 
     The test batch size is twice the training batch size. We use
@@ -218,7 +220,6 @@ def _():
 
 @app.cell
 def _(BATCH_SIZE):
-
     train_dataset = torchvision.datasets.MNIST(
         root="./data", train=True, transform=T.ToTensor(), download=True,
     )
@@ -256,7 +257,7 @@ def _():
     - `columns` defines the schema: image ID, image, predicted digit, true digit,
       and ten class probabilities.
     - `add_data()` adds one row per image. `wandb.Image()` makes the image
-      viewable in Weights & Biases; the remaining values let you filter errors and compare
+      viewable in Weights & Biases. The remaining values let you filter errors and compare
       class scores.
     - `training_run.log()` uploads accuracy and the table under
       `test_predictions`. Logging a fresh table under the same key each epoch
@@ -370,7 +371,7 @@ def _():
     mo.md(r"""
     ## Explore Your Predictions in Weights & Biases
 
-    [Open your Weights & Biases run]({run_url}) and find the `test_predictions` table.
+    Open the run URL printed by the training cell and find the `test_predictions` Table.
     Each row connects an image to its true label, predicted label, and class
     probabilities.
 
@@ -381,7 +382,9 @@ def _():
     With multiple epochs, use the table's step selector to compare snapshots.
     Across experiments, stable image IDs let you match predictions for the same
     test image. Try changing the learning rate or layer sizes, rerun training,
-    and compare the runs in your project.
+    and compare the runs in your project. Repeatedly using the test results to
+    choose settings turns this split into validation data. Keep an independent
+    test set for a final evaluation in your own project.
 
     ## Next steps
 
@@ -389,11 +392,6 @@ def _():
     for more ways to query and compare your results.
     - Explore the [CNN-2: Progress over Training Time report](https://wandb.ai/stacey/table-quickstart/reports/CNN-2-Progress-over-Training-Time--Vmlldzo3NDY5ODU#false-positives-grouped-by-guess) for examples on how to compare, filter, and group predictions.
     """)
-    return
-
-
-@app.cell
-def _():
     return
 
 

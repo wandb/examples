@@ -107,7 +107,8 @@ def _():
     mo.md(r"""
     ### Optional Hugging Face authentication
 
-    A [Hugging Face token](https://huggingface.co/settings/tokens) avoids anonymous Hub rate limits. Leave the field blank to use cached Hugging Face credentials.
+    A [Hugging Face token](https://huggingface.co/settings/tokens) authenticates
+    model downloads, which can help if anonymous requests are rate-limited. Leave the field blank to use cached Hugging Face credentials.
     """)
     return
 
@@ -132,7 +133,8 @@ def _():
     mo.md(r"""
     ## Generate and log images
 
-    The example uses two prompts and a fixed seed so you can reproduce the result. When you click the button below, the notebook downloads `SimianLuo/LCM_Dreamshaper_v7`, generates four images, and creates one Weights & Biases run in your selected project. It uses CUDA, Apple Silicon's MPS backend, or CPU, in that order.
+    The example uses two prompts and a fixed seed to make repeated runs easier
+    to compare. Results can still differ across devices and library versions. When you click the button below, the notebook downloads `SimianLuo/LCM_Dreamshaper_v7`, generates four images, and creates one Weights & Biases run in your selected project. It uses CUDA, Apple Silicon's MPS backend, or CPU, in that order.
     """)
     return
 

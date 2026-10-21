@@ -70,8 +70,9 @@ def _():
     [Vehicle Loan Default Prediction dataset](https://www.kaggle.com/sneharshinde/ltfs-av-data)
     and preprocessing code shared by Scotiabank in the
     [RAPIDS credit-scorecard example](https://github.com/rapidsai-community/showcase/tree/main/event_notebooks/GTC_2021/credit_scorecard).
-    This notebook demonstrates experiment tracking for a classifier; it does not
-    construct or validate a points-based lending scorecard.
+    The teaching objective is to track the data, settings, and results of a
+    classification experiment. The code does not construct or validate a
+    points-based lending scorecard.
 
     > On macOS, XGBoost also needs OpenMP. If importing XGBoost reports a missing
     `libomp.dylib`, install it with `brew install libomp` and restart.
@@ -138,10 +139,12 @@ def _(wandb_setup_form):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Get the Dataset
+    ## Get the dataset
 
-    The next cell defines the path of the source Artifact, ID columns, target column,
-    and creates a temporary working directory. The artifact's path points to a dataset artifact saved from a previous Weights & Biases user.
+    The next cell identifies a dataset Artifact already stored in Weights & Biases,
+    sets the ID and target column names, and creates a temporary working directory.
+    The preprocessing run will download this Artifact and record it as an input.
+    You need access to the source Artifact to run that step.
     """)
     return
 
@@ -161,13 +164,16 @@ def _():
     The source example treats age, time since disbursement, loan-to-value ratio
     (`LTV`), and credit bureau score (`PERFORM_CNS_SCORE`) as numeric features.
     Other predictors, including numeric IDs for states and manufacturers, are
-    categories: their codes should not imply an ordering.
+    categories. Their numeric codes identify groups rather than an ordered scale.
 
     The function below preserves the four numeric features and creates an
     indicator column for each category with `pd.get_dummies()`. It retains
     the row ID and target in the saved dataset, but excludes both from the
     predictor list used for training. Encoding once before the split gives
-    both partitions the same columns; this transformation uses no target values.
+    both partitions the same columns. Although this uses no target values, it
+    does expose the category vocabulary of the validation data. In a production
+    evaluation, fit the encoder on training data and handle unseen categories
+    when transforming validation or test data.
     """)
     return
 
@@ -192,8 +198,9 @@ def _():
     mo.md(r"""
     ## Preprocess and Log a Dataset Artifact
 
-    The next cell initializes a run (`preprocessing_run`). During the run, we retrieve the raw dataset with
-    `wandb.Run.use_artifact()`, and then you download its files. We read the CSV and apply the
+    The next cell starts `preprocessing_run`. Calling
+    `preprocessing_run.use_artifact()` records the raw dataset as this run’s input.
+    Calling `download()` retrieves its files. We read the CSV and apply the
     encoding function (`one_hot_encode_data`) to produce numeric predictors.
 
     We save the processed CSV, attach it to a new `wandb.Artifact()`, and call
@@ -292,7 +299,7 @@ def _():
     mo.md(r"""
     ## Inspect Data with Weights & Biases Tables
 
-    The next cell initilizes a run (`table_run`) and records the split Artifact as an input.
+    The next cell initializes a run (`table_run`) and records the split Artifact as an input.
     `wandb.Table(dataframe=...)` turns a reproducible sample of up to 1,000
     training rows into an interactive table. `table_run.log()` saves it under
     `processed_dataset` for sorting, filtering, and inspection in the Weights & Biases App UI.
@@ -372,10 +379,9 @@ def _():
     The following helper calculates AUC, log loss, and KS statistics for the
     baseline and sweep models from their predicted default probabilities.
 
-    - AUC measures ranking across thresholds
-    - log loss measures probability
-    quality
-    - KS measures separation between the scores for the two classes
+    - AUC measures how well the model ranks positive examples above negative examples. Higher is better.
+    - Log loss penalizes incorrect predicted probabilities, especially confident errors. Lower is better.
+    - KS measures the largest gap between the two classes’ cumulative score distributions. A larger gap indicates stronger separation.
 
     The helper uses the full training and validation sets, with a threshold
     of 0.5 for validation accuracy. Predictions use XGBoost's best iteration
@@ -414,7 +420,7 @@ def _():
     mo.md(r"""
     ## Train and Log the Baseline
 
-    The next cell initializes a run called (`training_run`), records the split Artifact as an input,
+    The next cell starts `training_run`, records the split Artifact as an input,
     and logs hyperparameters in its configuration. Passing
     `WandbCallback(log_model=True)` to `XGBClassifier` logs evaluation metrics
     and feature importance during training, and uploads the trained booster as
@@ -422,8 +428,8 @@ def _():
 
     After fitting, we add evaluation values to `training_run.summary` and log
     validation AUC plus a ROC curve. The curve receives probabilities for both
-    classes. For large datasets, we subsample only the visualization; the numeric
-    evaluation metrics use all validation rows.
+    classes. For large datasets, only the chart is subsampled. The numeric
+    evaluation metrics still use all validation rows.
 
     Inspect `validation_0-auc` and `validation_0-logloss` in the run's charts,
     then compare the summary's `train_auc` and `val_auc` for signs of overfitting.
@@ -516,7 +522,7 @@ def _():
     mo.md(r"""
     ## Define Training Function
 
-    The next cell defines the function that Weights & Biases agent calls to conduct the sweep.
+    The next cell defines the function the sweep agent calls for each trial.
 
     Each trial consumes the same split Artifact, creates a fresh classifier
     and callback, trains, and logs `val_auc`. `job_type="sweep"` distinguishes
@@ -569,7 +575,7 @@ def _():
 
     The next cell creates a sweep (`wandb.sweep()`), stores
     the sweep ID, then calls `wandb.agent()`. We pass `sweep_train` as the training function and
-    limit the number of sweeps to five trials (`count=5`). Lower `count` for a quicker experiment.
+    limit this agent to five training trials (`count=5`). Lower `count` for a quicker experiment.
 
     Each run closes through its context manager before the next trial starts.
     The dashboard compares the selected parameters against validation AUC.

@@ -50,11 +50,12 @@ def _():
     molecule to Weights & Biases. A prediction table keeps the sequence and results together
     for comparison across runs.
 
-    > This notebook was modified from the original produced by DeepMind to add additional Weights & Biases logging features.
+    This version runs ColabFold from a marimo notebook and adds Weights & Biases
+    logging so you can compare prediction settings and inspect the saved outputs.
 
     See the [AlphaFold-ed Proteins in Weights & Biases Tables report](https://forge.coreweave.com/wandb/wandb/examples/reports/AlphaFold-ed-Proteins-in-W-B-Tables--Vmlldzo4ODc0MDc) and view an example protein below.
 
-    ## 1. Prepare the Runtime
+    ## Prepare the Runtime
 
     Use a Linux-backed molab runtime, or open the notebook with its declared
     dependencies on Linux:
@@ -158,7 +159,7 @@ def _(wandb_setup_form):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 3. Choose a Protein and Prediction Settings
+    ## Choose a Protein and Prediction Settings
 
     The next cell lists five sample sequences with reference links. The two
     helper functions that follow validate an amino-acid sequence and make a
@@ -170,8 +171,8 @@ def _():
     metadata rather than inheriting the sample's species and reference.
 
     For this short demo, we use one model, three recycles, no structural
-    templates, and an MSA cap of `64:128`. These settings bound computation;
-    they are not a substitute for a thorough structure-prediction study.
+    templates, and an MSA cap of `64:128`. These settings reduce the computation needed to try the workflow.
+    A thorough structure-prediction study requires additional analysis.
     """)
     return
 
@@ -284,7 +285,7 @@ def _(SEQUENCES):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 4. Align and Fold
+    ## Align and Fold
 
     The following cells provide a start button and run ColabFold's batch command
     using this notebook's Python environment. The command reads a FASTA file, obtains an
@@ -388,15 +389,17 @@ def _(
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 5. Inspect Alignment and Confidence
+    ## Inspect Alignment and Confidence
 
     The following helpers read the A3M alignment and prediction scores, then
     save plots of alignment coverage, per-residue pLDDT, and predicted aligned
     error (PAE), when available. Lowercase A3M insertion characters are removed
     before calculating coverage.
 
-    pLDDT measures local confidence on a 0–100 scale; PAE describes uncertainty
-    in relative residue placement. High local confidence alone does not establish
+    pLDDT reports the model’s confidence in local structure on a 0–100 scale.
+    PAE estimates the positional error between residues after aligning on one
+    of them, which helps assess how confidently domains are placed relative
+    to each other. High local confidence alone does not establish
     biological function or correct domain placement. See the
     [AlphaFold FAQ](https://alphafold.ebi.ac.uk/faq) for interpretation.
 
@@ -552,7 +555,7 @@ def _(prediction_summary):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 6. Log the Prediction to Weights & Biases
+    ## Log the Prediction to Weights & Biases
 
     The next cell creates `prediction_run` with `wandb.init()`. Its configuration
     records the sequence, source metadata, model settings, and inference backend.
@@ -637,8 +640,8 @@ def _(entity, prediction_summary, project):
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(f"""
-    ## 7. Compare Predictions
+    mo.md(r"""
+    ## Compare Predictions
 
     Open the Weights & Biases run to inspect its configuration, metrics,
     confidence plots, and 3D molecule. The `predicted_molecules` table connects
@@ -662,7 +665,7 @@ def _():
 
     Protein-structure predictions require scientific review and are not for
     clinical use. ColabFold, AlphaFold, model parameters, and the MSA service
-    have their own licenses and terms; consult the
+    have their own licenses and terms. Consult the
     [ColabFold documentation](https://github.com/sokrypton/ColabFold) and
     [AlphaFold license information](https://github.com/google-deepmind/alphafold#license-and-disclaimer).
 

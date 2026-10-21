@@ -111,14 +111,14 @@ def _(wandb_setup_form):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 2. Define the Experiment Configuration
+    ## Define the Experiment Configuration
 
     The next cell defines a configuration dictionary. Passing it to
     `wandb.init(config=config)` records these settings with the run so you can
     compare experiments by hyperparameter.
 
     We simulate ten epochs with a fixed random seed. The learning rate is
-    recorded to demonstrate configuration tracking; it does not affect our
+    recorded to demonstrate configuration tracking. It does not affect our
     synthetic metrics. In real training, you would use it to configure an
     optimizer.
     """)
@@ -138,7 +138,7 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 3. Start a Run and Log Metrics
+    ## Start a Run and Log Metrics
 
     The next cell starts `training_run` with `wandb.init()`. Inside the loop,
     `training_run.log()` records a dictionary containing the epoch, accuracy,
@@ -176,7 +176,7 @@ def _(config, entity, project):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 4. Retrieve the Logged Results
+    ## Retrieve the Logged Results
 
     The next cell uses `wandb.Api().run(run_path)` to fetch the completed
     experiment. `logged_run.config` contains its settings, and
@@ -194,18 +194,14 @@ def _(run_path):
     api = wandb.Api()
     logged_run = api.run(run_path)
     history = list(logged_run.scan_history(keys=["epoch", "accuracy", "loss"]))
-
-    print(f"Configuration: {dict(logged_run.config)}")
-    print(f"Final accuracy: {logged_run.summary['accuracy']:.2%}")
-    print(f"Final loss: {logged_run.summary['loss']:.4f}")
     history
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    mo.md(f"""
-    ## 5. Explore the Run in Weights & Biases
+    mo.md(r"""
+    ## Explore the Run in Weights & Biases
 
     Open the Weights & Biases run to view the accuracy and loss charts. Its
     configuration contains the settings from this notebook, and its summary

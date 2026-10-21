@@ -52,14 +52,17 @@ def _():
     # Log (Almost) Anything with Weights & Biases Media
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/log-almost-anything-with-w-b-media/log_almost_anything_with_w_b_media.py/server)
 
-    In this notebook, we'll show you how to visualize a model's predictions with Weights & Biases: images, videos, audio, tables, HTML, metrics, plots, 3D objects, and point clouds.
+    Learn how to log numeric metrics and rich media to Weights & Biases. Each
+    section uses a small generated example or a downloaded asset to demonstrate
+    one data type. You can apply the same logging calls to model inputs and
+    predictions in your own experiments.
 
-    Follow along with the video below, or [open the tutorial on YouTube](https://wandb.me/media-video). View the finished examples in the interactive [Weights & Biases dashboard](https://app.wandb.ai/lavanyashukla/visualize-predictions/reports/Visualize-Model-Predictions--Vmlldzo1NjM4OA).
+    For the original walkthrough, [open the tutorial on YouTube](https://wandb.me/media-video). View the finished examples in the interactive [Weights & Biases dashboard](https://app.wandb.ai/lavanyashukla/visualize-predictions/reports/Visualize-Model-Predictions--Vmlldzo1NjM4OA).
 
     ![](https://paper-attachments.dropbox.com/s_C0EC7008D045FC80715C08E7386E0BBDA59DC92DEE34C734FEA67BF25E4BA5CC_1578297638486_image.png)
 
     Running the following cells uploads examples to Weights & Biases. Each section creates a
-    separate named run; its context manager finishes the run when the block exits.
+    separate named run. Its context manager finishes the run when the block exits.
     Rerunning a logging cell creates a new run.
     """)
     return
@@ -144,7 +147,8 @@ def _():
     mo.md(r"""
     ### Log metrics
 
-    Read the last 1,000 Apple stock prices, then log each closing price with
+    Read the last 1,000 rows of the bundled Apple stock-price dataset, then log
+    each closing price with
     `metrics_run.log()`. Each call advances Weights & Biases's default step, producing a
     time-series chart. The source is
     [Macrotrends' Apple stock price history](https://www.macrotrends.net/stocks/charts/AAPL/apple/stock-price-history).

@@ -149,7 +149,7 @@ def _():
     Both boosters use `learning_rate`. The [tree parameters](https://xgboost.readthedocs.io/en/stable/parameter.html#parameters-for-tree-booster)
     `max_depth` and `subsample` affect only `gbtree`, so the training function
     applies them only to tree models. Their sampled values are still recorded
-    in every run's config; filter to tree runs when comparing those parameters.
+    in every run’s config. Filter to tree runs when comparing those parameters.
     """)
     return
 
@@ -284,8 +284,8 @@ def _():
     ## Run the sweep agent
 
     The agent requests hyperparameters from Weights & Biases and calls `train` for each trial.
-    `count` limits how many runs this agent launches; without it, a random sweep
-    can continue indefinitely. Start with a smaller `run_count` for a quick check.
+    `count` limits how many runs this agent launches. Without a limit or a
+    manual stop, a random-search agent can keep requesting trials. Start with a smaller `run_count` for a quick check.
 
     Agents on other machines can join the same sweep using its ID, entity,
     project, and the same training function and dataset. The count applies to

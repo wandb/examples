@@ -42,8 +42,8 @@ def _(mo):
     then inspect those calls in Weave.
 
     See the [official OpenAI SDK documentation](https://platform.openai.com/docs/libraries)
-    for current client setup. Chat Completions remains available; this retirement
-    concerns the old Python SDK interface and Weights & Biases autologger.
+    for client setup. This notebook’s retirement concerns the legacy Python SDK
+    interface and Weights & Biases autologger.
 
     ## Historical reference
 

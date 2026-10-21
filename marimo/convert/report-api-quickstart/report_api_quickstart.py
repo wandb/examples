@@ -54,8 +54,8 @@ def _():
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/report-api-quickstart/report_api_quickstart.py/server)
 
     Use Workspaces and Reports API ([wandb-workspaces](https://github.com/wandb/wandb-workspaces)) to create and
-    customize Weights & Biases Reports. A report combines narrative **blocks** with **panel grids**:
-    runsets select experiment data, and panels visualize that data.
+    customize Weights & Biases Reports. A report combines narrative blocks with panel grids. A grid’s runsets
+    select the runs to include, and its panels visualize data from those runs.
 
     This tutorial covers how to create, save, and load a report. Along the way you will learn how to add common UI elements such as text, media, and panels to your report.
     """)
@@ -121,11 +121,12 @@ def _(wandb_setup_form):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 2. Create data for the panels
+    ## Create example data for the report
 
-    Before we create a report, let's log a psuedo training loop and some images so have content to add to our report.
-
-    The following cell defines some run names and colors that we will use. The specifics are not important.
+    The next cells create synthetic metrics, an image, a Table, and a small
+    Artifact pipeline. These give the report panels data to display without
+    training a model. The run names identify the examples, and the color mapping
+    makes those runs easier to follow across charts.
     """)
     return
 
@@ -146,10 +147,13 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    The next cell initializes three different loops:
-    - Training loop
-    - Log an image
-    - Log an artifact (for lineage)
+    The next cell creates four runs with synthetic training curves, one media
+    run with an image and Table, and eight runs that log a simulated Artifact
+    pipeline. All of them use your selected project.
+
+    The optimizer and encoder names are example configuration values. No models
+    are trained. The Artifact inputs and outputs create lineage for the report’s
+    lineage panel.
     """)
     return
 
@@ -231,9 +235,9 @@ def _(demo_colors, demo_rng, demo_run_colors, demo_run_names, entity, project):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Now that you have logged some runs, lets create a report.
+    Use the logged runs as data for the report below.
 
-    ## 3. Build a Report
+    ## Build a Report
 
     ### Text and image blocks
 
@@ -262,13 +266,14 @@ def _():
     ### Panel grids and run colors
 
     A `PanelGrid` combines runsets and panels. The first runset selects all runs in
-    the project; the second searches for `elephant`, matching the demo media run.
+    the project. The second searches for `elephant`, matching the demo media run.
     Panels show validation accuracy, accuracy bars, images, and differing run settings.
 
-    `custom_run_colors` maps **run IDs** to colors. The optional demo step records
+    `custom_run_colors` maps **run IDs** to colors. The demo-data cell records
     those IDs as it creates runs. For existing data, edit the mapping with IDs from
     your own project. The `WeaveBlockArtifact` below embeds Artifact lineage from
-    the second project; its API name refers to a Report block, not LLM tracing.
+    the selected project. In this API, `WeaveBlockArtifact` names a Report block
+    for Artifact views.
     """)
     return
 
@@ -299,13 +304,13 @@ def _():
     mo.md(r"""
     ### Assemble, save, load, and update
 
-    `Report(...)` creates a local draft. Assign its block list to define the order of
-    content. The publishing cell calls `save()`, reloads the saved object with
-    `Report.from_url()`, changes its description, then saves the update to the same
-    Report. Later clicks update that saved draft unless you rebuild the draft cell.
+    `Report(...)` creates a local object. Assign its block list to define the
+    content order, then call `save()` to publish it to Weights & Biases.
 
-    Inspect and edit the content first, then click **Publish the Quickstart Report**.
-    This is the first step that publishes a Report to Weights & Biases.
+    The next cell publishes a report, reloads it with `Report.from_url()`, updates
+    its description, and saves the change. Inspect the block definitions before
+    running this cell. Rerunning the whole cell constructs and publishes a new
+    report. To update an existing report, load its URL and save that object.
     """)
     return
 
@@ -331,7 +336,7 @@ def _(artifact_lineage, entity, panel_grid, project, text_blocks):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 4. FAQ examples: build more local drafts
+    ## FAQ examples: build more local drafts
 
     ### Resize panels
 
@@ -340,7 +345,8 @@ def _():
 
     Panel layout controls position (`x`, `y`) and dimensions (`w`, `h`) in grid units.
     The following parallel coordinates plot uses the full 24-unit panel-grid width.
-    Configuration fields use a `c::` prefix; the demo runs log `encoder` and `optimizer`.
+    Configuration fields use a `c::` prefix. For example, `c::encoder` selects
+    the `encoder` value logged in each run’s configuration.
     """)
     return
 
@@ -506,13 +512,13 @@ def _():
     ### Related Reports, grouped colors, and combined blocks
 
     These two drafts use the original tutorial's public CleanRL runs in
-    `openrlbenchmark/cleanrl`. They show reinforcement-learning metrics and videos;
-    viewing them requires access to that project. `RunsetGroup` assigns colors to
+    `openrlbenchmark/cleanrl`. They show reinforcement-learning metrics and videos.
+    Viewing the data requires access to that project. `RunsetGroup` assigns colors to
     specific configuration groups, using each configuration field as the key and
     its observed setting as the value.
 
     You can combine two Reports by concatenating their block lists. Publishing later
-    also creates a Report with `wr.Link` objects pointing to these two saved Reports;
+    also creates a Report with `wr.Link` objects pointing to these two saved Reports.
     `MarkdownBlock` supports ordinary Markdown links as well.
     """)
     return
@@ -593,9 +599,9 @@ def _():
     library, so cloning the original draft directly would change its save target.
 
     It then saves the six drafts above and creates a links Report after both related
-    Report URLs exist. On the first click this creates eight FAQ Reports. Later
-    clicks update the six saved drafts and create another width clone and links
-    Report. Save the Quickstart Report first.
+    Report URLs exist. The first execution creates eight FAQ Reports. Rerunning the publishing
+    cell updates the six saved drafts and creates another width clone and links
+    Report, provided you have not rebuilt those drafts. Save the Quickstart Report first.
     """)
     return
 
@@ -638,14 +644,14 @@ def _(
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 5. Update lists of blocks explicitly
+    ## Update lists of blocks explicitly
 
     A Report contains lists such as `report.blocks`, `panel_grid.panels`, and
     `panel_grid.runsets`. Object-reference behavior can vary across library versions.
     To make an update explicit, edit the block and then reassign the block list.
     Keep related mutations in one cell so marimo doesn't need to infer their order.
 
-    The following example stays local: it never calls `save()`.
+    The following example changes only the local object. It does not call `save()`.
     """)
     return
 

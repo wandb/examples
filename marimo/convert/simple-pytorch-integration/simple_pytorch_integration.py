@@ -161,23 +161,14 @@ def _(wandb_setup_form):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Define the Experiment and Pipeline
+    ## Define the experiment settings
 
-    Programmatically, the first thing we do is define our experiment:
-    what are the hyperparameters? what metadata is associated with this run?
+    The `config` dictionary holds the settings the training code will use, including
+    the learning rate, batch size, and epoch count. It also records the dataset
+    and architecture so you can distinguish this experiment from other runs.
 
-    It's a pretty common workflow to store this information in a `config` dictionary
-    (or similar object)
-    and then access it as needed.
-
-    For this example, we're only letting a few hyperparameters vary
-    and hand-coding the rest.
-    But any part of your model can be part of the `config`!
-
-    We also include some metadata: we're using the MNIST dataset and a convolutional
-    architecture. If we later work with, say,
-    fully-connected architectures on CIFAR in the same project,
-    this will help us separate our runs.
+    Pass this dictionary to `wandb.init(config=config)`. Inside the run, read
+    settings from `run.config` so the logged values and training inputs agree.
     """)
     return
 
@@ -200,14 +191,10 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Now, let's define the overall pipeline,
-    which is pretty typical for model-training:
-
-    1. we first `make` a model, plus associated data and optimizer, then
-    2. we `train` the model accordingly and finally
-    3. `evaluate` it to see how training went.
-
-    We'll implement these functions below.
+    The `model_pipeline` function keeps one experiment inside a Weights & Biases
+    run. It calls `make` to build the model, data loaders, loss, and optimizer,
+    then calls `train` and `evaluate`. Exiting the run’s context manager finishes
+    logging. The helper functions are defined below.
     """)
     return
 
@@ -237,26 +224,12 @@ def model_pipeline(hyperparameters, entity, project):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    The only difference here from a standard pipeline
-    is that it all occurs inside the context of `wandb.init`.
-    Calling this function sets up a line of communication
-    between your code and our servers.
+    `wandb.init()` starts the run and records the supplied configuration.
+    The model, optimizer, and data loaders use `run.config` to read those settings.
 
-    Passing the `config` dictionary to `wandb.init`
-    immediately logs all that information to us,
-    so you'll always know what hyperparameter values
-    you set your experiment to use.
-
-    To ensure the values you chose and logged are always the ones that get used
-    in your model, we recommend using the `run.config` copy of your object.
-    Check the definition of `make` below to see some examples.
-
-    > *Side Note*: We take care to run our code in separate processes,
-    so that any issues on our end
-    (e.g. a giant sea monster attacks our data centers)
-    don't crash your code.
-    Once the issue is resolved (e.g. the Kraken returns to the deep)
-    you can log the data with `wandb sync`.
+    The `with` block keeps metric logging and the final model file associated
+    with this run. A new call to `model_pipeline` creates a fresh model and run,
+    which lets you compare experiments after changing a setting.
     """)
     return
 
@@ -321,13 +294,10 @@ def make_loader(dataset, batch_size, shuffle):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Defining the model is normally the fun part!
-
-    But nothing changes with `wandb`,
-    so we're gonna stick with a standard ConvNet architecture.
-
-    Don't be afraid to mess around with this and try some experiments --
-    all your results will be logged on [wandb.ai](https://wandb.ai)!
+    The ConvNet applies two convolution-and-pooling stages, then maps the flattened
+    features to ten digit scores. It returns logits for cross-entropy loss.
+    Change the channel sizes in `config["kernels"]` to compare model capacity
+    while keeping the dataset and training budget fixed.
     """)
     return
 
@@ -360,16 +330,15 @@ class ConvNet(nn.Module):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Define Training Logic
+    ## Define the training loop
 
-    The next cells define a training loop:
+    For each batch, compute predictions and cross-entropy loss, clear the old
+    gradients, call `loss.backward()`, then update the weights with `optimizer.step()`.
+    The order matters because the optimizer uses the gradients from the backward pass.
 
-    - Forward pass
-    - Compute loss
-    - Apply optimizer
-    - Backward pass
-
-    During training we will use `wandb.Run.watch()` to log the gradients and the parameters of your PyTorch model.
+    `run.watch(..., log="all", log_freq=10)` records parameter and gradient
+    histograms. The loop logs loss every 25 batches and on the final batch,
+    using the number of examples seen as the logging step.
     """)
     return
 
@@ -416,31 +385,21 @@ def train(model, loader, criterion, optimizer, config, run):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    The only difference is in the logging code:
-    where previously you might have reported metrics by printing to the terminal,
-    now you pass the same information to `wandb.Run.log()`.
+    `run.log()` accepts a dictionary whose keys name the recorded metrics.
+    This example logs `loss` and `epoch`, with the number of examples seen passed
+    as `step`. Use a consistent step convention when comparing runs.
 
-    `wandb.Run.log()` expects a dictionary with strings as keys.
-    These strings identify the objects being logged, which make up the values.
-    You can also optionally log which `step` of training you're on.
+    ## Evaluate and save the model
 
-    ## Define Testing Logic
+    The evaluation helper switches the model to evaluation mode, predicts the
+    held-out MNIST digits, and logs the fraction classified correctly as
+    `test_accuracy`. It then exports the trained network to ONNX and uploads
+    `model.onnx` with `run.save()`.
 
-    Once the model is done training, we want to test it:
-    run it against some fresh data from production, perhaps,
-    or apply it to some hand-curated "hard examples".
-
-    This is also a great time to save the model's architecture
-    and final parameters to disk.
-    For maximum compatibility, we'll `export` our model in the
-    [Open Neural Network eXchange (ONNX) format](https://onnx.ai/).
-
-    Passing that filename to `wandb.Run.save()` ensures that the model parameters
-    are saved to Weights & Biases's servers: no more losing track of which `.h5` or `.pb`
-    corresponds to which training runs.
-
-    For more advanced features for storing, versioning, and distributing
-    models, see the [Weights & Biases Artifacts documentation](https://www.wandb.com/artifacts).
+    If you repeatedly use this score to choose hyperparameters, that held-out
+    subset serves as validation data. Use a separate test set for a final estimate
+    of generalization. For versioned model collections and lineage, see the
+    [Weights & Biases Artifacts documentation](https://docs.wandb.ai/models/artifacts).
     """)
     return
 
@@ -472,28 +431,15 @@ def evaluate(model, test_loader, run):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Run training and watch your metrics
+    ## Run training and inspect the logged results
 
-    Now that we've defined the whole pipeline and slipped in
-    those few lines of Weights & Biases code,
-    we're ready to run our fully-tracked experiment. Enable the following code
-    cell from its cell menu, then run it if it hasn't already started.
+    Run the experiment cell after submitting the setup form. It builds a fresh
+    model, trains it, evaluates the held-out images, and uploads the ONNX file.
 
-    We'll report a few links to you:
-    our documentation,
-    the Project page, which organizes all the runs in a project, and
-    the Run page, where this run's results will be stored.
-
-    Navigate to the Run page and check out these tabs:
-
-    1. **Charts**, where the model gradients, parameter values, and loss are logged throughout training
-    2. **System**, which contains a variety of system metrics, including Disk I/O utilization, CPU and GPU metrics, and more
-    3. **Logs**, which has a copy of anything pushed to standard out during training
-    4. **Files**, where, once training is complete, you can click on the `model.onnx` to view our network with the [Netron model viewer](https://github.com/lutzroeder/netron).
-
-    Once the run is finished
-    (i.e. the `with wandb.init` block is exited),
-    we'll also print a summary of the results in the cell output.
+    Open the run URL printed by Weights & Biases. Inspect the loss curve and the
+    parameter and gradient histograms, then check `test_accuracy` in the summary.
+    Under **Files**, find `model.onnx`. The configuration records the settings
+    used to create these results.
     """)
     return
 
@@ -515,8 +461,7 @@ def _():
     for `model.onnx`.
 
     Change `learning_rate` or `batch_size` in `config`, then run the experiment
-    cell again. This creates a new run. Compare both runs in the `pytorch-demo`
-    project to see how the change affected loss and test accuracy.
+    cell again. This creates a new run. Compare both runs in your selected project to see how the change affected loss and test accuracy.
 
     ## Next steps: Test Hyperparameters with Sweeps
 

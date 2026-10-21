@@ -139,7 +139,8 @@ def _():
     `simulation_run.log()` sends one accuracy and loss measurement per epoch.
 
     The fixed seeds make the examples reproducible while giving each run a
-    different curve. These values are synthetic: no model or dataset is used.
+    different curve. These values are generated mathematically, without training
+    a model or loading a dataset.
     Each context manager finishes its run before the next experiment begins.
     """)
     return
@@ -173,8 +174,7 @@ def _():
     mo.md(r"""
     ## Compare runs in your project
 
-    Open a run link printed by Weights & Biases in the previous cell. In the `basic-intro`
-    project, select the five simulation runs and compare their `acc` and `loss`
+    Open a run link printed by Weights & Biases in the previous cell. In the simulation project you selected, select the five simulation runs and compare their `acc` and `loss`
     curves. Choose `epoch` as the horizontal axis to compare the same training
     point across runs. Inspect each run's config to see its seed and epoch count.
 
@@ -186,9 +186,10 @@ def _():
     training settings. We train three fresh models with dropout values 0.1, 0.3,
     and 0.5 so you can compare them in Weights & Biases.
 
-    To keep the lesson short, we use every fifth MNIST example: 12,000 training
-    images and 2,000 held-out images. We use the held-out subset for validation
-    throughout this example; it is not an independent final test.
+    To keep the lesson short, we use every fifth MNIST example. This gives us
+    12,000 training images and 2,000 held-out images. We repeatedly evaluate the
+    held-out subset when comparing dropout rates, so it serves as validation
+    data. An independent final evaluation would require another test set.
     """)
     return
 
@@ -218,7 +219,7 @@ def _():
     `sample_stride`-th image. `ToTensor()` converts each grayscale image to a
     tensor with pixel values between 0 and 1.
 
-    Training batches are shuffled; validation batches retain the same order
+    Training batches are shuffled. Validation batches retain the same order
     across runs so we can compare predictions on the same images. Calling
     this helper downloads missing data. `num_workers=0` works across notebook
     runtimes, and pinned memory helps transfer batches to CUDA when available.
@@ -318,7 +319,7 @@ def _():
     mo.md(r"""
     ## Build a Prediction Table
 
-    The next helper functions creates a `wandb.Table` with one row per image. Each row
+    The next helper function creates a `wandb.Table` with one row per image. Each row
     contains a viewable `wandb.Image`, the predicted digit, the true label,
     and ten class probabilities.
     """)
@@ -356,7 +357,7 @@ def _():
     to a separate file so later epochs cannot overwrite an earlier checkpoint.
     `training_run.log_model()` uploads that checkpoint as a model Artifact with
     an epoch alias. The model architecture and dropout are recorded in the run
-    configuration; recreate that architecture before loading its weights.
+    configuration. Recreate that architecture before loading the saved weights.
 
     Checkpoints are kept in a temporary directory until the run finishes logging.
     """)
@@ -430,7 +431,7 @@ def _():
     mo.md(r"""
     ## Inspect Metrics, Predictions, and Models
 
-    In the `pytorch-intro` project, compare the three runs' `val/val_loss` and
+    In your selected training project, compare the three runs' `val/val_loss` and
     `val/val_accuracy` curves. Use the config column `dropout` to identify each
     experiment and `final_validation_accuracy` to compare their final results.
     Open a run's `predictions_table` and filter `pred != target` to inspect

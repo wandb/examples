@@ -58,10 +58,9 @@ def _():
 
     This notebook introduces `WandbEvalCallback`, an abstract callback you can subclass to visualize datasets and model predictions using Weights & Biases Tables. See the [Keras integration](https://docs.wandb.ai/models/integrations/keras).
 
-    Use Weights & Biases for machine learning experiment tracking, dataset
-    versioning, and project collaboration.
 
-    A CPU is sufficient; a GPU speeds up training. Running the data and model
+
+    This example can run on CPU. A GPU can reduce training time. Running the data and model
     cells downloads Fashion-MNIST and ImageNet weights the first time.
 
     Run the cells from top to bottom in the marimo editor. Editing a cell
@@ -73,8 +72,8 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    This lesson requires an online Weights & Biases run: the evaluation callback uploads
-    validation images as an Artifact and retrieves their table for reuse in
+    This lesson requires an online Weights & Biases run. The evaluation callback
+    uploads validation images as an Artifact and retrieves their table for reuse in
     each epoch's prediction table.
     """)
     return
@@ -171,8 +170,9 @@ def _():
 
     We use [Fashion-MNIST](https://www.tensorflow.org/datasets/catalog/fashion_mnist)
     from the TensorFlow Datasets catalog to build a simple image classification
-    pipeline. Labels become one-hot vectors; images keep their 0–255 range
-    until the model applies MobileNetV2 preprocessing. Validation examples stay
+    pipeline. Labels become one-hot vectors. The input pipeline keeps image pixels in
+    the 0–255 range. The model later applies MobileNetV2 preprocessing
+    after its trainable convolution. Validation examples stay
     in a fixed order.
 
     > Note: The `get_dataloader()` function is defined at the end of the notebook to keep the focus on the main concepts rather than data-loading implementation details.
@@ -194,8 +194,10 @@ def _():
     ## Model
 
     A frozen ImageNet MobileNetV2 supplies image features. The model resizes each
-    grayscale image to 32 × 32, learns a three-channel convolution, applies
-    MobileNetV2 preprocessing, and trains a ten-class classification head.
+    grayscale image to 32 × 32 and uses a trainable convolution to produce
+    three channels. It then applies MobileNetV2 preprocessing and trains a
+    ten-class classification head. The convolution and head learn while the
+    backbone weights stay fixed.
     """)
     return
 
@@ -311,7 +313,7 @@ def _():
     ## Train
 
     Create the Weights & Biases run before constructing its callbacks. `WandbMetricsLogger`
-    records metrics every ten batches and at epoch end; `WandbClfEvalCallback`
+    records metrics every ten batches and at epoch end. `WandbClfEvalCallback`
     logs ground truth once and predictions after each epoch. The context
     manager closes the run when training finishes or raises an exception.
     """)
@@ -346,7 +348,7 @@ def _():
 
     Open the run link printed by Weights & Biases in the previous cell. Select the **Artifacts** tab in the Weights & Biases UI to view the `val` artifact you logged. In it, you will find a table with 100 validation images and labels.
 
-    Select the **Workspaces** from the proejct sidebar to view the training and validation loss,
+    Open the run’s workspace to view training and validation loss,
     accuracy, and top-five accuracy charts.
 
     Try changing the learning rate, recreate and compile the model, then train

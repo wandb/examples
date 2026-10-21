@@ -71,9 +71,14 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Finding a machine learning model that meets your desired metric (such as model accuracy) is normally a redundant task that can take multiple iterations. To make matters worse, it might be unclear which hyperparameter combinations to use for a given training run.
+    Comparing hyperparameters requires repeated training runs. A sweep defines
+    which settings to vary and which metric to compare, then records the
+    configuration and results of each trial.
 
-    Use Weights & Biases Sweeps to create an organized and efficient way to automatically search through combinations of hyperparameter values such as the learning rate, batch size, number of hidden layers, optimizer type and more to find values that optimize your model based on your desired metric.
+    This example samples optimizer, hidden-layer size, dropout, learning rate,
+    and batch size for a small MNIST classifier. It minimizes training loss to
+    demonstrate sweep mechanics. Use a validation metric when selecting settings
+    for a model you intend to deploy.
 
     In this tutorial you will create a hyperparameter search with Weights & Biases PyTorch integration. Follow along with a [video tutorial](https://wandb.me/sweeps-video).
 
@@ -194,8 +199,8 @@ def _():
     ## Initialize the sweep
 
     `wandb.sweep()` registers the configuration with a Weights & Biases-managed controller
-    and returns `sweep_id`. The controller chooses hyperparameters; an agent on
-    this machine will request those values and execute the training function.
+    and returns `sweep_id`. The controller chooses hyperparameters. An agent on
+    this machine requests those values and executes the training function.
     Rerunning this cell creates a new sweep. Weights & Biases prints its dashboard link.
 
     In a terminal, register the same configuration with `wandb sweep config.yaml`.
@@ -365,7 +370,7 @@ def _():
     Open the sweep dashboard link printed by Weights & Biases. Confirm that completed runs
     contain the sampled configuration, a `batch loss` chart, and an epoch-level
     `loss` chart. Sort runs by `loss` to find the lowest training loss. Five
-    trials demonstrate the workflow; larger searches provide more evidence for
+    trials demonstrate the workflow. Larger searches provide more evidence for
     the comparison plots below.
     """)
     return
@@ -386,12 +391,15 @@ def _():
 def _():
     mo.md(r"""
     ### Hyperparameter Importance Plot
-    The hyperparameter importance plot surfaces which hyperparameters were the best predictors of your metrics.
-    We report feature importance (from a random forest model) and correlation (implicitly a linear model).
+    The hyperparameter importance plot estimates which settings best predict
+    the observed metric values. Use it to choose settings worth investigating
+    further, rather than treating it as proof that a parameter caused an improvement.
+    With only a few trials, these estimates can be unstable.
 
     ![](https://assets.website-files.com/5ac6b7f2924c652fd013a891/5e190367778ad820b35f9af5_s_194708415DEC35F74A7691FF6810D3B14703D1EFE1672ED29000BA98171242A5_1578695757573_image.png)
 
-    These visualizations can help you save both time and resources running expensive hyperparameter optimizations by honing in on the parameters (and value ranges) that are the most important, and thereby worthy of further exploration.
+    Compare these patterns with individual runs before narrowing the search
+    space. Repeat promising settings to check whether the improvement persists.
     """)
     return
 

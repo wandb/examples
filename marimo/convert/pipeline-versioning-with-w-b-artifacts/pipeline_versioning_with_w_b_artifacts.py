@@ -61,8 +61,8 @@ def _(mo):
     Watch the [original video tutorial](https://youtu.be/Hd94gatGMic).
 
     An **Artifact** is a versioned collection of files, such as a dataset or model.
-    A run records one step of a pipeline: `log_artifact()` declares an output, and
-    `use_artifact()` declares an input. Together these relationships form a directed
+    Each run in this lesson records one pipeline step. `log_artifact()` records
+    an output, and `use_artifact()` records an input. Together these relationships form a directed
     acyclic graph showing which data and model versions produced a result.
 
     We'll create five runs: load data, preprocess data, initialize a model, train,
@@ -147,7 +147,7 @@ def _(torch):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## 1. Log the raw dataset
+    ## Log the raw dataset
 
     First define the data-loading logic. MNIST provides 60,000 training images and
     10,000 test images. We reserve the last 10,000 training images for validation,
@@ -180,7 +180,8 @@ def _(TensorDataset, torchvision):
 def _(mo):
     mo.md(r"""
     Now create `loading_run` and an Artifact named `mnist-raw` with type `dataset`.
-    Names identify collections of versions; types group related Artifacts. A run's
+    An Artifact name identifies a collection of versions. Its type, such as
+    `dataset` or `model`, describes the kind of files it contains. A run's
     `job_type` labels its role in the pipeline. Keeping related runs in one project
     makes their lineage easier to explore.
 
@@ -191,8 +192,8 @@ def _(mo):
     rather than the mutable `latest` alias.
 
     Each stage uses a temporary directory for downloaded data and Weights & Biases runtime
-    files. The context managers finish the run before cleaning up the directory;
-    Weights & Biases's separate Artifact cache can persist across stages.
+    files. Each run finishes before its temporary directory is removed.
+    The separate Weights & Biases Artifact cache can persist across stages.
     """)
     return
 
@@ -227,7 +228,7 @@ def _(entity, load_mnist, project, tempfile, torch, wandb):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## 2. Consume the raw Artifact and log preprocessed data
+    ## Consume the raw Artifact and log preprocessed data
 
     The next helpers handle tensor files and preprocessing. `read_dataset()` loads
     only tensors using `weights_only=True`. `preprocess()` converts pixel values to
@@ -265,8 +266,8 @@ def _(mo):
     network.
 
     We save the transformed splits in `mnist-preprocess` and record the preprocessing
-    options in its metadata. These settings are also the CNN's input contract:
-    keep normalization and channel expansion enabled for the model below.
+    options in its metadata. The CNN below expects normalized images with an explicit channel dimension,
+    so keep both preprocessing options enabled.
 
     Artifact references look like `entity/project/mnist-raw:v0`. You can also request
     `mnist-raw:latest` or a custom alias such as `best`, but aliases can move to a new
@@ -315,7 +316,7 @@ def _(
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## 3. Log an initialized model
+    ## Log an initialized model
 
     This small ConvNet has two convolution/pooling blocks, dropout, and a linear
     classifier. Its constructor calculates the flattened feature size from the
@@ -366,13 +367,13 @@ def _():
 def _(mo):
     mo.md(r"""
     Choose the model settings below. `wandb.init(config=...)` records them with
-    `initialization_run`; we copy that configuration into the model Artifact's
+    `initialization_run`. We also copy that configuration into the model Artifact’s
     metadata for later reconstruction.
 
-    Here we demonstrate `add_file()`: save the checkpoint with `torch.save()` first,
-    then attach it to `convnet`. In contrast, `new_file()` above writes directly into
+    Here we save the checkpoint with `torch.save()` and attach the existing
+    file to `convnet` with `add_file()`. In contrast, `new_file()` above writes directly into
     the Artifact. The initialized model is independent of the dataset preprocessing
-    stage; the training stage will consume both outputs.
+    stage. Training will consume both the initialized model and preprocessed data.
     """)
     return
 
@@ -416,11 +417,11 @@ def _(ConvNet, entity, model_config, os, project, tempfile, torch, wandb):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## 4. Train using dataset and model Artifacts
+    ## Train using dataset and model Artifacts
 
     Before training, define an evaluation helper that computes mean cross-entropy
     loss and accuracy across a loader without tracking gradients. Training will use
-    it on validation data after each epoch; final evaluation will use the same
+    it on validation data after each epoch. Final evaluation will use the same
     logic on the held-out test set.
     """)
     return
@@ -457,7 +458,7 @@ def _(mo):
 
     Finally, save a new `trained-model` Artifact. Its metadata records the architecture
     and training settings, while the run's input edges identify the exact dataset
-    and initialization used. The upload must finish before the report run fetches it.
+    and initialization used. The upload must finish before the evaluation run fetches it.
     For more training details, see the
     [PyTorch integration lesson](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py/server).
     """)
@@ -567,7 +568,7 @@ def _(
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## 5. Evaluate the trained model and inspect hard examples
+    ## Evaluate the trained model and inspect hard examples
 
     The final run consumes `trained-model` and the same preprocessed dataset version.
     It evaluates only the test split, keeping test results separate from training and
@@ -615,7 +616,7 @@ def _(mo):
     with concrete examples of the model's behavior.
 
     The trained Artifact stores architecture and training settings separately in
-    its metadata. We use `model_config` to reconstruct the CNN; the training
+    its metadata. We use `model_config` to reconstruct the CNN. The training
     settings remain available for inspection.
     """)
     return
@@ -688,10 +689,9 @@ def _(mo):
     Open the run links printed by Weights & Biases and inspect:
 
     - **Artifacts:** `mnist-raw`, `mnist-preprocess`, `convnet`, and `trained-model`.
-    - **Lineage graph:** loading produces raw data; preprocessing consumes it and
-      produces processed data; training consumes processed data and the initialized
-      model, then produces the trained model; evaluation consumes processed data
-      and the trained model.
+    - **Lineage graph:** follow the raw dataset into preprocessing, then follow
+      the processed dataset and initialized model into training. Confirm that
+      evaluation consumes the trained model and the processed dataset.
     - **Metadata:** dataset sizes, preprocessing settings, and model configuration.
     - **Training charts:** `train/loss`, `validation/loss`, and `validation/accuracy`.
     - **Evaluation:** final `loss` and `accuracy`, plus the `high-loss-examples` panel.
