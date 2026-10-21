@@ -52,13 +52,7 @@ def _():
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/w-b-tables-quickstart/w_b_tables_quickstart.py/server)
 
     This notebooks covers how to track, visualize, and compare model predictions over the course of training, using PyTorch on MNIST data.
-    """)
-    return
 
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
     ## 1. Authenticate and Choose a Project
 
     The next cell calls `wandb.login()` and sets the project for your experiment.
@@ -335,14 +329,6 @@ def _(
 
         run_url = training_run.url
     print(f"View metrics and prediction tables: {run_url}")
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md("""
- 
-    """)
     return
 
 

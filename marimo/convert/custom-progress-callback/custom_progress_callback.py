@@ -68,18 +68,19 @@ def _():
 
     > Note: The default GPT-2 model benefits from a GPU. CPU training is supported but slower. We recommend that you start with one epoch and fewer training texts.
 
-    ## Authentication
+    ## Authenticate with Weights & Biases
 
-    If prompted, specify your [Forge API Key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys). If you run the notebook locally, you can set `WANDB_API_KEY` in your environment or molab Secrets.
+    Authenticate with Weights & Biases to log your experiments. Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the field below, then select **Connect to Weights & Biases**. Do not paste your API key into the notebook’s source code.
+
+    If you run this notebook locally, Weights & Biases automatically uses credentials from the `WANDB_API_KEY` environment variable or your `.netrc` file. If these credentials are available, you do not need to enter your key.
     """)
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    wandb_login_form = mo.md("{api_key}\n\n{entity}").batch(
-        api_key=mo.ui.text(kind="password", label="Forge API key (optional)", full_width=True),
-        entity=mo.ui.text(label="Weights & Biases entity or team (optional)", full_width=True),
+    wandb_login_form = mo.md("{api_key}\n").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True)
     ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
     wandb_login_form
     return (wandb_login_form,)
@@ -88,18 +89,21 @@ def _():
 @app.cell(hide_code=True)
 def _(wandb_login_form):
     mo.stop(wandb_login_form.value is None, mo.md("Connect to Weights & Biases above before training."))
+
     _api_key = wandb_login_form.value["api_key"].strip()
+
     try:
         _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
     except (wandb.errors.Error, ValueError):
         _login_ok = False
+
     mo.stop(
         not _login_ok,
         mo.callout("Authentication did not complete. Check your API key or runtime credentials and reconnect.", kind="danger"),
     )
-    wandb_settings = {"entity": wandb_login_form.value["entity"].strip() or None}
+
     mo.callout("Connected to Weights & Biases.", kind="success")
-    return (wandb_settings,)
+    return
 
 
 @app.cell(hide_code=True)
