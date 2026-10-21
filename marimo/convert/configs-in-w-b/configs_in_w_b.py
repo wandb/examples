@@ -55,27 +55,40 @@ def _():
 
     ## Authenticate with Weights & Biases
 
-    Authenticate with Weights & Biases to log your experiments. Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the field below, then select **Connect to Weights & Biases**. Do not paste your API key into the notebook’s source code.
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
 
-    If you run this notebook locally, Weights & Biases automatically uses credentials from the `WANDB_API_KEY` environment variable or your `.netrc` file. If these credentials are available, you do not need to enter your key.
+    If this runtime already has credentials in `WANDB_API_KEY` or your `.netrc` file, leave the API key field blank.
+
+    ## Set your team and project
+
+    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `config_example`. Then select **Connect to Weights & Biases**.
     """)
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    wandb_login_form = mo.md("{api_key}\n").batch(
-        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True)
+    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
+        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
+        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
+        project=mo.ui.text(value="config_example", label="Project", full_width=True),
     ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
-    wandb_login_form
-    return (wandb_login_form,)
+    wandb_setup_form
+    return (wandb_setup_form,)
 
 
 @app.cell(hide_code=True)
-def _(wandb_login_form):
-    mo.stop(wandb_login_form.value is None, mo.md("Connect to Weights & Biases above before training."))
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
 
-    _api_key = wandb_login_form.value["api_key"].strip()
+    _submission = wandb_setup_form.value
+    _api_key = _submission["api_key"].strip()
+    _entity = _submission["entity"].strip()
+    _project = _submission["project"].strip()
+    mo.stop(
+        not _entity or not _project,
+        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+    )
 
     try:
         _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
@@ -84,27 +97,12 @@ def _(wandb_login_form):
 
     mo.stop(
         not _login_ok,
-        mo.callout("Authentication did not complete. Check your API key or runtime credentials and reconnect.", kind="danger"),
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
     )
 
-    mo.callout("Connected to Weights & Biases.", kind="success")
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Set your team and project
-
-    Set `entity` to your Weights & Biases team name. Optionally, change `project` to the project where you want to log runs. Otherwise, the notebook uses the provided project name.
-    """)
-    return
-
-
-@app.cell
-def _():
-    entity = "your-entity"
-    project = "config_example"
+    entity = _entity
+    project = _project
+    mo.md("✓ Connected to Weights & Biases.")
     return entity, project
 
 
