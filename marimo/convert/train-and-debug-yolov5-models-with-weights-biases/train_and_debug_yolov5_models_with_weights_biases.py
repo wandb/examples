@@ -52,6 +52,9 @@ with app.setup:
     else:
         device = "cpu"
 
+    # Avoid the observed YOLO26 loss-indexing failure on Apple's MPS backend.
+    training_device = 0 if torch.cuda.is_available() else "cpu"
+
 
 @app.cell(hide_code=True)
 def _():
@@ -84,13 +87,13 @@ def _():
     The original Colab used YOLOv5. This version uses **YOLO26** through the
     maintained [`ultralytics`](https://docs.ultralytics.com/) package and its
     [Weights & Biases integration](https://docs.ultralytics.com/integrations/weights-biases/).
-    The object-detection and experiment-tracking workflow is the same; the
-    Python API replaces the original command-line scripts.
+    The lesson still covers object detection and experiment tracking, using
+    the Python API in place of the original command-line scripts.
 
-    Open the notebook in the marimo **editor**. Cells that authenticate,
-    download files, or train start disabled: enable each from its cell menu
-    when you reach that step, then run it if it hasn't started. Editing a
-    setting marks dependent cells as stale until you run them again.
+    Open the notebook in the marimo editor and submit the setup form before
+    running the training example. The prediction and data-preparation cells
+    download their inputs when executed. Review the settings before running
+    training. After changing a setting, rerun the dependent cells.
     """)
     return
 
@@ -175,7 +178,7 @@ def _():
 
     Run the detector on a sample street image. This downloads the small
     `yolo26n.pt` checkpoint. `conf=0.25` filters out predictions whose confidence
-    is below 25%; the image shows the remaining boxes, labels, and scores.
+    is below 0.25. The image shows the remaining boxes, labels, and scores.
     """)
     return
 
@@ -238,8 +241,10 @@ def _():
     The run is closed when training completes or raises an error. Its link
     appears in the cell output while training is underway.
 
-    Three epochs provide a short demonstration; a GPU is recommended for
-    longer runs, but this notebook also supports CPU training. Local training
+    The default three epochs demonstrate the workflow. A GPU can reduce training
+    time for longer runs. Training uses CUDA when available and otherwise CPU,
+    including on Macs, to avoid an observed MPS error during loss computation.
+    CPU training can take longer. Local training
     outputs are stored under `runs/chess`, outside the versioned dataset.
     """)
     return
@@ -268,7 +273,7 @@ def _(config, data_yaml_path, dataset_root, entity, project, run_name):
             epochs=run.config.epochs,
             imgsz=run.config.imgsz,
             batch=run.config.batch,
-            device=device,
+            device=training_device,
             workers=0,
             project=str(Path("runs/chess").resolve()),
             name=run.id,
@@ -289,7 +294,7 @@ def _():
 
     - **Config:** the model, epoch count, image size, and batch size you chose.
     - **Charts:** training losses, precision, recall, mAP50, and mAP50-95.
-      Losses describe training progress; mAP measures detection quality on
+      Losses describe training progress. Mean average precision (mAP) measures detection quality on
       held-out images, including whether the predicted boxes match the labels.
     - **Images and plots:** validation predictions, confusion matrix, and
       performance curves. Look for missed pieces or confused classes.
@@ -318,8 +323,8 @@ def _():
 
     This restores the training state stored in that checkpoint. Keep the
     dataset available at the paths recorded by the original job. The best-model
-    Artifact is useful for inference or a new fine-tuning run; it should not be
-    assumed to contain the optimizer state needed to resume an interrupted job.
+    Artifact is useful for inference or a new fine-tuning run. Resuming an
+    interrupted job requires a checkpoint that includes its training state.
 
     See the [Ultralytics training guide](https://docs.ultralytics.com/modes/train/#resuming-interrupted-trainings)
     for checkpoint resume behavior. The old YOLOv5 `wandb-artifact://` command
