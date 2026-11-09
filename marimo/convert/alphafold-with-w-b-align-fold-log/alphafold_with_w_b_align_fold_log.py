@@ -1,11 +1,12 @@
 # /// script
-# requires-python = ">=3.11"
+# requires-python = ">=3.12,<3.13"
 # dependencies = [
-#     "colabfold[alphafold]>=1.6.3,<1.7",
+#     "colabfold[alphafold-minus-jax]>=1.6.3,<1.7",
+#     "jax>=0.6.2,<0.12; sys_platform == 'darwin' and platform_machine == 'arm64'",
 #     "jax[cuda13]>=0.6.2,<0.12; sys_platform == 'linux'",
 #     "marimo>=0.24.0",
 #     "matplotlib>=3.8,<4",
-#     "numpy>=2.0,<3",
+#     "numpy>=2.0,<=2.1.3",
 #     "py3Dmol>=2.0,<3",
 #     "wandb>=0.19.10",
 # ]
@@ -15,12 +16,13 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.25.2"
 app = marimo.App(width="medium", app_title="ColabFold with Weights & Biases")
 
 with app.setup:
     import json
     import os
+    import platform
     import re
     import subprocess
     import sys
@@ -57,16 +59,19 @@ def _():
 
     ## Prepare the Runtime
 
-    Use a Linux-backed molab runtime, or open the notebook with its declared
-    dependencies on Linux:
+    Use a Linux-backed molab runtime, Linux workstation, or Apple-silicon Mac.
+    Open the notebook with its declared, platform-specific dependencies:
 
     ```bash
     uvx marimo edit --sandbox alphafold_with_w_b_align_fold_log.py
     ```
 
-    The next cell checks the runtime and chooses GPU or CPU inference. It
-    retains the CPU fallback for compute capability 12.0 devices used by this
-    example. You can inspect the selected backend before predicting.
+    `--sandbox` creates an isolated Python environment; it does not change the
+    host operating system. The next cell selects NVIDIA GPU inference on Linux
+    when supported and CPU inference otherwise. Apple-silicon Macs use CPU JAX
+    and can be substantially slower than Linux with an NVIDIA GPU. The Linux
+    path retains the CPU fallback for compute capability 12.0 devices used by
+    this example. You can inspect the selected backend before predicting.
 
     The prediction cell queries the public ColabFold MSA service and downloads
     model parameters on first use. Submit one sequence at a time and follow
@@ -78,26 +83,60 @@ def _():
 
 @app.cell
 def _():
-    runtime_ready = sys.platform.startswith("linux")
-    try:
-        gpu_probe = subprocess.run(
-            ["nvidia-smi", "--query-gpu=name,compute_cap", "--format=csv,noheader"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        gpu_rows = [row.rsplit(",", maxsplit=1) for row in gpu_probe.stdout.splitlines() if row.strip()]
-        gpu_names = [name.strip() for name, capability in gpu_rows]
-        compute_capabilities = [capability.strip() for name, capability in gpu_rows]
-    except (FileNotFoundError, subprocess.CalledProcessError, ValueError):
-        gpu_names = []
-        compute_capabilities = []
+    machine = platform.machine().lower()
+    is_linux = sys.platform.startswith("linux")
+    is_apple_silicon = sys.platform == "darwin" and machine in {"arm64", "aarch64"}
+    runtime_ready = is_linux or is_apple_silicon
 
-    inference_backend = "cpu" if not gpu_names or "12.0" in compute_capabilities else "gpu"
-    print(f"Platform: {sys.platform}; inference backend: {inference_backend}")
-    if not runtime_ready:
-        print("Structure prediction requires a Linux-backed runtime for this notebook.")
-    return inference_backend, runtime_ready
+    gpu_names = []
+    compute_capabilities = []
+    if is_linux:
+        try:
+            gpu_probe = subprocess.run(
+                ["nvidia-smi", "--query-gpu=name,compute_cap", "--format=csv,noheader"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            gpu_rows = [
+                row.rsplit(",", maxsplit=1)
+                for row in gpu_probe.stdout.splitlines()
+                if row.strip()
+            ]
+            gpu_names = [name.strip() for name, capability in gpu_rows]
+            compute_capabilities = [
+                capability.strip() for name, capability in gpu_rows
+            ]
+        except (FileNotFoundError, subprocess.CalledProcessError, ValueError):
+            pass
+
+    inference_backend = (
+        "gpu"
+        if gpu_names and "12.0" not in compute_capabilities
+        else "cpu"
+    )
+    runtime_platform = f"{sys.platform}/{machine}"
+    return inference_backend, runtime_platform, runtime_ready
+
+
+@app.cell(hide_code=True)
+def _(inference_backend, runtime_platform, runtime_ready):
+    if runtime_ready:
+        _message = (
+            f"Runtime: `{runtime_platform}`. ColabFold will use the "
+            f"**{inference_backend.upper()}** backend."
+        )
+        if runtime_platform.startswith("darwin/"):
+            _message += " Apple-silicon macOS runs inference on CPU and may take considerably longer."
+        _kind = "success"
+    else:
+        _message = (
+            f"Runtime `{runtime_platform}` is unsupported by this notebook. "
+            "Use Linux or an Apple-silicon Mac; Windows users should use WSL2."
+        )
+        _kind = "danger"
+    mo.callout(mo.md(_message), kind=_kind)
+    return
 
 
 @app.cell(hide_code=True)
@@ -292,7 +331,7 @@ def _():
     alignment through MMseqs2, and runs AlphaFold2 inference locally. Each
     execution writes to a fresh output directory.
 
-    Click **Align and fold** to start this computation and submit the sequence
+    Run the following cell to start the computation and submit the sequence
     to the shared MSA service. The command's logs show alignment and inference
     progress. When it finishes, we collect the top-ranked PDB structure, score
     JSON, alignment file, and total elapsed time for the Weights & Biases logging step.
@@ -309,14 +348,10 @@ def _(
     num_models,
     num_recycles,
     output_root,
-    runtime_ready,
     sequence,
     sequence_id,
     use_templates,
 ):
-    if not runtime_ready:
-        raise RuntimeError("Run structure prediction in a Linux-backed runtime.")
-
     output_root.mkdir(parents=True, exist_ok=True)
     prediction_root = Path(tempfile.mkdtemp(prefix=f"{sequence_id}-", dir=output_root))
     prediction_dir = prediction_root / "prediction"
@@ -527,16 +562,25 @@ def _(fold_result):
 
 @app.cell
 def _(prediction_summary):
-    pdb_text = Path(prediction_summary["pred_output_path"]).read_text(encoding="utf-8")
-    structure_view = py3Dmol.view(width=800, height=600)
+    pdb_text = Path(
+        prediction_summary["pred_output_path"]
+    ).read_text(encoding="utf-8")
+
+    structure_view = py3Dmol.view(width="100%", height=600)
     structure_view.addModel(pdb_text, "pdb")
     structure_view.setStyle({
         "cartoon": {
-            "colorscheme": {"prop": "b", "gradient": "roygb", "min": 0, "max": 100}
+            "colorscheme": {
+                "prop": "b",
+                "gradient": "roygb",
+                "min": 0,
+                "max": 100,
+            }
         }
     })
     structure_view.zoomTo()
-    structure_view
+
+    mo.iframe(structure_view.write_html(), height="620px")
     return
 
 
