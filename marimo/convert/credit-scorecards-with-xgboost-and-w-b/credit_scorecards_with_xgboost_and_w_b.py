@@ -17,7 +17,7 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.25.2"
 app = marimo.App(
     width="medium",
     app_title="Vehicle loan classification with XGBoost and Weights & Biases",
@@ -62,7 +62,7 @@ def _():
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/credit-scorecards-with-xgboost-and-w-b/credit_scorecards_with_xgboost_and_w_b.py/server)
 
-    This lesson tracks a classification pipeline from raw data to trained model.
+    This notebook shows how to track a classification pipeline from raw data to trained model.
     We use Weights & Biases Artifacts to record dataset lineage, Tables to inspect sample rows,
     the XGBoost callback to log training, and Sweeps to compare hyperparameters.
 
@@ -75,7 +75,11 @@ def _():
     points-based lending scorecard.
 
     > On macOS, XGBoost also needs OpenMP. If importing XGBoost reports a missing
-    `libomp.dylib`, install it with `brew install libomp` and restart.
+    `libomp.dylib`, install it with:
+    > ```
+    > brew install libomp
+    > ```
+    > Then restart your marimo notebook
     """)
     return
 
@@ -91,7 +95,7 @@ def _():
 
     ## Set your team and project
 
-    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `vehicle_loan_default`. Then select **Connect to Weights & Biases**.
+    Enter your Weights & Biases team name and choose a project for this notebook. The default project is `vehicle_loan_default`. Then select **Connect to Weights & Biases**.
     """)
     return
 
@@ -597,7 +601,7 @@ def _():
     ## Verify and Explore the Experiment Records
 
     Open the baseline run to inspect its metrics,
-    feature importance, ROC curve, and saved model. The Artifacts graph connects
+    feature importance, ROC curve, and saved model. The Artifact lineage graph connects
     the source dataset, `vehicle_defaults_processed`, `vehicle_defaults_split`,
     and the training run. Open the `log-dataset` run's `processed_dataset`
     Table to inspect the encoded inputs.

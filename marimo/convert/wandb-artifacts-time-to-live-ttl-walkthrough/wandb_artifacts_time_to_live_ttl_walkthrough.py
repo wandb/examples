@@ -62,7 +62,7 @@ def _():
 
     ## Set your team and project
 
-    Enter your Weights & Biases team name and choose a project for this lesson. The default project is `artifacts-ttl-demo`. Then select **Connect to Weights & Biases**.
+    Enter your Weights & Biases team name and choose a project for this notebook. The default project is `artifacts-ttl-demo`. Then select **Connect to Weights & Biases**.
     """)
     return
 
