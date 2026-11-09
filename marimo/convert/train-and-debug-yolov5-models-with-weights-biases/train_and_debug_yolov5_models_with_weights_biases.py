@@ -80,7 +80,7 @@ def _():
 
     # Train and Debug Ultralytics YOLO Models with Weights & Biases
 
-    In this lesson, you will use a pretrained object detector, fine-tune it to
+    In This notebook, you will use a pretrained object detector, fine-tune it to
     recognize chess pieces, and use Weights & Biases to inspect its training metrics,
     predictions, dataset, and model checkpoint.
 
@@ -104,42 +104,65 @@ def _():
     ## Authenticate with Weights & Biases
 
     Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
-
-    
-
-    ## Set your team and project
-
-    Enter your Weights & Biases team name and choose a project for this notebook. The default project is `yolo-wandb-demo`. Then select **Connect to Weights & Biases**.
     """)
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    wandb_setup_form = mo.md("{api_key}\n\n{entity}\n\n{project}").batch(
-        api_key=mo.ui.text(kind="password", label="Forge API key", full_width=True),
-        entity=mo.ui.text(label="Team", placeholder="Your team name", full_width=True),
-        project=mo.ui.text(value="yolo-wandb-demo", label="Project", full_width=True),
-    ).form(submit_button_label="Connect to Weights & Biases", bordered=True)
-    wandb_setup_form
-    return (wandb_setup_form,)
+    def _notify_submission(_value):
+        mo.status.toast(
+            "Credentials submitted",
+            "Run the next cell to verify them with W&B.",
+        )
+
+    wandb_api_form = (
+        mo.md("{api_key}")
+        .batch(
+            api_key=mo.ui.text(
+                kind="password",
+                label="Forge API key",
+                full_width=True,
+            )
+        )
+        .form(
+            submit_button_label="Connect to Weights & Biases",
+            bordered=True,
+            on_change=_notify_submission,
+        )
+    )
+
+    wandb_api_form
+    return (wandb_api_form,)
 
 
 @app.cell(hide_code=True)
-def _(wandb_setup_form):
-    mo.stop(wandb_setup_form.value is None)
+def _():
+    mo.md(r"""
+    After submitting the API key, run the following cell to verify the
+    credentials and load your available W&B entities.
+    """)
+    return
 
-    _submission = wandb_setup_form.value
-    _api_key = _submission["api_key"].strip()
-    _entity = _submission["entity"].strip()
-    _project = _submission["project"].strip()
-    mo.stop(
-        not _entity or not _project,
-        mo.callout("Enter your team and project, then connect again.", kind="warn"),
+
+@app.cell(hide_code=True)
+def _():
+    from wandb.sdk.lib.service.service_connection import (
+        WandbApiFailedError as _WandbApiFailedError,
     )
 
+    mo.stop(wandb_api_form.value is None)
+
+    _submission = wandb_api_form.value
+    _api_key = _submission["api_key"].strip()
+
     try:
-        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
+        _login_ok = wandb.login(
+            key=_api_key or None,
+            relogin=bool(_api_key),
+            verify=True,
+            prompt=False,
+        )
     except (wandb.errors.Error, ValueError):
         _login_ok = False
 
@@ -148,10 +171,133 @@ def _(wandb_setup_form):
         mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
     )
 
+    try:
+        _api = wandb.Api(timeout=15)
+        _viewer = _api.viewer
+    except (wandb.errors.Error, _WandbApiFailedError, ValueError):
+        mo.stop(
+            True,
+            mo.callout(
+                "W&B verified the credentials but could not retrieve your account entities.",
+                kind="danger",
+            ),
+        )
+
+    available_entities = sorted({
+        _value
+        for _value in (
+            getattr(_viewer, "username", None),
+            getattr(_viewer, "entity", None),
+            *_viewer.teams,
+        )
+        if _value
+    })
+    mo.stop(
+        not available_entities,
+        mo.callout(
+            "W&B authenticated successfully, but no personal or team entities were found.",
+            kind="danger",
+        ),
+    )
+
+    mo.callout(
+        mo.md("✓ Credentials verified. Choose a personal or team entity below."),
+        kind="success",
+    )
+    return (available_entities,)
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Set your team and project
+
+    Run the following cell and specify your:
+
+    - Weights & Biases personal or team entity.
+    - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `yolo-wandb-demo`.
+
+    Then select **Use this W&B target**. A project does not need to exist yet;
+    W&B creates it when the first run starts if you have write access.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    def _validate_wandb_target(value):
+        if value is None:
+            return None
+        if not value["entity"]:
+            return "Select a W&B entity."
+        if not value["project"].strip():
+            return "Enter a project name."
+        return None
+
+    def _notify_wandb_submission(_value):
+        mo.status.toast(
+            "W&B target selected",
+            "Run the next cell to confirm the destination.",
+        )
+
+    wandb_setup_form = (
+        mo.md("{entity}\n\n{project}")
+        .batch(
+            entity=mo.ui.dropdown(
+                options=available_entities,
+                value=available_entities[0],
+                label="W&B entity",
+                searchable=True,
+                full_width=True,
+            ),
+            project=mo.ui.text(
+                value="yolo-wandb-demo",
+                label="Project",
+                full_width=True,
+            ),
+        )
+        .form(
+            submit_button_label="Use this W&B target",
+            validate=_validate_wandb_target,
+            on_change=_notify_wandb_submission,
+            bordered=True,
+        )
+    )
+
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    After submitting the target form, run the next cell to confirm the selected
+    destination. W&B verifies project write access when the first run starts.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _entity = _submission["entity"]
+    _project = _submission["project"].strip()
+
     entity = _entity
     project = _project
-    mo.md("✓ Connected to Weights & Biases.")
+
+    mo.callout(
+        mo.md(
+            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            "when the first run starts."
+        ),
+        kind="success",
+    )
     return entity, project
+
+
 
 
 @app.cell

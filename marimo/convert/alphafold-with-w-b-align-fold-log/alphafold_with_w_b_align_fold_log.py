@@ -46,7 +46,7 @@ def _():
 
     <img src="https://i.imgur.com/4ta7Arm.png" alt="Weights & Biases" />
 
-    This lesson uses [ColabFold](https://github.com/sokrypton/ColabFold) to
+    This notebook uses [ColabFold](https://github.com/sokrypton/ColabFold) to
     align a protein sequence and predict its structure with AlphaFold2. We then
     log the experiment configuration, confidence metrics, plots, and a 3D
     molecule to Weights & Biases. A prediction table keeps the sequence and results together
