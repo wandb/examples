@@ -411,14 +411,34 @@ def _():
     mo.md(r"""
     ## Verify the run and compare experiments
 
-    Open the run link printed by Weights & Biases during training, or find the run named
-    `bert-base-mrpc` in your chosen project. In the run's workspace, inspect
-    `train/loss`, `eval/loss`, `eval/accuracy`, and `eval/f1`. The training step
-    is the horizontal axis, and evaluation points appear after each epoch.
-    Check the run's config for settings such as `learning_rate`,
-    `num_train_epochs`, and `per_device_train_batch_size`. The system metrics
-    show resource usage. Parameter and gradient histograms are logged
-    periodically when `WANDB_WATCH` is `"all"`.
+    From the previous cell's output, select the link to your project or run that is returned by Weights & Biases during training. Alternatively, navgiate to Weights & Biases App and search for **huggingface-demo** (or the name of the project if you changed it).
+
+
+    It should look similar to the following:
+
+    ```
+    wandb: ⭐️ View project at https://wandb.ai/team/huggingface-demo
+    wandb: 🚀 View run at https://wandb.ai/team/huggingface-demo/runs/uz6s7b1k
+    ```
+
+    Where **team** is the name you specified for **Weights & Biases entity** in the form above and `uz6s7b1k` is the unique run ID. The run ID you see will differ.
+
+    Navigate to your project's workspace in the Weights & Biases App. Scroll to the `train` panel. You should see the following plots with the following titles:
+
+    - `train/loss`
+    - `train/learning_rate`
+
+    Similarly, within the **eval** section, you shold see:
+
+    - `eval/loss`
+    - `eval/accuracy`
+
+    View the [run's config](https://docs.coreweave.com/products/wandb/track/config#view-config-values) to view the parameters that where used as inputes such as `learning_rate`,
+    `num_train_epochs`, and `per_device_train_batch_size`.
+
+    USe the [run's summary metrics](https://docs.coreweave.com/products/wandb/track/log/log-summary#view-summary-metrics) to view the model's outputs.
+
+    ## Next steps
 
     Try another learning rate or change `--model_name_or_path` to
     `distilbert-base-uncased`, give the experiment a descriptive `--run_name`,
