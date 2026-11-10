@@ -245,13 +245,6 @@ def _(available_entities):
     return (wandb_setup_form,)
 
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    After submitting the target form, run the next cell to confirm the selected
-    destinations. Weights & Biases verifies project write access when each first run starts.
-    """)
-    return
 
 
 @app.cell(hide_code=True)
@@ -263,14 +256,6 @@ def _(wandb_setup_form):
     simulation_project = _submission["simulation_project"].strip()
     training_project = _submission["training_project"].strip()
 
-    mo.callout(
-        mo.md(
-            f"✓ Using `{entity}/{simulation_project}` for simulations and "
-            f"`{entity}/{training_project}` for training. Weights & Biases will confirm "
-            "write access when each first run starts."
-        ),
-        kind="success",
-    )
     return entity, simulation_project, training_project
 
 

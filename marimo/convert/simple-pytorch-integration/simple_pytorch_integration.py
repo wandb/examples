@@ -273,13 +273,6 @@ def _():
     return (wandb_setup_form,)
 
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    After submitting the target form, run the next cell to confirm the selected
-    destination. Weights & Biases verifies project write access when the first run starts.
-    """)
-    return
 
 
 @app.cell(hide_code=True)
@@ -293,13 +286,6 @@ def _():
     entity = _entity
     project = _project
 
-    mo.callout(
-        mo.md(
-            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
-            "when the first run starts."
-        ),
-        kind="success",
-    )
     return entity, project
 
 
