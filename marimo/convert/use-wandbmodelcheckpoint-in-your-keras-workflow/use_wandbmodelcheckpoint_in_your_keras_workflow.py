@@ -83,7 +83,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -110,7 +110,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
@@ -148,7 +148,7 @@ def _():
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -165,13 +165,13 @@ def _():
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
 
     mo.callout(
-        mo.md("✓ Credentials verified. Choose a personal or team entity below."),
+        mo.md("✓ Credentials verified. Specify your team entity below."),
         kind="success",
     )
     return (available_entities,)
@@ -184,11 +184,12 @@ def _():
 
     Run the following cell and specify your:
 
-    - Weights & Biases personal or team entity.
+    - Weights & Biases team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `intro-keras`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
@@ -199,14 +200,14 @@ def _():
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -216,7 +217,7 @@ def _():
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -227,7 +228,7 @@ def _():
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -242,7 +243,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when the first run starts.
+    destination. Weights & Biases verifies project write access when the first run starts.
     """)
     return
 
@@ -260,7 +261,7 @@ def _():
 
     mo.callout(
         mo.md(
-            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
             "when the first run starts."
         ),
         kind="success",
@@ -429,23 +430,6 @@ def _(configs, entity, model, project, trainloader, validloader):
     return
 
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Explore your results
-
-    Open the run link printed by Weights & Biases. In the run's **Artifacts**
-    tab, find the artifact of type `model` and inspect its versions. Each version
-    contains a `model.keras` checkpoint. The `latest` alias points to the most
-    recent version. In the **Workspace**, inspect `epoch/loss`, `epoch/val_loss`, and
-    `epoch/val_accuracy`. Check **Config** for the hyperparameters used to
-    produce these checkpoints.
-
-    To keep a separate local checkpoint for each epoch, change `filepath` to
-    `"models/model-{epoch:02d}.keras"`. Rebuild the model with the compile cell
-    and train again, then compare the local files with the Weights & Biases Artifact versions.
-    """)
-    return
 
 
 @app.cell(hide_code=True)
@@ -480,6 +464,31 @@ def get_dataloader(ds, configs, dataloader_type="train"):
     if dataloader_type == "train":
         dataloader = dataloader.shuffle(configs["shuffle_buffer"], seed=configs["seed"])
     return dataloader.batch(configs["batch_size"]).prefetch(tf.data.AUTOTUNE)
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Verify the metrics and checkpoint versions
+
+    Open the run link. Inspect `epoch/loss`, `epoch/val_loss`, and
+    `epoch/val_accuracy`, then open **Config** to confirm the hyperparameters.
+
+    In **Artifacts**, find the model Artifact and inspect its versions. Each should
+    contain `model.keras`, while `latest` should resolve to the newest checkpoint.
+    Because the file includes architecture, weights, and optimizer state, a
+    downloaded version can be loaded with `tf.keras.models.load_model()`. See the
+    [Artifacts guide](https://docs.wandb.ai/models/artifacts) and
+    [Keras integration guide](https://docs.wandb.ai/models/integrations/keras).
+
+    ## Next steps
+
+    Change the learning rate, rebuild, and train with the same split. Compare
+    validation curves and checkpoint versions together. For distinct local files,
+    use `models/model-{epoch:02d}.keras`; Weights & Biases versioning does not require unique
+    local names, but the formatted path makes local inspection easier.
+    """)
+    return
 
 
 if __name__ == "__main__":

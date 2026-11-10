@@ -57,7 +57,7 @@ def _(mo):
     # Pipeline Versioning with Weights & Biases Artifacts
 
     Track an MNIST pipeline from raw data to an evaluated model. This Weights & Biases
-    lesson is based on the PyTorch [Basic MNIST Example](https://github.com/pytorch/examples/tree/master/mnist/).
+    notebook is based on the PyTorch [Basic MNIST Example](https://github.com/pytorch/examples/tree/master/mnist/).
     Watch the [original video tutorial](https://youtu.be/Hd94gatGMic).
 
     An **Artifact** is a versioned collection of files, such as a dataset or model.
@@ -90,7 +90,7 @@ def _(mo):
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -117,7 +117,7 @@ def _(mo):
 def _(mo):
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
@@ -155,7 +155,7 @@ def _(mo, wandb, wandb_api_form):
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -172,13 +172,13 @@ def _(mo, wandb, wandb_api_form):
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
 
     mo.callout(
-        mo.md("✓ Credentials verified. Choose a personal or team entity below."),
+        mo.md("✓ Credentials verified. Specify your team entity below."),
         kind="success",
     )
     return (available_entities,)
@@ -191,11 +191,12 @@ def _(mo):
 
     Run the following cell and specify your:
 
-    - Weights & Biases personal or team entity.
+    - Weights & Biases team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `artifacts-example`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
@@ -206,14 +207,14 @@ def _(available_entities, mo):
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -223,7 +224,7 @@ def _(available_entities, mo):
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -234,7 +235,7 @@ def _(available_entities, mo):
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -249,7 +250,7 @@ def _(available_entities, mo):
 def _(mo):
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when the first run starts.
+    destination. Weights & Biases verifies project write access when the first run starts.
     """)
     return
 
@@ -267,7 +268,7 @@ def _(mo, wandb_setup_form):
 
     mo.callout(
         mo.md(
-            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
             "when the first run starts."
         ),
         kind="success",
@@ -606,7 +607,7 @@ def _(mo):
     and training settings, while the run's input edges identify the exact dataset
     and initialization used. The upload must finish before the evaluation run fetches it.
     For more training details, see the
-    [PyTorch integration lesson](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py/server).
+    [PyTorch integration notebook](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/simple-pytorch-integration/simple_pytorch_integration.py/server).
     """)
     return
 
@@ -830,24 +831,27 @@ def _(
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Inspect the pipeline in Weights & Biases
+    ## Verify the versioned pipeline
 
-    Open the run links printed by Weights & Biases and inspect:
+    Open any run link, select the project, and open **Artifacts**. Confirm that it
+    contains `mnist-raw`, `mnist-preprocess`, `convnet`, and `trained-model`. In
+    lineage, follow raw data into preprocessing, then follow the processed dataset
+    and initialized model into training. Evaluation should consume the trained
+    model and the same processed-data version.
 
-    - **Artifacts:** `mnist-raw`, `mnist-preprocess`, `convnet`, and `trained-model`.
-    - **Lineage graph:** follow the raw dataset into preprocessing, then follow
-      the processed dataset and initialized model into training. Confirm that
-      evaluation consumes the trained model and the processed dataset.
-    - **Metadata:** dataset sizes, preprocessing settings, and model configuration.
-    - **Training charts:** `train/loss`, `validation/loss`, and `validation/accuracy`.
-    - **Evaluation:** final `loss` and `accuracy`, plus the `high-loss-examples` panel.
+    Inspect `train/loss`, `validation/loss`, and `validation/accuracy`. On the
+    evaluation run, compare final `loss` and `accuracy` with the
+    `high-loss-examples` panel. Check Artifact metadata for split sizes,
+    preprocessing, architecture, and training settings. See the
+    [Artifacts guide](https://docs.wandb.ai/models/artifacts) for versioning and
+    lineage.
 
-    The graph can group nodes by Artifact `type` and run `job_type`, or show individual
-    runs and Artifact versions. This lets you trace a result back to its exact inputs.
+    ## Next steps
 
-    Edit the model or training settings and rerun the affected stages to create and
-    compare versions. Weights & Biases deduplicates unchanged file contents. For a controlled
-    training comparison, keep the initialized model and dataset versions fixed.
+    Change one model setting and rerun only the affected stages. For a controlled
+    comparison, reuse the initialized-model and dataset versions. For a data
+    experiment, create a new processed-data version and follow its separate
+    lineage. Compare metrics with hard examples to see which failures changed.
     """)
     return
 

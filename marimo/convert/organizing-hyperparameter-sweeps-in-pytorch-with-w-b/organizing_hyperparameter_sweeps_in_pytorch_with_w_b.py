@@ -102,7 +102,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -129,7 +129,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
@@ -167,7 +167,7 @@ def _():
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -184,13 +184,13 @@ def _():
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
 
     mo.callout(
-        mo.md("✓ Credentials verified. Choose a personal or team entity below."),
+        mo.md("✓ Credentials verified. Specify your team entity below."),
         kind="success",
     )
     return (available_entities,)
@@ -203,11 +203,12 @@ def _():
 
     Run the following cell and specify your:
 
-    - Weights & Biases personal or team entity.
+    - Weights & Biases team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `pytorch-sweeps-demo`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
@@ -218,14 +219,14 @@ def _():
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -235,7 +236,7 @@ def _():
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -246,7 +247,7 @@ def _():
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -261,7 +262,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when the first run starts.
+    destination. Weights & Biases verifies project write access when the first run starts.
     """)
     return
 
@@ -279,7 +280,7 @@ def _():
 
     mo.callout(
         mo.md(
-            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
             "when the first run starts."
         ),
         kind="success",
@@ -553,11 +554,25 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Learn more about Weights & Biases Sweeps
+    ## Verify and interpret the sweep
 
-    We created a simple training script and [a few flavors of sweep configs](https://github.com/wandb/examples/tree/main/examples/keras/keras-cnn-fashion) for you to play with. We highly encourage you to give these a try.
+    Open the URL printed by `wandb.sweep()`; it ends in
+    `/sweeps/<sweep-id>`. Add `optimizer`, `learning_rate`, `fc_layer_size`,
+    `dropout`, and the objective `loss` to the runs table. Each trial should also
+    contain `batch loss` and epoch-level `loss` charts.
 
-    That repo also has examples to help you try more advanced sweep features like [Bayesian Hyperband](https://app.wandb.ai/wandb/examples-keras-cnn-fashion/sweeps/us0ifmrf?workspace=user-lavanyashukla), and [Hyperopt](https://app.wandb.ai/wandb/examples-keras-cnn-fashion/sweeps/xbs2wm5e?workspace=user-lavanyashukla).
+    Sort by `loss`, then inspect parallel coordinates and parameter importance.
+    Use importance as a hypothesis generator, especially with few trials. This
+    tutorial minimizes training loss, so the lowest run is not automatically the
+    model that generalizes best. See the
+    [Sweeps visualization guide](https://docs.coreweave.com/products/wandb/sweeps/visualize-sweep-results).
+
+    ## Next steps
+
+    Add a validation loader, log `val_loss` or `val_accuracy`, and make that metric
+    the objective. Repeat promising configurations with multiple seeds before
+    narrowing the search space. Compare random and Bayesian search while keeping
+    the data and evaluation protocol fixed.
     """)
     return
 

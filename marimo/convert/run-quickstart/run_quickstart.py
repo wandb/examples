@@ -171,8 +171,9 @@ def _():
     - Weights & Biases personal or team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `my-awesome-project`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this W&B target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
@@ -347,19 +348,24 @@ def _(run_path):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Explore the Run in Weights & Biases
+    ## Verify the logged run
 
-    Open the Weights & Biases run to view the accuracy and loss charts. Its
-    configuration contains the settings from this notebook, and its summary
-    shows the most recently logged metric values.
+    Open the run URL printed by `wandb.init()`. Confirm that `accuracy` rises and
+    `loss` falls across the logged epochs. Open **Config** and compare it with the
+    notebook dictionary, then check **Summary** for the latest values.
 
-    Change the seed or epoch count and rerun the experiment. Weights & Biases creates a new
-    run that you can compare with the previous one in your project. In a real
-    training workflow, changing the learning rate would let you compare how that
-    hyperparameter affects measured performance.
+    The Public API provides a second check: `scan_history()` should contain every
+    logged epoch, while `logged_run.summary` contains the latest values. See the
+    [config guide](https://docs.coreweave.com/products/wandb/track/config#view-config-values)
+    and [summary guide](https://docs.coreweave.com/products/wandb/track/log/log-summary#view-summary-metrics)
+    for those views.
 
-    See the [Weights & Biases quickstart](https://docs.wandb.ai/models/quickstart)
-    for more examples.
+    ## Next steps
+
+    Change the seed or epoch count and rerun to create another run. Compare complete
+    histories rather than only final values. In real training, replace simulated
+    metrics with measured results and record the learning rate in Config so the
+    comparison has an interpretable cause.
     """)
     return
 

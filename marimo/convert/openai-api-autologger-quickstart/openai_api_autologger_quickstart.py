@@ -24,7 +24,7 @@ def _(mo):
     [Weights & Biases Weave's OpenAI integration](https://docs.wandb.ai/weave/guides/integrations/openai)
     for automatic logging in new applications.**
 
-    The original Weights & Biases lesson used
+    The original Weights & Biases notebook used
     `wandb.integration.openai.autolog` to record two chat conversations, model
     responses, token usage, and latency in a Weights & Biases run. It then disabled logging
     with `autolog.disable()`.

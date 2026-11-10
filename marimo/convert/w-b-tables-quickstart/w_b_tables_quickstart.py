@@ -76,7 +76,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -103,7 +103,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
@@ -141,7 +141,7 @@ def _():
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -158,13 +158,13 @@ def _():
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
 
     mo.callout(
-        mo.md("✓ Credentials verified. Choose a personal or team entity below."),
+        mo.md("✓ Credentials verified. Specify your team entity below."),
         kind="success",
     )
     return (available_entities,)
@@ -177,11 +177,12 @@ def _():
 
     Run the following cell and specify your:
 
-    - Weights & Biases personal or team entity.
+    - Weights & Biases team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `table-quickstart`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
@@ -192,14 +193,14 @@ def _():
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -209,7 +210,7 @@ def _():
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -220,7 +221,7 @@ def _():
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -235,7 +236,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when the first run starts.
+    destination. Weights & Biases verifies project write access when the first run starts.
     """)
     return
 
@@ -253,7 +254,7 @@ def _():
 
     mo.callout(
         mo.md(
-            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
             "when the first run starts."
         ),
         kind="success",
@@ -515,28 +516,26 @@ def _(
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Explore Your Predictions in Weights & Biases
+    ## Verify the prediction Table
 
-    Open the run URL printed by the training cell and find the `test_predictions` Table.
-    Each row connects an image to its true label, predicted label, and class
-    probabilities.
+    Open the run URL and find `test_predictions`. Each row should connect a stable
+    image ID with the image, `guess`, `truth`, and ten `score_*` probabilities.
+    Filter to `guess != truth`, group by `guess`, and inspect low-margin cases where
+    the two largest scores are close.
 
-    Filter to rows where `guess != truth` to inspect mistakes. Group by
-    `guess` to find patterns in misclassified digits, or compare the
-    `score_0` through `score_9` columns to inspect the model's confidence.
-
-    With multiple epochs, use the table's step selector to compare snapshots.
-    Across experiments, stable image IDs let you match predictions for the same
-    test image. Try changing the learning rate or layer sizes, rerun training,
-    and compare the runs in your project. Repeatedly using the test results to
-    choose settings turns this split into validation data. Keep an independent
-    test set for a final evaluation in your own project.
+    Use the step selector to compare epoch snapshots. Across runs, stable IDs let
+    you find the same image. Inspect loss and accuracy beside the Table so aggregate
+    changes can be connected to predictions. See the
+    [Tables guide](https://docs.wandb.ai/models/tables).
 
     ## Next steps
 
-    - See the [Weights & Biases Tables guide](https://docs.wandb.ai/models/tables)
-    for more ways to query and compare your results.
-    - Explore the [CNN-2: Progress over Training Time report](https://wandb.ai/stacey/table-quickstart/reports/CNN-2-Progress-over-Training-Time--Vmlldzo3NDY5ODU#false-positives-grouped-by-guess) for examples on how to compare, filter, and group predictions.
+    Change the learning rate or layer sizes and rerun with the same seed and image
+    IDs. Compare fixed, persistent, and new errors. Repeatedly selecting settings
+    from these results turns the test split into validation data, so keep an
+    independent test set for final evaluation. The
+    [progress-over-time Report](https://wandb.ai/stacey/table-quickstart/reports/CNN-2-Progress-over-Training-Time--Vmlldzo3NDY5ODU#false-positives-grouped-by-guess)
+    shows additional comparisons.
     """)
     return
 

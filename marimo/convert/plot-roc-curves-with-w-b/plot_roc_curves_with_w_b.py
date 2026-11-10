@@ -104,7 +104,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -131,7 +131,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
@@ -169,7 +169,7 @@ def _():
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -186,13 +186,13 @@ def _():
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
 
     mo.callout(
-        mo.md("✓ Credentials verified. Choose a personal or team entity below."),
+        mo.md("✓ Credentials verified. Specify your team entity below."),
         kind="success",
     )
     return (available_entities,)
@@ -205,11 +205,12 @@ def _():
 
     Run the following cell and specify your:
 
-    - Weights & Biases personal or team entity.
+    - Weights & Biases team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `custom_roc_curve`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
@@ -220,14 +221,14 @@ def _():
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -237,7 +238,7 @@ def _():
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -248,7 +249,7 @@ def _():
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -263,7 +264,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when the first run starts.
+    destination. Weights & Biases verifies project write access when the first run starts.
     """)
     return
 
@@ -281,7 +282,7 @@ def _():
 
     mo.callout(
         mo.md(
-            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
             "when the first run starts."
         ),
         kind="success",
@@ -518,25 +519,6 @@ def _(config, entity, model, project, train_generator, validation_generator):
     return
 
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Explore your results
-
-    Open the run link printed by Weights & Biases and find the `roc_curve`
-    custom chart. Check that it contains all ten class names. Compare curves
-    across epochs and runs: a curve closer to the upper-left corner indicates
-    better separation of that class from the others.
-
-    Inspect `epoch/loss`, `epoch/val_loss`, and `epoch/val_accuracy` alongside
-    the curves. Increase `num_train` or `epochs`, rebuild the model, and train
-    again while keeping the validation sample fixed.
-
-    See [ROC chart customization](https://wandb.ai/wandb/plots/reports/Plot-ROC-Curves--VmlldzoyNjk3MDE)
-    and the [Custom Charts project](https://app.wandb.ai/demo-team/custom-charts)
-    for more examples.
-    """)
-    return
 
 
 @app.cell(hide_code=True)
@@ -630,6 +612,31 @@ def sample_images(directory, num_images, seed):
             class_images.sample(n=requested, random_state=seed)
         )
     return pd.concat(samples, ignore_index=True)
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Verify the ROC curves
+
+    Open the run link and find `roc_curve` under **Custom Charts**. Select an epoch
+    and confirm that all ten class names appear. A curve closer to the upper-left
+    corner indicates stronger one-vs-rest separation, so compare classes rather
+    than reducing the chart to one impression.
+
+    Inspect `epoch/loss`, `epoch/val_loss`, and `epoch/val_accuracy` beside the
+    curves. Check **Config** for sample sizes, seed, and epochs. The
+    [ROC chart example](https://wandb.ai/wandb/plots/reports/Plot-ROC-Curves--VmlldzoyNjk3MDE)
+    shows additional customization patterns.
+
+    ## Next steps
+
+    Increase the training sample or epochs, rebuild the model, and rerun while
+    keeping validation fixed. Compare the same class curves across runs and check
+    whether higher accuracy improves every class or hides a regression. Supplement
+    the curves with a clearly defined scalar validation metric for selection.
+    """)
+    return
 
 
 if __name__ == "__main__":

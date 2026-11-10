@@ -13,7 +13,7 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.25.2"
 app = marimo.App(width="medium", app_title="Intro to Weights & Biases")
 
 with app.setup:
@@ -62,10 +62,6 @@ def _():
     This notebook starts with simulated metrics, then tracks real PyTorch training,
     prediction tables, and model checkpoints. An optional final example shows
     how to send a Weights & Biases alert.
-
-    Running the code cells creates experiment runs, downloads MNIST, and uploads
-    metrics and checkpoints. The optional alert has its own Python setting
-    near the end of the lesson.
     """)
     return
 
@@ -85,7 +81,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -112,13 +108,13 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_api_form):
     from wandb.sdk.lib.service.service_connection import (
         WandbApiFailedError as _WandbApiFailedError,
     )
@@ -150,7 +146,7 @@ def _():
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -167,7 +163,7 @@ def _():
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
@@ -184,20 +180,20 @@ def _():
     mo.md(r"""
     ## Set your team and projects
 
-    Choose a personal or team entity and project names for the simulated and
-    training runs. The projects do not need to exist yet; W&B creates them when
-    their first runs start if you have write access.
+    Choose a personal or team entity and project names for both the simulated and training runs.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _():
+def _(available_entities):
     def _validate_wandb_target(value):
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["simulation_project"].strip():
             return "Enter a simulation project name."
         if not value["training_project"].strip():
@@ -206,7 +202,7 @@ def _():
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B targets selected",
+            "Weights & Biases targets selected",
             "Run the next cell to confirm the destinations.",
         )
 
@@ -216,7 +212,7 @@ def _():
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -232,7 +228,7 @@ def _():
             ),
         )
         .form(
-            submit_button_label="Use these W&B targets",
+            submit_button_label="Use these Weights & Biases targets",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -247,13 +243,13 @@ def _():
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destinations. W&B verifies project write access when each first run starts.
+    destinations. Weights & Biases verifies project write access when each first run starts.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_setup_form):
     mo.stop(wandb_setup_form.value is None)
 
     _submission = wandb_setup_form.value
@@ -264,14 +260,12 @@ def _():
     mo.callout(
         mo.md(
             f"✓ Using `{entity}/{simulation_project}` for simulations and "
-            f"`{entity}/{training_project}` for training. W&B will confirm "
+            f"`{entity}/{training_project}` for training. Weights & Biases will confirm "
             "write access when each first run starts."
         ),
         kind="success",
     )
     return entity, simulation_project, training_project
-
-
 
 
 @app.cell(hide_code=True)
@@ -620,15 +614,27 @@ def _(entity, training_project):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Next Steps
+    ## Verify the runs, Tables, and model Artifacts
 
-    You have used the same run/log pattern for simulated metrics and real
-    training, then added Tables, checkpoint Artifacts, and an optional alert.
+    Open the links printed by the simulation and training cells. In the simulation
+    project, confirm that each run contains `acc` and `loss`. In the training
+    project, compare dropout values from **Config** with
+    `final_validation_accuracy` from **Summary**.
 
-    Next, automate hyperparameter comparisons with
-    [Weights & Biases Sweeps using PyTorch](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py/server).
-    See the [Weights & Biases Alerts guide](https://docs.wandb.ai/guides/track/alert)
-    for notification settings.
+    For a training run, inspect `train/train_loss`, `val/val_loss`, and
+    `val/val_accuracy`. Open `predictions_table`, filter to `pred != target`, and
+    compare the class probabilities. In **Artifacts**, verify that the
+    `mnist-<run-id>` collection contains checkpoint versions with epoch aliases.
+    See the [Tables guide](https://docs.wandb.ai/models/tables) and
+    [Artifacts guide](https://docs.wandb.ai/models/artifacts).
+
+    ## Next steps
+
+    Repeat the best dropout value with several seeds before treating it as an
+    improvement. Then automate the comparison with the
+    [PyTorch Sweeps tutorial](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py/server).
+    If you enabled the optional alert, inspect it separately; its synthetic values
+    are not MNIST results.
     """)
     return
 

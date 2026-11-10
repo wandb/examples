@@ -90,7 +90,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -117,7 +117,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
@@ -155,7 +155,7 @@ def _():
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -172,13 +172,13 @@ def _():
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
 
     mo.callout(
-        mo.md("✓ Credentials verified. Choose a personal or team entity below."),
+        mo.md("✓ Credentials verified. Specify your team entity below."),
         kind="success",
     )
     return (available_entities,)
@@ -191,11 +191,12 @@ def _():
 
     Run the following cell and specify your:
 
-    - Weights & Biases personal or team entity.
+    - Weights & Biases team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `smollm2-lora`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
@@ -206,14 +207,14 @@ def _():
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -223,7 +224,7 @@ def _():
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -234,7 +235,7 @@ def _():
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -249,7 +250,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when the first run starts.
+    destination. Weights & Biases verifies project write access when the first run starts.
     """)
     return
 
@@ -267,7 +268,7 @@ def _():
 
     mo.callout(
         mo.md(
-            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
             "when the first run starts."
         ),
         kind="success",
@@ -547,18 +548,25 @@ def _(
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Inspect Metrics and the Saved Adapter
+    ## Verify the fine-tuning run and adapter
 
-    Open your Weights & Biases run to inspect training loss, learning rate,
-    and system metrics. The configuration records the settings you chose, and
-    the run summary includes the percentage of trainable parameters.
+    Open the run link. Inspect training loss, learning rate, and system metrics
+    across the demonstration steps. Open **Config** to confirm the base model,
+    dataset, sequence length, and LoRA values such as `r`, `lora_alpha`, and
+    `lora_dropout`. In **Summary**, verify the trainable parameter count and
+    percentage.
 
-    In **Artifacts**, open the logged model Artifact to browse the adapter
-    weights, tokenizer files, and base-model metadata. To use the adapter later, load it alongside the base model named in its metadata.
+    In **Artifacts**, browse the adapter weights, adapter configuration, tokenizer
+    files, and base-model metadata. The Artifact contains a PEFT adapter rather
+    than the full base model, so both are needed later. See the
+    [Artifacts guide](https://docs.wandb.ai/models/artifacts).
 
-    Try changing the learning rate or LoRA rank, rerun the training cell, and
-    compare the experiments in your Weights & Biases project. The ten-step demo exercises the logging workflow. Assess model quality
-    with a suitable training budget and held-out evaluation data.
+    ## Next steps
+
+    Change the learning rate or LoRA rank and rerun with the same data and seed.
+    Compare loss and runtime with the trainable-parameter percentage. The short run
+    verifies the workflow; for model quality, define held-out prompts and an
+    evaluation rubric before increasing the training budget.
     """)
     return
 

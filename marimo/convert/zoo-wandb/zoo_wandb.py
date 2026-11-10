@@ -4,7 +4,7 @@
 
 import marimo
 
-__generated_with = "0.24.0"
+__generated_with = "0.25.2"
 app = marimo.App()
 
 
@@ -43,7 +43,7 @@ def _(mo):
 
     The classifier uses animal attributes such as feathers, fins, and number of
     legs to predict one of seven dataset classes. The model is intentionally
-    small so the lesson can focus on Artifact paths, version selection, and lineage.
+    small so the notebook can focus on Artifact paths, version selection, and lineage.
 
     Before publishing, check that the target registries exist and that your
     account can link versions to their collections. Registry access also determines
@@ -88,7 +88,7 @@ def _(mo):
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -115,7 +115,7 @@ def _(mo):
 def _(mo):
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
@@ -153,7 +153,7 @@ def _(mo, wandb, wandb_api_form):
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -170,13 +170,13 @@ def _(mo, wandb, wandb_api_form):
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
 
     mo.callout(
-        mo.md("✓ Credentials verified. Choose a personal or team entity below."),
+        mo.md("✓ Credentials verified. Specify your team entity below."),
         kind="success",
     )
     return (available_entities,)
@@ -189,11 +189,12 @@ def _(mo):
 
     Run the following cell and specify your:
 
-    - Weights & Biases personal or team entity.
+    - Weights & Biases team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `zoo_experiment`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
@@ -204,14 +205,14 @@ def _(available_entities, mo):
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -221,7 +222,7 @@ def _(available_entities, mo):
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -232,7 +233,7 @@ def _(available_entities, mo):
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -247,7 +248,7 @@ def _(available_entities, mo):
 def _(mo):
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when the first run starts.
+    destination. Weights & Biases verifies project write access when the first run starts.
     """)
     return
 
@@ -265,14 +266,12 @@ def _(mo, wandb_setup_form):
 
     mo.callout(
         mo.md(
-            f"✓ Using `{TEAM_ENTITY}/{PROJECT}`. W&B will confirm write access "
+            f"✓ Using `{TEAM_ENTITY}/{PROJECT}`. Weights & Biases will confirm write access "
             "when the first run starts."
         ),
         kind="success",
     )
     return PROJECT, TEAM_ENTITY
-
-
 
 
 @app.cell(hide_code=True)
@@ -1031,23 +1030,26 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Review the saved experiment
+    ## Verify the Registry collections and lineage
 
-    You have logged dataset files, linked their versions to Registry, trained
-    from a registered split, and retrieved a model and test data for inference.
-    The Registry paths and lineage connect these steps across projects.
+    Open the Weights & Biases Registry App. In the dataset registry, open
+    `zoo-dataset-tensors` and `zoo-dataset-tensors-split`; verify the linked
+    versions and four train/test tensor files. In the model registry, open
+    `Zoo_Classifier_Models` and inspect the classifier version.
 
-    Inspect incorrect predictions alongside the original animal attributes.
-    The test split is small, so avoid drawing broad conclusions from one accuracy
-    value. If you use these examples to change the model, reserve other data for
-    a final evaluation.
+    Open **Lineage** on the model version and follow the training run back to the
+    exact split-dataset version. Check model metadata for `num_classes` and
+    `model_type`, and compare them with the inference reconstruction code. The
+    [Registry linking guide](https://docs.coreweave.com/products/registry/link_version)
+    explains logging an Artifact versus linking a version into a collection.
 
-    ## Document a model version for reuse
+    ## Next steps
 
-    Add a description explaining the expected input features, network architecture,
-    class-ID mapping, and how to load the state dictionary. Include the training
-    data version and evaluation results. This gives another user the information
-    needed to use the saved model correctly.
+    Document the 16 input features, class-ID mapping, architecture, required code,
+    dataset version, and evaluation result on the model version. Then test retrieval
+    from another authorized project or entity. The test split is small, so inspect
+    incorrect animals and reserve additional data before using accuracy to approve
+    a reusable model.
     """)
     return
 

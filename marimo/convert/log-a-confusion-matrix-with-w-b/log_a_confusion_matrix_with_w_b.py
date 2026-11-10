@@ -16,7 +16,7 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.25.2"
 app = marimo.App(
     width="medium",
     app_title="Plot a Confusion Matrix with Weights & Biases",
@@ -113,7 +113,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -140,13 +140,13 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_api_form):
     from wandb.sdk.lib.service.service_connection import (
         WandbApiFailedError as _WandbApiFailedError,
     )
@@ -178,7 +178,7 @@ def _():
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -195,13 +195,13 @@ def _():
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
 
     mo.callout(
-        mo.md("✓ Credentials verified. Choose a personal or team entity below."),
+        mo.md("✓ Credentials verified. Specify your team entity below."),
         kind="success",
     )
     return (available_entities,)
@@ -214,29 +214,30 @@ def _():
 
     Run the following cell and specify your:
 
-    - Weights & Biases personal or team entity.
+    - Weights & Biases team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `confusion_matrix`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _():
+def _(available_entities):
     def _validate_wandb_target(value):
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -246,7 +247,7 @@ def _():
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -257,7 +258,7 @@ def _():
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -272,13 +273,13 @@ def _():
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when the first run starts.
+    destination. Weights & Biases verifies project write access when the first run starts.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_setup_form):
     mo.stop(wandb_setup_form.value is None)
 
     _submission = wandb_setup_form.value
@@ -290,14 +291,12 @@ def _():
 
     mo.callout(
         mo.md(
-            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
             "when the first run starts."
         ),
         kind="success",
     )
     return entity, project
-
-
 
 
 @app.cell
@@ -580,14 +579,25 @@ def _(
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    Open the run in Weights & Biases App UI and find `conf_mat` in the **Custom Charts** panel.
-    Compare the mistakes across classes, then increase the training sample or
-    epoch count and run again.
+    ## Verify the confusion matrix
+
+    Open the run link printed when training begins. Find `conf_mat` under
+    **Custom Charts** and select an epoch. Diagonal cells are correct predictions;
+    off-diagonal cells show which Fashion-MNIST classes the model confuses.
+    Compare the chart with `epoch/val_loss` and `epoch/val_accuracy` so an
+    aggregate change can be traced to specific classes.
+
+    Open **Artifacts** to verify the model checkpoint versions, and check **Config**
+    for sample sizes, epoch count, and `num_log_batches`. The matrix may cover fewer
+    examples than the validation metrics, so confirm its scope. See the
+    [confusion-matrix example](https://wandb.ai/wandb/plots/reports/Confusion-Matrix--VmlldzozMDg1NTM)
+    for customization ideas.
 
     ## Next steps
 
-    - More info and customization details: [Confusion Matrix](https://wandb.ai/wandb/plots/reports/Confusion-Matrix--VmlldzozMDg1NTM)
-    - More examples in this Weights & Biases project: [Custom Charts](https://app.wandb.ai/demo-team/custom-charts).
+    Increase `num_log_batches` or the training sample size and rerun. Compare the
+    same off-diagonal pairs across runs, then inspect example images from those
+    pairs before changing the model. Keep the validation sample fixed.
     """)
     return
 

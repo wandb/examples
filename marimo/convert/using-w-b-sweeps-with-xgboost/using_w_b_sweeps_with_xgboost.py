@@ -5,7 +5,7 @@
 #     "numpy>=1.26",
 #     "scikit-learn>=1.5",
 #     "wandb>=0.18",
-#     "xgboost>=2.1,<3.3",  # Preserve the tree-versus-linear booster lesson.
+#     "xgboost>=2.1,<3.3",  # Preserve the tree-versus-linear booster notebook.
 # ]
 #
 # [tool.marimo.runtime]
@@ -91,7 +91,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -118,7 +118,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
@@ -156,7 +156,7 @@ def _():
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -173,13 +173,13 @@ def _():
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
 
     mo.callout(
-        mo.md("✓ Credentials verified. Choose a personal or team entity below."),
+        mo.md("✓ Credentials verified. Specify your team entity below."),
         kind="success",
     )
     return (available_entities,)
@@ -192,11 +192,12 @@ def _():
 
     Run the following cell and specify your:
 
-    - Weights & Biases personal or team entity.
+    - Weights & Biases team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `XGBoost-sweeps`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
@@ -207,14 +208,14 @@ def _():
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -224,7 +225,7 @@ def _():
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -235,7 +236,7 @@ def _():
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -250,7 +251,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when the first run starts.
+    destination. Weights & Biases verifies project write access when the first run starts.
     """)
     return
 
@@ -268,7 +269,7 @@ def _():
 
     mo.callout(
         mo.md(
-            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
             "when the first run starts."
         ),
         kind="success",
@@ -456,27 +457,24 @@ def _(entity, project, sweep_id, train):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Visualize your results
+    ## Verify the XGBoost sweep
 
-    Click on the link returned by Weights & Biases in the previous cell. The link will look similar to the following:
+    Open the sweep link, which ends in `/sweeps/<sweep-id>`. Add `booster`,
+    `learning_rate`, `max_depth`, `subsample`, and `accuracy` to the runs table.
+    Confirm that every agent run has sampled values in **Config** and a final
+    accuracy value.
 
-    ```bash
-    🧹 View sweep at https://wandb.ai/wandb/XGBoost-sweeps/sweeps/wna9genj
-    ```
+    Inspect parallel coordinates, scatter plots, and parameter importance. Filter
+    to `booster="gbtree"` before interpreting `max_depth` or `subsample`, because
+    they do not affect the linear booster. Treat importance estimates from a small
+    trial count as leads. See the [Sweeps guide](https://docs.coreweave.com/products/wandb/sweeps/visualize-sweep-results).
 
-    Navigate to the **Sweep** panel. By default, Weights & Biases plots [parallel coordinates](https://docs.coreweave.com/products/wandb/app/features/panels/parallel-coordinates#parallel-coordinates), [scatter plot, and a parameter importance plot](https://docs.coreweave.com/products/wandb/sweeps/visualize-sweep-results#scatter-plot-and-parameter-importance).
+    ## Next steps
 
-    ## Verify and next steps
-
-    Check that the agent's runs finished and that each run has an `accuracy`
-    value and the sampled parameters in **Config**. Inspect the parallel
-    coordinates and parameter importance panels, filtering to tree runs when
-    evaluating `max_depth` and `subsample`.
-
-    Try narrowing the learning-rate values or changing `method` to `bayes`.
-    Run the sweep-creation cell again, then the agent cell, to compare the new
-    sweep with the first one. See the [Sweeps documentation](https://docs.wandb.ai/models/sweeps)
-    for more configuration options.
+    Narrow learning-rate choices or switch to Bayesian search, then create a new
+    sweep so the search space has its own record. Keep the split fixed. After
+    selecting by validation accuracy, evaluate the chosen model on a separate test
+    set instead of continuing to tune against the same held-out examples.
     """)
     return
 

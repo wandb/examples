@@ -117,7 +117,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -144,7 +144,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
@@ -182,7 +182,7 @@ def _():
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -199,13 +199,13 @@ def _():
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
 
     mo.callout(
-        mo.md("✓ Credentials verified. Choose a personal or team entity below."),
+        mo.md("✓ Credentials verified. Specify your team entity below."),
         kind="success",
     )
     return (available_entities,)
@@ -218,11 +218,12 @@ def _():
 
     Run the following cell and specify your:
 
-    - Weights & Biases personal or team entity.
+    - Weights & Biases team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `pytorch_demo`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
@@ -233,14 +234,14 @@ def _():
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -250,7 +251,7 @@ def _():
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -261,7 +262,7 @@ def _():
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -276,7 +277,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when the first run starts.
+    destination. Weights & Biases verifies project write access when the first run starts.
     """)
     return
 
@@ -294,7 +295,7 @@ def _():
 
     mo.callout(
         mo.md(
-            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
             "when the first run starts."
         ),
         kind="success",
@@ -596,28 +597,6 @@ def _(config, entity, project):
     return
 
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Verify your experiment
-
-    Open the run link printed by Weights & Biases. Check that its **Config** matches the
-    Python dictionary above, that the loss and gradient charts contain data,
-    and that `test_accuracy` appears in the run summary. Under **Files**, look
-    for `model.onnx`.
-
-    Change `learning_rate` or `batch_size` in `config`, then run the experiment
-    cell again. This creates a new run. Compare both runs in your selected project to see how the change affected loss and test accuracy.
-
-    ## Next steps: Test Hyperparameters with Sweeps
-
-    We only looked at a single set of hyperparameters in this example.
-    But an important part of most ML workflows is iterating over
-    a number of hyperparameters.
-
-    You can use [Weights & Biases Sweeps](https://docs.coreweave.com/products/wandb/sweeps) to automate hyperparameter testing and explore the space of possible models and optimization strategies.
-    """)
-    return
 
 
 @app.cell(hide_code=True)
@@ -640,6 +619,32 @@ def seed_everything(seed):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Verify the PyTorch experiment
+
+    Open the run link. Confirm that **Config** matches the submitted
+    hyperparameters, then inspect the training `loss` curve and parameter and
+    gradient histograms. In **Summary**, find `test_accuracy`; under **Files**,
+    confirm that `model.onnx` was uploaded.
+
+    Repeatedly choosing hyperparameters from test accuracy turns the test split
+    into validation data. Use the [config guide](https://docs.coreweave.com/products/wandb/track/config#view-config-values)
+    and [summary guide](https://docs.coreweave.com/products/wandb/track/log/log-summary#view-summary-metrics)
+    to compare settings and final metrics.
+
+    ## Next steps
+
+    Change either `learning_rate` or `batch_size`, keep the seed and split fixed,
+    and rerun. Compare loss histories and held-out accuracy, then inspect whether
+    the gradient distributions help explain the result. Once the manual comparison
+    is useful, automate a validation-based search with
+    [Weights & Biases Sweeps](https://docs.coreweave.com/products/wandb/sweeps).
+    """)
+    return
 
 
 if __name__ == "__main__":

@@ -81,26 +81,6 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Run with the notebook's dependencies
-
-    From this notebook's directory, launch it with its declared Python and package versions:
-
-    ```bash
-    uvx marimo edit --sandbox huggingface_wandb.py
-    ```
-
-    The training script uses the same Python interpreter as the notebook.
-    Opening this file in an existing marimo environment does not install the
-    dependencies listed at the top of the file. That environment must also
-    contain `evaluate`, `accelerate`, `datasets`, PyTorch, and Transformers.
-    The sandbox command installs the declared dependencies in an isolated environment.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
     ## Authenticate with Weights & Biases
 
     Run the following cell. When prompted, specify your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys):
@@ -216,11 +196,12 @@ def _():
 
     Run the following cell and specify your:
 
-    - Weights & Biases personal or team entity.
+    - Weights & Biases team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `huggingface-demo`.
 
-    Then select **Use this Weights & Biases target**. A project does not need to exist yet;
-    Weights & Biases creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 

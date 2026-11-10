@@ -13,7 +13,7 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.25.2"
 app = marimo.App(
     width="medium",
     app_title="Introduction to Weights & Biases with Keras",
@@ -86,7 +86,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -113,13 +113,13 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_api_form):
     from wandb.sdk.lib.service.service_connection import (
         WandbApiFailedError as _WandbApiFailedError,
     )
@@ -151,7 +151,7 @@ def _():
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -168,13 +168,13 @@ def _():
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
 
     mo.callout(
-        mo.md("✓ Credentials verified. Choose a personal or team entity below."),
+        mo.md("✓ Credentials verified. Specify your team entity below."),
         kind="success",
     )
     return (available_entities,)
@@ -185,20 +185,21 @@ def _():
     mo.md(r"""
     ## Set your team and projects
 
-    Choose a personal or team entity and project names for the simulated and
-    training runs. The projects do not need to exist yet; W&B creates them when
-    their first runs start if you have write access.
+    Specify your team entity and project names for the simulated and
+    training runs.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _():
+def _(available_entities):
     def _validate_wandb_target(value):
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["simulation_project"].strip():
             return "Enter a simulation project name."
         if not value["training_project"].strip():
@@ -207,7 +208,7 @@ def _():
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B targets selected",
+            "Weights & Biases targets selected",
             "Run the next cell to confirm the destinations.",
         )
 
@@ -217,7 +218,7 @@ def _():
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -233,7 +234,7 @@ def _():
             ),
         )
         .form(
-            submit_button_label="Use these W&B targets",
+            submit_button_label="Use these Weights & Biases targets",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -248,13 +249,13 @@ def _():
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destinations. W&B verifies project write access when each first run starts.
+    destinations. Weights & Biases verifies project write access when each first run starts.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_setup_form):
     mo.stop(wandb_setup_form.value is None)
 
     _submission = wandb_setup_form.value
@@ -265,14 +266,12 @@ def _():
     mo.callout(
         mo.md(
             f"✓ Using `{entity}/{simulation_project}` for simulations and "
-            f"`{entity}/{training_project}` for training. W&B will confirm "
+            f"`{entity}/{training_project}` for training. Weights & Biases will confirm "
             "write access when each first run starts."
         ),
         kind="success",
     )
     return entity, simulation_project, training_project
-
-
 
 
 @app.cell(hide_code=True)
@@ -530,22 +529,27 @@ def _(entity, training_project):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Verify and next steps
+    ## Verify the simulation and training projects
 
-    In your W&B workspace, check:
+    Open the links printed for both selected projects. In the simulation project,
+    each run should contain eight generated `accuracy` and `loss` values. In the
+    training project, compare dropout values from **Config** against
+    `epoch/val_loss`, `epoch/val_accuracy`, and the
+    `final_validation_accuracy` summary metric.
 
-    - **Simulation project** (default `basic-intro`): each simulation has eight logged accuracy and loss values.
-    - **Training project** (default `keras-intro`): compare `dropout` in each training run's config with
-      `epoch/val_loss`, `epoch/val_accuracy`, and `final_validation_accuracy`.
-      Open a training run's **Artifacts** tab to find its per-epoch Keras models.
-    - **Alert demo**: inspect the accuracy history in the run named
-      `keras-low-accuracy-alert-demo`. With the default seed, the second value
-      crosses the threshold. Check your configured notification destination
-      for the warning.
+    Open a training run's **Artifacts** tab and confirm that the Keras model was
+    versioned during training. A downloaded checkpoint can be loaded with
+    `tf.keras.models.load_model()`. Use the
+    [run config](https://docs.coreweave.com/products/wandb/track/config#view-config-values)
+    and [summary metrics](https://docs.coreweave.com/products/wandb/track/log/log-summary#view-summary-metrics)
+    to compare the experiments.
 
-    Continue with
-    [Organizing hyperparameter sweeps in PyTorch](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/organizing-hyperparameter-sweeps-in-pytorch-with-w-b/organizing_hyperparameter_sweeps_in_pytorch_with_w_b.py/server)
-    to automate a collection of training runs.
+    ## Next steps
+
+    Repeat the best dropout value with another seed, or change the optimizer while
+    keeping the data split fixed. Compare the complete validation curves, not only
+    the final number. If you ran the optional alert demo, inspect its synthetic
+    accuracy history separately; it is not derived from the MNIST model.
     """)
     return
 
