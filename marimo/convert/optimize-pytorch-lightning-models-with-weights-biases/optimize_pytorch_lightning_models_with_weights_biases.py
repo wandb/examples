@@ -6,7 +6,7 @@
 #     "torch>=2.2",
 #     "torchvision>=0.17",
 #     "torchmetrics>=1.3",
-#     "wandb>=0.18",
+#     "wandb>=0.30.0",
 # ]
 # ///
 

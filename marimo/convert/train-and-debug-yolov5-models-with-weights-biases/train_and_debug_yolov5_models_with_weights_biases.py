@@ -9,7 +9,7 @@
 #     "torch>=2.6,<2.12",
 #     "torchvision>=0.21,<0.27",
 #     "ultralytics>=8.4.149,<8.5",
-#     "wandb>=0.18,<0.29",
+#     "wandb>=0.31.0,<1",
 # ]
 #
 # [tool.marimo.runtime]

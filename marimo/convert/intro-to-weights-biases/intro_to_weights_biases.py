@@ -4,7 +4,7 @@
 #     "marimo>=0.24",
 #     "torch>=2.1",
 #     "torchvision>=0.16",
-#     "wandb>=0.18",
+#     "wandb>=0.30.0",
 # ]
 #
 # [tool.marimo.runtime]

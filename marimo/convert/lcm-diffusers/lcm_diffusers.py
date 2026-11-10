@@ -7,7 +7,7 @@
 #     "torch>=2.6",
 #     "torchvision>=0.21",
 #     "transformers>=4.41.2",
-#     "wandb>=0.18",
+#     "wandb>=0.30.0",
 # ]
 # ///
 

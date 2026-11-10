@@ -4,7 +4,7 @@
 #     "marimo>=0.24.0",
 #     "numpy>=1.26",
 #     "scikit-learn>=1.5",
-#     "wandb>=0.18",
+#     "wandb>=0.30.0",
 #     "xgboost>=2.1,<3.3",  # Preserve the tree-versus-linear booster notebook.
 # ]
 #

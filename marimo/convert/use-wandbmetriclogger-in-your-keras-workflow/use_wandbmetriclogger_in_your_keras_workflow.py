@@ -5,7 +5,7 @@
 #     "marimo>=0.23.11",
 #     "tensorflow>=2.16,<3",
 #     "tensorflow-datasets>=4.9,<5",
-#     "wandb>=0.18,<1",
+#     "wandb>=0.30.0,<1",
 # ]
 #
 # [tool.marimo.runtime]

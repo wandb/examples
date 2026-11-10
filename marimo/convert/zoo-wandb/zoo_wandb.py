@@ -5,7 +5,7 @@
 #     "scikit-learn",
 #     "torch",
 #     "ucimlrepo",
-#     "wandb",
+#     "wandb>=0.30.0",
 # ]
 # ///
 

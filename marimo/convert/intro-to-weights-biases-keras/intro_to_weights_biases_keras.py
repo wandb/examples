@@ -3,7 +3,7 @@
 # dependencies = [
 #     "marimo>=0.24.2",
 #     "tensorflow>=2.16,<3",
-#     "wandb>=0.18,<1",
+#     "wandb>=0.30.0,<1",
 # ]
 #
 # [tool.marimo.runtime]

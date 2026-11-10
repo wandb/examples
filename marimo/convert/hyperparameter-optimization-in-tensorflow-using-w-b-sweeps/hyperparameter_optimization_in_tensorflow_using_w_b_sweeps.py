@@ -4,7 +4,7 @@
 #     "marimo>=0.24.2",
 #     "numpy>=1.26,<3",
 #     "tensorflow>=2.16,<3",
-#     "wandb>=0.18,<1",
+#     "wandb>=0.30.0,<1",
 # ]
 #
 # [tool.marimo.runtime]

@@ -7,7 +7,7 @@
 #     "torch>=2.5",
 #     "torchvision>=0.20",
 #     "tqdm>=4.66",
-#     "wandb>=0.18",
+#     "wandb>=0.30.0",
 # ]
 #
 # [tool.marimo.runtime]

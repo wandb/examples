@@ -5,7 +5,7 @@
 #     "tensorflow>=2.16,<3",
 #     "tensorflow-datasets>=4.9,<5",
 #     "importlib-resources>=6",
-#     "wandb>=0.18,<1",
+#     "wandb>=0.30.0,<1",
 #     "pillow>=10",
 # ]
 #

@@ -4,7 +4,7 @@
 #     "marimo>=0.24",
 #     "pandas>=2.0",
 #     "pillow>=10.0",
-#     "wandb>=0.19.10",
+#     "wandb>=0.30.0",
 #     "wandb-workspaces>=0.1",
 # ]
 # ///

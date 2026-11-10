@@ -4,7 +4,7 @@
 #     "marimo>=0.24.2",
 #     "torch>=2.1,<3",
 #     "torchvision>=0.16,<1",
-#     "wandb>=0.18,<1",
+#     "wandb>=0.30.0,<1",
 # ]
 # ///
 """Organize a PyTorch hyperparameter search with Weights & Biases Sweeps."""

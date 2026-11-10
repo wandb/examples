@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "marimo",
-#     "wandb",
+#     "wandb>=0.30.0",
 # ]
 # ///
 

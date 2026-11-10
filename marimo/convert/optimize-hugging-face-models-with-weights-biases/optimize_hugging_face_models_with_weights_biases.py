@@ -14,7 +14,7 @@
 #     "sentencepiece>=0.2,!=0.1.92",
 #     "torch>=2.6",
 #     "transformers @ git+https://github.com/huggingface/transformers.git@02d8fb9784e8f14a1251e4c992cd82a5762417c6",
-#     "wandb>=0.18",
+#     "wandb>=0.30.0",
 # ]
 # ///
 
