@@ -1,5 +1,12 @@
 # /// script
-# dependencies = ["pandas", "scikit-learn", "torch", "ucimlrepo", "wandb"]
+# dependencies = [
+#     "marimo>=0.25.2",
+#     "pandas",
+#     "scikit-learn",
+#     "torch",
+#     "ucimlrepo",
+#     "wandb",
+# ]
 # ///
 
 import marimo
@@ -44,10 +51,6 @@ def _(mo):
     The classifier uses animal attributes such as feathers, fins, and number of
     legs to predict one of seven dataset classes. The model is intentionally
     small so the notebook can focus on Artifact paths, version selection, and lineage.
-
-    Before publishing, check that the target registries exist and that your
-    account can link versions to their collections. Registry access also determines
-    which colleagues can retrieve the linked files.
     """)
     return
 
@@ -277,6 +280,27 @@ def _(mo, wandb_setup_form):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+    ## Create a registry
+
+    Next, [create a registry](https://docs.coreweave.com/products/registry/create_registry#create-a-registry) with the Weights & Biases Public API:
+    """)
+    return
+
+
+@app.cell
+def _():
+    REGISTRY_NAME = "New_Zoo_Registry"
+
+    # wandb.Api().create_registry(
+    #     name=REGISTRY_NAME,
+    #     visibility="organization",
+    # )
+    return (REGISTRY_NAME,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     ## Retrieve and process dataset
     We will use the open source [Zoo dataset](https://archive.ics.uci.edu/dataset/111/zoo) from the UCI Machine Learning Repository.
 
@@ -325,12 +349,10 @@ def _(mo):
     mo.md(r"""
     ### Convert the data to tensors
 
-    Convert feature values to `float32`, matching the linear layers’ weights.
-    Convert labels to integer tensors and subtract one so the original class
-    IDs 1–7 become 0–6, as required by the seven-output classifier.
+    The following cell converts feature values to `float32`, matching the linear layers’ weights.
 
-    Keep the numeric class IDs consistent through training and evaluation.
-    Human-readable labels are added only when displaying predictions.
+    We also convert labels to integer tensors and subtract one so that the original class
+    `IDs 1–7` become `0–6`, as required by the seven-output classifier.
     """)
     return
 
@@ -368,12 +390,13 @@ def _(mo):
     mo.md(r"""
     ## Log and link the dataset
 
-    An Artifact stores a versioned set of files in a project. A Registry collection
+    An [Artifact](https://docs.coreweave.com/products/wandb/artifacts) stores a versioned set of files in a project. A [registry collection](https://docs.coreweave.com/products/registry)
     contains links to Artifact versions so authorized users can discover and reuse
-    them. Linking creates a reference to the source version.
+    them. [Linking an artifact](https://docs.coreweave.com/products/registry/link_version) creates a reference to the source version.
 
-    The target path identifies the registry and collection. The registry must
-    already exist. This example uses a `dataset` registry and a collection named
+    A _target path_ identifies the registry and collection.
+
+    This example uses a `dataset` registry and a collection named
     `zoo-dataset-tensors`. Match the registry name to the one in your organization.
 
     ```python
@@ -391,20 +414,13 @@ def _(mo):
     mo.md(r"""
     ### Publish the dataset to Registry
 
-    Define the target path, start a run, and create a dataset Artifact. Add the
-    feature and label tensor files, then call `run.link_artifact()` with the
-    Artifact and target path. For this draft Artifact, the call logs the files
-    as a run output and links the resulting version to the collection.
-
-    These first files contain the full dataset. The following section creates
-    and publishes separate training and test files.
+    The following cell define the target path of the dataset:
     """)
     return
 
 
 @app.cell
-def _():
-    REGISTRY_NAME = "Dataset"
+def _(REGISTRY_NAME):
     COLLECTION_NAME = "zoo-dataset-tensors"
 
     # Path to link the artifact to a collection
@@ -415,34 +431,33 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    The next cell uses the team and project from the setup form. It adds
-    `zoo_dataset.pt` and `zoo_labels.pt` to a dataset Artifact, links the version
-    to `dataset_target_path`, and finishes the run.
+    The next cell initializes a run, creates an artifact object, adds `zoo_dataset.pt` and `zoo_labels.pt` to a dataset Artifact and then links the artifact version to registry (defined by `dataset_target_path`).
+
+    > These files contain the full dataset. The following section creates
+    and publishes separate training and test files.
     """)
     return
 
 
 @app.cell
 def _(PROJECT, TEAM_ENTITY, dataset_target_path, wandb):
-
-    run = wandb.init(
+    with wandb.init(
         entity=TEAM_ENTITY,
         project=PROJECT,
         job_type="publish_dataset"
-    )
+    ) as run:
 
-    artifact = wandb.Artifact(
-        name="zoo_dataset",
-        type="dataset",  
-        description="Processed dataset and labels."
-    )
+        artifact = wandb.Artifact(
+            name="zoo_dataset",
+            type="dataset",  
+            description="Processed dataset and labels."
+        )
+    
+        artifact.add_file(local_path="zoo_dataset.pt", name="zoo_dataset")
+        artifact.add_file(local_path="zoo_labels.pt", name="zoo_labels")
+    
+        run.link_artifact(artifact=artifact, target_path=dataset_target_path)
 
-    artifact.add_file(local_path="zoo_dataset.pt", name="zoo_dataset")
-    artifact.add_file(local_path="zoo_labels.pt", name="zoo_labels")
-
-    run.link_artifact(artifact=artifact, target_path=dataset_target_path)
-
-    run.finish()
     return
 
 
@@ -488,27 +503,35 @@ def _(config, dataset, labels, torch, train_test_split):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Next, let's publish this dataset into a different collection within the Dataset registry called "zoo-dataset-tensors-split":
+    Next, let's publish this dataset into a different collection called "zoo-dataset-tensors-split":
     """)
     return
 
 
 @app.cell
-def _(PROJECT, TEAM_ENTITY, config, wandb):
-    run_1 = wandb.init(entity=TEAM_ENTITY, project=PROJECT, job_type='publish_split_dataset', config=config)
-    artifact_1 = wandb.Artifact(name='split_zoo_dataset', type='dataset', description='Artifact contains `zoo_dataset` split into 4 datasets.                 For training, use `zoo_dataset_X_train` and `zoo_labels_y_train`.                 For testing, use `zoo_dataset_X_test` and `zoo_labels_y_test`.')
-    artifact_1.add_file(local_path='zoo_dataset_X_train.pt', name='zoo_dataset_X_train')
-    artifact_1.add_file(local_path='zoo_labels_y_train.pt', name='zoo_labels_y_train')
-    artifact_1.add_file(local_path='zoo_dataset_X_test.pt', name='zoo_dataset_X_test')
-    artifact_1.add_file(local_path='zoo_labels_y_test.pt', name='zoo_labels_y_test')
-    REGISTRY_NAME_1 = 'Dataset'
-    # Let's add a description to let others know which file to use in future experiments
-    COLLECTION_NAME_1 = 'zoo-dataset-tensors-split'
-    target_dataset_path = f'wandb-registry-{REGISTRY_NAME_1}/{COLLECTION_NAME_1}'
-    run_1.link_artifact(artifact=artifact_1, target_path=target_dataset_path)
-    # Create a target path for our artifact in the registry
-    run_1.finish()
-    return COLLECTION_NAME_1, REGISTRY_NAME_1
+def _(PROJECT, REGISTRY_NAME, TEAM_ENTITY, config, wandb):
+    job_type = 'publish_split_dataset'
+    name = 'split_zoo_dataset'
+
+    with wandb.init(entity=TEAM_ENTITY, project=PROJECT, job_type=job_type, config=config) as run_1:
+
+        description = 'Contains `zoo_dataset` split into 4 datasets. ' \
+        'For training, use `zoo_dataset_X_train` and `zoo_labels_y_train ' \
+        'For testing, use `zoo_dataset_X_test` and `zoo_labels_y_test`.'
+    
+        artifact_1 = wandb.Artifact(name=name, type='dataset', description=description)
+        artifact_1.add_file(local_path='zoo_dataset_X_train.pt',name='zoo_dataset_X_train')
+        artifact_1.add_file(local_path='zoo_labels_y_train.pt', name='zoo_labels_y_train')
+        artifact_1.add_file(local_path='zoo_dataset_X_test.pt', name='zoo_dataset_X_test')
+        artifact_1.add_file(local_path='zoo_labels_y_test.pt', name='zoo_labels_y_test')
+    
+    
+        # Add a description to let others know which file to use in future experiments
+        COLLECTION_NAME_1 = 'zoo-dataset-tensors-split'
+        target_dataset_path = f'wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME_1}'
+        run_1.link_artifact(artifact=artifact_1, target_path=target_dataset_path)
+
+    return (COLLECTION_NAME_1,)
 
 
 @app.cell(hide_code=True)
@@ -517,12 +540,12 @@ def _(mo):
     We can verify we correctly linked our artifact to our desired collection and registry with Weights & Biases App UI:
 
     1. Navigate to the Registry App
-    2. Select on the Dataset registry
+    2. Select the registry
     3. Click **View details** "zoo-dataset-tensors-split" collection
     4. Click the **View** button next to the artifact version
     5. Select the **Files** tab
 
-    You should see four files: "zoo_dataset_X_test", "zoo_dataset_X_train", "zoo_labels_y_test", and "zoo_labels_y_train".
+    You should see four files: **zoo_dataset_X_test**, **zoo_dataset_X_train**, **zoo_labels_y_test**, and **zoo_labels_y_train**.
     """)
     return
 
@@ -532,10 +555,9 @@ def _(mo):
     mo.md(r"""
     ## Define a classifier
 
-    The network maps 16 animal attributes to 16 hidden units with a sigmoid
-    activation, then produces seven class scores. Cross-entropy loss accepts
-    these scores directly. The same architecture must be recreated when loading
-    the saved state dictionary later.
+    The next cell defines a classifer using PyTorch. The network maps 16 animal attributes to 16 hidden units with a sigmoid activation, then produces seven class scores. Cross-entropy loss accepts these scores directly.
+
+    > The same architecture must be recreated when loading the saved state dictionary later.
     """)
     return
 
@@ -588,22 +610,18 @@ def _(hyperparameter_config, model, nn, torch):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Train from a registered dataset
+    ## Train the model
 
-    Retrieve the split dataset through its Registry path so the training run
+    Retrieve the split dataset through its registry path so the training run
     records exactly which Artifact version it consumed.
 
     ```python
     artifact_name = f"wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME}:v{VERSION}"
     ```
 
-    The code below selects `v0`. That is appropriate only if it is the split you
-    intend to train on. If the collection already existed or you reran publication,
-    inspect its versions and update `VERSION` before training. A Registry collection’s
-    version number need not match the source project’s version number.
+    The code below selects `v0`. If the collection already existed or you reran publication, inspect its versions and update `VERSION` before training.
 
-    A target path identifies the collection used when linking. Adding a version
-    suffix selects a specific entry to download.
+    Recall that the target path identifies the collection used when linking. Adding a version suffix selects a specific entry to download.
     """)
     return
 
@@ -612,7 +630,7 @@ def _(mo):
 def _(
     COLLECTION_NAME_1,
     PROJECT,
-    REGISTRY_NAME_1,
+    REGISTRY_NAME,
     TEAM_ENTITY,
     hyperparameter_config,
     loss_fn,
@@ -621,39 +639,45 @@ def _(
     torch,
     wandb,
 ):
-    run_2 = wandb.init(entity=TEAM_ENTITY, project=PROJECT, job_type='training', config=hyperparameter_config)
-    VERSION = 0
-    # Get dataset artifacts from registry
-    artifact_name = f'wandb-registry-{REGISTRY_NAME_1.lower()}/{COLLECTION_NAME_1}:v{VERSION}'
-    dataset_artifact = run_2.use_artifact(artifact_or_name=artifact_name)
-    X_train_path = dataset_artifact.download(path_prefix='zoo_dataset_X_train')
-    y_train_path = dataset_artifact.download(path_prefix='zoo_labels_y_train')
-    # Download only the training data
-    X_train_1 = torch.load(f=X_train_path + '/zoo_dataset_X_train')
-    y_train_1 = torch.load(f=y_train_path + '/zoo_labels_y_train')
-    prev_best_loss = 10000000000.0
-    # Load data as tensors 
-    for e in range(hyperparameter_config['epochs'] + 1):
-        pred = model(X_train_1)
-        loss = loss_fn(pred, y_train_1.squeeze(1))
-    # Set initial dummy loss value to compare to in training loop
-        loss.backward()
-        optimizer.step()
-    # Training loop
-        optimizer.zero_grad()
-        wandb.log({'train/epoch_ndx': e, 'train/train_loss': loss})
-        if e % 100 == 0 and loss <= prev_best_loss:
-            print('epoch: ', e, 'loss:', loss.item())
-            PATH = 'zoo_wandb.pth'
-            torch.save(model.state_dict(), PATH)
-            model_artifact_name = f'zoo-{wandb.run.id}'
-            artifact_2 = wandb.Artifact(name=model_artifact_name, type='model', metadata={'num_classes': 7, 'model_type': wandb.config['model_type']})
-            prev_best_loss = loss
-    print(f'Saving model artifact {model_artifact_name}')
-    artifact_2.add_file(PATH)
-    artifact_2.save()
-    # Add saved model to artifact
-    run_2.finish()  # Checkpoint/save model if loss improves  # Store new best loss
+    with wandb.init(entity=TEAM_ENTITY, project=PROJECT, job_type='training', config=hyperparameter_config) as run_2:
+
+        VERSION = 0
+   
+        # Get dataset artifacts from registry
+        artifact_name = f'wandb-registry-{REGISTRY_NAME.lower()}/{COLLECTION_NAME_1}:v{VERSION}'
+        dataset_artifact = run_2.use_artifact(artifact_or_name=artifact_name)
+        X_train_path = dataset_artifact.download(path_prefix='zoo_dataset_X_train')
+        y_train_path = dataset_artifact.download(path_prefix='zoo_labels_y_train')
+
+        # Download only the training data
+        X_train_1 = torch.load(f=X_train_path + '/zoo_dataset_X_train')
+        y_train_1 = torch.load(f=y_train_path + '/zoo_labels_y_train')
+        prev_best_loss = 10000000000.0
+    
+        # Load data as tensors 
+        for e in range(hyperparameter_config['epochs'] + 1):
+            pred = model(X_train_1)
+            loss = loss_fn(pred, y_train_1.squeeze(1))
+        
+            # Set initial dummy loss value to compare to in training loop
+            loss.backward()
+            optimizer.step()
+        
+            # Training loop
+            optimizer.zero_grad()
+            run_2.log({'train/epoch_ndx': e, 'train/train_loss': loss})
+            if e % 100 == 0 and loss <= prev_best_loss:
+                print('epoch: ', e, 'loss:', loss.item())
+                PATH = 'zoo_wandb.pth'
+                torch.save(model.state_dict(), PATH)
+                model_artifact_name = f'zoo-{run_2.id}'
+                artifact_2 = wandb.Artifact(name=model_artifact_name, type='model', metadata={'num_classes': 7, 'model_type': run_2.config['model_type']})
+                prev_best_loss = loss
+    
+        print(f'Saving model artifact {model_artifact_name}')
+        artifact_2.add_file(PATH)
+        artifact_2.save()
+        # Add saved model to artifact
     return (model_artifact_name,)
 
 
@@ -671,7 +695,7 @@ def _(mo):
     training loss rather than held-out performance.
 
     The model is now stored in the selected project. The next step links that
-    version to Registry, where access is governed by the registry’s permissions.
+    version to the registry.
     """)
     return
 
@@ -679,18 +703,17 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Link the trained model to Registry
+    ### Link the trained model to the registry
 
-    First identify the model version stored in the team project. Its path contains
-    the team, project, Artifact name, and version suffix.
+    Let's link the model we trained in the previous to the registry.
+
+    First defined the model artifact's name. It is composed of the team that created and logged the artifact, the project, artifact name, and the version:
 
     ```python
     artifact_name = f"{TEAM_ENTITY}/{PROJECT}/{ARTIFACT_NAME}:v{VERSION}"
     ```
 
-    This example uses a run-specific model name and selects its first version,
-    `v0`. If you adapt the code to reuse Artifact names, choose the intended
-    version explicitly before linking it.
+    The following cell defines the artifact's name using the values defined earlier in this notebook:
     """)
     return
 
@@ -706,51 +729,41 @@ def _(PROJECT, TEAM_ENTITY, model_artifact_name):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Define the destination collection for the model version. The next cell uses
-    the `model` registry and the `Zoo_Classifier_Models` collection. Check that
-    the registry name matches your organization before running the linking cell.
+    Next, define the destination collection and registry for the model version:
 
     ```python
     target_path = f"wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME}"
     ```
 
-    The source Artifact path selects the files to share. The target path selects
-    where users will discover that version in Registry.
+    The source Artifact path selects the files to share. The target path selects where users will discover that version in Registry.
     """)
     return
 
 
 @app.cell
-def _():
-    REGISTRY_NAME_2 = 'Model'
+def _(REGISTRY_NAME):
     COLLECTION_NAME_2 = 'Zoo_Classifier_Models'
-    target_path = f'wandb-registry-{REGISTRY_NAME_2}/{COLLECTION_NAME_2}'
-    print('Target path: ', target_path)
-    return (target_path,)
+
+    target_path_2 = f'wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME_2}'
+    print('Target path: ', target_path_2)
+    return (target_path_2,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Putting this all together, we specify our artifact name in `run.use_artifact()` and the target path for `run.link_artifact()`:
+    Putting this all, let's now link the model to the registry.
+
+    We pass the model artifact's name to `wandb.Run.use_artifact()` and we pass the target path to `wandb.Run.link_artifact()`:
     """)
     return
 
 
 @app.cell
-def _(PROJECT, TEAM_ENTITY, artifact_name_1, target_path, wandb):
-    run_3 = wandb.init(entity=TEAM_ENTITY, project=PROJECT)
-    model_artifact = run_3.use_artifact(artifact_or_name=artifact_name_1, type='model')
-    run_3.link_artifact(artifact=model_artifact, target_path=target_path)
-    run_3.finish()
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    The preceding code block links our model artifact version to a collection called "Zoo_Classifier_Models" within the model registry.
-    """)
+def _(PROJECT, TEAM_ENTITY, artifact_name_1, target_path_2, wandb):
+    with wandb.init(entity=TEAM_ENTITY, project=PROJECT) as run_3:
+        model_artifact = run_3.use_artifact(artifact_or_name=artifact_name_1, type='model')
+        run_3.link_artifact(artifact=model_artifact, target_path=target_path_2)
     return
 
 
@@ -764,34 +777,19 @@ def _(mo):
     run to the model. This connects the saved weights to the data version used
     for training.
 
-    The screenshot below is an earlier example. Its run names and version numbers
-    will differ from yours.
-
-    ![Example dataset and model lineage](./images/dag_model_registry.png)
-
     Use the lineage graph to choose a model version based on its recorded inputs
     and training run, then copy that version’s full path for inference.
-    """)
-    return
 
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     ## Download registered artifacts for inference
 
     The final section simulates using the registered model from another team’s
     project. It downloads model weights and the test split, recreates the model,
     and compares predictions with the saved labels.
 
-    The API key submitted earlier must have access to the Registry versions and
-    permission to create runs in the destination project. Changing the destination
-    team does not authenticate as a different person.
+    Open each version in Registry and copy its full asrtifact path, or construct
+    the path from the registry, collection, and version.
 
-    Open each version in Registry and copy its full Artifact path, or construct
-    the path from the registry, collection, and version. The examples below use
-    `VERSION_1 = 0` and `VERSION_2 = 0`. Update them if the intended model or test
-    split has another version number.
+    The examples below use `VERSION_1 = 0` and `VERSION_2 = 0`. Update them if the intended model or test split has another version number.
     """)
     return
 
@@ -805,12 +803,13 @@ def _(mo):
 
 
 @app.cell
-def _():
+def _(REGISTRY_NAME):
     # Create model artifact name
-    REGISTRY_NAME_3 = 'model'
     COLLECTION_NAME_3 = 'Zoo_Classifier_Models'
     VERSION_1 = 0
-    model_artifact_name_1 = f'wandb-registry-{REGISTRY_NAME_3}/{COLLECTION_NAME_3}:v{VERSION_1}'
+
+    model_artifact_name_1 = f'wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME_3}:v{VERSION_1}'
+
     print(f'Model artifact name: {model_artifact_name_1}')
     return (model_artifact_name_1,)
 
@@ -818,22 +817,17 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Replace `<TEAM_B>` with a team where your authenticated account can create
-    runs. You can reuse the team selected in the setup form if you do not have
-    a second team. The run records the downloaded model as an input.
+    The following cell downloads the model we previously linked to the registry:
     """)
     return
 
 
 @app.cell
-def _(model_artifact_name_1, wandb):
-    # Enter information about your team and your team's project
-    DIFFERENT_TEAM_ENTITY = '<TEAM_B>'
-    DIFFERENT_PROJECT = 'Check_Zoo_Model'
-    run_4 = wandb.init(entity=DIFFERENT_TEAM_ENTITY, project=DIFFERENT_PROJECT)
-    registry_model = run_4.use_artifact(artifact_or_name=model_artifact_name_1)
-    local_model_path = registry_model.download()
-    return DIFFERENT_PROJECT, DIFFERENT_TEAM_ENTITY, local_model_path
+def _(PROJECT, TEAM_ENTITY, model_artifact_name_1, wandb):
+    with wandb.init(entity=TEAM_ENTITY, project=PROJECT) as run_4:
+        registry_model = run_4.use_artifact(artifact_or_name=model_artifact_name_1)
+        local_model_path = registry_model.download()
+    return (local_model_path,)
 
 
 @app.cell(hide_code=True)
@@ -864,41 +858,38 @@ def _(local_model_path, nn, torch):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Get test dataset from Dataset registry
+    ### Get test dataset from registry
 
-    Let's get the test dataset from our registry. Similar to the above code block, we will specify the full name of the artifact version we want from our Dataset registry.
+    Let's get the test dataset from our registry. Similar to the above code block, we will specify the full name of the artifact version we want from our registry.
     """)
     return
 
 
 @app.cell
-def _():
+def _(REGISTRY_NAME):
     # Create dataset artifact name
-    REGISTRY_NAME_4 = 'dataset'
     COLLECTION_NAME_4 = 'zoo-dataset-tensors-split'
     VERSION_2 = 0
-    data_artifact_name = f'wandb-registry-{REGISTRY_NAME_4}/{COLLECTION_NAME_4}:v{VERSION_2}'
+
+    data_artifact_name = f'wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME_4}:v{VERSION_2}'
+
     print(f'Dataset artifact name: {data_artifact_name}')
     return (data_artifact_name,)
 
 
 @app.cell
-def _(DIFFERENT_PROJECT, DIFFERENT_TEAM_ENTITY, data_artifact_name, wandb):
-    run_5 = wandb.init(entity=DIFFERENT_TEAM_ENTITY, project=DIFFERENT_PROJECT)
-    dataset_artifact_1 = run_5.use_artifact(artifact_or_name=data_artifact_name, type='dataset')
-    local_dataset_path = dataset_artifact_1.download()
-    return local_dataset_path, run_5
+def _(PROJECT, TEAM_ENTITY, data_artifact_name, torch, wandb):
+    with wandb.init(entity=TEAM_ENTITY, project=PROJECT) as run_5:
+        dataset_artifact_1 = run_5.use_artifact(artifact_or_name=data_artifact_name, type='dataset')
+        local_dataset_path = dataset_artifact_1.download()
 
-
-@app.cell
-def _(local_dataset_path, run_5, torch):
-    # Test data and label filenames
-    test_data_filename = 'zoo_dataset_X_test'
-    test_labels_filename = 'zoo_labels_y_test'
-    loaded_data = torch.load(f'{local_dataset_path}/{test_data_filename}')
-    # Load dataset and labels into notebook
-    loaded_labels = torch.load(f'{local_dataset_path}/{test_labels_filename}')
-    run_5.finish()
+        # Test data and label filenames
+        test_data_filename = 'zoo_dataset_X_test'
+        test_labels_filename = 'zoo_labels_y_test'
+        loaded_data = torch.load(f'{local_dataset_path}/{test_data_filename}')
+    
+        # Load dataset and labels into notebook
+        loaded_labels = torch.load(f'{local_dataset_path}/{test_labels_filename}')
     return loaded_data, loaded_labels
 
 
@@ -954,7 +945,7 @@ def _(loaded_data, loaded_model, torch):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Build a DataFrame that pairs each prediction with its reference label.
+    Build a `DataFrame` that pairs each prediction with its reference label.
     Use the numeric IDs to check correctness, and verify the display dictionary
     before using class names to explain individual errors.
     """)
@@ -1019,10 +1010,7 @@ def _(df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Use the percentage calculated from your current predictions. The historical
-    output below reports about 88%, but it is not a target or a result produced
-    by the current run. This small test split can give noticeably different
-    scores after changes to training or initialization.
+    Your results may vary. We found that the model tends to accurately prediect ~80% of the time.
     """)
     return
 
@@ -1032,24 +1020,11 @@ def _(mo):
     mo.md(r"""
     ## Verify the Registry collections and lineage
 
-    Open the Weights & Biases Registry App. In the dataset registry, open
-    `zoo-dataset-tensors` and `zoo-dataset-tensors-split`; verify the linked
-    versions and four train/test tensor files. In the model registry, open
-    `Zoo_Classifier_Models` and inspect the classifier version.
+    Navigate to the Registry, and open the
+    `zoo-dataset-tensors` and `zoo-dataset-tensors-split` collections. Verify the linked
+    versions and four train/test tensor files are there. Then check that the collection we made for our model exists and possesses the model we linked.
 
-    Open **Lineage** on the model version and follow the training run back to the
-    exact split-dataset version. Check model metadata for `num_classes` and
-    `model_type`, and compare them with the inference reconstruction code. The
-    [Registry linking guide](https://docs.coreweave.com/products/registry/link_version)
-    explains logging an Artifact versus linking a version into a collection.
-
-    ## Next steps
-
-    Document the 16 input features, class-ID mapping, architecture, required code,
-    dataset version, and evaluation result on the model version. Then test retrieval
-    from another authorized project or entity. The test split is small, so inspect
-    incorrect animals and reserve additional data before using accuracy to approve
-    a reusable model.
+    As an exercise, explore the linked model's lineage. To do so, navigate to the registry and collection. Select a model version, then select the **Lineage** tab.
     """)
     return
 
