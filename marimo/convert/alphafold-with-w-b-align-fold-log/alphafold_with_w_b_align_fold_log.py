@@ -8,7 +8,7 @@
 #     "matplotlib>=3.8,<4",
 #     "numpy>=2.0,<=2.1.3",
 #     "py3Dmol>=2.0,<3",
-#     "wandb>=0.19.10",
+#     "wandb==0.31.0",
 # ]
 # ///
 
@@ -60,7 +60,7 @@ def _():
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     machine = platform.machine().lower()
     is_linux = sys.platform.startswith("linux")
@@ -289,8 +289,6 @@ def _(available_entities):
     return (wandb_setup_form,)
 
 
-
-
 @app.cell(hide_code=True)
 def _(wandb_setup_form):
     mo.stop(wandb_setup_form.value is None)
@@ -301,7 +299,6 @@ def _(wandb_setup_form):
 
     entity = _entity
     project = _project
-
     return entity, project
 
 
