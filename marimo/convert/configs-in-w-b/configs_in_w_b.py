@@ -64,7 +64,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -91,7 +91,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
@@ -129,7 +129,7 @@ def _(wandb_api_form):
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -146,7 +146,7 @@ def _(wandb_api_form):
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
@@ -168,8 +168,8 @@ def _():
     - Weights & Biases personal or team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `config_example`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**. A project does not need to exist yet;
+    Weights & Biases creates it when the first run starts if you have write access.
     """)
     return
 
@@ -180,14 +180,14 @@ def _(available_entities):
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -197,7 +197,7 @@ def _(available_entities):
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -208,7 +208,7 @@ def _(available_entities):
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -223,7 +223,7 @@ def _(available_entities):
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when the first run starts.
+    destination. Weights & Biases verifies project write access when the first run starts.
     """)
     return
 
@@ -241,7 +241,7 @@ def _(wandb_setup_form):
 
     mo.callout(
         mo.md(
-            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
             "when the first run starts."
         ),
         kind="success",
@@ -354,23 +354,31 @@ def _(run_path):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Verify and compare experiments
+    ## Verify the saved configuration
 
-    Open the run link printed by `wandb.init()` and find **Config** on the
-    run's **Overview** page. Confirm that it contains `dataset="CelebA"`,
-    `type="baseline"`, `epochs=4`, `batch_size=32`, `batch_per_gpu=8`, and
-    `weight_decay=0.1` (or your chosen overrides). Refresh after the Public API
-    step to see `purpose="configuration tutorial"` as well.
+    Open the run link printed by `wandb.init()`. It should look similar:
 
-    Rerun the example with different settings, then open the project's runs
-    table to filter or group by a config field such as `type` or `batch_per_gpu`.
-    In a training experiment, log metrics with `run.log()` to compare outcomes
-    across configurations or build a parallel coordinates chart.
+    ```
+    wandb: ⭐️ View project at https://wandb.ai/<entity>/config_example
+    wandb: 🚀 View run at https://wandb.ai/<entity>/config_example/runs/<run-id>
+    ```
 
-    Explore the [example project](https://wandb.ai/wandb/DistHyperOpt) for a
-    larger comparison, or read
-    [Configure experiments](https://docs.coreweave.com/products/wandb/track/config)
-    for more configuration patterns.
+    Where `<entity>` is the name you specified for Weights & Biases entity in the form above and `<run-id>` is the unique [run ID](https://docs.coreweave.com/products/wandb/runs/run-identifiers#run-id).
+
+    On the run's [**Overview** page](https://docs.coreweave.com/products/wandb/runs/view-logged-runs#overview), navigate to the **Config** section and confirm that it contains `dataset`, `type`, `epochs`, `batch_size`, `batch_per_gpu`, and `weight_decay`.  Also verify that `purpose="configuration tutorial"` was added to the same run.
+
+    The **Summary** metrics section should be empty because this notebook only records a configuration.
+
+    See [Configure experiments](https://docs.coreweave.com/products/wandb/track/config)
+    and the [Public API reference](https://docs.coreweave.com/products/wandb/ref/python/public-api)
+    for the two update patterns used here.
+
+    ## Next steps
+
+    Change one parsed argument and rerun the example. In the project's runs table,
+    add config columns such as `type` or `batch_per_gpu`, then filter or group by
+    them. To turn this into an experiment comparison, log a measured outcome with
+    `run.log()` and compare that metric against the recorded settings.
     """)
     return
 

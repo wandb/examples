@@ -99,7 +99,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -126,13 +126,13 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_api_form):
     from wandb.sdk.lib.service.service_connection import (
         WandbApiFailedError as _WandbApiFailedError,
     )
@@ -164,7 +164,7 @@ def _():
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -181,7 +181,7 @@ def _():
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
@@ -203,26 +203,26 @@ def _():
     - Weights & Biases personal or team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `vehicle_loan_default`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**. A project does not need to exist yet;
+    Weights & Biases creates it when the first run starts if you have write access.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _():
+def _(available_entities):
     def _validate_wandb_target(value):
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -232,7 +232,7 @@ def _():
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -243,7 +243,7 @@ def _():
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -258,13 +258,13 @@ def _():
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when the first run starts.
+    destination. Weights & Biases verifies project write access when the first run starts.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_setup_form):
     mo.stop(wandb_setup_form.value is None)
 
     _submission = wandb_setup_form.value
@@ -276,14 +276,12 @@ def _():
 
     mo.callout(
         mo.md(
-            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
             "when the first run starts."
         ),
         kind="success",
     )
     return entity, project
-
-
 
 
 @app.cell(hide_code=True)
@@ -744,21 +742,31 @@ def _(baseline_metrics, entity, project, sweep_config, sweep_train):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Verify and Explore the Experiment Records
+    ## Verify the pipeline and sweep
 
-    Open the baseline run to inspect its metrics,
-    feature importance, ROC curve, and saved model. The Artifact lineage graph connects
-    the source dataset, `vehicle_defaults_processed`, `vehicle_defaults_split`,
-    and the training run. Open the `log-dataset` run's `processed_dataset`
-    Table to inspect the encoded inputs.
+    Use the links printed by the baseline run and `wandb.sweep()`. The baseline
+    link opens one run; the sweep link ends in `/sweeps/<sweep-id>` and opens the
+    five-trial comparison.
 
-    Open the sweep dashboard to compare hyperparameters and
-    validation AUC. Inspect parameter trends rather than relying on a single
-    best trial.
+    In the project, inspect:
 
-    See the [Weights & Biases XGBoost integration](https://docs.wandb.ai/models/integrations/xgboost)
-    and [Sweeps configuration guide](https://docs.wandb.ai/models/sweeps/define-sweep-configuration)
-    for more options.
+    - **Artifacts and lineage:** follow the source dataset through
+      `vehicle_defaults_processed` and `vehicle_defaults_split` into training.
+    - **Dataset Table:** open `processed_dataset` in the `log-dataset` run.
+    - **Baseline run:** compare validation AUC and accuracy, the ROC curve, feature
+      importance, and the saved booster.
+    - **Sweep:** add sampled parameters and `val_auc` to the runs table, then use
+      parallel coordinates to look for trends.
+
+    The [Artifacts guide](https://docs.wandb.ai/models/artifacts) explains lineage,
+    and the [Sweeps guide](https://docs.coreweave.com/products/wandb/sweeps/visualize-sweep-results)
+    describes the comparison panels.
+
+    ## Next steps
+
+    Narrow one promising parameter range and run a second sweep while keeping the
+    split Artifact fixed. Compare both validation AUC and the ROC curve, and reserve
+    a separate test set for the final estimate.
     """)
     return
 

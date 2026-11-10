@@ -808,26 +808,6 @@ def _(entity, prediction_summary, project):
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Compare Predictions
-
-    Open the Weights & Biases run to inspect its configuration, metrics,
-    confidence plots, and 3D molecule. The `predicted_molecules` table connects
-    the sequence to its structure and plots.
-
-    Try another sample or increase the number of models. Click **Align and fold**
-    again to produce a new prediction and Weights & Biases run, then compare confidence and
-    runtime in your project. The wall time includes alignment, model setup, and
-    inference; first-run downloads can make it substantially longer.
-
-    The public MSA service is intended for small, serial queries. For larger
-    workloads, follow ColabFold's local-database instructions.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
     ## References
 
     Protein-structure predictions require scientific review and are not for
@@ -839,6 +819,46 @@ def _():
     Publications should cite the
     [ColabFold paper](https://doi.org/10.1038/s41592-022-01488-1) and
     [AlphaFold paper](https://doi.org/10.1038/s41586-021-03819-2).
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Verify the prediction run
+
+    Open the run link printed after **Align and fold**, or open the newest run in
+    the selected W&B project. Run links follow:
+
+    ```
+    https://wandb.ai/<entity>/<project>/runs/<run-id>
+    ```
+
+    Within your project, navigate to the **Media** section. You should see the protein structure along with its:
+
+    - 3D render of the PDVB structure
+    - `predicted_aligned_error`
+    - `plddt_confidence`
+    - `msa_coverage`
+
+    Open the alignment and confidence images and open
+
+    Navigate to the Tables section to view the `predicted_molecules` table. In the table you can view
+    the "tag", "species", "sequence", "molecule", "MSA coverage", "confidence", and "predicted aligned error".
+
+    Check the [run config](https://docs.coreweave.com/products/wandb/track/config#view-config-values)
+    for the sequence source, model count, seed, and inference backend.
+
+    ## Next steps
+
+    Fold another sample or increase the model count, then compare confidence with
+    runtime. Treat pLDDT and pTM as confidence signals, not experimental
+    validation.
+
+    For larger workloads, follow the
+    [ColabFold documentation](https://github.com/sokrypton/ColabFold) instead of
+    sending many requests to the public MSA service.
     """)
     return
 

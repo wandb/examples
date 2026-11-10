@@ -113,7 +113,7 @@ def _():
     def _notify_submission(_value):
         mo.status.toast(
             "Credentials submitted",
-            "Run the next cell to verify them with W&B.",
+            "Run the next cell to verify them with Weights & Biases.",
         )
 
     wandb_api_form = (
@@ -140,7 +140,7 @@ def _():
 def _():
     mo.md(r"""
     After submitting the API key, run the following cell to verify the
-    credentials and load your available W&B entities.
+    credentials and load your available Weights & Biases entities.
     """)
     return
 
@@ -178,7 +178,7 @@ def _(wandb_api_form):
         mo.stop(
             True,
             mo.callout(
-                "W&B verified the credentials but could not retrieve your account entities.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
@@ -195,7 +195,7 @@ def _(wandb_api_form):
     mo.stop(
         not available_entities,
         mo.callout(
-            "W&B authenticated successfully, but no personal or team entities were found.",
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
             kind="danger",
         ),
     )
@@ -219,8 +219,8 @@ def _():
     - Weights & Biases personal or team entity.
     - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `huggingface-demo`.
 
-    Then select **Use this W&B target**. A project does not need to exist yet;
-    W&B creates it when the first run starts if you have write access.
+    Then select **Use this Weights & Biases target**. A project does not need to exist yet;
+    Weights & Biases creates it when the first run starts if you have write access.
     """)
     return
 
@@ -231,7 +231,7 @@ def _(available_entities):
         if value is None:
             return None
         if not value["entity"]:
-            return "Select a W&B entity."
+            return "Select a Weights & Biases entity."
         if not value["project"].strip():
             return "Enter a project name."
         return None
@@ -239,7 +239,7 @@ def _(available_entities):
 
     def _notify_wandb_submission(_value):
         mo.status.toast(
-            "W&B target selected",
+            "Weights & Biases target selected",
             "Run the next cell to confirm the destination.",
         )
 
@@ -250,7 +250,7 @@ def _(available_entities):
             entity=mo.ui.dropdown(
                 options=available_entities,
                 value=available_entities[0],
-                label="W&B entity",
+                label="Weights & Biases entity",
                 searchable=True,
                 full_width=True,
             ),
@@ -261,7 +261,7 @@ def _(available_entities):
             ),
         )
         .form(
-            submit_button_label="Use this W&B target",
+            submit_button_label="Use this Weights & Biases target",
             validate=_validate_wandb_target,
             on_change=_notify_wandb_submission,
             bordered=True,
@@ -276,7 +276,7 @@ def _(available_entities):
 def _():
     mo.md(r"""
     After submitting the target form, run the next cell to confirm the selected
-    destination. W&B verifies project write access when training starts.
+    destination. Weights & Biases verifies project write access when training starts.
     """)
     return
 
@@ -294,7 +294,7 @@ def _(wandb_setup_form):
 
     mo.callout(
         mo.md(
-            f"✓ Using `{entity}/{project}`. W&B will confirm write access "
+            f"✓ Using `{entity}/{project}`. Weights & Biases will confirm write access "
             "when training starts."
         ),
         kind="success",
@@ -421,7 +421,7 @@ def _():
     wandb: 🚀 View run at https://wandb.ai/team/huggingface-demo/runs/uz6s7b1k
     ```
 
-    Where **team** is the name you specified for **Weights & Biases entity** in the form above and `uz6s7b1k` is the unique run ID. The run ID you see will differ.
+    Where **team** is the name you specified for **Weights & Biases entity** in the form above and `uz6s7b1k` is the unique [run ID](https://docs.coreweave.com/products/wandb/runs/run-identifiers#run-id).
 
     Navigate to your project's workspace in the Weights & Biases App. Scroll to the `train` panel. You should see the following plots with the following titles:
 
