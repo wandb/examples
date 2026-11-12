@@ -1,23 +1,23 @@
 # /// script
 # dependencies = [
 #     "fsspec[http]==2026.7.0",
+#     "marimo>=0.25.2",
 #     "matplotlib==3.11.1",
 #     "numpy==2.5.2",
 #     "pandas==3.0.5",
 #     "plotly==7.0.0",
 #     "soundfile==0.14.0",
-#     "wandb==0.29.0",
+#     "wandb>=0.30.0",
 # ]
 # ///
 
 import marimo
 
-__generated_with = "0.24.0"
+__generated_with = "0.25.2"
 app = marimo.App(auto_download=["html"])
 
 with app.setup:
     import io
-    import warnings
 
     import fsspec
     import marimo as mo
@@ -26,8 +26,6 @@ with app.setup:
     import pandas as pd
     import soundfile as sf
     import wandb
-
-    warnings.filterwarnings("ignore", category=UserWarning)
 
 
 @app.cell(hide_code=True)
@@ -52,56 +50,222 @@ def _():
 
     Use [Weights & Biases](https://wandb.com) for machine learning experiment tracking, dataset versioning, and project collaboration.
 
-    <div><img /></div>
-
-    <img src="https://wandb.me/mini-diagram" width="650" alt="Weights & Biases" />
-
-    <div><img /></div>
-
-    # Log (Almost) Anything with W&B Media
+    # Log (Almost) Anything with Weights & Biases Media
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/log-almost-anything-with-w-b-media/log_almost_anything_with_w_b_media.py/server)
-    """)
-    return
 
+    Learn how to log numeric metrics and rich media to Weights & Biases. Each
+    section uses a small generated example or a downloaded asset to demonstrate
+    one data type. You can apply the same logging calls to model inputs and
+    predictions in your own experiments.
 
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    In this notebook, we'll show you how to visualize a model's predictions with Weights & Biases: images, videos, audio, tables, HTML, metrics, plots, 3D objects, and point clouds.
+    For the original walkthrough, [open the tutorial on YouTube](https://wandb.me/media-video). View the finished examples in the interactive [Weights & Biases dashboard](https://app.wandb.ai/lavanyashukla/visualize-predictions/reports/Visualize-Model-Predictions--Vmlldzo1NjM4OA).
 
-    Follow along with the video below, or [open the tutorial on YouTube](https://wandb.me/media-video). View the finished examples in the interactive [W&B dashboard](https://app.wandb.ai/lavanyashukla/visualize-predictions/reports/Visualize-Model-Predictions--Vmlldzo1NjM4OA).
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.Html(r"""
-    <iframe
-      width="100%"
-      height="450"
-      src="https://www.youtube.com/embed/96MxRvx15Ts"
-      title="Log (Almost) Anything with W&B Media"
-      frameborder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      referrerpolicy="strict-origin-when-cross-origin"
-      allowfullscreen>
-    </iframe>
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
     ![](https://paper-attachments.dropbox.com/s_C0EC7008D045FC80715C08E7386E0BBDA59DC92DEE34C734FEA67BF25E4BA5CC_1578297638486_image.png)
+
+    Running the following cells uploads examples to Weights & Biases. Each section creates a
+    separate named run. Its context manager finishes the run when the block exits.
+    Rerunning a logging cell creates a new run.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Authenticate with Weights & Biases
+
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    def _notify_submission(_value):
+        mo.status.toast(
+            "Credentials submitted",
+            "Run the next cell to verify them with Weights & Biases.",
+        )
+
+    wandb_api_form = (
+        mo.md("{api_key}")
+        .batch(
+            api_key=mo.ui.text(
+                kind="password",
+                label="Forge API key",
+                full_width=True,
+            )
+        )
+        .form(
+            submit_button_label="Connect to Weights & Biases",
+            bordered=True,
+            on_change=_notify_submission,
+        )
+    )
+
+    wandb_api_form
+    return (wandb_api_form,)
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    After submitting the API key, run the following cell to verify the
+    credentials and load your available Weights & Biases entities.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(wandb_api_form):
+    from wandb.sdk.lib.service.service_connection import (
+        WandbApiFailedError as _WandbApiFailedError,
+    )
+
+    mo.stop(wandb_api_form.value is None)
+
+    _submission = wandb_api_form.value
+    _api_key = _submission["api_key"].strip()
+
+    try:
+        _login_ok = wandb.login(
+            key=_api_key or None,
+            relogin=bool(_api_key),
+            verify=True,
+            prompt=False,
+        )
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    try:
+        _api = wandb.Api(timeout=15)
+        _viewer = _api.viewer
+    except (wandb.errors.Error, _WandbApiFailedError, ValueError):
+        mo.stop(
+            True,
+            mo.callout(
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
+                kind="danger",
+            ),
+        )
+
+    available_entities = sorted({
+        _value
+        for _value in (
+            getattr(_viewer, "username", None),
+            getattr(_viewer, "entity", None),
+            *_viewer.teams,
+        )
+        if _value
+    })
+    mo.stop(
+        not available_entities,
+        mo.callout(
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
+            kind="danger",
+        ),
+    )
+
+    mo.callout(
+        mo.md("✓ Credentials verified. Specify your team entity below."),
+        kind="success",
+    )
+    return (available_entities,)
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Set your team and project
+
+    Run the following cell and specify your:
+
+    - Weights & Biases team entity.
+    - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `visualize-predictions`.
+
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(available_entities):
+    def _validate_wandb_target(value):
+        if value is None:
+            return None
+        if not value["entity"]:
+            return "Select a Weights & Biases entity."
+        if not value["project"].strip():
+            return "Enter a project name."
+        return None
+
+    def _notify_wandb_submission(_value):
+        mo.status.toast(
+            "Weights & Biases target selected",
+            "Run the next cell to confirm the destination.",
+        )
+
+    wandb_setup_form = (
+        mo.md("{entity}\n\n{project}")
+        .batch(
+            entity=mo.ui.dropdown(
+                options=available_entities,
+                value=available_entities[0],
+                label="Weights & Biases entity",
+                searchable=True,
+                full_width=True,
+            ),
+            project=mo.ui.text(
+                value="visualize-predictions",
+                label="Project",
+                full_width=True,
+            ),
+        )
+        .form(
+            submit_button_label="Use this Weights & Biases target",
+            validate=_validate_wandb_target,
+            on_change=_notify_wandb_submission,
+            bordered=True,
+        )
+    )
+
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+@app.cell(hide_code=True)
+def _(wandb_setup_form):
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _entity = _submission["entity"]
+    _project = _submission["project"].strip()
+
+    entity = _entity
+    project = _project
+    return entity, project
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Load tutorial assets
+
+    We read the original tutorial's stock prices, image, video, piano recording,
+    HTML, and mesh from the Weights & Biases examples repository using `fsspec`.
     """)
     return
 
 
 @app.cell
 def _():
-    # Stream tutorial assets: audio, video and other data files to log
     fs = fsspec.filesystem("github", org="wandb", repo="examples")
     asset_base_url = "examples/data"
     return asset_base_url, fs
@@ -110,340 +274,144 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Authentication
+    ### Log metrics
 
-    Enter your [W&B API key](https://wandb.ai/authorize) and, if needed, your team or entity. You can leave the key blank when this environment already has W&B credentials.
+    Read the last 1,000 rows of the bundled Apple stock-price dataset, then log
+    each closing price with
+    `metrics_run.log()`. Each call advances Weights & Biases's default step, producing a
+    time-series chart. The source is
+    [Macrotrends' Apple stock price history](https://www.macrotrends.net/stocks/charts/AAPL/apple/stock-price-history).
     """)
     return
-
-
-@app.cell(hide_code=True)
-def _():
-    _api_key_input = mo.ui.text(
-        kind="password",
-        label="W&B API key (optional)",
-        placeholder="Paste a key or use cached credentials",
-        full_width=True,
-    )
-    _entity_input = mo.ui.text(
-        label="W&B entity or team (optional)",
-        placeholder="Leave blank to use your default entity",
-        full_width=True,
-    )
-    wandb_login_form = (
-        mo.md("{api_key}\n\n{entity}")
-        .batch(api_key=_api_key_input, entity=_entity_input)
-        .form(submit_button_label="Connect to W&B", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
-
-
-@app.cell(hide_code=True)
-def _(wandb_login_form):
-    mo.stop(
-        wandb_login_form.value is None,
-        mo.callout(
-            mo.md("Connect to W&B above before running a logging example."),
-            kind="info",
-        ),
-    )
-
-    _api_key = wandb_login_form.value["api_key"].strip()
-    _entity = wandb_login_form.value["entity"].strip()
-    try:
-        _login_ok = wandb.login(key=_api_key or None, relogin=bool(_api_key))
-        _login_error = None
-    except wandb.errors.Error as _error:
-        _login_ok = False
-        _login_error = str(_error)
-
-    mo.stop(
-        not _login_ok,
-        mo.callout(
-            mo.md(
-                "W&B authentication did not complete. "
-                f"Check the API key and try again. \n\nW&B reported: `{_login_error or 'unknown error'}`"
-            ),
-            kind="danger",
-        ),
-    )
-
-    wandb_settings = {
-        "project": "visualize-predictions",
-        "entity": _entity or None,
-    }
-    mo.callout(
-        mo.md("Connected. Each button below creates one separate W&B run."),
-        kind="success",
-    )
-    return (wandb_settings,)
-
-
-@app.function
-def finish_active_run():
-    """Finish a run left open by an interrupted demonstration."""
-    if wandb.run is not None:
-        wandb.finish()
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Run the demonstrations
-
-    Use the button in each section to create only the run you want to inspect. This keeps reactive edits from launching every W&B logging example at once.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    metrics_button = mo.ui.run_button(label="Log metrics")
-    mo.vstack([mo.md("### Log metrics"), metrics_button])
-    return (metrics_button,)
 
 
 @app.cell
 def _(asset_base_url, fs):
     # Apple stock prices from
     # https://www.macrotrends.net/stocks/charts/AAPL/apple/stock-price-history
-    with fs.open(f"{asset_base_url}/apple.csv", "rb") as _apple_file:
-        apple_prices = pd.read_csv(_apple_file).tail(1000)
+    with fs.open(f"{asset_base_url}/apple.csv", "rb") as apple_file:
+        apple_prices = pd.read_csv(apple_file).tail(1000)
     apple_prices.head()
     return (apple_prices,)
 
 
 @app.cell
-def _(apple_prices, metrics_button, wandb_settings):
-    mo.stop(not metrics_button.value)
-    finish_active_run()
-
-    with wandb.init(name="metrics", **wandb_settings) as _metrics_run:
+def _(apple_prices, entity, project):
+    with wandb.init(name="metrics", project=project, entity=entity) as metrics_run:
         for price in apple_prices["close"]:
-            _metrics_run.log({"Stock Price": price})
-        _metrics_run_url = _metrics_run.url
-
-    mo.callout(
-        mo.md(f"Metrics logged. [Open the W&B run]({_metrics_run_url})."),
-        kind="success",
-    )
+            metrics_run.log({"Stock Price": price})
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    plots_button = mo.ui.run_button(label="Log a plot")
-    mo.vstack([mo.md("### Log plots"), plots_button])
-    return (plots_button,)
+    mo.md(r"""
+    ### Log plots
 
-
-@app.cell
-def _(plots_button, wandb_settings):
-    mo.stop(not plots_button.value)
-    finish_active_run()
-
-    _fibonacci = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
-    fig, ax = plt.subplots()
-    ax.plot(_fibonacci)
-    ax.set_ylabel("Fibonacci values")
-
-    with wandb.init(name="plots", **wandb_settings) as _plots_run:
-        _plots_run.log({"plot": fig})
-        _plots_run_url = _plots_run.url
-
-    mo.vstack(
-        [
-            fig,
-            mo.callout(
-                mo.md(f"Plot logged. [Open the W&B run]({_plots_run_url})."),
-                kind="success",
-            ),
-        ]
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    histograms_button = mo.ui.run_button(label="Log histograms")
-    mo.vstack([mo.md("### Log histograms"), histograms_button])
-    return (histograms_button,)
-
-
-@app.cell
-def _(histograms_button, wandb_settings):
-    mo.stop(not histograms_button.value)
-    finish_active_run()
-
-    _fibonacci = np.array([0, 1, 1, 2, 3, 5, 8, 13, 21, 34])
-    with wandb.init(name="histograms", **wandb_settings) as _histograms_run:
-        for i in range(1, 10):
-            _histograms_run.log({"histograms": wandb.Histogram(_fibonacci / i)})
-        _histograms_run_url = _histograms_run.url
-
-    mo.callout(
-        mo.md(f"Histograms logged. [Open the W&B run]({_histograms_run_url})."),
-        kind="success",
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    images_button = mo.ui.run_button(label="Log an image")
-    mo.vstack([mo.md("### Log images"), images_button])
-    return (images_button,)
-
-
-@app.cell
-def _(asset_base_url, fs, images_button, wandb_settings):
-    mo.stop(not images_button.value)
-    finish_active_run()
-
-    with fs.open(f"{asset_base_url}/cafe.jpg", "rb") as _image_file:
-        im = plt.imread(_image_file, format="jpg")
-
-    with wandb.init(name="images", **wandb_settings) as _images_run:
-        _images_run.log({"img": [wandb.Image(im, caption="Cafe")]})
-        _images_run_url = _images_run.url
-
-    mo.callout(
-        mo.md(f"Image logged. [Open the W&B run]({_images_run_url})."),
-        kind="success",
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    videos_button = mo.ui.run_button(label="Log a video")
-    mo.vstack([mo.md("### Log videos"), videos_button])
-    return (videos_button,)
-
-
-@app.cell
-def _(asset_base_url, fs, videos_button, wandb_settings):
-    mo.stop(not videos_button.value)
-    finish_active_run()
-
-    with fs.open(f"{asset_base_url}/openai-gym.mp4", "rb") as _video_file:
-        _video = io.BytesIO(_video_file.read())
-
-    with wandb.init(name="videos", **wandb_settings) as _videos_run:
-        _videos_run.log({"video": wandb.Video(_video, format="mp4")})
-        _videos_run_url = _videos_run.url
-
-    mo.callout(
-        mo.md(f"Video logged. [Open the W&B run]({_videos_run_url})."),
-        kind="success",
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.Html(r"""
-    <video controls preload="metadata" style="width: 100%; max-width: 720px;">
-      <source src="https://api.wandb.ai/files/lavanyashukla/visualize-predictions/0gv4owya/media/videos/openai-gym_89a16925.mp4" type="video/mp4" />
-      Your browser does not support embedded video.
-    </video>
+    Log a Matplotlib figure directly. Weights & Biases converts this line plot to an interactive
+    Plotly chart, so you can inspect Fibonacci values in the run dashboard.
     """)
     return
 
 
-@app.cell(hide_code=True)
-def _():
-    audio_file_button = mo.ui.run_button(label="Log the piano recording")
-    generated_audio_button = mo.ui.run_button(label="Log generated audio")
-    mo.vstack(
-        [
-            mo.md("### Log audio"),
-            mo.hstack([audio_file_button, generated_audio_button], justify="start"),
-        ]
-    )
-    return audio_file_button, generated_audio_button
-
-
 @app.cell
-def _(asset_base_url, audio_file_button, fs, wandb_settings):
-    mo.stop(not audio_file_button.value)
-    finish_active_run()
+def _(entity, project):
+    plot_values = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+    fig, ax = plt.subplots()
+    ax.plot(plot_values)
+    ax.set_ylabel("Fibonacci values")
 
-    with fs.open(f"{asset_base_url}/piano.wav", "rb") as _audio_file:
-        _samples, _sample_rate = sf.read(_audio_file, dtype="float32")
+    with wandb.init(name="plots", project=project, entity=entity) as plots_run:
+        plots_run.log({"plot": wandb.Image(fig)})
 
-    with wandb.init(name="audio_file", **wandb_settings) as _audio_file_run:
-        _audio_file_run.log(
-            {
-                "examples": [
-                    wandb.Audio(
-                        _samples,
-                        caption="Piano",
-                        sample_rate=_sample_rate,
-                    )
-                ]
-            }
-        )
-        _audio_file_run_url = _audio_file_run.url
-
-    mo.callout(
-        mo.md(f"Audio file logged. [Open the W&B run]({_audio_file_run_url})."),
-        kind="success",
-    )
-    return
-
-
-@app.cell
-def _(generated_audio_button, wandb_settings):
-    mo.stop(not generated_audio_button.value)
-    finish_active_run()
-
-    _sample_rate = 44_100
-    length = 3
-    xs = np.linspace(0, length, num=_sample_rate * length)
-    waveform = np.sin(_sample_rate * 2 * np.pi / 40 * xs**2)
-
-    with wandb.init(name="audio_generated", **wandb_settings) as _generated_audio_run:
-        _generated_audio_run.log(
-            {
-                "examples": [
-                    wandb.Audio(
-                        waveform,
-                        caption="Boop",
-                        sample_rate=_sample_rate,
-                    )
-                ]
-            }
-        )
-        _generated_audio_run_url = _generated_audio_run.url
-
-    mo.callout(
-        mo.md(f"Generated audio logged. [Open the W&B run]({_generated_audio_run_url})."),
-        kind="success",
-    )
+    fig
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    tables_button = mo.ui.run_button(label="Log tables")
-    mo.vstack([mo.md("### Log tables"), tables_button])
-    return (tables_button,)
+    mo.md(r"""
+    ### Log histograms
+
+    Wrap an array in `wandb.Histogram` to track a distribution. Logging scaled
+    Fibonacci values across nine steps shows how the distribution changes.
+    """)
+    return
 
 
 @app.cell
-def _(tables_button, wandb_settings):
-    mo.stop(not tables_button.value)
-    finish_active_run()
+def _(entity, project):
+    histogram_values = np.array([0, 1, 1, 2, 3, 5, 8, 13, 21, 34])
+    with wandb.init(name="histograms", project=project, entity=entity) as histograms_run:
+        for i in range(1, 10):
+            histograms_run.log({"histograms": wandb.Histogram(histogram_values / i)})
+    return
 
-    with wandb.init(name="tables", **wandb_settings) as _tables_run:
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ### Log images
+
+    Wrap image pixels in `wandb.Image` and add a caption. Weights & Biases displays the image
+    in a Media panel, making it useful for inspecting inputs or predictions.
+    """)
+    return
+
+
+@app.cell
+def _(asset_base_url, entity, fs, project):
+    with fs.open(f"{asset_base_url}/cafe.jpg", "rb") as image_file:
+        im = plt.imread(image_file, format="jpg")
+
+    with wandb.init(name="images", project=project, entity=entity) as images_run:
+        images_run.log({"img": [wandb.Image(im, caption="Cafe")]})
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ### Log videos
+
+    Read an existing MP4 into a byte buffer and pass it to `wandb.Video`.
+    Weights & Biases stores the clip with the run so you can replay behavior such as an agent
+    acting in an environment.
+    """)
+    return
+
+
+@app.cell
+def _(asset_base_url, entity, fs, project):
+    with fs.open(f"{asset_base_url}/openai-gym.mp4", "rb") as video_file:
+        video = io.BytesIO(video_file.read())
+
+    with wandb.init(name="videos", project=project, entity=entity) as videos_run:
+        videos_run.log({"video": wandb.Video(video, format="mp4")})
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ### Log tables
+
+    Tables keep examples, predictions, and labels together for inspection.
+    The following cell demonstrates two equivalent ways to build a `wandb.Table`:
+    supply all rows at once, or add rows individually with `add_data()`.
+    """)
+    return
+
+
+@app.cell
+def _(entity, project):
+    with wandb.init(name="tables", project=project, entity=entity) as tables_run:
         # Create tabular data, method 1.
         data = [
             ["I love my phone", "1", "1"],
             ["My phone sucks", "0", "-1"],
         ]
-        _tables_run.log(
+        tables_run.log(
             {
                 "a_table": wandb.Table(
                     data=data,
@@ -458,92 +426,79 @@ def _(tables_button, wandb_settings):
         )
         table.add_data("I love my phone", "1", "1")
         table.add_data("My phone sucks", "0", "-1")
-        _tables_run.log({"another_table": table})
-        _tables_run_url = _tables_run.url
-
-    mo.callout(
-        mo.md(f"Tables logged. [Open the W&B run]({_tables_run_url})."),
-        kind="success",
-    )
+        tables_run.log({"another_table": table})
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    html_button = mo.ui.run_button(label="Log HTML")
-    mo.vstack([mo.md("### Log HTML"), html_button])
-    return (html_button,)
+    mo.md(r"""
+    ### Log HTML
+
+    Use `wandb.Html` for custom visualizations or reports. Here we log both a
+    downloaded HTML document and an inline string. `data_is_not_path=True` tells
+    Weights & Biases to treat the strings as HTML content.
+    """)
+    return
 
 
 @app.cell
-def _(asset_base_url, fs, html_button, wandb_settings):
-    mo.stop(not html_button.value)
-    finish_active_run()
+def _(asset_base_url, entity, fs, project):
+    with fs.open(f"{asset_base_url}/some_html.html", "rt") as html_file:
+        html = html_file.read()
 
-    with fs.open(f"{asset_base_url}/some_html.html", "rt") as _html_file:
-        _html = _html_file.read()
-
-    with wandb.init(name="html", **wandb_settings) as _html_run:
-        _html_run.log(
+    with wandb.init(name="html", project=project, entity=entity) as html_run:
+        html_run.log(
             {
-                "custom_file": wandb.Html(_html, data_is_not_path=True),
+                "custom_file": wandb.Html(html, data_is_not_path=True),
                 "custom_string": wandb.Html(
                     '<a href="https://mysite">Link</a>',
                     data_is_not_path=True,
                 ),
             }
         )
-        _html_run_url = _html_run.url
-
-    mo.callout(
-        mo.md(f"HTML logged. [Open the W&B run]({_html_run_url})."),
-        kind="success",
-    )
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    objects_button = mo.ui.run_button(label="Log a 3D object")
-    mo.vstack([mo.md("### Log 3D objects"), objects_button])
-    return (objects_button,)
+    mo.md(r"""
+    ### Log 3D objects
+
+    Load the tutorial's wolf mesh and wrap its text buffer in `wandb.Object3D`.
+    `file_type="obj"` identifies the mesh format for Weights & Biases's 3D viewer.
+    """)
+    return
 
 
 @app.cell
-def _(asset_base_url, fs, objects_button, wandb_settings):
-    mo.stop(not objects_button.value)
-    finish_active_run()
+def _(asset_base_url, entity, fs, project):
+    with fs.open(f"{asset_base_url}/wolf.obj", "rt") as object_file:
+        mesh_buffer = io.StringIO(object_file.read())
 
-    with fs.open(f"{asset_base_url}/wolf.obj", "rt") as _object_file:
-        _object = io.StringIO(_object_file.read())
-
-    with wandb.init(name="3d_objects", **wandb_settings) as _object_3d_run:
-        _object_3d_run.log(
-            {"3d_object": wandb.Object3D(_object, file_type="obj")}
+    with wandb.init(name="3d_objects", project=project, entity=entity) as object_3d_run:
+        object_3d_run.log(
+            {"3d_object": wandb.Object3D(mesh_buffer, file_type="obj")}
         )
-        _object_3d_run_url = _object_3d_run.url
-
-    mo.callout(
-        mo.md(f"3D object logged. [Open the W&B run]({_object_3d_run_url})."),
-        kind="success",
-    )
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    point_clouds_button = mo.ui.run_button(label="Log a point cloud")
-    mo.vstack([mo.md("### Log point clouds"), point_clouds_button])
-    return (point_clouds_button,)
+    mo.md(r"""
+    ### Log point clouds
+
+    Generate 250 reproducible 3D points and two labeled bounding boxes.
+    `wandb.Object3D` also accepts a scene dictionary, allowing you to inspect
+    point clouds and annotations together in Weights & Biases.
+    """)
+    return
 
 
 @app.cell
-def _(point_clouds_button, wandb_settings):
-    mo.stop(not point_clouds_button.value)
-    finish_active_run()
-
+def _(entity, project):
     points = np.random.default_rng(42).uniform(size=(250, 3))
-    _scene = {
+    scene = {
         "type": "lidar/beta",
         "points": points,
         "boxes": np.array(
@@ -581,35 +536,34 @@ def _(point_clouds_button, wandb_settings):
         "vectors": np.array([]),
     }
 
-    with wandb.init(name="point_clouds", **wandb_settings) as _point_cloud_run:
-        _point_cloud_run.log({"point_scene": wandb.Object3D(_scene)})
-        _point_cloud_run_url = _point_cloud_run.url
-
-    mo.callout(
-        mo.md(f"Point cloud logged. [Open the W&B run]({_point_cloud_run_url})."),
-        kind="success",
-    )
+    with wandb.init(
+        name="point_clouds", project=project, entity=entity) as point_cloud_run:
+        point_cloud_run.log({"point_scene": wandb.Object3D(scene)})
     return
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Verify and next steps
+    ## Verify each logged data type
 
-    Open the run link produced by each demonstration and verify the result in the W&B workspace:
+    Each demonstration creates a named run in the selected project. Use the run
+    URLs or the runs table to find `metrics`, `plots`, `histograms`, `images`,
+    `videos`, `tables`, `html`, `3d_objects`, and the 3D point cloud example.
 
-    - **Metrics, plots, and histograms:** inspect the run charts.
-    - **Images, video, audio, HTML, and 3D data:** inspect the run's Media panels.
-    - **Tables:** open the logged Tables panels and compare the two construction methods.
+    Confirm that scalar metrics and histograms have steps, test the media and 3D
+    viewers, compare `a_table` with `another_table`, and inspect the point cloud
+    with its labeled boxes. The [media guide](https://docs.wandb.ai/models/track/log/media)
+    explains the supported objects, while the
+    [Tables guide](https://docs.wandb.ai/models/tables) covers filtering and
+    comparison.
 
-    Try changing the generated waveform or point cloud, then click that section's button again to create a new run you can compare.
+    ## Next steps
 
-    ## More resources
-
-    - [Track model performance](https://app.wandb.ai/lavanyashukla/visualize-models/reports/Visualize-Model-Performance--Vmlldzo1NTk2MA)
-    - [Visualize sklearn models](https://app.wandb.ai/lavanyashukla/visualize-sklearn/reports/Visualize-Sklearn-Model-Performance--Vmlldzo0ODIzNg)
-    - [Visualize model predictions](https://app.wandb.ai/lavanyashukla/visualize-predictions/reports/Visualize-Model-Predictions--Vmlldzo1NjM4OA/)
+    Replace one sample with a small, representative batch from your own model. Add
+    stable IDs, labels, predictions, and confidence values to a Table so the same
+    examples can be compared across runs. Prefer a diagnostic sample plus an
+    Artifact reference over logging an entire dataset as media.
     """)
     return
 
