@@ -269,8 +269,6 @@ def _(available_entities):
     return (wandb_setup_form,)
 
 
-
-
 @app.cell(hide_code=True)
 def _(wandb_setup_form):
     mo.stop(wandb_setup_form.value is None)
@@ -281,7 +279,6 @@ def _(wandb_setup_form):
 
     entity = _entity
     project = _project
-
     return entity, project
 
 
@@ -567,17 +564,20 @@ def _():
     mo.md(r"""
     ## Verify the confusion matrix
 
-    Open the run link printed when training begins. Find `conf_mat` under
-    **Custom Charts** and select an epoch. Diagonal cells are correct predictions;
-    off-diagonal cells show which Fashion-MNIST classes the model confuses.
-    Compare the chart with `epoch/val_loss` and `epoch/val_accuracy` so an
+    Open the run link printed when training begins. It will look similar to:
+
+    ```
+    wandb: ⭐️ View project at https://wandb.ai/team/confusion_matrix
+    wandb: 🚀 View run at https://wandb.ai/team/confusion_matrix/runs/run_ID
+    ```
+
+    Where `team` will be your Weights & Biases team entity and `run_ID` is the unique run ID.
+
+    Select the **Workspaces** tab. Find `conf_mat` under **Custom Charts** and select an epoch. Diagonal cells are correct predictions. Off-diagonal cells show which Fashion-MNIST classes the model confuses. Compare the chart with `epoch/val_loss` and `epoch/val_accuracy` so an
     aggregate change can be traced to specific classes.
 
-    Open **Artifacts** to verify the model checkpoint versions, and check **Config**
-    for sample sizes, epoch count, and `num_log_batches`. The matrix may cover fewer
-    examples than the validation metrics, so confirm its scope. See the
-    [confusion-matrix example](https://wandb.ai/wandb/plots/reports/Confusion-Matrix--VmlldzozMDg1NTM)
-    for customization ideas.
+    Select the **Artifacts** tab to verify the model checkpoint versions, and check **Config** for sample sizes, epoch count, and `num_log_batches`. The matrix may cover fewer examples than the validation metrics, so confirm its scope. See the
+    [confusion-matrix example](https://wandb.ai/wandb/plots/reports/Confusion-Matrix--VmlldzozMDg1NTM) for customization ideas.
 
     ## Next steps
 
