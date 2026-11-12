@@ -1,6 +1,7 @@
 # /// script
 # dependencies = [
 #     "fsspec[http]==2026.7.0",
+#     "marimo>=0.25.2",
 #     "matplotlib==3.11.1",
 #     "numpy==2.5.2",
 #     "pandas==3.0.5",
@@ -12,7 +13,7 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.25.2"
 app = marimo.App(auto_download=["html"])
 
 with app.setup:
@@ -116,7 +117,7 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_api_form):
     from wandb.sdk.lib.service.service_connection import (
         WandbApiFailedError as _WandbApiFailedError,
     )
@@ -195,7 +196,7 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _():
+def _(available_entities):
     def _validate_wandb_target(value):
         if value is None:
             return None
@@ -239,10 +240,8 @@ def _():
     return (wandb_setup_form,)
 
 
-
-
 @app.cell(hide_code=True)
-def _():
+def _(wandb_setup_form):
     mo.stop(wandb_setup_form.value is None)
 
     _submission = wandb_setup_form.value
@@ -251,10 +250,7 @@ def _():
 
     entity = _entity
     project = _project
-
     return entity, project
-
-
 
 
 @app.cell(hide_code=True)
@@ -392,66 +388,6 @@ def _(asset_base_url, entity, fs, project):
 
     with wandb.init(name="videos", project=project, entity=entity) as videos_run:
         videos_run.log({"video": wandb.Video(video, format="mp4")})
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ### Log audio
-
-    Use `wandb.Audio` for either a recording or a generated waveform. Supply the
-    sample rate so playback uses the correct timing, and a caption to identify
-    each example. The next two cells log piano audio and a synthetic chirp.
-    """)
-    return
-
-
-@app.cell
-def _(asset_base_url, entity, fs, project):
-    with fs.open(f"{asset_base_url}/piano.wav", "rb") as audio_file:
-        samples, piano_sample_rate = sf.read(audio_file, dtype="float32")
-
-    with wandb.init(
-        name="audio_file", project=project, entity=entity
-    ) as audio_file_run:
-        audio_file_run.log(
-            {
-                "examples": [
-                    wandb.Audio(
-                        samples,
-                        caption="Piano",
-                        sample_rate=piano_sample_rate,
-                    )
-                ]
-            }
-        )
-    return
-
-
-@app.cell
-def _(entity, project):
-    generated_sample_rate = 44_100
-    duration_seconds = 3
-    sample_times = np.linspace(
-        0, duration_seconds, num=generated_sample_rate * duration_seconds, endpoint=False
-    )
-    waveform = np.sin(generated_sample_rate * 2 * np.pi / 40 * sample_times**2)
-
-    with wandb.init(
-        name="audio_generated", project=project, entity=entity
-    ) as generated_audio_run:
-        generated_audio_run.log(
-            {
-                "examples": [
-                    wandb.Audio(
-                        waveform,
-                        caption="Boop",
-                        sample_rate=generated_sample_rate,
-                    )
-                ]
-            }
-        )
     return
 
 
@@ -613,8 +549,7 @@ def _():
 
     Each demonstration creates a named run in the selected project. Use the run
     URLs or the runs table to find `metrics`, `plots`, `histograms`, `images`,
-    `videos`, the audio examples, `tables`, `html`, `3d_objects`, and the point
-    cloud run.
+    `videos`, `tables`, `html`, `3d_objects`, and the 3D point cloud example.
 
     Confirm that scalar metrics and histograms have steps, test the media and 3D
     viewers, compare `a_table` with `another_table`, and inspect the point cloud
