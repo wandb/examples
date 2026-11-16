@@ -247,8 +247,6 @@ def _(available_entities, mo):
     return (wandb_setup_form,)
 
 
-
-
 @app.cell(hide_code=True)
 def _(mo, wandb_setup_form):
     mo.stop(wandb_setup_form.value is None)
@@ -259,7 +257,6 @@ def _(mo, wandb_setup_form):
 
     TEAM_ENTITY = _entity
     PROJECT = _project
-
     return PROJECT, TEAM_ENTITY
 
 
@@ -274,13 +271,13 @@ def _(mo):
 
 
 @app.cell
-def _():
+def _(wandb):
     REGISTRY_NAME = "New_Zoo_Registry"
 
-    # wandb.Api().create_registry(
-    #     name=REGISTRY_NAME,
-    #     visibility="organization",
-    # )
+    wandb.Api().create_registry(
+        name=REGISTRY_NAME,
+        visibility="organization",
+    )
     return (REGISTRY_NAME,)
 
 
@@ -438,12 +435,11 @@ def _(PROJECT, TEAM_ENTITY, dataset_target_path, wandb):
             type="dataset",  
             description="Processed dataset and labels."
         )
-    
+
         artifact.add_file(local_path="zoo_dataset.pt", name="zoo_dataset")
         artifact.add_file(local_path="zoo_labels.pt", name="zoo_labels")
-    
-        run.link_artifact(artifact=artifact, target_path=dataset_target_path)
 
+        run.link_artifact(artifact=artifact, target_path=dataset_target_path)
     return
 
 
@@ -504,19 +500,18 @@ def _(PROJECT, REGISTRY_NAME, TEAM_ENTITY, config, wandb):
         description = 'Contains `zoo_dataset` split into 4 datasets. ' \
         'For training, use `zoo_dataset_X_train` and `zoo_labels_y_train ' \
         'For testing, use `zoo_dataset_X_test` and `zoo_labels_y_test`.'
-    
+
         artifact_1 = wandb.Artifact(name=name, type='dataset', description=description)
         artifact_1.add_file(local_path='zoo_dataset_X_train.pt',name='zoo_dataset_X_train')
         artifact_1.add_file(local_path='zoo_labels_y_train.pt', name='zoo_labels_y_train')
         artifact_1.add_file(local_path='zoo_dataset_X_test.pt', name='zoo_dataset_X_test')
         artifact_1.add_file(local_path='zoo_labels_y_test.pt', name='zoo_labels_y_test')
-    
-    
+
+
         # Add a description to let others know which file to use in future experiments
         COLLECTION_NAME_1 = 'zoo-dataset-tensors-split'
         target_dataset_path = f'wandb-registry-{REGISTRY_NAME}/{COLLECTION_NAME_1}'
         run_1.link_artifact(artifact=artifact_1, target_path=target_dataset_path)
-
     return (COLLECTION_NAME_1,)
 
 
@@ -639,16 +634,16 @@ def _(
         X_train_1 = torch.load(f=X_train_path + '/zoo_dataset_X_train')
         y_train_1 = torch.load(f=y_train_path + '/zoo_labels_y_train')
         prev_best_loss = 10000000000.0
-    
+
         # Load data as tensors 
         for e in range(hyperparameter_config['epochs'] + 1):
             pred = model(X_train_1)
             loss = loss_fn(pred, y_train_1.squeeze(1))
-        
+    
             # Set initial dummy loss value to compare to in training loop
             loss.backward()
             optimizer.step()
-        
+    
             # Training loop
             optimizer.zero_grad()
             run_2.log({'train/epoch_ndx': e, 'train/train_loss': loss})
@@ -659,7 +654,7 @@ def _(
                 model_artifact_name = f'zoo-{run_2.id}'
                 artifact_2 = wandb.Artifact(name=model_artifact_name, type='model', metadata={'num_classes': 7, 'model_type': run_2.config['model_type']})
                 prev_best_loss = loss
-    
+
         print(f'Saving model artifact {model_artifact_name}')
         artifact_2.add_file(PATH)
         artifact_2.save()
@@ -873,7 +868,7 @@ def _(PROJECT, TEAM_ENTITY, data_artifact_name, torch, wandb):
         test_data_filename = 'zoo_dataset_X_test'
         test_labels_filename = 'zoo_labels_y_test'
         loaded_data = torch.load(f'{local_dataset_path}/{test_data_filename}')
-    
+
         # Load dataset and labels into notebook
         loaded_labels = torch.load(f'{local_dataset_path}/{test_labels_filename}')
     return loaded_data, loaded_labels
