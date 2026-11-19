@@ -16,7 +16,7 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.25.2"
 app = marimo.App(width="medium", app_title="Simple PyTorch Integration")
 
 with app.setup:
@@ -98,6 +98,8 @@ def _():
         model.to_onnx()
         run.save("model.onnx")
     ```
+
+    > Note: marimo notebooks are reactive. marimo tracks dependencies between cells and runs them in the required order. This notebook places helper functions at the end because they aren’t central to its learning objectives, even when earlier cells use them.
     """)
     return
 
@@ -150,7 +152,7 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_api_form):
     from wandb.sdk.lib.service.service_connection import (
         WandbApiFailedError as _WandbApiFailedError,
     )
@@ -229,7 +231,7 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _():
+def _(available_entities):
     def _validate_wandb_target(value):
         if value is None:
             return None
@@ -273,10 +275,8 @@ def _():
     return (wandb_setup_form,)
 
 
-
-
 @app.cell(hide_code=True)
-def _():
+def _(wandb_setup_form):
     mo.stop(wandb_setup_form.value is None)
 
     _submission = wandb_setup_form.value
@@ -285,10 +285,7 @@ def _():
 
     entity = _entity
     project = _project
-
     return entity, project
-
-
 
 
 @app.cell(hide_code=True)
@@ -583,30 +580,6 @@ def _(config, entity, project):
     return
 
 
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Helper functions
-
-    Resetting the random seeds before each experiment makes runs easier to
-    compare on the same device and software stack.
-    """)
-    return
-
-
-@app.function
-def seed_everything(seed):
-    # Reset random number generators before each experiment.
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-
-
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
@@ -631,6 +604,28 @@ def _():
     [Weights & Biases Sweeps](https://docs.coreweave.com/products/wandb/sweeps).
     """)
     return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Helper functions
+
+    Resetting the random seeds before each experiment makes runs easier to
+    compare on the same device and software stack.
+    """)
+    return
+
+
+@app.function
+def seed_everything(seed):
+    # Reset random number generators before each experiment.
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 if __name__ == "__main__":

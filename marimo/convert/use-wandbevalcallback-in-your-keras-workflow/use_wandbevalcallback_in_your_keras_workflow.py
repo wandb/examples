@@ -15,7 +15,7 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.25.2"
 app = marimo.App(
     width="medium",
     app_title="Keras evaluation with Weights & Biases",
@@ -56,25 +56,9 @@ def _():
 
     [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/use-wandbevalcallback-in-your-keras-workflow/use_wandbevalcallback_in_your_keras_workflow.py/server)
 
-    This notebook introduces `WandbEvalCallback`, an abstract callback you can subclass to visualize datasets and model predictions using Weights & Biases Tables. See the [Keras integration](https://docs.wandb.ai/models/integrations/keras).
+    This notebook introduces `WandbEvalCallback`, an abstract callback you can subclass to visualize datasets and model predictions using Weights & Biases Tables. The evaluation callback uploads validation images as an Artifact and retrieves their table for reuse in each epoch's prediction table.
 
-
-
-    This example can run on CPU. A GPU can reduce training time. Running the data and model
-    cells downloads Fashion-MNIST and ImageNet weights the first time.
-
-    Run the cells from top to bottom in the marimo editor. Editing a cell
-    marks its dependents as stale until you run them again.
-    """)
-    return
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    This notebook requires an online Weights & Biases run. The evaluation callback
-    uploads validation images as an Artifact and retrieves their table for reuse in
-    each epoch's prediction table.
+    > Note: marimo notebooks are reactive. marimo tracks dependencies between cells and runs them in the required order. This notebook places helper functions at the end because they aren’t central to its learning objectives, even when earlier cells use them.
     """)
     return
 
@@ -127,7 +111,7 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_api_form):
     from wandb.sdk.lib.service.service_connection import (
         WandbApiFailedError as _WandbApiFailedError,
     )
@@ -206,7 +190,7 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _():
+def _(available_entities):
     def _validate_wandb_target(value):
         if value is None:
             return None
@@ -250,10 +234,8 @@ def _():
     return (wandb_setup_form,)
 
 
-
-
 @app.cell(hide_code=True)
-def _():
+def _(wandb_setup_form):
     mo.stop(wandb_setup_form.value is None)
 
     _submission = wandb_setup_form.value
@@ -262,10 +244,7 @@ def _():
 
     entity = _entity
     project = _project
-
     return entity, project
-
-
 
 
 @app.cell(hide_code=True)
@@ -474,31 +453,6 @@ def _(configs, entity, model, project, trainloader, validloader):
     return
 
 
-
-
-@app.function
-def parse_data(example, num_classes):
-    # Get image
-    image = example["image"]
-    image = tf.cast(image, tf.float32)
-
-    # Get label
-    label = example["label"]
-    label = tf.one_hot(label, depth=num_classes)
-    return image, label
-
-
-@app.function
-def get_dataloader(ds, configs, dataloader_type="train"):
-    dataloader = ds.map(
-        lambda example: parse_data(example, configs["num_classes"]),
-        num_parallel_calls=tf.data.AUTOTUNE,
-    )
-    if dataloader_type == "train":
-        dataloader = dataloader.shuffle(configs["shuffle_buffer"], seed=configs["seed"])
-    return dataloader.batch(configs["batch_size"]).prefetch(tf.data.AUTOTUNE)
-
-
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
@@ -522,6 +476,39 @@ def _():
     task-specific prediction and confidence columns.
     """)
     return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Helper functions
+
+    The input pipeline maps images and labels, shuffles only training examples, then batches and prefetches them.
+    """)
+    return
+
+
+@app.function
+def parse_data(example, num_classes):
+    # Get image
+    image = example["image"]
+    image = tf.cast(image, tf.float32)
+
+    # Get label
+    label = example["label"]
+    label = tf.one_hot(label, depth=num_classes)
+    return image, label
+
+
+@app.function
+def get_dataloader(ds, configs, dataloader_type="train"):
+    dataloader = ds.map(
+        lambda example: parse_data(example, configs["num_classes"]),
+        num_parallel_calls=tf.data.AUTOTUNE,
+    )
+    if dataloader_type == "train":
+        dataloader = dataloader.shuffle(configs["shuffle_buffer"], seed=configs["seed"])
+    return dataloader.batch(configs["batch_size"]).prefetch(tf.data.AUTOTUNE)
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.25.2"
 app = marimo.App(
     width="medium",
     app_title="Keras metrics with Weights & Biases",
@@ -58,8 +58,7 @@ def _():
     This notebook introduces the `WandbMetricsLogger` callback for [experiment tracking](https://docs.wandb.ai/models/integrations/keras). It logs training and validation metrics along with system metrics to Weights & Biases.
 
 
-
-    This notebook is designed to run on your local machine's CPU.
+    > Note: marimo notebooks are reactive. marimo tracks dependencies between cells and runs them in the required order. This notebook places helper functions at the end because they aren’t central to its learning objectives, even when earlier cells use them.
     """)
     return
 
@@ -112,7 +111,7 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_api_form):
     from wandb.sdk.lib.service.service_connection import (
         WandbApiFailedError as _WandbApiFailedError,
     )
@@ -191,7 +190,7 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _():
+def _(available_entities):
     def _validate_wandb_target(value):
         if value is None:
             return None
@@ -235,10 +234,8 @@ def _():
     return (wandb_setup_form,)
 
 
-
-
 @app.cell(hide_code=True)
-def _():
+def _(wandb_setup_form):
     mo.stop(wandb_setup_form.value is None)
 
     _submission = wandb_setup_form.value
@@ -247,10 +244,7 @@ def _():
 
     entity = _entity
     project = _project
-
     return entity, project
-
-
 
 
 @app.cell(hide_code=True)
@@ -398,6 +392,30 @@ def _(configs, entity, model, project, trainloader, validloader):
     return
 
 
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Verify the Keras metrics
+
+    Open the run link. Inspect `epoch/loss`, `epoch/accuracy`, `epoch/val_loss`,
+    and `epoch/val_accuracy`. Compare those epoch summaries with the more frequent
+    `batch/*` metrics produced by `log_freq=10`; batch charts should contain more
+    points and more short-term variation.
+
+    Open **Config** and confirm learning rate, batch size, epochs, and data limits.
+    The [Keras integration guide](https://docs.wandb.ai/models/integrations/keras)
+    describes metric namespaces and callback behavior, while the
+    [config guide](https://docs.coreweave.com/products/wandb/track/config#view-config-values)
+    shows how to compare settings.
+
+    ## Next steps
+
+    Change the learning rate, rebuild the model, and rerun with the same data and
+    seed. Then change `log_freq` from `10` to `"epoch"` to see how cadence changes
+    chart detail without changing the model. Use epoch-level values for the fair
+    run-to-run comparison.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -432,32 +450,6 @@ def get_dataloader(ds, configs, dataloader_type="train"):
     if dataloader_type == "train":
         dataloader = dataloader.shuffle(configs["shuffle_buffer"], seed=configs["seed"])
     return dataloader.batch(configs["batch_size"]).prefetch(tf.data.AUTOTUNE)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Verify the Keras metrics
-
-    Open the run link. Inspect `epoch/loss`, `epoch/accuracy`, `epoch/val_loss`,
-    and `epoch/val_accuracy`. Compare those epoch summaries with the more frequent
-    `batch/*` metrics produced by `log_freq=10`; batch charts should contain more
-    points and more short-term variation.
-
-    Open **Config** and confirm learning rate, batch size, epochs, and data limits.
-    The [Keras integration guide](https://docs.wandb.ai/models/integrations/keras)
-    describes metric namespaces and callback behavior, while the
-    [config guide](https://docs.coreweave.com/products/wandb/track/config#view-config-values)
-    shows how to compare settings.
-
-    ## Next steps
-
-    Change the learning rate, rebuild the model, and rerun with the same data and
-    seed. Then change `log_freq` from `10` to `"epoch"` to see how cadence changes
-    chart detail without changing the model. Use epoch-level values for the fair
-    run-to-run comparison.
-    """)
-    return
 
 
 if __name__ == "__main__":
