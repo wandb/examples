@@ -1,5 +1,7 @@
 # /// script
+# requires-python = ">=3.10"
 # dependencies = [
+#     "marimo>=0.24",
 #     "torch==2.14.0",
 #     "torchvision==0.29.0",
 #     "wandb==0.30.0",
@@ -8,8 +10,11 @@
 
 import marimo
 
-__generated_with = "0.24.0"
-app = marimo.App(auto_download=["html"])
+__generated_with = "0.25.1"
+app = marimo.App(
+    width="medium",
+    app_title="Weights & Biases Tables Quickstart",
+)
 
 with app.setup:
     import marimo as mo
@@ -20,18 +25,6 @@ with app.setup:
     import torchvision
     import torchvision.transforms as T
     import wandb
-
-    WANDB_PROJECT = "table-quickstart"
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    # View & analyze model predictions during training
-
-    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/w-b-tables-quickstart/w_b_tables_quickstart.py/server)
-    """)
-    return
 
 
 @app.cell(hide_code=True)
@@ -54,32 +47,16 @@ def _():
     <img class="wandb-header-logo--light" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_blackwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
     <img class="wandb-header-logo--dark" src="https://raw.githubusercontent.com/wandb/docs/main/icons/Endorsed_primary_goldwhite.svg" width="400" alt="Weights & Biases by CoreWeave" />
 
-    This quickstart guide covers how to track, visualize, and compare model predictions over the course of training, using PyTorch on MNIST data.
+    # View & analyze model predictions during training
 
-    With [W&B Tables](https://docs.wandb.com/datasets-and-predictions):
-    1. Log metrics, images, text, etc. to a `wandb.Table()` during model training or evaluation
-    2. View, sort, filter, group, join, interactively query, and explore these tables
-    3. Compare model predictions or results: dynamically across specific images, hyperparameters/model versions, or time steps.
+    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/wandb/examples/blob/main/marimo/convert/w-b-tables-quickstart/w_b_tables_quickstart.py/server)
 
-    ## Examples
-    ### Compare predicted scores for specific images
+    Train an MNIST classifier and log a Table of labeled prediction examples
+    after each epoch. Use the images, predictions, and class probabilities to
+    inspect mistakes that an aggregate accuracy score cannot explain.
 
-    [Live example: compare predictions after 1 vs 5 epochs of training →](https://wandb.ai/stacey/table-quickstart/reports/CNN-2-Progress-over-Training-Time--Vmlldzo3NDY5ODU#compare-predictions-after-1-vs-5-epochs)
-    <img src="https://i.imgur.com/NMme6Qj.png" alt="1 epoch vs 5 epochs of training"/>
-    The histograms compare per-class scores between the two models. The top green bar in each histogram represents model "CNN-2, 1 epoch" (id 0), which only trained for 1 epoch. The bottom purple bar represents model "CNN-2, 5 epochs" (id 1), which trained for 5 epochs. The images are filtered to cases where the models disagree. For example, in the first row, the "4" gets high scores across all the possible digits after 1 epoch, but after 5 epochs it scores highest on the correct label and very low on the rest.
-
-    ### Focus on top errors over time
-    [Live example →](https://wandb.ai/stacey/table-quickstart/reports/CNN-2-Progress-over-Training-Time--Vmlldzo3NDY5ODU#top-errors-over-time)
-
-    See incorrect predictions (filter to rows where "guess" != "truth") on the full test data. Note that there are 229 wrong guesses after 1 training epoch, but only 98 after 5 epochs.
-    <img src="https://i.imgur.com/7g8nodn.png" alt="side by side, 1 vs 5 epochs of training"/>
-
-    ### Compare model performance and find patterns
-
-    [See full detail in a live example →](https://wandb.ai/stacey/table-quickstart/reports/CNN-2-Progress-over-Training-Time--Vmlldzo3NDY5ODU#false-positives-grouped-by-guess)
-
-    Filter out correct answers, then group by the guess to see examples of misclassified images and the underlying distribution of true labels—for two models side-by-side. A model variant with 2X the layer sizes and learning rate is on the left, and the baseline is on the right. Note that the baseline makes slightly more mistakes for each guessed class.
-    <img src="https://i.imgur.com/i5PP9AE.png" alt="grouped errors for baseline vs double variant"/>
+    Running the following code cells downloads MNIST, trains a model, and logs
+    metrics and prediction tables to Weights & Biases.
     """)
     return
 
@@ -87,82 +64,204 @@ def _():
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## Authentication
+    ## Authenticate with Weights & Biases
 
-    Enter your [W&B API key](https://wandb.ai/authorize) and, if needed, your team or entity. You can leave the key blank when this environment already has W&B credentials, including a `WANDB_API_KEY` configured in the Molab Secrets panel.
-
-    If you do not yet have an account, [sign up for W&B](https://wandb.ai/signup). Your entity is the first path segment after `wandb.ai` when you open a W&B workspace.
-
-    This example runs in Molab as a convenient hosted environment, but you can run the same training code anywhere and visualize its metrics and predictions in W&B.
+    Paste your [Forge API key](https://docs.coreweave.com/products/wandb/platform/hosting/iam/api-keys) into the password field below. Keep your key out of the notebook’s source code.
     """)
     return
 
 
 @app.cell(hide_code=True)
 def _():
-    _api_key_input = mo.ui.text(
-        kind="password",
-        label="W&B API key (optional)",
-        placeholder="Paste a key or use cached credentials",
-        full_width=True,
+    def _notify_submission(_value):
+        mo.status.toast(
+            "Credentials submitted",
+            "Run the next cell to verify them with Weights & Biases.",
+        )
+
+    wandb_api_form = (
+        mo.md("{api_key}")
+        .batch(
+            api_key=mo.ui.text(
+                kind="password",
+                label="Forge API key",
+                full_width=True,
+            )
+        )
+        .form(
+            submit_button_label="Connect to Weights & Biases",
+            bordered=True,
+            on_change=_notify_submission,
+        )
     )
-    _entity_input = mo.ui.text(
-        label="W&B entity or team (optional)",
-        placeholder="Leave blank to use your default entity",
-        full_width=True,
-    )
-    wandb_login_form = (
-        mo.md("{api_key}\n\n{entity}")
-        .batch(api_key=_api_key_input, entity=_entity_input)
-        .form(submit_button_label="Connect to W&B", bordered=True)
-    )
-    wandb_login_form
-    return (wandb_login_form,)
+
+    wandb_api_form
+    return (wandb_api_form,)
 
 
 @app.cell(hide_code=True)
-def _(wandb_login_form):
-    mo.stop(
-        wandb_login_form.value is None,
-        mo.callout(
-            "Submit the form above to authenticate before creating a run.",
-            kind="info",
-        ),
+def _():
+    mo.md(r"""
+    After submitting the API key, run the following cell to verify the
+    credentials and load your available Weights & Biases entities.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    from wandb.sdk.lib.service.service_connection import (
+        WandbApiFailedError as _WandbApiFailedError,
     )
 
-    _api_key = wandb_login_form.value["api_key"].strip()
-    _entity = wandb_login_form.value["entity"].strip()
+    mo.stop(wandb_api_form.value is None)
+
+    _submission = wandb_api_form.value
+    _api_key = _submission["api_key"].strip()
 
     try:
-        wandb.login(key=_api_key or None, relogin=bool(_api_key))
-    except wandb.errors.Error:
+        _login_ok = wandb.login(
+            key=_api_key or None,
+            relogin=bool(_api_key),
+            verify=True,
+            prompt=False,
+        )
+    except (wandb.errors.Error, ValueError):
+        _login_ok = False
+
+    mo.stop(
+        not _login_ok,
+        mo.callout("Check your API key or saved credentials, then connect again.", kind="danger"),
+    )
+
+    try:
+        _api = wandb.Api(timeout=15)
+        _viewer = _api.viewer
+    except (wandb.errors.Error, _WandbApiFailedError, ValueError):
         mo.stop(
             True,
             mo.callout(
-                "W&B authentication failed. Check the API key or your Molab Secrets configuration, then submit the form again.",
+                "Weights & Biases verified the credentials but could not retrieve your account entities.",
                 kind="danger",
             ),
         )
 
-    wandb_entity = _entity or None
-    _entity_note = (
-        f" Runs will be logged to `{wandb_entity}`."
-        if wandb_entity
-        else " Runs will use your default W&B entity."
+    available_entities = sorted({
+        _value
+        for _value in (
+            getattr(_viewer, "username", None),
+            getattr(_viewer, "entity", None),
+            *_viewer.teams,
+        )
+        if _value
+    })
+    mo.stop(
+        not available_entities,
+        mo.callout(
+            "Weights & Biases authenticated successfully, but no personal or team entities were found.",
+            kind="danger",
+        ),
     )
+
     mo.callout(
-        mo.md(f"W&B is connected.{_entity_note}"),
+        mo.md("✓ Credentials verified. Specify your team entity below."),
         kind="success",
     )
-    return (wandb_entity,)
+    return (available_entities,)
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 0. Setup
+    ## Set your team and project
 
-    The dependencies are declared in the notebook metadata. The next cells define the PyTorch data loader, model, and training schedule. MNIST is downloaded only after you explicitly start the training workflow.
+    Run the following cell and specify your:
+
+    - Weights & Biases team entity.
+    - A name for your [project](https://docs.coreweave.com/products/wandb/track/project-page#projects). The default project is `table-quickstart`.
+
+    Then select **Use this Weights & Biases target**.
+
+    > If the project doesn't exist, Weights & Biases creates it when the first run starts, provided you have write access.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _():
+    def _validate_wandb_target(value):
+        if value is None:
+            return None
+        if not value["entity"]:
+            return "Select a Weights & Biases entity."
+        if not value["project"].strip():
+            return "Enter a project name."
+        return None
+
+    def _notify_wandb_submission(_value):
+        mo.status.toast(
+            "Weights & Biases target selected",
+            "Run the next cell to confirm the destination.",
+        )
+
+    wandb_setup_form = (
+        mo.md("{entity}\n\n{project}")
+        .batch(
+            entity=mo.ui.dropdown(
+                options=available_entities,
+                value=available_entities[0],
+                label="Weights & Biases entity",
+                searchable=True,
+                full_width=True,
+            ),
+            project=mo.ui.text(
+                value="table-quickstart",
+                label="Project",
+                full_width=True,
+            ),
+        )
+        .form(
+            submit_button_label="Use this Weights & Biases target",
+            validate=_validate_wandb_target,
+            on_change=_notify_wandb_submission,
+            bordered=True,
+        )
+    )
+
+    wandb_setup_form
+    return (wandb_setup_form,)
+
+
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.stop(wandb_setup_form.value is None)
+
+    _submission = wandb_setup_form.value
+    _entity = _submission["entity"]
+    _project = _submission["project"].strip()
+
+    entity = _entity
+    project = _project
+
+    return entity, project
+
+
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Set the Training and Table Sizes
+
+    The next cell selects a GPU when available and defines the model's
+    hyperparameters. One epoch keeps the demo short. Increase `EPOCHS` to compare
+    predictions at different points in training.
+
+    We evaluate all 10,000 test images, but log only 32 images from each of the
+    first ten test batches. That creates a table with 320 rows per epoch and
+    keeps image uploads small.
     """)
     return
 
@@ -170,72 +269,57 @@ def _():
 @app.cell
 def _():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    # Create train and test data loaders.
-    def get_dataloader(is_train, batch_size, slice=5):
-        "Get a training data loader."
-        ds = torchvision.datasets.MNIST(
-            root=".",
-            train=is_train,
-            transform=T.ToTensor(),
-            download=True,
-        )
-        loader = torch.utils.data.DataLoader(
-            dataset=ds,
-            batch_size=batch_size,
-            shuffle=True if is_train else False,
-            pin_memory=torch.cuda.is_available(),
-            num_workers=2,
-        )
-        return loader
-
-    return device, get_dataloader
+    EPOCHS = 1
+    BATCH_SIZE = 32
+    LEARNING_RATE = 0.001
+    NUM_CLASSES = 10
+    L1_SIZE = 32
+    L2_SIZE = 64
+    CONV_KERNEL_SIZE = 5
+    NUM_BATCHES_TO_LOG = 10
+    NUM_IMAGES_PER_BATCH = 32
+    return (
+        BATCH_SIZE,
+        CONV_KERNEL_SIZE,
+        EPOCHS,
+        L1_SIZE,
+        L2_SIZE,
+        LEARNING_RATE,
+        NUM_BATCHES_TO_LOG,
+        NUM_CLASSES,
+        NUM_IMAGES_PER_BATCH,
+        device,
+    )
 
 
 @app.cell(hide_code=True)
 def _():
     mo.md(r"""
-    ## 1. Define the model and training schedule
+    ## Define the Classifier
 
-    * Set the number of epochs to run, where each epoch consists of a training step and a validation (test) step. Optionally configure the amount of data to log per test step. Here the number of batches and number of images per batch to visualize are set low to simplify the demo.
-    * Define a simple convolutional neural net (following [pytorch-tutorial](https://github.com/yunjey/pytorch-tutorial) code).
-    * Load in train and test sets using PyTorch
+    The next cell defines a small convolutional network for MNIST. It returns
+    ten logits per image, one for each digit. During evaluation, we apply
+    softmax to convert those logits into per-class probabilities for the table.
+
+    This is ordinary PyTorch model code. The Weights & Biases integration happens later,
+    when we start a run and log its metrics and predictions.
     """)
     return
 
 
 @app.cell
-def _(device):
-    # Number of epochs to run. Each epoch includes a training step and a
-    # test step, so this sets the number of prediction tables to log.
-    EPOCHS = 1
-
-    # Keep the amount of prediction data low to simplify the demo.
-    NUM_BATCHES_TO_LOG = 10
-    NUM_IMAGES_PER_BATCH = 32
-
-    # Training configuration and hyperparameters.
-    NUM_CLASSES = 10
-    BATCH_SIZE = 32
-    LEARNING_RATE = 0.001
-    L1_SIZE = 32
-    L2_SIZE = 64
-    # Changing this may require changing the shape of adjacent layers.
-    CONV_KERNEL_SIZE = 5
-
-
-    # Define a two-layer convolutional neural network.
+def _(CONV_KERNEL_SIZE, L1_SIZE, L2_SIZE):
     class ConvNet(nn.Module):
         def __init__(self, num_classes=10):
             super().__init__()
             self.layer1 = nn.Sequential(
-                nn.Conv2d(1, L1_SIZE, CONV_KERNEL_SIZE, stride=1, padding=2),
+                nn.Conv2d(1, L1_SIZE, CONV_KERNEL_SIZE, stride=1, padding=CONV_KERNEL_SIZE // 2),
                 nn.BatchNorm2d(L1_SIZE),
                 nn.ReLU(),
                 nn.MaxPool2d(kernel_size=2, stride=2),
             )
             self.layer2 = nn.Sequential(
-                nn.Conv2d(L1_SIZE, L2_SIZE, CONV_KERNEL_SIZE, stride=1, padding=2),
+                nn.Conv2d(L1_SIZE, L2_SIZE, CONV_KERNEL_SIZE, stride=1, padding=CONV_KERNEL_SIZE // 2),
                 nn.BatchNorm2d(L2_SIZE),
                 nn.ReLU(),
                 nn.MaxPool2d(kernel_size=2, stride=2),
@@ -248,64 +332,80 @@ def _(device):
             out = out.reshape(out.size(0), -1)
             return self.fc(out)
 
-    model = ConvNet(NUM_CLASSES).to(device)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-
-    model
-    return (
-        BATCH_SIZE,
-        CONV_KERNEL_SIZE,
-        EPOCHS,
-        L1_SIZE,
-        L2_SIZE,
-        LEARNING_RATE,
-        NUM_BATCHES_TO_LOG,
-        NUM_CLASSES,
-        NUM_IMAGES_PER_BATCH,
-        criterion,
-        model,
-        optimizer,
-    )
+    return (ConvNet,)
 
 
 @app.cell(hide_code=True)
 def _():
-    mo.vstack(
-        [
-            mo.md(r"""
-    ## 2. Run training and log test predictions
+    mo.md(r"""
+    ## Load MNIST
 
-    For every epoch, run a training step and a test step. For each test step, create a `wandb.Table()` in which to store test predictions. These can be visualized, dynamically queried, and compared side by side in your browser.
+    The next cell downloads MNIST and creates training and test data loaders.
+    Training batches are shuffled. Test batches stay in a fixed order so each
+    logged image has the same identifier across epochs and experiments.
 
-    The button below downloads MNIST, trains the model for the configured number of epochs, and creates a W&B run containing metrics and prediction tables.
-    """),
-            mo.callout(
-                mo.md(
-                    "For faster training in molab, open **Configure compute** and select a GPU before starting the run."
-                ),
-                kind="info",
-            ),
-        ]
-    )
+    The test batch size is twice the training batch size. We use
+    `num_workers=0` so loading also works in notebook runtimes without separate
+    worker processes.
+    """)
     return
 
 
 @app.cell
-def _():
-    run_training = mo.ui.run_button(
-        label="Train model and log predictions to W&B",
-        kind="success",
-        tooltip="Downloads MNIST and creates a W&B run",
+def _(BATCH_SIZE):
+    train_dataset = torchvision.datasets.MNIST(
+        root="./data", train=True, transform=T.ToTensor(), download=True,
     )
-    run_training
-    return (run_training,)
+    test_dataset = torchvision.datasets.MNIST(
+        root="./data", train=False, transform=T.ToTensor(), download=True,
+    )
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=BATCH_SIZE,
+        shuffle=True,
+        num_workers=0,
+        pin_memory=torch.cuda.is_available(),
+    )
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=2 * BATCH_SIZE,
+        shuffle=False,
+        num_workers=0,
+        pin_memory=torch.cuda.is_available(),
+    )
+    return test_loader, train_loader
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Train and Log Prediction Tables
+
+    The next cell starts a Weights & Biases run with `wandb.init()` and records the training
+    configuration. Each execution builds a fresh model and optimizer.
+
+    During training, `training_run.log()` sends the loss to Weights & Biases. At the end of
+    each epoch, we evaluate the model and build a new `wandb.Table`:
+
+    - `columns` defines the schema: image ID, image, predicted digit, true digit,
+      and ten class probabilities.
+    - `add_data()` adds one row per image. `wandb.Image()` makes the image
+      viewable in Weights & Biases. The remaining values let you filter errors and compare
+      class scores.
+    - `training_run.log()` uploads accuracy and the table under
+      `test_predictions`. Logging a fresh table under the same key each epoch
+      lets you inspect predictions over time.
+
+    The context manager finishes the run after training and evaluation complete.
+    """)
+    return
 
 
 @app.cell
 def _(
     BATCH_SIZE,
     CONV_KERNEL_SIZE,
+    ConvNet,
     EPOCHS,
     L1_SIZE,
     L2_SIZE,
@@ -313,27 +413,12 @@ def _(
     NUM_BATCHES_TO_LOG,
     NUM_CLASSES,
     NUM_IMAGES_PER_BATCH,
-    criterion,
     device,
-    get_dataloader,
-    model,
-    optimizer,
-    run_training,
-    wandb_entity,
+    entity,
+    project,
+    test_loader,
+    train_loader,
 ):
-    mo.stop(
-        not run_training.value,
-        mo.callout(
-            mo.md(
-                "Click **Train model and log predictions to W&B** when you are ready to download MNIST and start the run."
-            ),
-            kind="info",
-        ),
-    )
-
-    train_loader = get_dataloader(is_train=True, batch_size=BATCH_SIZE)
-    test_loader = get_dataloader(is_train=False, batch_size=2 * BATCH_SIZE)
-
     training_config = {
         "epochs": EPOCHS,
         "batch_size": BATCH_SIZE,
@@ -341,47 +426,15 @@ def _(
         "l1_size": L1_SIZE,
         "l2_size": L2_SIZE,
         "conv_kernel": CONV_KERNEL_SIZE,
-        "img_count": min(10000, NUM_IMAGES_PER_BATCH * NUM_BATCHES_TO_LOG),
+        "num_batches_to_log": NUM_BATCHES_TO_LOG,
+        "num_images_per_batch": NUM_IMAGES_PER_BATCH,
     }
 
-    # ✨ W&B: Initialize a run and log the training configuration.
-    with wandb.init(
-        project=WANDB_PROJECT,
-        entity=wandb_entity,
-        config=training_config,
-    ) as run:
-        run_url = run.url
+    model = ConvNet(NUM_CLASSES).to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-        def log_test_predictions(
-            images,
-            labels,
-            outputs,
-            predicted,
-            test_table,
-            log_counter,
-        ):
-            "Log predictions and per-class scores for one test batch."
-            scores = F.softmax(outputs.data, dim=1)
-            log_scores = scores.cpu().numpy()
-            log_images = images.cpu().numpy()
-            log_labels = labels.cpu().numpy()
-            log_preds = predicted.cpu().numpy()
-
-            for image_id, (image, label, prediction, score) in enumerate(
-                zip(log_images, log_labels, log_preds, log_scores)
-            ):
-                row_id = f"{image_id}_{log_counter}"
-                test_table.add_data(
-                    row_id,
-                    wandb.Image(image),
-                    prediction,
-                    label,
-                    *score,
-                )
-                if image_id + 1 == NUM_IMAGES_PER_BATCH:
-                    break
-
-        total_step = len(train_loader)
+    with wandb.init(project=project, entity=entity, config=training_config) as training_run:
         for epoch in range(EPOCHS):
             model.train()
             for step, (images, labels) in enumerate(train_loader):
@@ -394,17 +447,11 @@ def _(
                 loss.backward()
                 optimizer.step()
 
-                # ✨ W&B: Log loss over training steps for live visualization.
-                run.log({"loss": loss.item()})
+                training_run.log({"loss": loss.item()})
                 if (step + 1) % 100 == 0:
                     print(
-                        "Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}".format(
-                            epoch + 1,
-                            EPOCHS,
-                            step + 1,
-                            total_step,
-                            loss.item(),
-                        )
+                        f"Epoch {epoch + 1}/{EPOCHS}, "
+                        f"batch {step + 1}/{len(train_loader)}, loss: {loss.item():.4f}"
                     )
 
             columns = ["id", "image", "guess", "truth"]
@@ -412,68 +459,72 @@ def _(
             test_table = wandb.Table(columns=columns)
 
             model.eval()
-            log_counter = 0
+            correct = 0
+            total = 0
             with torch.no_grad():
-                correct = 0
-                total = 0
-                for images, labels in test_loader:
+                for batch_index, (images, labels) in enumerate(test_loader):
                     images = images.to(device)
                     labels = labels.to(device)
                     outputs = model(images)
-                    _, predicted = torch.max(outputs.data, 1)
-
-                    if log_counter < NUM_BATCHES_TO_LOG:
-                        log_test_predictions(
-                            images,
-                            labels,
-                            outputs,
-                            predicted,
-                            test_table,
-                            log_counter,
-                        )
-                        log_counter += 1
+                    predicted = outputs.argmax(dim=1)
 
                     total += labels.size(0)
                     correct += (predicted == labels).sum().item()
 
+                    if batch_index < NUM_BATCHES_TO_LOG:
+                        scores = F.softmax(outputs, dim=1).cpu()
+                        for image_index in range(min(NUM_IMAGES_PER_BATCH, len(images))):
+                            image_id = batch_index * test_loader.batch_size + image_index
+                            test_table.add_data(
+                                image_id,
+                                wandb.Image(images[image_index].cpu()),
+                                predicted[image_index].item(),
+                                labels[image_index].item(),
+                                *scores[image_index].tolist(),
+                            )
+
             accuracy = 100 * correct / total
-            # ✨ W&B: Log accuracy and the prediction table for this epoch.
-            run.log(
-                {
-                    "epoch": epoch,
-                    "acc": accuracy,
-                    "test_predictions": test_table,
-                }
-            )
+            training_run.log({
+                "epoch": epoch + 1,
+                "acc": accuracy,
+                "test_predictions": test_table,
+            })
             print(
-                "Test accuracy on the 10,000 MNIST test images: "
-                f"{accuracy:.2f}%"
+                f"Epoch {epoch + 1}: test accuracy {accuracy:.2f}% "
+                f"on {total:,} images; {len(test_table.data)} table rows"
             )
 
-    training_result = {
-        "run_url": run_url,
-        "accuracy": accuracy,
-        "epochs": EPOCHS,
-    }
-    return (training_result,)
-
-
-@app.cell
-def _(training_result):
-    _run_url = training_result["run_url"]
-    _accuracy = training_result["accuracy"]
-    mo.callout(
-        mo.md(
-            f"""
-    Training is complete. [Open the W&B run]({_run_url}) to explore the logged loss, accuracy, and prediction tables.
-
-    Final test accuracy: **{_accuracy:.2f}%**
-    """
-        ),
-        kind="success",
-        title="W&B Tables run ready",
-    )
+        run_url = training_run.url
+    print(f"View metrics and prediction tables: {run_url}")
     return
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Verify the prediction Table
+
+    Open the run URL and find `test_predictions`. Each row should connect a stable
+    image ID with the image, `guess`, `truth`, and ten `score_*` probabilities.
+    Filter to `guess != truth`, group by `guess`, and inspect low-margin cases where
+    the two largest scores are close.
+
+    Use the step selector to compare epoch snapshots. Across runs, stable IDs let
+    you find the same image. Inspect loss and accuracy beside the Table so aggregate
+    changes can be connected to predictions. See the
+    [Tables guide](https://docs.wandb.ai/models/tables).
+
+    ## Next steps
+
+    Change the learning rate or layer sizes and rerun with the same seed and image
+    IDs. Compare fixed, persistent, and new errors. Repeatedly selecting settings
+    from these results turns the test split into validation data, so keep an
+    independent test set for final evaluation. The
+    [progress-over-time Report](https://wandb.ai/stacey/table-quickstart/reports/CNN-2-Progress-over-Training-Time--Vmlldzo3NDY5ODU#false-positives-grouped-by-guess)
+    shows additional comparisons.
+    """)
+    return
+
 
 if __name__ == "__main__":
     app.run()

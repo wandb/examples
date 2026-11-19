@@ -50,7 +50,7 @@ with app.setup(hide_code=True):
         device_kind = "warn"
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     # MNIST -> W&B Run -> Registry
@@ -99,7 +99,7 @@ def _():
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Configuration
@@ -523,7 +523,7 @@ def _(collection_name_v, registry_name_v, run):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell(hide_code=False)
 def _():
     mo.md(r"""
     ## Helper functions
