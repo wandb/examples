@@ -14,7 +14,7 @@
 
 import marimo
 
-__generated_with = "0.25.1"
+__generated_with = "0.25.2"
 app = marimo.App(
     width="medium",
     app_title="Keras checkpoints with Weights & Biases",
@@ -60,10 +60,7 @@ def _():
     model checkpoints and logs them as versioned Weights & Biases [Artifacts](https://docs.wandb.ai/models/artifacts).
     Use `WandbMetricsLogger` alongside it to track training and validation metrics.
 
-
-
-    This notebook is designed to run on your local machine's CPU. The data
-    and model cells download Fashion-MNIST and ImageNet weights the first time.
+    > Note: marimo notebooks are reactive. marimo tracks dependencies between cells and runs them in the required order. This notebook places helper functions at the end because they aren’t central to its learning objectives, even when earlier cells use them.
     """)
     return
 
@@ -116,7 +113,7 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _():
+def _(wandb_api_form):
     from wandb.sdk.lib.service.service_connection import (
         WandbApiFailedError as _WandbApiFailedError,
     )
@@ -195,7 +192,7 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _():
+def _(available_entities):
     def _validate_wandb_target(value):
         if value is None:
             return None
@@ -239,10 +236,8 @@ def _():
     return (wandb_setup_form,)
 
 
-
-
 @app.cell(hide_code=True)
-def _():
+def _(wandb_setup_form):
     mo.stop(wandb_setup_form.value is None)
 
     _submission = wandb_setup_form.value
@@ -251,10 +246,7 @@ def _():
 
     entity = _entity
     project = _project
-
     return entity, project
-
-
 
 
 @app.cell(hide_code=True)
@@ -416,6 +408,29 @@ def _(configs, entity, model, project, trainloader, validloader):
     return
 
 
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""
+    ## Verify the metrics and checkpoint versions
+
+    Open the run link. Inspect `epoch/loss`, `epoch/val_loss`, and
+    `epoch/val_accuracy`, then open **Config** to confirm the hyperparameters.
+
+    In **Artifacts**, find the model Artifact and inspect its versions. Each should
+    contain `model.keras`, while `latest` should resolve to the newest checkpoint.
+    Because the file includes architecture, weights, and optimizer state, a
+    downloaded version can be loaded with `tf.keras.models.load_model()`. See the
+    [Artifacts guide](https://docs.wandb.ai/models/artifacts) and
+    [Keras integration guide](https://docs.wandb.ai/models/integrations/keras).
+
+    ## Next steps
+
+    Change the learning rate, rebuild, and train with the same split. Compare
+    validation curves and checkpoint versions together. For distinct local files,
+    use `models/model-{epoch:02d}.keras`; Weights & Biases versioning does not require unique
+    local names, but the formatted path makes local inspection easier.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -450,31 +465,6 @@ def get_dataloader(ds, configs, dataloader_type="train"):
     if dataloader_type == "train":
         dataloader = dataloader.shuffle(configs["shuffle_buffer"], seed=configs["seed"])
     return dataloader.batch(configs["batch_size"]).prefetch(tf.data.AUTOTUNE)
-
-
-@app.cell(hide_code=True)
-def _():
-    mo.md(r"""
-    ## Verify the metrics and checkpoint versions
-
-    Open the run link. Inspect `epoch/loss`, `epoch/val_loss`, and
-    `epoch/val_accuracy`, then open **Config** to confirm the hyperparameters.
-
-    In **Artifacts**, find the model Artifact and inspect its versions. Each should
-    contain `model.keras`, while `latest` should resolve to the newest checkpoint.
-    Because the file includes architecture, weights, and optimizer state, a
-    downloaded version can be loaded with `tf.keras.models.load_model()`. See the
-    [Artifacts guide](https://docs.wandb.ai/models/artifacts) and
-    [Keras integration guide](https://docs.wandb.ai/models/integrations/keras).
-
-    ## Next steps
-
-    Change the learning rate, rebuild, and train with the same split. Compare
-    validation curves and checkpoint versions together. For distinct local files,
-    use `models/model-{epoch:02d}.keras`; Weights & Biases versioning does not require unique
-    local names, but the formatted path makes local inspection easier.
-    """)
-    return
 
 
 if __name__ == "__main__":
