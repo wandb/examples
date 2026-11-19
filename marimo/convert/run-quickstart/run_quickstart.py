@@ -327,7 +327,7 @@ def _(run_path):
     api = wandb.Api()
     logged_run = api.run(run_path)
     history = list(logged_run.scan_history(keys=["epoch", "accuracy", "loss"]))
-    history
+    print(history)
     return
 
 
