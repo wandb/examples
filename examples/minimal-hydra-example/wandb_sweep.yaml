@@ -1,6 +1,7 @@
 program: main.py
+project: example-hydra
 metric:
-  name: val_loss
+  name: epoch/val_loss
   goal: minimize
 
 method: bayes

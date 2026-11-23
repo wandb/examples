@@ -4,3 +4,4 @@ defaults:
 - optimizer: adam
 - wandb: default
 - experiment: default
+- logging: default
