@@ -53,7 +53,8 @@ class User:
         url = f"{self.base_url}/scim/Users"
         try:
             response = requests.post(url, json=data, **self.request_kwargs)
-        except requests.HTTPError:
+        except requests.HTTPError as e:
+            response = e.response
             return {
                 "error": f"User creation failed. Status code: {response.status_code}",
                 "details": response.text,
@@ -75,7 +76,8 @@ class User:
         url = f"{self.base_url}/scim/Users/{user_id}"
         try:
             response = requests.get(url, **self.request_kwargs)
-        except requests.HTTPError:
+        except requests.HTTPError as e:
+            response = e.response
             return {
                 "error": f"Get user failed. Status code: {response.status_code}",
                 "details": response.text,
@@ -104,7 +106,8 @@ class User:
         params = {"filter": filter} if filter else {}
         try:
             response = requests.get(url, params=params, **self.request_kwargs)
-        except requests.HTTPError:
+        except requests.HTTPError as e:
+            response = e.response
             return {
                 "error": f"Get users failed. Status code: {response.status_code}",
                 "details": response.text,
@@ -134,7 +137,8 @@ class User:
         }
         try:
             response = requests.patch(url, json=payload, **self.request_kwargs)
-        except requests.HTTPError:
+        except requests.HTTPError as e:
+            response = e.response
             if response.status_code == 404:
                 return "User not found"
             return f"Failed to activate user. Status code: {response.status_code}"
@@ -164,7 +168,8 @@ class User:
         }
         try:
             response = requests.patch(url, json=payload, **self.request_kwargs)
-        except requests.HTTPError:
+        except requests.HTTPError as e:
+            response = e.response
             if response.status_code == 404:
                 return "User not found"
             return f"Failed to deactivate user. Status code: {response.status_code}"
@@ -185,7 +190,8 @@ class User:
         url = f"{self.base_url}/scim/Users/{user_id}"
         try:
             response = requests.delete(url, **self.request_kwargs)
-        except requests.HTTPError:
+        except requests.HTTPError as e:
+            response = e.response
             if response.status_code == 404:
                 return "User not found"
             return f"Failed to delete user. Status code: {response.status_code}"
@@ -223,7 +229,8 @@ class User:
         url = f"{self.base_url}/scim/Users/{user_id}"
         try:
             response = requests.patch(url, json=data, **self.request_kwargs)
-        except requests.HTTPError:
+        except requests.HTTPError as e:
+            response = e.response
             if response.status_code == 404:
                 return "User not found"
             return f"Failed to update user. Status code: {response.status_code}"
@@ -267,7 +274,8 @@ class User:
         url = f"{self.base_url}/scim/Users/{user_id}"
         try:
             response = requests.patch(url, json=data, **self.request_kwargs)
-        except requests.HTTPError:
+        except requests.HTTPError as e:
+            response = e.response
             if response.status_code == 404:
                 return {"error": "User not found"}
             return {
@@ -310,7 +318,8 @@ class User:
         url = f"{self.base_url}/scim/Users/{user_id}"
         try:
             response = requests.patch(url, json=data, **self.request_kwargs)
-        except requests.HTTPError:
+        except requests.HTTPError as e:
+            response = e.response
             if response.status_code == 404:
                 return {"error": "User not found"}
             return {
@@ -343,7 +352,8 @@ class User:
         url = f"{self.base_url}/scim/Users/{user_id}"
         try:
             response = requests.patch(url, json=data, **self.request_kwargs)
-        except requests.HTTPError:
+        except requests.HTTPError as e:
+            response = e.response
             if response.status_code == 404:
                 return {"error": "User not found"}
             return {
