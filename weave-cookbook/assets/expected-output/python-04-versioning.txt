@@ -1,0 +1,10 @@
+$ uv run python examples/04_versioning.py
+weave: Logged in as Weights & Biases user: <your-username>.
+weave: View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+weave: 📦 Published to https://wandb.ai/<entity>/weave-cookbook/weave/objects/game-catalog/versions/<digest>
+weave: 📦 Published to https://wandb.ai/<entity>/weave-cookbook/weave/objects/game-catalog/versions/<digest>
+published: weave:///<entity>/weave-cookbook/object/game-catalog:<digest>
+published: weave:///<entity>/weave-cookbook/object/game-catalog:<digest>
+latest has 13 games; v0 still has 12.
+
+Captured 2026-08-02 with weave 0.53.4 on Python 3.11.13.

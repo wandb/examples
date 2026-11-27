@@ -1,0 +1,19 @@
+$ npm run judge
+
+> weave-cookbook-ts@0.1.0 judge
+> tsx examples/03-llm-judge.ts
+
+View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+🍩 https://wandb.ai/<entity>/weave-cookbook/r/call/<call-id>
+Evaluating 1/6 examples (4 running, 0 errors)
+...
+Evaluating 6/6 examples (0 running, 0 errors)
+Judge agrees with the human labels on 100% of calibration rows.
+🍩 https://wandb.ai/<entity>/weave-cookbook/r/call/<call-id>
+Evaluating 1/3 examples (2 running, 0 errors)
+...
+Evaluating 3/3 examples (0 running, 0 errors)
+{ true_count: 3, true_fraction: 1 }
+
+Agreement and scores vary between runs; 6/6 and 3/3 were one captured run.
+Captured 2026-08-02 with weave (npm) 0.16.5 on Node.js 26.4.0.

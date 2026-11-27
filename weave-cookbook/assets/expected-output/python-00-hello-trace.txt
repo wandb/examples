@@ -1,0 +1,6 @@
+$ uv run python examples/00_hello_trace.py
+weave: Logged in as Weights & Biases user: <your-username>.
+weave: View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+Welcome to game night! Bring snacks.
+
+Captured 2026-08-02 with weave 0.53.4 on Python 3.11.13.

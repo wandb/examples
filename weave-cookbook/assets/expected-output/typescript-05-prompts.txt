@@ -1,0 +1,12 @@
+$ npm run prompts
+
+> weave-cookbook-ts@0.1.0 prompts
+> tsx examples/05-prompts.ts
+
+View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+Gemcutter's Guild
+
+fetched game-night-system -> You are the Game Night Agent. Pick exactly one game from the candidate list. Cho...
+
+The model's pick varies between runs; the prompt preview does not.
+Expected output shape for weave (npm) 0.16.5 on Node.js 26.4.0.

@@ -1,0 +1,7 @@
+$ uv run python examples/02_eval_logger.py
+weave: Logged in as Weights & Biases user: <your-username>.
+weave: View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+Logged 3 predictions to evaluation 'game-night-batch'.
+weave: 🍩 https://wandb.ai/<entity>/weave-cookbook/r/call/<call-id>
+
+Captured 2026-08-02 with weave 0.53.4 on Python 3.11.13.

@@ -1,0 +1,7 @@
+$ uv run python examples/01_trace_recommendation.py --players 4 --minutes 60 --vibe "cooperative"
+weave: Logged in as Weights & Biases user: <your-username>.
+weave: View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+Gemcutter's Guild
+
+The model's pick varies between runs; the output remains one catalog name or "none".
+Expected output shape for weave 0.53.4 on Python 3.11.13.

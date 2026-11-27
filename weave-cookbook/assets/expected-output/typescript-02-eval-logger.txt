@@ -1,0 +1,9 @@
+$ npm run eval-logger
+
+> weave-cookbook-ts@0.1.0 eval-logger
+> tsx examples/02-eval-logger.ts
+
+View Weave data at https://wandb.ai/<entity>/weave-cookbook/weave
+Logged 3 predictions to evaluation 'game-night-batch'.
+
+Captured 2026-08-02 with weave (npm) 0.16.5 on Node.js 26.4.0.
