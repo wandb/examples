@@ -14,6 +14,10 @@ If you run into any trouble, let us know by opening up [an issue](https://github
 
 The examples are primarily organized by framework.
 
+## [Halo](https://github.com/wandb/examples/tree/master/examples/halo)
+
+Fine-tune Qwen3 with faster kernels and lower peak memory without converting the Hugging Face model, and compare the results in W&B.
+
 ## 🚀 Getting started
 
 1. Install wandb
